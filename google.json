@@ -1,0 +1,2235 @@
+{
+  "hasResizeObserver": true,
+  "webDriver": false,
+  "navigator": {
+    "language": "en-US",
+    "languages": ["en-US", "ar", "en"],
+    "deviceMemory": 8,
+    "hardwareConcurrency": 8,
+    "maxTouchPoints": 0,
+    "platform": "Win32",
+    "vendor": "Google Inc.",
+    "pdfViewerEnabled": true,
+    "appName": "Netscape",
+    "appVersion": "5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "appCodeName": "Mozilla",
+    "product": "Gecko",
+    "productSub": "20030107",
+    "doNotTrack": null,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "userAgentData": {
+      "brands": [
+        {
+          "brand": "Google Chrome",
+          "version": "137"
+        },
+        {
+          "brand": "Chromium",
+          "version": "137"
+        },
+        {
+          "brand": "Not/A)Brand",
+          "version": "24"
+        }
+      ],
+      "mobile": false,
+      "platform": "Windows"
+    },
+    "userAgentHighEntropyValues": {
+      "architecture": "x86",
+      "brands": [
+        {
+          "brand": "Google Chrome",
+          "version": "137"
+        },
+        {
+          "brand": "Chromium",
+          "version": "137"
+        },
+        {
+          "brand": "Not/A)Brand",
+          "version": "24"
+        }
+      ],
+      "fullVersionList": [
+        {
+          "brand": "Google Chrome",
+          "version": "137.0.7151.120"
+        },
+        {
+          "brand": "Chromium",
+          "version": "137.0.7151.120"
+        },
+        {
+          "brand": "Not/A)Brand",
+          "version": "24.0.0.0"
+        }
+      ],
+      "mobile": false,
+      "model": "",
+      "platform": "Windows",
+      "platformVersion": "19.0.0",
+      "uaFullVersion": "137.0.7151.120"
+    }
+  },
+  "userActivation": {
+    "hasBeenActive": true,
+    "isActive": false
+  },
+  "visualViewport": {
+    "width": 1520.800048828125,
+    "height": 196,
+    "scale": 1,
+    "offsetLeft": 0,
+    "offsetTop": 0,
+    "pageLeft": 0,
+    "pageTop": 0
+  },
+  "window": {
+    "windowName": "",
+    "innerWidth": 1536,
+    "innerHeight": 196,
+    "outerWidth": 1536,
+    "outerHeight": 816,
+    "devicePixelRatio": 1.25,
+    "scrollX": 0,
+    "scrollY": 0
+  },
+  "windowChrome": {
+    "metricsPrivate": {
+      "MetricTypeType": {
+        "HISTOGRAM_LINEAR": "histogram-linear",
+        "HISTOGRAM_LOG": "histogram-log"
+      }
+    },
+    "runtime": {
+      "ContextType": {
+        "BACKGROUND": "BACKGROUND",
+        "DEVELOPER_TOOLS": "DEVELOPER_TOOLS",
+        "OFFSCREEN_DOCUMENT": "OFFSCREEN_DOCUMENT",
+        "POPUP": "POPUP",
+        "SIDE_PANEL": "SIDE_PANEL",
+        "TAB": "TAB"
+      },
+      "OnInstalledReason": {
+        "CHROME_UPDATE": "chrome_update",
+        "INSTALL": "install",
+        "SHARED_MODULE_UPDATE": "shared_module_update",
+        "UPDATE": "update"
+      },
+      "OnRestartRequiredReason": {
+        "APP_UPDATE": "app_update",
+        "OS_UPDATE": "os_update",
+        "PERIODIC": "periodic"
+      },
+      "PlatformArch": {
+        "ARM": "arm",
+        "ARM64": "arm64",
+        "MIPS": "mips",
+        "MIPS64": "mips64",
+        "X86_32": "x86-32",
+        "X86_64": "x86-64"
+      },
+      "PlatformNaclArch": {
+        "ARM": "arm",
+        "MIPS": "mips",
+        "MIPS64": "mips64",
+        "X86_32": "x86-32",
+        "X86_64": "x86-64"
+      },
+      "PlatformOs": {
+        "ANDROID": "android",
+        "CROS": "cros",
+        "FUCHSIA": "fuchsia",
+        "LINUX": "linux",
+        "MAC": "mac",
+        "OPENBSD": "openbsd",
+        "WIN": "win"
+      },
+      "RequestUpdateCheckStatus": {
+        "NO_UPDATE": "no_update",
+        "THROTTLED": "throttled",
+        "UPDATE_AVAILABLE": "update_available"
+      }
+    },
+    "timeTicks": {}
+  },
+  "chromeFunctionsValues": {
+    "packageDirectoryEntry": {}
+  },
+  "screen": {
+    "availWidth": 1536,
+    "availHeight": 816,
+    "availTop": 0,
+    "availLeft": 0,
+    "colorDepth": 24,
+    "pixelDepth": 24,
+    "height": 864,
+    "width": 1536
+  },
+  "documentElement": {
+    "clientWidth": 1521,
+    "clientHeight": 196,
+    "scrollWidth": 1521,
+    "scrollHeight": 506,
+    "offsetLeft": 0,
+    "offsetTop": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "offsetWidth": 1521,
+    "offsetHeight": 196
+  },
+  "performanceMemory": {
+    "jsHeapSizeLimit": 4294705152,
+    "totalJSHeapSize": 9076334,
+    "usedJSHeapSize": 7962154
+  },
+  "visibility": {
+    "hidden": false,
+    "visibilityState": "visible"
+  },
+  "touchSupport": {
+    "ontouchstart_in_Window": false,
+    "ontouchend_in_Window": false,
+    "pointerEvent_in_Window": true,
+    "touchEvent_in_Window": true,
+    "deviceMotionEvent_in_Window": true,
+    "maxTouchPoints": 0
+  },
+  "clipboard": {
+    "hasReadText": true,
+    "hasWriteText": true
+  },
+  "math": {
+    "acos": 1.4470237543681796,
+    "sin": 0.8414709848078965,
+    "tan": -1.5574077246549023,
+    "exp": 2.718281828459045
+  },
+  "evalFunction": {
+    "typeofEval": "function",
+    "typeofFunction": "function"
+  },
+  "chromeRuntime": true,
+  "pluginsLength": 5,
+  "mimeTypesLength": 2,
+  "plugins": [
+    {
+      "name": "PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chrome PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chrome PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chrome PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chromium PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chromium PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chromium PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "Microsoft Edge PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Microsoft Edge PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Microsoft Edge PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "WebKit built-in PDF",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "WebKit built-in PDF",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "WebKit built-in PDF",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        }
+      ]
+    }
+  ],
+  "mimeTypes": [
+    {
+      "type": "application/pdf",
+      "description": "Portable Document Format",
+      "suffixes": "pdf",
+      "enabledPlugin": {
+        "name": "PDF Viewer",
+        "filename": "internal-pdf-viewer",
+        "description": "Portable Document Format"
+      }
+    },
+    {
+      "type": "text/pdf",
+      "description": "Portable Document Format",
+      "suffixes": "pdf",
+      "enabledPlugin": {
+        "name": "PDF Viewer",
+        "filename": "internal-pdf-viewer",
+        "description": "Portable Document Format"
+      }
+    }
+  ],
+  "connection": {
+    "effectiveType": "4g",
+    "rtt": 250,
+    "downlink": 1.5,
+    "saveData": false
+  },
+  "gamepads": [],
+  "dateValues": {
+    "intlDateTimeOptions": {
+      "locale": "en-US",
+      "calendar": "gregory",
+      "numberingSystem": "latn",
+      "timeZone": "Asia/Riyadh",
+      "year": "numeric",
+      "month": "numeric",
+      "day": "numeric"
+    },
+    "intlNumberFormatOptions": {
+      "locale": "en-US",
+      "numberingSystem": "latn",
+      "style": "decimal",
+      "minimumIntegerDigits": 1,
+      "minimumFractionDigits": 0,
+      "maximumFractionDigits": 3,
+      "useGrouping": "auto",
+      "notation": "standard",
+      "signDisplay": "auto",
+      "roundingIncrement": 1,
+      "roundingMode": "halfExpand",
+      "roundingPriority": "auto",
+      "trailingZeroDisplay": "auto"
+    },
+    "timezoneOffset": -180,
+    "timezoneOffsetString": "+03:00",
+    "compactOffset": "+0300",
+    "localDate": "Sun Jun 29 2025 01:41:00 GMT+0300 (Arabian Standard Time)",
+    "utcDate": "Sun, 29 Jun 2025 01:41:00 GMT",
+    "localDateISO": "2025-06-29T01:41:00.094Z",
+    "timezoneOffsetUtcString": "03:00Z"
+  },
+  "mediaQueriesNamesChecked": {
+    "(prefers-color-scheme: dark)": false,
+    "(prefers-color-scheme: light)": true,
+    "(prefers-reduced-motion: reduce)": false,
+    "(prefers-contrast: more)": false,
+    "(hover: hover)": true,
+    "(hover: none)": false,
+    "(pointer: fine)": true,
+    "(pointer: coarse)": false,
+    "(any-pointer: fine)": true,
+    "(any-hover: hover)": true,
+    "(aspect-ratio: 16/9)": false,
+    "(orientation: landscape)": true,
+    "(orientation: portrait)": false,
+    "(resolution: 96dpi)": false,
+    "(min-width: 768px)": true,
+    "(max-width: 1920px)": true
+  },
+  "mediaOrientation": "landscape",
+  "orientationMatchMediaOrientation": true,
+  "objectProtoToStringCall_WinMatchMedia": "[object Function]",
+  "cssSupports": {
+    "display: grid": true,
+    "display: contents": true,
+    "color: color(display-p3 1 0 0)": true,
+    "backdrop-filter: blur(4px)": true,
+    "position: sticky": true,
+    "text-decoration: underline dotted": true,
+    "-webkit-appearance: none": true,
+    "font-variation-settings: \"wght\" 700": true,
+    "aspect-ratio: 1/1": true
+  },
+  "matchMediaPrototype": [
+    "addListener",
+    "constructor",
+    "matches",
+    "media",
+    "onchange",
+    "removeListener"
+  ],
+  "mediaCapabilities": {
+    "hasGetUserMedia": true,
+    "getUserMediaIsFunction": true,
+    "enumeratedDevices": [
+      {
+        "deviceId": "default",
+        "kind": "audioinput",
+        "label": "Default - Microphone (Realtek(R) Audio)",
+        "groupId": "73920b6dd88bef5ef7fb38d26beab0f3fef1cd15e33b5950250370f03011963d"
+      },
+      {
+        "deviceId": "communications",
+        "kind": "audioinput",
+        "label": "Communications - Microphone (Realtek(R) Audio)",
+        "groupId": "73920b6dd88bef5ef7fb38d26beab0f3fef1cd15e33b5950250370f03011963d"
+      },
+      {
+        "deviceId": "8dc058ca3c6941dea93f8530c2ad1181fd1cbc0656b5c473a0bf57d5c8d7e168",
+        "kind": "audioinput",
+        "label": "Microphone (Realtek(R) Audio)",
+        "groupId": "73920b6dd88bef5ef7fb38d26beab0f3fef1cd15e33b5950250370f03011963d"
+      },
+      {
+        "deviceId": "",
+        "kind": "videoinput",
+        "label": "",
+        "groupId": ""
+      },
+      {
+        "deviceId": "default",
+        "kind": "audiooutput",
+        "label": "Default - Speakers (Realtek(R) Audio)",
+        "groupId": "73920b6dd88bef5ef7fb38d26beab0f3fef1cd15e33b5950250370f03011963d"
+      },
+      {
+        "deviceId": "communications",
+        "kind": "audiooutput",
+        "label": "Communications - Speakers (Realtek(R) Audio)",
+        "groupId": "73920b6dd88bef5ef7fb38d26beab0f3fef1cd15e33b5950250370f03011963d"
+      },
+      {
+        "deviceId": "2a5ae0008e7c4d9b1bfca2576f084adeed7d8680b3ff6ccc4bc732492ff7f187",
+        "kind": "audiooutput",
+        "label": "Speakers (Realtek(R) Audio)",
+        "groupId": "73920b6dd88bef5ef7fb38d26beab0f3fef1cd15e33b5950250370f03011963d"
+      }
+    ],
+    "supportedConstraints": {
+      "aspectRatio": true,
+      "autoGainControl": true,
+      "brightness": true,
+      "channelCount": true,
+      "colorTemperature": true,
+      "contrast": true,
+      "deviceId": true,
+      "displaySurface": true,
+      "echoCancellation": true,
+      "exposureCompensation": true,
+      "exposureMode": true,
+      "exposureTime": true,
+      "facingMode": true,
+      "focusDistance": true,
+      "focusMode": true,
+      "frameRate": true,
+      "groupId": true,
+      "height": true,
+      "iso": true,
+      "latency": true,
+      "noiseSuppression": true,
+      "pan": true,
+      "pointsOfInterest": true,
+      "resizeMode": true,
+      "sampleRate": true,
+      "sampleSize": true,
+      "saturation": true,
+      "sharpness": true,
+      "suppressLocalAudioPlayback": true,
+      "tilt": true,
+      "torch": true,
+      "voiceIsolation": true,
+      "whiteBalanceMode": true,
+      "width": true,
+      "zoom": true
+    }
+  },
+  "orientationInfo": {
+    "angle": 0,
+    "type": "landscape-primary",
+    "onchangeExists": false,
+    "lockExists": false,
+    "unlockExists": false
+  },
+  "stoarge": {
+    "hasLocalStorage": true,
+    "hasSessionStorage": true,
+    "hasIndexedDB": true,
+    "persisted": false,
+    "quota": 149433402162,
+    "usage": 0,
+    "usageDetails": {},
+    "supportsPersistence": true,
+    "supportsEstimate": true,
+    "supportsGetDirectory": true
+  },
+  "permissions": {
+    "camera": {
+      "name": "video_capture",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "microphone": {
+      "name": "audio_capture",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "geolocation": {
+      "name": "geolocation",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "notifications": {
+      "name": "notifications",
+      "state": "denied",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "persistent-storage": {
+      "name": "durable_storage",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "push": {
+      "name": "push",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Push Permission without userVisibleOnly:true isn't supported yet.",
+      "errorType": "DOMException"
+    },
+    "accelerometer": {
+      "name": "sensors",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "gyroscope": {
+      "name": "sensors",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "ambient-light-sensor": {
+      "name": "ambient-light-sensor",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': GenericSensorExtraClasses flag is not enabled.",
+      "errorType": "TypeError"
+    },
+    "clipboard-read": {
+      "name": "clipboard_read",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "clipboard-write": {
+      "name": "clipboard_write",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "background-sync": {
+      "name": "background_sync",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "midi": {
+      "name": "midi",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "magnetometer": {
+      "name": "sensors",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "accessibility-events": {
+      "name": "accessibility-events",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'accessibility-events' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "clipboard": {
+      "name": "clipboard",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'clipboard' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "payment-handler": {
+      "name": "payment_handler",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "periodic-background-sync": {
+      "name": "periodic_background_sync",
+      "state": "denied",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "window-placement": {
+      "name": "window-placement",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'window-placement' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "idle_detection": {
+      "name": "idle_detection",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'idle_detection' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "bluetooth": {
+      "name": "bluetooth",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'bluetooth' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "usb": {
+      "name": "usb",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'usb' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    }
+  },
+  "webrtcCandidates": [
+    {
+      "candidate": "candidate:510834475 1 udp 2122129151 172.20.10.4 63043 typ host generation 0 ufrag qd4i network-id 1 network-cost 10",
+      "address": "172.20.10.4",
+      "relatedAddress": null,
+      "relatedPort": null,
+      "foundation": "510834475",
+      "component": "rtp",
+      "protocol": "udp",
+      "priority": 2122129151,
+      "port": 63043,
+      "type": "host"
+    },
+    {
+      "candidate": "candidate:1753336441 1 udp 2122262783 2a02:9b0:4072:62c5:62bb:925b:4118:4779 63044 typ host generation 0 ufrag qd4i network-id 2 network-cost 10",
+      "address": "[2a02:9b0:4072:62c5:62bb:925b:4118:4779]",
+      "relatedAddress": null,
+      "relatedPort": null,
+      "foundation": "1753336441",
+      "component": "rtp",
+      "protocol": "udp",
+      "priority": 2122262783,
+      "port": 63044,
+      "type": "host"
+    },
+    {
+      "candidate": "candidate:3633217961 1 udp 2122197247 2a02:9b0:4072:62c5:a0f7:dfe3:bc2a:b680 63045 typ host generation 0 ufrag qd4i network-id 3 network-cost 10",
+      "address": "[2a02:9b0:4072:62c5:a0f7:dfe3:bc2a:b680]",
+      "relatedAddress": null,
+      "relatedPort": null,
+      "foundation": "3633217961",
+      "component": "rtp",
+      "protocol": "udp",
+      "priority": 2122197247,
+      "port": 63045,
+      "type": "host"
+    },
+    {
+      "candidate": "candidate:1626116646 1 tcp 1518149375 172.20.10.4 9 typ host tcptype active generation 0 ufrag qd4i network-id 1 network-cost 10",
+      "address": "172.20.10.4",
+      "relatedAddress": null,
+      "relatedPort": null,
+      "foundation": "1626116646",
+      "component": "rtp",
+      "protocol": "tcp",
+      "priority": 1518149375,
+      "port": 9,
+      "type": "host"
+    },
+    {
+      "candidate": "candidate:371191668 1 tcp 1518283007 2a02:9b0:4072:62c5:62bb:925b:4118:4779 9 typ host tcptype active generation 0 ufrag qd4i network-id 2 network-cost 10",
+      "address": "[2a02:9b0:4072:62c5:62bb:925b:4118:4779]",
+      "relatedAddress": null,
+      "relatedPort": null,
+      "foundation": "371191668",
+      "component": "rtp",
+      "protocol": "tcp",
+      "priority": 1518283007,
+      "port": 9,
+      "type": "host"
+    },
+    {
+      "candidate": "candidate:2786108580 1 tcp 1518217471 2a02:9b0:4072:62c5:a0f7:dfe3:bc2a:b680 9 typ host tcptype active generation 0 ufrag qd4i network-id 3 network-cost 10",
+      "address": "[2a02:9b0:4072:62c5:a0f7:dfe3:bc2a:b680]",
+      "relatedAddress": null,
+      "relatedPort": null,
+      "foundation": "2786108580",
+      "component": "rtp",
+      "protocol": "tcp",
+      "priority": 1518217471,
+      "port": 9,
+      "type": "host"
+    }
+  ],
+  "batteryInfo": {
+    "charging": true,
+    "chargingTime": null,
+    "dischargingTime": null,
+    "level": 0.97
+  },
+  "usbDevices": [],
+  "isBluetoothAvailable": true,
+  "canvasFP": {
+    "width": 300,
+    "height": 150,
+    "devicePixelRatio": 1.25,
+    "dataURL": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAACWCAYAAABkW7XSAAAQAElEQVR4AeycCZRU1ZnHv1dVvQDdYFwSVHQQBtGYccYFiY6MaNxGBDXunFGRpVvcQlScOYnGkxk9kyOiSdSE7o5LNKMSdwwe0cigaBBBM3pi4gaigtuAYe21ql7+/9v9yqYP9FLdXVXv1b/P/bjvvXvv9333d6v+ufd1m5jpJx8EPATtaFyL9taxnfcYpiICxUuAX5DinX1uZ07B6WjkH0catM6uO47jPYZlV/wq84vRsqOlUYVEgF+SQsonirlQXNobxYmWwGQDK8H1jixoZ80xtPa+eI2hKiJQHAQkWP23zhSTwMiZYkPhoVGcShGaVoaaVo66vfEZjX1oHMOxNPqiz8A/awzvvKhVBMJOgB/6sM+hEPOngNDIl+JCo9BQeChCgTANRPKDYBUw1u0teMY+QX+OpQ/6ok8aYzAWDW5URCC6BPhhj+7s8jMzCgeNbCkoFBeKDMWGwjMAaQ0ce4UdesLNdt7EO2z2pFqbc9pdVnf63XYfjdd8xjb2YV+OgXEsfdAXfdI3YzAWY9LQTUUEokmAH/Roziz3s6JYBEYRofEYR2GhyAw86Fzb76S5dtHEWrvjGwfbD8sq7cy02eEtjTaseYtVNm2yEhqv+Yxt7MO+HMOx9IGpBbsu+mYMxqIF8Vmjm0rREojoxCVYfbOwgUCwpnDQKCTcCQ0YOd6GnvwzmzHqRJtTMtAmJBttt6bNlmjeaokmWMs2S9Ca6nEP4zWNba4P+nIMx9IHfdEnUueOizEYK457GnPApQU1r2UiEAkCEqy+W0YKBAWDxzQKCIVkwPgf20nfusDmJErtO01bLNG8zeIUo5Z61LAkrKUB140WS6GmYXcV4zPXxnbattax9EFf9EnfSL+9aDE2c2AuaFIRgWgRkGD1fj0pDjQKBQUjI1bYCU0fvJdNTTZYhRMqCBLFCvfxVJPFU80Wy1gLrpPmpWi8bt+GvhzDsRQy+sJ9BX0zBqawM9FiXmhWEYFoEJBg7Wgdu/+MgkCjWNEoWHyvNGDiL+zqknI7rmUrdk/1FofAOMsIFIQpDWHy0+alUzs214Y+TsTaBCzw43Zo8M0YjIWUKVqMzRyYC4250dCsIgLhJyDByn4NKQQ0MqRRKCgY5RCQq/yYHYadUALHuzh3RdxRpSlSMCdEFCnfjGJlEK0dGdvSbX3cGIylD/qiT/pmDMZiTEyFL/eZA3NhTjTmSEOzigiEmwA/0OGeQX6zpxCQIQWCQlGOI9o0i9uh3AFBWGLOuDtqFZtYGuJEIcoIVFf5oz/7cowbm2w7OtJnE65hjMWYLrZZR9Fijl1FUbsIhIIAv2yhSLTAkqQI0MiPR68E8ivFS/DjSwfacXxZ7oQKYpLCkY5i40QHuyXW6JtdgXhxx0Uf9EnfQRzGZGzmAOcUT+bE3Jgjc6WhSWV7AroLEwF+mMOUbyHlSgGgURRKRo633YcMs/OcgECk3Lsq1BSWwCg0vZ4ARSv11TsvJ1rcbSEWYzMH5oI4fPnP3JgjDY9URCDcBCRYPV8/fvlpZEdB4E6mdNQZdiZEahDeK8WS2FnxhTqFyokURKbnYboYQZ8wxmAsxmRs5sBcMFq7LEBQiRYBfum+mlH1vO9aVY3vrHrezajXGJ991aNwr6rnXYd8l9rUuyq7TJJ9Z9Q+0GW/zjtQtJxgHXSu7V1eYcdyh0PxoOElOd6oYyfEY2DnfrJuDY6HjMWYNObAXJgTHFNMmSNzxa2KCISbwPaClY6dZZ5/vdVWe1ZzybWoh6N+bOdTLKCWmktuRL7j7O5pW3KQFbnRKAaJYUfgvRWPZXixjh1OzO16eGyjWGEX1G/5wDdFK4jH2PwTiCRyYU6IGwgWc6XhkYoIhJdA64eYu5KqmqUQq/PN9/5r1JyLv7jopYoXJzxxYP3pC0c8OvWVAY+PnnvRh9jBcNfVugOrqlljl/xy78zUuRMLdmf0NaN2obXfxWzf7m+3c2O/qhr63ogYG21mzQTUb6LPFaj5zEf91e7pkl8eAd/0vxDPfVw/gL5uhzVlWfkPJi3Yf8WgWTc/h7alMI71XTuT5e4Kc+Rcx9SdsnrqsrKf8XE3jTuVwMjOCVZppR2Jd0kedzg+hIpmvnnuONhNx1l3g2gxFmPSmANzYU7wmYAxR+Ya5M0aj1VEIHwE+EE2tyuprR5nvvcgvsjXH3fsPb9uSZYuWfj0rC+eWHDt/9x9762Xv/POUT6md6QlE4OdmX1sqfgcPDMI1xEYezfGnoldjof6Ntgpro3/UKx871aLpYe59lh6LPrf5saxvdXOQftBaN/F/PT/4dFg9Lm67ZmH648tkXw6c+Tz/H9G2zL096yuajL6u3Jv3Z23L1h41ZPb6occjxxuc+2efybGX+PicSfGXSTmesghT99ZUtLU7Ab27B8P3ckuNvYK+6bn2dcoFGnssHA88wiKOx/0yUlhLMZkbObAXJgTc0MCLk/UzBmVigiElwA/zJnsKwb9tWzShFtPw4MDysu2HXniCfN2H3PYk9+aOuWqO0aNemXgiP1WPlh16bTbqy+d9r2zz/7xHhMn3XLS9OWJh/cc+v55EISneXyc8aqdM33qZTMmTpz75ckn3Tlm2isl8445+v6fm+dfZfNmrmN79fSZ12N8wxmT5jzGe8QzjP8Dns+qXmnXXXzRrLqTT75jj/Hj7328avrMm6pW2swLLrx66IRTfnrY5AuuvW/fPd8egjGbxo27fz36/5x29ln/+W/HjLtvvykzLruCcxg4YNMrU6bMOoBtUy74/ncxtnTyedfdCV9XY6wdeeRvD8A3eDyuD6heYTWXLbfdcN2dgmHYPZmz+OB97ECKBMXCGZUj7dospz+I6SO2ywHXzIm5IQfusNrnjEdZFQ0SgbwT2E6wtm77WhN3J8jq7camQcuefe6S9Rs2DFuP+0zBJ7/UfNvn2UXVjz3/++nvmu9tOXD0i/+K3c6fIT7H4H/Zz/W81D1PLbhm0dpPRn/u+7GRyTQOKL736IifzPBXfzBm/oMP3Xjqww/fMPqNN49/G/3PGDFy5dczAcy+uer9sTc+88zlq9av33cp48HGfbjmkOu442torPSO/pffXDqgfIvLHV/SvfE9/fDhR370mxeWXvhBOz/B5X5btu76EseuXTv6BfPtqAMPfGn4smXnvI1xS9Dp7ZoxVn3nWNuA6+4UpOMEifHj5QNtuDuKtR0Fee2cQDRcnYt/2mIxNo3vtFgzN4SnYDHXIG/zas0rRgMLlZAT4Ae5x1NI+/b8pi3fqK9vGJJM+vH3S0uaE0MqPx/oxexwCNDquiPst3S6ZvVhn6dTsc95vccea6ac8J262hH7rTh38y3XeTyqrf6PWhzbbOXwv/vjV+/CzNa9+PL5H3JMYOm0PRE8++ijg16LxZKDdt19Lf/OiF2a/bSt5MUOzbdP3nvn6JfYtvbjg1Yjv6ZBA77k/5snH2VrwZc/5pXaUORnEEIWZ+CTrd+sxzEmBNjF5z/MibnBIdc4yBe3KiIQXgL8MPc6+9LSho2pZPlofCuG4kvzmXvP5Pn7cMcWi6c3JGLNWxIlzf9onlXGYnYBjmlPBYYxPJbtKIfB9dsG018zGil6FDWvqaniLfjxceTjzgFNOS1INxPPXXtx28W9XOcuB5O3fP8wB+YCc7m15uNybb0EvbYLVSKwMwKF+rxPBKuicsPaZDpx/Bf/P3yUm2hJywmoj4ZZCV5q77r7upX123aZjhfhu6XTdn/NL+6aXFNbs0tN3bzlNYfbxMWLZ/yRfTvaxo17XZxKlbTupFLxWeZ7Lx911Pw3OvbL8T2//BnzPCs3iESaSfgFIAbIoS0Xc7mZZXI1c9emHxEIK4E+EazKig1fVFauv3LVqsNPe/ONE28x3/s+7OkhQz5dY74N/voea97Db/7u+OjDg09c/upZ8/Hbvs3m+Yvwkv7GzsDF4slP16z5p8nPL56xBP33sVS8Gse/YfDp4Tia6mxsZ2277f7Rm/B3yooVp/2wsbGit8fDzkKpTQREoA8JbC9YdVWTAxGpqPhyE94zDT/+hLpFJYmGhvHH3HM5rzOx+ecBtdXjSksam/jsnEn//buxRzwy/uCDn31sxvTq2/Fs06hRy0fgf9P3wrVtuuWGH4wevfTcb499hO3jDeP5mzn+hq6quuo1Y2x2bGeDK7945u9HrniQ774um1Z9Ov/8AkfKUwcN2vTGuh/9dOgB+7/8l0x3+EO+Lp8993z39YsnX3tqkNu4b8//FG1uLuy/7z5/eh/3u4wZ8+RN5eVbt/JZD8xH34zhpX8j5mgOpAcpRWNeC3Joy8Vcbu7tmssryDmv6Sm4CPSGgPts98YBx3766f6H3vPAzb+rm3fX6/iSzG9qrrxiwoTbTt9//+VlaP8A35TPUJt7Ge/ZHyA61/AdVjJu9/qevVt7uM1l+07Ns83syzH46g1OpOwnO+3bgwbs1lYi3xHw+0DVShvZjaGYSqaXu/ZTthFq5Tvj4cvMLJ8/zCEGSjCXW2suLtfWS7S1XagSgbAR2KFg4b3S7EBEUK/C/WSKTfvrYKJ4NnfBE/9+HI5oSUskN9f9qmb+fffd8g8Ln7ly/APHbjgD/dwODLUr7A9/EwPjvWvAP3g2m4bL7Qree63A89Yx7f4EATm9UDvGzmcdDKC/4M8U2l+zHfeZufCe4zD+TPiezDY+66ZRAGhpv9k+gwAbd1nUClqM/1hufxiTYWnMhTkxN2SRhjFXGi5VRCC8BHYoWD2eDv/7PRwPq6qqr6meUV2L49tImzfzVf5dFnYww7iT6ZHPeTPX4ciWOcL1aGz/d+YXn0YhSDXW2xr8Ns6Pxc1nTTP+YIfDKifWFouxaUEuzA3x+a6PuTJnGh6piEA4CfSNYLXNvSRl9xp+guOb59mVEKx53MngcVQKv/SBpTZ/bH+JJSBWEA2Pxi0O6pxPFjHB21wOuGZOzA15ULCCfFnjkUqfEZCjnBLoU8HiX4vzOIYjlju+8bjVG7HiMQ2+3HE0p1S6DsYvPnct6eW3258hyn+NlViaIuEEA+N5REOVk8JY1EnGZg7MhTkxNyTg8kTNnFGpiEB4CfSpYIUXQ7cz55c+MAoBdy/J5i22LF5iPoWCRzIa3iP57kV8t11n2RG7KcZiTBpzYC7MCR6TMOaYRh3kzRq3KiIQPgISrOzWjAJAoxgk175qixOllo7jaBhHzXdIzrjtoaBkF6PrUfDN3ZWLhXdojM0cmAtzgoP2gsV88UhFBMJLIL+CFV5uzJw7FSdYb823dY1b7X/jZZbmDoeG45lxh0VBYef+MOcbosVYjEljDsyFOSFmIFjMFbcqIhBuAhKsnq8fv/w07licYMFF83uP26PY4WwrKbd0IhAu7HooWs7QqU8LhIp+3e6qpDUmYzMH5oJY/G8wA8FirsyZhiYVEQgnAQlW9uvGLz+NotWyaomt37TWHuIOB++Q0hCONGsnKBAu1hSY7MO1jYRQ1r2ZzAAACDZJREFU0VdgjBHEYmzmwFzQuwXG3JgjDbcqIhBuAhKs7NaPAkDjzoWiwJ1M85Ib7PfN9bY4MdBSFA9n2P1QXChWwREuu5AYRbHy2mqIoBMr7OYYhzEZmzmgRwHurpCVigj0koAEq3cAA9FyggVXjc98z+6ylL1e0l608CKeL8NjCbzjouhAbChgzjCo04L+7EfRi+GaPujL7araxIqxGNPFNmuEv0CwKKjMEY9URCD8BCRY2a8hhYBGUaBlROupS+1WL22vlQ6yJN4rpUoGuB1XCmLj0/CS3P1lPHdcFCIK0o6MbUEfNyZhbjx2VM4nfTMGYzEmptJRrJgXc6ShWUUEwk1AgtW79aMQ0HgspAWi1QABmdvSaItLKizFHVACokVzO6Ngx4XjohOiOIRoB+ba0Cezo8I4+qDRJ30zBmNhGg2wYGfFXGjMjYYmFRHIGYF+CyTB6j1aCgKNAkHB4svuJrhtwBHtV5s/sbshMFuxE2rdFWHXhXu+40plxAtC5N5HYQflxIkixWeBlVmKY0owlrs1+sL9VvpmDMaCMSZjMwfmwpxoaFIRgWgQkGD13TpSHCgUFAwKBwWkAS/BF/3pfpudbLbnyyotSbFxwoN3XNwl8WU5RQjHu3QcuzAar/nMtbX14xiOpQ/6ok/6RvrcWTEWYzI2c2AuaFIRgWgRkGD1zXoGAsGagkGjgFBIGlYtsc+wE6p771mb3VJvCxPltqFsMMSrwpJlMIoRrWwg7mG8prGtFO3syzEcSx/0RZ9Ivb1YMSaNOaDJgprXMhGIBAEJVt8tIwUiMAoHjaLF90p8GV7/1nz7YNHV9uunquzyz9+0m5q22KNYgJXYUa0trbQtZUOspWyItfCaz9jGPuzLMRxLH0i5Hkaf9M0YjEUL4rNGFxURiBYBfCeiNaECmA3Fgsbf0FFEeEyjsHC3RZHhrqh++e32+nPX2kNPXW5zFlTZ7Cen2YwnptqFNF7zGdvYh30xL4oUx9IHfdEnfTMGYzEmDV1VRCCaBCRY/bOuFA4ahYSCQqO4UGQoNhQdGkVoG1LYCmPd3oJn7MO+NI6lD/qiTxpjMBYNblREILoEJFj9t7YUkMAoKhQXCg2NxzgKD40iRKMgtTc+o7EPjWM4lkZf9Bn4Z91/M5HnfiMgxz0jIMHqGa9selNM2hvFhkbhCYxitCML2llzDK29L15nk5PGiEAoCUiwcrdsFJeOxl0SRYjW2XXHcbzPXeaKJAIFQkCClZ+FoOB0NApWe+vYzvv8ZKuoIlAgBEItWAXCUGmIgAjkiIAEK0egFUYERKD3BCRYvWcoDyIgAjkiIMHKEWiF6SUBDRcBEJBgAYKKCIhAOAhIsMKxTspSBEQABCRYgKAiAiJQSAR2nosEa+ds1CICIlBgBCRYBbYgSkcERGDnBCRYO2ejFhEQgQIjIMEqsAXpfTryIALRJSDBiu7aamYiEDkCEqzILakmJALRJSDBiu7aambRJ1B0M5RgFd2Sa8IiEF4CEqzwrp0yF4GiIyDBKrol14RFILwEilmwwrtqylwEipSABKtIF17TFoEwEpBghXHVlLMIFCkBCVaRLnyxTVvzjQYBCVY01lGzEIGiICDBKopl1iRFIBoEJFjRWEfNQgSKgkC3BKsoSGiSIiACBU9AglXwS6QERUAEAgISrICEahEQgYInIMEq+CXKcYIKJwIFTECCVcCLo9REQAS2JyDB2p6H7kRABAqYgASrgBdHqYlA/xIIn3cJVvjWTBmLQNESkGAV7dJr4iIQPgISrPCtmTIWgaIlIMHKeuk1UAREINcEJFi5Jq54IiACWROQYGWNTgNFQARyTUCClWviihdGAsq5QAhIsApkIZSGCIhA1wQkWF0zUg8REIECISDBKpCFUBoiIAJdE8iFYHWdhXqIgAiIQDcISLC6AUldREAECoOABKsw1kFZiIAIdIOABKsbkNSl+wTUUwT6k4AEqz/pyrcIiECfEpBg9SlOORMBEehPAhKs/qQr3yIQZQJ5mJsEKw/QFVIERCA7AhKs7LhplAiIQB4ISLDyAF0hRUAEsiMgwcqOW+9HyYMIiECPCUiweoxMA0RABPJFQIKVL/KKKwIi0GMCEqweI9MAEegpAfXvKwISrL4iKT8iIAL9TkCC1e+IFUAERKCvCEiw+oqk/IiACPQ7gRAIVr8zUAAREIGQEJBghWShlKYIiICZBEufAhEQgdAQkGCFZqmKIlFNUgQ6JSDB6hSPGkVABAqJgASrkFZDuYiACHRKQILVKR41ioAI9BeBbPxKsLKhpjEiIAJ5ISDBygt2BRUBEciGgAQrG2oaIwIikBcCEqy8YO99UHkQgWIkIMEqxlXXnEUgpAQkWCFdOKUtAsVIQIJVjKuuOYeLgLLNEJBgZVDoQgREoNAJSLAKfYWUnwiIQIaABCuDQhciIAKFTiD6glXoK6D8REAEuk1AgtVtVOooAiKQbwISrHyvgOKLgAh0m4AEq9uo1LHwCSjDqBOQYEV9hTU/EYgQAQlWhBZTUxGBqBOQYEV9hTU/EYgQgXaCFaFZaSoiIAKRJCDBiuSyalIiEE0CEqxorqtmJQKRJCDBiuSydjkpdRCBUBKQYIVy2ZS0CBQnAQlWca67Zi0CoSQgwQrlsilpEeg+gSj1lGBFaTU1FxGIOAEJVsQXWNMTgSgRkGBFaTU1FxGIOAEJVhcLrGYREIHCISDBKpy1UCYiIAJdEJBgdQFIzSIgAoVDQIJVOGuhTPJNQPELnoAEq+CXSAmKgAgEBCRYAQnVIiACBU9AglXwS6QERUAEAgJ/AwAA//9DiuUUAAAABklEQVQDADRY/6WeHNGFAAAAAElFTkSuQmCC",
+    "dataURLLength": 8402,
+    "sha1": "50f31b1974142fbb2007f36b958cbad068145159",
+    "toDataURLDuration": 19,
+    "toBlobDuration": 7.5,
+    "toBlobHash": "5a4062ce081569b45ebd2695e1d17ae3dc4e6976",
+    "blobSize": 6285,
+    "imageDataHash": "631d2f78fb2a6ca529da4841ae3d06d21059d6e9",
+    "meanPixelValue": 8.500166666666667,
+    "pixelVariance": 1551.6672110833335,
+    "avgPixelNeighborDiff": 4.68231884057971,
+    "isToDataURLNative": true,
+    "isToBlobNative": true,
+    "isGetContextNative": true,
+    "toStringToDataURL": "function toDataURL() { [native code] }",
+    "toStringToBlob": "function toBlob() { [native code] }",
+    "toStringGetContext": "function getContext() { [native code] }",
+    "toDataURLProps": {
+      "length": 0,
+      "name": "toDataURL"
+    },
+    "hasCanvasMutation": false,
+    "ctxStateProps": {
+      "shadowBlur": 5,
+      "shadowColor": "rgba(0, 0, 0, 0.5)",
+      "fillStyle": "rgba(102, 204, 0, 0.7)",
+      "font": "14px Arial",
+      "globalCompositeOperation": "multiply",
+      "textBaseline": "top",
+      "lineWidth": 1,
+      "lineCap": "butt",
+      "lineJoin": "miter",
+      "miterLimit": 10,
+      "shadowOffsetX": 0,
+      "shadowOffsetY": 0,
+      "globalAlpha": 1
+    },
+    "ctxNativeMethods": {
+      "fillRect": {
+        "spoof": true,
+        "length": 4,
+        "name": "fillRect",
+        "toString": "function fillRect() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 4,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "fillRect",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "fillText": {
+        "spoof": true,
+        "length": 3,
+        "name": "fillText",
+        "toString": "function fillText() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 3,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "fillText",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "beginPath": {
+        "spoof": true,
+        "length": 0,
+        "name": "beginPath",
+        "toString": "function beginPath() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 0,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "beginPath",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "arc": {
+        "spoof": true,
+        "length": 5,
+        "name": "arc",
+        "toString": "function arc() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 5,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "arc",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "getImageData": {
+        "spoof": true,
+        "length": 4,
+        "name": "getImageData",
+        "toString": "function getImageData() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 4,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "getImageData",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "toDataURL": {
+        "spoof": true,
+        "length": 0,
+        "name": "toDataURL",
+        "toString": "function toDataURL() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 0,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "toDataURL",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "toBlob": {
+        "spoof": true,
+        "length": 1,
+        "name": "toBlob",
+        "toString": "function toBlob() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 1,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "toBlob",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      }
+    },
+    "canvasClassName": "HTMLCanvasElement",
+    "ctxClassName": "CanvasRenderingContext2D",
+    "cssWidth": "",
+    "cssHeight": ""
+  },
+  "audioFP": {
+    "fingerprint": {
+      "sum": "10748.965",
+      "sha1": "6d50b0d9f60f7b47891564a0360f65bc8e141cfd",
+      "renderLatency": "232.00"
+    },
+    "metadata": {
+      "audioCtxSampleRate": 48000,
+      "audioCtxBaseLatency": 0.01,
+      "audioCtxState": "running",
+      "isRunning": true,
+      "sinkId": "",
+      "channelCount": 2,
+      "channelCountMode": "explicit",
+      "maxChannelCount": 2,
+      "numberOfInputs": 1,
+      "numberOfOutputs": 0,
+      "destinationToString": "[object AudioDestinationNode]",
+      "destinationClass": "AudioDestinationNode",
+      "closeIsNative": true,
+      "audioContextNative": "function AudioContext() { [native code] }",
+      "offlineContextNative": "function OfflineAudioContext() { [native code] }",
+      "audioContextToStringIsNative": true,
+      "offlineContextToStringIsNative": true,
+      "compressorToStringIsNative": true,
+      "analyserBinCount": 1024,
+      "analyserSample": {
+        "0": null,
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null,
+        "7": null,
+        "8": null,
+        "9": null,
+        "10": null,
+        "11": null,
+        "12": null,
+        "13": null,
+        "14": null,
+        "15": null,
+        "16": null,
+        "17": null,
+        "18": null,
+        "19": null,
+        "20": null,
+        "21": null,
+        "22": null,
+        "23": null,
+        "24": null,
+        "25": null,
+        "26": null,
+        "27": null,
+        "28": null,
+        "29": null,
+        "30": null,
+        "31": null
+      },
+      "gainValue": 0,
+      "compressor": {
+        "threshold": {
+          "value": -24,
+          "automationRate": "k-rate",
+          "defaultValue": -24,
+          "minValue": -100,
+          "maxValue": 0
+        },
+        "knee": {
+          "value": 30,
+          "automationRate": "k-rate",
+          "defaultValue": 30,
+          "minValue": 0,
+          "maxValue": 40
+        },
+        "ratio": {
+          "value": 12,
+          "automationRate": "k-rate",
+          "defaultValue": 12,
+          "minValue": 1,
+          "maxValue": 20
+        },
+        "attack": {
+          "value": 0.003000000026077032,
+          "automationRate": "k-rate",
+          "defaultValue": 0.003000000026077032,
+          "minValue": 0,
+          "maxValue": 1
+        },
+        "release": {
+          "value": 0.25,
+          "automationRate": "k-rate",
+          "defaultValue": 0.25,
+          "minValue": 0,
+          "maxValue": 1
+        }
+      }
+    }
+  },
+  "videoFP": {
+    "screenWidth": 1536,
+    "screenHeight": 864,
+    "canPlayTypeResults": {
+      "video/webm; codecs=\"vp8, vorbis\"": "probably",
+      "video/webm; codecs=\"vp9\"": "probably",
+      "video/mp4; codecs=\"avc1.42E01E\"": "probably",
+      "video/mp4; codecs=\"hev1\"": "",
+      "video/ogg; codecs=\"theora\"": "",
+      "video/mp4; codecs=\"av01.0.05M.08\"": "probably"
+    },
+    "mediaCapabilitiesDecodingInfo": {
+      "powerEfficient": true,
+      "smooth": true,
+      "supported": true,
+      "keySystemAccess": null
+    },
+    "videoProps": {
+      "autoplay": false,
+      "controls": false,
+      "loop": false,
+      "muted": false,
+      "defaultMuted": false,
+      "playsInline": false,
+      "preload": "metadata",
+      "volume": 1,
+      "readyState": 0,
+      "networkState": 0,
+      "width": 0,
+      "height": 0,
+      "videoWidth": 0,
+      "videoHeight": 0
+    },
+    "hasTracks": {
+      "textTracks": true,
+      "audioTracks": false,
+      "videoTracks": false
+    },
+    "isNative": {
+      "canPlayType": true,
+      "constructor": true,
+      "addTextTrack": true
+    },
+    "videoFingerprintToString": {
+      "canPlayType": "function canPlayType() { [native code] }",
+      "constructor": "function HTMLVideoElement() { [native code] }",
+      "addTextTrack": "function addTextTrack() { [native code] }"
+    }
+  },
+  "audioAndVideoData": {
+    "mediaDevices": {
+      "prototype": "MediaDevices",
+      "props": []
+    },
+    "audio": {
+      "prototype": "HTMLAudioElement",
+      "props": ["constructor"],
+      "events": []
+    },
+    "video": {
+      "prototype": "HTMLVideoElement",
+      "props": [
+        "width",
+        "height",
+        "videoWidth",
+        "videoHeight",
+        "poster",
+        "webkitDecodedFrameCount",
+        "webkitDroppedFrameCount",
+        "playsInline",
+        "onenterpictureinpicture",
+        "onleavepictureinpicture",
+        "disablePictureInPicture",
+        "cancelVideoFrameCallback",
+        "getVideoPlaybackQuality",
+        "requestPictureInPicture",
+        "requestVideoFrameCallback",
+        "constructor"
+      ],
+      "events": []
+    },
+    "supportedMimeTypes": [
+      "audio/webm",
+      "audio/mp4",
+      "video/webm",
+      "video/mp4"
+    ],
+    "streamCapabilities": [
+      {
+        "kind": "audio",
+        "capabilities": {
+          "autoGainControl": [true, false],
+          "channelCount": {
+            "max": 2,
+            "min": 1
+          },
+          "deviceId": "default",
+          "echoCancellation": [true, false],
+          "groupId": "73920b6dd88bef5ef7fb38d26beab0f3fef1cd15e33b5950250370f03011963d",
+          "latency": {
+            "max": 0.01,
+            "min": 0.01
+          },
+          "noiseSuppression": [true, false],
+          "sampleRate": {
+            "max": 48000,
+            "min": 48000
+          },
+          "sampleSize": {
+            "max": 16,
+            "min": 16
+          },
+          "voiceIsolation": [true, false]
+        },
+        "settings": {
+          "autoGainControl": true,
+          "channelCount": 1,
+          "deviceId": "default",
+          "echoCancellation": true,
+          "groupId": "73920b6dd88bef5ef7fb38d26beab0f3fef1cd15e33b5950250370f03011963d",
+          "latency": 0.01,
+          "noiseSuppression": true,
+          "sampleRate": 48000,
+          "sampleSize": 16,
+          "voiceIsolation": false
+        },
+        "constraints": {}
+      },
+      {
+        "kind": "video",
+        "capabilities": {
+          "aspectRatio": {
+            "max": 640,
+            "min": 0.0020833333333333333
+          },
+          "brightness": {
+            "max": 64,
+            "min": -64,
+            "step": 1
+          },
+          "colorTemperature": {
+            "max": 6500,
+            "min": 2800,
+            "step": 10
+          },
+          "contrast": {
+            "max": 100,
+            "min": 0,
+            "step": 1
+          },
+          "deviceId": "9355204bac101207b7fbea3ec606d2498c2424844516149aeb98581f02811b06",
+          "exposureMode": ["continuous", "manual"],
+          "exposureTime": {
+            "max": 10000,
+            "min": 39.0625,
+            "step": 39.0625
+          },
+          "facingMode": ["user"],
+          "frameRate": {
+            "max": 30,
+            "min": 0
+          },
+          "groupId": "777db171b8739a672df0e5a09faf419c9e3607c94c23f06f5d6729b627d2cb7f",
+          "height": {
+            "max": 480,
+            "min": 1
+          },
+          "resizeMode": ["none", "crop-and-scale"],
+          "saturation": {
+            "max": 100,
+            "min": 0,
+            "step": 1
+          },
+          "sharpness": {
+            "max": 15,
+            "min": 0,
+            "step": 1
+          },
+          "whiteBalanceMode": ["continuous", "manual"],
+          "width": {
+            "max": 640,
+            "min": 1
+          }
+        },
+        "settings": {
+          "aspectRatio": 1.3333333333333333,
+          "brightness": 0,
+          "colorTemperature": 4600,
+          "contrast": 50,
+          "deviceId": "9355204bac101207b7fbea3ec606d2498c2424844516149aeb98581f02811b06",
+          "exposureMode": "continuous",
+          "exposureTime": 156.25,
+          "facingMode": "user",
+          "frameRate": 30,
+          "groupId": "777db171b8739a672df0e5a09faf419c9e3607c94c23f06f5d6729b627d2cb7f",
+          "height": 480,
+          "resizeMode": "none",
+          "saturation": 50,
+          "sharpness": 2,
+          "whiteBalanceMode": "continuous",
+          "width": 640
+        },
+        "constraints": {}
+      }
+    ]
+  },
+  "fontsData": {
+    "fontReadyTime": "42.20",
+    "statusBeforeReady": "loaded",
+    "statusAfterReady": "loaded",
+    "fontsStatus": "loaded",
+    "documentFontsCheckIsNative": true,
+    "fontFaceSetToString": "not available",
+    "fontFaceToString": null,
+    "hasCustomFonts": false,
+    "fontDetection": [
+      {
+        "font": "Arial",
+        "detected": true
+      },
+      {
+        "font": "Times New Roman",
+        "detected": true
+      },
+      {
+        "font": "Courier New",
+        "detected": true
+      },
+      {
+        "font": "Helvetica",
+        "detected": true
+      },
+      {
+        "font": "Segoe UI",
+        "detected": true
+      },
+      {
+        "font": "Tahoma",
+        "detected": true
+      },
+      {
+        "font": "Verdana",
+        "detected": true
+      },
+      {
+        "font": "Georgia",
+        "detected": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "detected": true
+      },
+      {
+        "font": "Impact",
+        "detected": true
+      },
+      {
+        "font": "Calibri",
+        "detected": true
+      },
+      {
+        "font": "Cambria",
+        "detected": true
+      },
+      {
+        "font": "Lucida Console",
+        "detected": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "detected": true
+      },
+      {
+        "font": "Gill Sans",
+        "detected": false
+      },
+      {
+        "font": "Trebuchet MS",
+        "detected": true
+      }
+    ],
+    "fontSizeChecks": [
+      {
+        "font": "Arial",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Arial",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Arial",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Arial",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 18,
+        "check": true
+      }
+    ],
+    "genericSupport": [
+      {
+        "font": "serif",
+        "check": true
+      },
+      {
+        "font": "sans-serif",
+        "check": true
+      },
+      {
+        "font": "monospace",
+        "check": true
+      },
+      {
+        "font": "cursive",
+        "check": true
+      },
+      {
+        "font": "fantasy",
+        "check": true
+      },
+      {
+        "font": "system-ui",
+        "check": true
+      }
+    ],
+    "renderWidths": {
+      "Arial": {
+        "monospace": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "sans-serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Times New Roman": {
+        "monospace": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "sans-serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Courier New": {
+        "monospace": {
+          "1234567890": 432.0703125,
+          "mmmmmmmmmmlli": 561.69140625,
+          "abcdefghijklmnopqrstuvwxyz": 1123.3828125,
+          "WWWWWWWWWW": 432.0703125
+        },
+        "sans-serif": {
+          "1234567890": 432.0703125,
+          "mmmmmmmmmmlli": 561.69140625,
+          "abcdefghijklmnopqrstuvwxyz": 1123.3828125,
+          "WWWWWWWWWW": 432.0703125
+        },
+        "serif": {
+          "1234567890": 432.0703125,
+          "mmmmmmmmmmlli": 561.69140625,
+          "abcdefghijklmnopqrstuvwxyz": 1123.3828125,
+          "WWWWWWWWWW": 432.0703125
+        }
+      },
+      "Helvetica": {
+        "monospace": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "sans-serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Segoe UI": {
+        "monospace": {
+          "1234567890": 388.125,
+          "mmmmmmmmmmlli": 672.46875,
+          "abcdefghijklmnopqrstuvwxyz": 923.4140625,
+          "WWWWWWWWWW": 672.5390625
+        },
+        "sans-serif": {
+          "1234567890": 388.125,
+          "mmmmmmmmmmlli": 672.46875,
+          "abcdefghijklmnopqrstuvwxyz": 923.4140625,
+          "WWWWWWWWWW": 672.5390625
+        },
+        "serif": {
+          "1234567890": 388.125,
+          "mmmmmmmmmmlli": 672.46875,
+          "abcdefghijklmnopqrstuvwxyz": 923.4140625,
+          "WWWWWWWWWW": 672.5390625
+        }
+      },
+      "Tahoma": {
+        "monospace": {
+          "1234567890": 393.046875,
+          "mmmmmmmmmmlli": 654.328125,
+          "abcdefghijklmnopqrstuvwxyz": 914.484375,
+          "WWWWWWWWWW": 649.3359375
+        },
+        "sans-serif": {
+          "1234567890": 393.046875,
+          "mmmmmmmmmmlli": 654.328125,
+          "abcdefghijklmnopqrstuvwxyz": 914.484375,
+          "WWWWWWWWWW": 649.3359375
+        },
+        "serif": {
+          "1234567890": 393.046875,
+          "mmmmmmmmmmlli": 654.328125,
+          "abcdefghijklmnopqrstuvwxyz": 914.484375,
+          "WWWWWWWWWW": 649.3359375
+        }
+      },
+      "Verdana": {
+        "monospace": {
+          "1234567890": 457.734375,
+          "mmmmmmmmmmlli": 759.5859375,
+          "abcdefghijklmnopqrstuvwxyz": 1051.76953125,
+          "WWWWWWWWWW": 711.9140625
+        },
+        "sans-serif": {
+          "1234567890": 457.734375,
+          "mmmmmmmmmmlli": 759.5859375,
+          "abcdefghijklmnopqrstuvwxyz": 1051.76953125,
+          "WWWWWWWWWW": 711.9140625
+        },
+        "serif": {
+          "1234567890": 457.734375,
+          "mmmmmmmmmmlli": 759.5859375,
+          "abcdefghijklmnopqrstuvwxyz": 1051.76953125,
+          "WWWWWWWWWW": 711.9140625
+        }
+      },
+      "Georgia": {
+        "monospace": {
+          "1234567890": 394.3828125,
+          "mmmmmmmmmmlli": 696.515625,
+          "abcdefghijklmnopqrstuvwxyz": 934.3828125,
+          "WWWWWWWWWW": 702.421875
+        },
+        "sans-serif": {
+          "1234567890": 394.3828125,
+          "mmmmmmmmmmlli": 696.515625,
+          "abcdefghijklmnopqrstuvwxyz": 934.3828125,
+          "WWWWWWWWWW": 702.421875
+        },
+        "serif": {
+          "1234567890": 394.3828125,
+          "mmmmmmmmmmlli": 696.515625,
+          "abcdefghijklmnopqrstuvwxyz": 934.3828125,
+          "WWWWWWWWWW": 702.421875
+        }
+      },
+      "Comic Sans MS": {
+        "monospace": {
+          "1234567890": 427.921875,
+          "mmmmmmmmmmlli": 618.9609375,
+          "abcdefghijklmnopqrstuvwxyz": 973.93359375,
+          "WWWWWWWWWW": 748.4765625
+        },
+        "sans-serif": {
+          "1234567890": 427.921875,
+          "mmmmmmmmmmlli": 618.9609375,
+          "abcdefghijklmnopqrstuvwxyz": 973.93359375,
+          "WWWWWWWWWW": 748.4765625
+        },
+        "serif": {
+          "1234567890": 427.921875,
+          "mmmmmmmmmmlli": 618.9609375,
+          "abcdefghijklmnopqrstuvwxyz": 973.93359375,
+          "WWWWWWWWWW": 748.4765625
+        }
+      },
+      "Impact": {
+        "monospace": {
+          "1234567890": 358.6640625,
+          "mmmmmmmmmmlli": 614.28515625,
+          "abcdefghijklmnopqrstuvwxyz": 867.12890625,
+          "WWWWWWWWWW": 586.40625
+        },
+        "sans-serif": {
+          "1234567890": 358.6640625,
+          "mmmmmmmmmmlli": 614.28515625,
+          "abcdefghijklmnopqrstuvwxyz": 867.12890625,
+          "WWWWWWWWWW": 586.40625
+        },
+        "serif": {
+          "1234567890": 358.6640625,
+          "mmmmmmmmmmlli": 614.28515625,
+          "abcdefghijklmnopqrstuvwxyz": 867.12890625,
+          "WWWWWWWWWW": 586.40625
+        }
+      },
+      "Calibri": {
+        "monospace": {
+          "1234567890": 364.921875,
+          "mmmmmmmmmmlli": 624.7265625,
+          "abcdefghijklmnopqrstuvwxyz": 848.53125,
+          "WWWWWWWWWW": 640.546875
+        },
+        "sans-serif": {
+          "1234567890": 364.921875,
+          "mmmmmmmmmmlli": 624.7265625,
+          "abcdefghijklmnopqrstuvwxyz": 848.53125,
+          "WWWWWWWWWW": 640.546875
+        },
+        "serif": {
+          "1234567890": 364.921875,
+          "mmmmmmmmmmlli": 624.7265625,
+          "abcdefghijklmnopqrstuvwxyz": 848.53125,
+          "WWWWWWWWWW": 640.546875
+        }
+      },
+      "Cambria": {
+        "monospace": {
+          "1234567890": 398.671875,
+          "mmmmmmmmmmlli": 658.16015625,
+          "abcdefghijklmnopqrstuvwxyz": 910.72265625,
+          "WWWWWWWWWW": 663.3984375
+        },
+        "sans-serif": {
+          "1234567890": 398.671875,
+          "mmmmmmmmmmlli": 658.16015625,
+          "abcdefghijklmnopqrstuvwxyz": 910.72265625,
+          "WWWWWWWWWW": 663.3984375
+        },
+        "serif": {
+          "1234567890": 398.671875,
+          "mmmmmmmmmmlli": 658.16015625,
+          "abcdefghijklmnopqrstuvwxyz": 910.72265625,
+          "WWWWWWWWWW": 663.3984375
+        }
+      },
+      "Lucida Console": {
+        "monospace": {
+          "1234567890": 433.828125,
+          "mmmmmmmmmmlli": 563.9765625,
+          "abcdefghijklmnopqrstuvwxyz": 1127.953125,
+          "WWWWWWWWWW": 433.828125
+        },
+        "sans-serif": {
+          "1234567890": 433.828125,
+          "mmmmmmmmmmlli": 563.9765625,
+          "abcdefghijklmnopqrstuvwxyz": 1127.953125,
+          "WWWWWWWWWW": 433.828125
+        },
+        "serif": {
+          "1234567890": 433.828125,
+          "mmmmmmmmmmlli": 563.9765625,
+          "abcdefghijklmnopqrstuvwxyz": 1127.953125,
+          "WWWWWWWWWW": 433.828125
+        }
+      },
+      "Palatino Linotype": {
+        "monospace": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 698.484375,
+          "abcdefghijklmnopqrstuvwxyz": 959.1328125,
+          "WWWWWWWWWW": 720
+        },
+        "sans-serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 698.484375,
+          "abcdefghijklmnopqrstuvwxyz": 959.1328125,
+          "WWWWWWWWWW": 720
+        },
+        "serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 698.484375,
+          "abcdefghijklmnopqrstuvwxyz": 959.1328125,
+          "WWWWWWWWWW": 720
+        }
+      },
+      "Gill Sans": {
+        "monospace": {
+          "1234567890": 395.859375,
+          "mmmmmmmmmmlli": 514.6171875,
+          "abcdefghijklmnopqrstuvwxyz": 1029.234375,
+          "WWWWWWWWWW": 395.859375
+        },
+        "sans-serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Trebuchet MS": {
+        "monospace": {
+          "1234567890": 377.578125,
+          "mmmmmmmmmmlli": 660.65625,
+          "abcdefghijklmnopqrstuvwxyz": 937.125,
+          "WWWWWWWWWW": 613.4765625
+        },
+        "sans-serif": {
+          "1234567890": 377.578125,
+          "mmmmmmmmmmlli": 660.65625,
+          "abcdefghijklmnopqrstuvwxyz": 937.125,
+          "WWWWWWWWWW": 613.4765625
+        },
+        "serif": {
+          "1234567890": 377.578125,
+          "mmmmmmmmmmlli": 660.65625,
+          "abcdefghijklmnopqrstuvwxyz": 937.125,
+          "WWWWWWWWWW": 613.4765625
+        }
+      }
+    },
+    "renderWidthsSHA1": "9764491b90fae7deb68342d61755fd92863ead43",
+    "loadedFontFaces": [],
+    "canvasRenderHash": "5ca060810f9c0fb3f0c8eb2b4cc7e8cd644e7701"
+  },
+  "canvasSize": {
+    "width": 300,
+    "height": 150
+  },
+  "webglFP": {
+    "contextType": "webgl",
+    "vendor": "Google Inc. (Intel)",
+    "renderer": "ANGLE (Intel, Intel(R) Iris(R) Plus Graphics (0x00008A52) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "version": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+    "timeGetParameterVersion": 0.4000000059604645,
+    "shadingLanguageVersion": "WebGL GLSL ES 1.0 (OpenGL ES GLSL ES 1.0 Chromium)",
+    "supportedExtensions": [
+      "ANGLE_instanced_arrays",
+      "EXT_blend_minmax",
+      "EXT_clip_control",
+      "EXT_color_buffer_half_float",
+      "EXT_depth_clamp",
+      "EXT_disjoint_timer_query",
+      "EXT_float_blend",
+      "EXT_frag_depth",
+      "EXT_polygon_offset_clamp",
+      "EXT_shader_texture_lod",
+      "EXT_texture_compression_bptc",
+      "EXT_texture_compression_rgtc",
+      "EXT_texture_filter_anisotropic",
+      "EXT_texture_mirror_clamp_to_edge",
+      "EXT_sRGB",
+      "KHR_parallel_shader_compile",
+      "OES_element_index_uint",
+      "OES_fbo_render_mipmap",
+      "OES_standard_derivatives",
+      "OES_texture_float",
+      "OES_texture_float_linear",
+      "OES_texture_half_float",
+      "OES_texture_half_float_linear",
+      "OES_vertex_array_object",
+      "WEBGL_blend_func_extended",
+      "WEBGL_color_buffer_float",
+      "WEBGL_compressed_texture_s3tc",
+      "WEBGL_compressed_texture_s3tc_srgb",
+      "WEBGL_debug_renderer_info",
+      "WEBGL_debug_shaders",
+      "WEBGL_depth_texture",
+      "WEBGL_draw_buffers",
+      "WEBGL_lose_context",
+      "WEBGL_multi_draw",
+      "WEBGL_polygon_mode"
+    ],
+    "debugInfo": {
+      "UNMASKED_VENDOR_WEBGL": 37445,
+      "UNMASKED_RENDERER_WEBGL": 37446
+    },
+    "contextClass": "WebGLRenderingContext",
+    "floatTextureSupported": true,
+    "floatColorBufferSupported": true,
+    "halfFloatTextureSupported": true,
+    "drawBuffersSupported": true,
+    "depthTextureSupported": true,
+    "shaderLodSupported": true,
+    "debugShadersSupported": true,
+    "loseContextSupported": true,
+    "hasKhrDebug": false,
+    "khrDebugMaxDebugLoggedMessages": null,
+    "khrDebugMaxDebugMessageLength": null,
+    "khrDebugMaxDebugMessageBufferSize": null,
+    "khrDebugMaxDebugMessageArguments": null,
+    "anisotropicFiltering": true,
+    "maxAnisotropy": 16,
+    "glShadingLanguageVersion": "WebGL GLSL ES 1.0 (OpenGL ES GLSL ES 1.0 Chromium)",
+    "timeGetParameterShadingLang": 0.20000000298023224,
+    "maxTextureSize": 16384,
+    "glRenderBufferSize": 16384,
+    "glVendor": "WebKit",
+    "timeGetParameterVendor": 0,
+    "glRenderer": "WebKit WebGL",
+    "timeGetParameterGlRenderer": 0,
+    "glAliasedLineWidthRange": {
+      "0": 1,
+      "1": 1
+    },
+    "glAliasedPointSizeRange": {
+      "0": 1,
+      "1": 1024
+    },
+    "maxCubeMapSize": null,
+    "maxCubeMapTextureSize": 16384,
+    "maxRenderBufferSize": 16384,
+    "maxVertexAttribs": 16,
+    "maxVaryingVectors": 30,
+    "maxVertexUniformVectors": 4096,
+    "maxFragmentUniformVectors": 1024,
+    "subPixelBits": 4,
+    "precisionFormats": {
+      "vertex": {
+        "high": {
+          "rangeMin": 127,
+          "rangeMax": 127,
+          "precision": 23
+        },
+        "medium": {
+          "rangeMin": 127,
+          "rangeMax": 127,
+          "precision": 23
+        },
+        "low": {
+          "rangeMin": 127,
+          "rangeMax": 127,
+          "precision": 23
+        }
+      },
+      "fragment": {
+        "high": {
+          "rangeMin": 127,
+          "rangeMax": 127,
+          "precision": 23
+        },
+        "medium": {
+          "rangeMin": 127,
+          "rangeMax": 127,
+          "precision": 23
+        },
+        "low": {
+          "rangeMin": 127,
+          "rangeMax": 127,
+          "precision": 23
+        }
+      }
+    },
+    "programChecks": {
+      "linkStatus": true,
+      "shaderCompileStatus": true,
+      "shaderLog": ""
+    },
+    "framebufferStatus": 36055,
+    "isContextLost": false,
+    "pixelsHash": 0,
+    "pixelReadAfterTextureUpload": [0, 0, 0, 0],
+    "contextAttributes": {
+      "alpha": true,
+      "depth": true,
+      "stencil": false,
+      "antialias": true,
+      "premultipliedAlpha": true,
+      "preserveDrawingBuffer": false,
+      "failIfMajorPerformanceCaveat": false
+    },
+    "drawingBufferWidth": 300,
+    "drawingBufferHeight": 150,
+    "methodToStrings": {
+      "getParameter": "function getParameter() { [native code] }",
+      "getShaderPrecisionFormat": "function getShaderPrecisionFormat() { [native code] }",
+      "getSupportedExtensions": "function getSupportedExtensions() { [native code] }",
+      "getExtension": "function getExtension() { [native code] }",
+      "readPixels": "function readPixels() { [native code] }",
+      "getError": "function getError() { [native code] }",
+      "isContextLost": "function isContextLost() { [native code] }",
+      "createProgram": "function createProgram() { [native code] }",
+      "clear": "function clear() { [native code] }",
+      "clearColor": "function clearColor() { [native code] }",
+      "useProgram": "function useProgram() { [native code] }",
+      "enableVertexAttribArray": "function enableVertexAttribArray() { [native code] }",
+      "disableVertexAttribArray": "function disableVertexAttribArray() { [native code] }",
+      "bindBuffer": "function bindBuffer() { [native code] }",
+      "bufferData": "function bufferData() { [native code] }",
+      "createShader": "function createShader() { [native code] }",
+      "shaderSource": "function shaderSource() { [native code] }",
+      "compileShader": "function compileShader() { [native code] }",
+      "createTexture": "function createTexture() { [native code] }",
+      "texImage2D": "function texImage2D() { [native code] }",
+      "drawArrays": "function drawArrays() { [native code] }",
+      "drawElements": "function drawElements() { [native code] }",
+      "getContextAttributes": "function getContextAttributes() { [native code] }"
+    }
+  }
+}

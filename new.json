@@ -1,0 +1,566 @@
+{
+  "navigator_userAgentData": {
+    "minVersion": 89,
+    "path": "navigator.userAgentData",
+    "weight": 3
+  },
+  "navigator_plugins": {
+    "minVersion": 1,
+    "path": "navigator.plugins",
+    "weight": 1
+  },
+  "navigator_mimeTypes": {
+    "minVersion": 1,
+    "path": "navigator.mimeTypes",
+    "weight": 1
+  },
+  "navigator_serial": {
+    "minVersion": 80,
+    "path": "navigator.serial",
+    "weight": 2
+  },
+  "navigator_hid": {
+    "minVersion": 89,
+    "path": "navigator.hid",
+    "weight": 2
+  },
+  "navigator_usb": {
+    "minVersion": 61,
+    "path": "navigator.usb",
+    "weight": 2
+  },
+  "navigator_bluetooth": {
+    "minVersion": 56,
+    "path": "navigator.bluetooth",
+    "weight": 2
+  },
+  "navigator_mediaCapabilities": {
+    "minVersion": 68,
+    "path": "navigator.mediaCapabilities",
+    "weight": 2
+  },
+  "navigator_clipboard": {
+    "minVersion": 66,
+    "path": "navigator.clipboard",
+    "weight": 3
+  },
+  "navigator_clipboard_event": {
+    "minVersion": 1,
+    "path": "window.ClipboardEvent",
+    "weight": 3
+  },
+  "navigator_getBattery": {
+    "minVersion": 38,
+    "path": "navigator.getBattery",
+    "weight": 2
+  },
+  "window_chrome": {
+    "minVersion": 1,
+    "path": "window.chrome",
+    "weight": 3
+  },
+  "screen_metrics": {
+    "minVersion": 1,
+    "path": "window.screen",
+    "weight": 1
+  },
+  "media_devices": {
+    "minVersion": 53,
+    "path": "navigator.mediaDevices",
+    "weight": 3
+  },
+  "matchMedia": {
+    "minVersion": 9,
+    "path": "window.matchMedia",
+    "weight": 2
+  },
+
+  "CSS_supports": {
+    "minVersion": 22,
+    "path": "window.CSS.supports",
+    "weight": 2
+  },
+  "CSSStyleSheet": {
+    "minVersion": 1,
+    "path": "window.CSSStyleSheet",
+    "weight": 2
+  },
+  "CSS_paintWorklet": {
+    "minVersion": 68,
+    "path": "CSS.paintWorklet",
+    "weight": 3
+  },
+  "CSS_registerProperty": {
+    "minVersion": 68,
+    "path": "CSS.registerProperty",
+    "weight": 2
+  },
+  "requestIdleCallback": {
+    "minVersion": 47,
+    "path": "window.requestIdleCallback",
+    "weight": 1
+  },
+  "requestAnimationFrame": {
+    "minVersion": 1,
+    "path": "window.requestAnimationFrame",
+    "weight": 1
+  },
+  "Intl": {
+    "minVersion": 24,
+    "path": "window.Intl",
+    "weight": 2
+  },
+  "networkConnection": {
+    "minVersion": 61,
+    "path": "navigator.connection",
+    "weight": 2
+  },
+  "indexedDB": {
+    "minVersion": 23,
+    "path": "window.indexedDB",
+    "isFunction": false,
+    "methods": ["open", "deleteDatabase"],
+    "weight": 2,
+    "checkRuntime": true
+  },
+  "localStorage": {
+    "minVersion": 4,
+    "path": "window.localStorage",
+    "weight": 2
+  },
+  "sessionStorage": {
+    "minVersion": 5,
+    "path": "window.sessionStorage",
+    "weight": 2
+  },
+  "StorageManager": {
+    "minVersion": 57,
+    "path": "navigator.storage",
+    "weight": 3
+  },
+  "caches": {
+    "minVersion": 40,
+    "path": "window.caches",
+    "weight": 3
+  },
+  "permissions": {
+    "minVersion": 43,
+    "path": "navigator.permissions",
+    "weight": 3
+  },
+  "webrtc": {
+    "minVersion": 23,
+    "path": "window.RTCPeerConnection",
+    "weight": 3
+  },
+  "offlineAudio": {
+    "minVersion": 35,
+    "path": "window.OfflineAudioContext",
+    "weight": 2
+  },
+  "audioContext": {
+    "minVersion": 10,
+    "path": "window.AudioContext",
+    "weight": 2
+  },
+  "audioWorklet": {
+    "minVersion": 66,
+    "path": "AudioWorklet",
+    "weight": 3
+  },
+  "MediaRecorder": {
+    "minVersion": 49,
+    "path": "window.MediaRecorder",
+    "isFunction": true,
+    "methods": ["start", "stop", "pause", "resume"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "Atomics": {
+    "minVersion": 60,
+    "path": "window.Atomics",
+    "isFunction": false,
+    "weight": 2,
+    "methods": ["wait", "notify", "add", "sub", "store"]
+  },
+  "ResizeObserver": {
+    "minVersion": 64,
+    "path": "window.ResizeObserver",
+    "weight": 3
+  },
+  "IntersectionObserver": {
+    "minVersion": 51,
+    "path": "window.IntersectionObserver",
+    "weight": 3
+  },
+  "MutationObserver": {
+    "minVersion": 14,
+    "path": "window.MutationObserver",
+    "weight": 3
+  },
+  "PerformanceObserver": {
+    "minVersion": 52,
+    "path": "window.PerformanceObserver",
+    "weight": 2
+  },
+
+  "TextEncoder": {
+    "minVersion": 38,
+    "path": "window.TextEncoder",
+    "isFunction": true,
+    "methods": ["encode"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "FinalizationRegistry": {
+    "minVersion": 84,
+    "path": "window.FinalizationRegistry",
+    "isFunction": true,
+    "methods": ["register", "unregister"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "WeakRef": {
+    "minVersion": 84,
+    "path": "window.WeakRef",
+    "isFunction": true,
+    "methods": ["deref"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "WebAssembly": {
+    "minVersion": 57,
+    "path": "window.WebAssembly",
+    "isFunction": false,
+    "methods": ["instantiate", "validate", "compile"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "ReadableStream": {
+    "minVersion": 65,
+    "path": "window.ReadableStream",
+    "isFunction": true,
+    "methods": ["getReader"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "FunctionPrototypeToString": {
+    "minVersion": 1,
+    "path": "Function.prototype.toString",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "ErrorPrototypeToString": {
+    "minVersion": 1,
+    "path": "Error.prototype.toString",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "HTMLCanvasElement": {
+    "minVersion": 1,
+    "path": "window.HTMLCanvasElement",
+    "isFunction": false,
+    "methods": ["getContext", "toDataURL", "toBlob"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "ImageBitmap": {
+    "minVersion": 50,
+    "path": "window.ImageBitmap",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 1
+  },
+  "createImageBitmap": {
+    "minVersion": 50,
+    "path": "window.createImageBitmap",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "OffscreenCanvas": {
+    "minVersion": 69,
+    "path": "window.OffscreenCanvas",
+    "isFunction": true,
+    "methods": ["getContext", "transferToImageBitmap", "convertToBlob"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "CanvasRenderingContext2D": {
+    "minVersion": 1,
+    "path": "window.CanvasRenderingContext2D",
+    "isFunction": false,
+    "methods": ["fillRect", "getImageData", "drawImage"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "OffscreenCanvasRenderingContext2D": {
+    "minVersion": 76,
+    "path": "window.OffscreenCanvasRenderingContext2D",
+    "isFunction": false,
+    "methods": ["fillRect", "getImageData", "drawImage"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+
+  "Path2D": {
+    "minVersion": 47,
+    "path": "window.Path2D",
+    "isFunction": true,
+    "methods": ["addPath", "closePath"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "virtualKeyboard": {
+    "minVersion": 94,
+    "path": "navigator.virtualKeyboard",
+    "isFunction": false,
+    "methods": ["overlaysContent"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "serviceWorker": {
+    "minVersion": 40,
+    "path": "navigator.serviceWorker",
+    "isFunction": false,
+    "methods": ["register", "getRegistrations"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "navigator_scheduling": {
+    "minVersion": 94,
+    "path": "navigator.scheduling",
+    "isFunction": false,
+    "methods": ["isInputPending"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "EyeDropper": {
+    "minVersion": 95,
+    "path": "window.EyeDropper",
+    "isFunction": true,
+    "methods": ["open"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "AbsoluteOrientationSensor": {
+    "minVersion": 67,
+    "path": "window.AbsoluteOrientationSensor",
+    "isFunction": true,
+    "methods": ["start", "stop"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "Accelerometer": {
+    "minVersion": 67,
+    "path": "window.Accelerometer",
+    "isFunction": true,
+    "methods": ["start", "stop"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "Gyroscope": {
+    "minVersion": 67,
+    "path": "window.Gyroscope",
+    "isFunction": true,
+    "methods": ["start", "stop"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "TrustedTypes": {
+    "minVersion": 83,
+    "path": "window.trustedTypes",
+    "isFunction": false,
+    "methods": ["createPolicy"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "WebSocket": {
+    "minVersion": 16,
+    "path": "window.WebSocket",
+    "isFunction": true,
+    "methods": ["send", "close"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "crypto_subtle": {
+    "minVersion": 37,
+    "path": "window.crypto.subtle",
+    "isFunction": false,
+    "methods": ["encrypt", "decrypt", "digest"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "attachShadow": {
+    "minVersion": 53,
+    "path": "Element.prototype.attachShadow",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "DragEvent": {
+    "minVersion": 1,
+    "path": "window.DragEvent",
+    "isFunction": false,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "DeviceOrientationEvent": {
+    "minVersion": 7,
+    "path": "window.DeviceOrientationEvent",
+    "weight": 1
+  },
+  "SpeechSynthesis": {
+    "minVersion": 33,
+    "path": "window.speechSynthesis",
+    "isFunction": false,
+    "methods": ["speak", "cancel"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "showOpenFilePicker": {
+    "minVersion": 86,
+    "path": "window.showOpenFilePicker",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "showSaveFilePicker": {
+    "minVersion": 86,
+    "path": "window.showSaveFilePicker",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "showDirectoryPicker": {
+    "minVersion": 86,
+    "path": "window.showDirectoryPicker",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 3
+  },
+
+  "XRSession": {
+    "minVersion": 79,
+    "path": "window.XRSession",
+    "isFunction": false,
+    "methods": ["requestReferenceSpace", "end"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "XRSystem": {
+    "minVersion": 79,
+    "path": "navigator.xr",
+    "isFunction": false,
+    "methods": ["isSessionSupported", "requestSession"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "AbortController": {
+    "minVersion": 66,
+    "path": "window.AbortController",
+    "isFunction": true,
+    "methods": ["abort", "signal"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "AbortSignal": {
+    "minVersion": 66,
+    "path": "window.AbortSignal",
+    "isFunction": false,
+    "methods": ["addEventListener", "removeEventListener"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "window_devicePixelRatio": {
+    "minVersion": 1,
+    "path": "window.devicePixelRatio",
+    "isFunction": false,
+    "methods": [],
+    "checkRuntime": false,
+    "weight": 1
+  },
+  "BroadcastChannel": {
+    "minVersion": 54,
+    "path": "window.BroadcastChannel",
+    "isFunction": true,
+    "methods": ["postMessage", "close"],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "VideoEncoder": {
+    "minVersion": 94,
+    "path": "window.VideoEncoder",
+    "isFunction": true,
+    "methods": ["configure", "encode", "flush"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "Object_getPrototypeOf": {
+    "minVersion": 1,
+    "path": "Object.getPrototypeOf",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 1
+  },
+  "Object_hasOwn": {
+    "minVersion": 93,
+    "path": "Object.hasOwn",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "Array_at": {
+    "minVersion": 92,
+    "path": "Array.prototype.at",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "Promise_any": {
+    "minVersion": 85,
+    "path": "Promise.any",
+    "isFunction": true,
+    "methods": [],
+    "checkRuntime": true,
+    "weight": 2
+  },
+  "document_fonts": {
+    "minVersion": 35,
+    "path": "document.fonts",
+    "isFunction": false,
+    "methods": ["load", "check", "ready"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "geolocation": {
+    "minVersion": 5,
+    "path": "navigator.geolocation",
+    "isFunction": false,
+    "methods": ["getCurrentPosition", "watchPosition"],
+    "checkRuntime": true,
+    "weight": 3
+  },
+  "navigator_credentials": {
+    "minVersion": 65,
+    "path": "navigator.credentials",
+    "isFunction": false,
+    "methods": ["create", "get", "store", "preventSilentAccess"],
+    "checkRuntime": true,
+    "weight": 2
+  }
+}

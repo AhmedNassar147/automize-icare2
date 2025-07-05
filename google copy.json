@@ -1,0 +1,1635 @@
+{
+  "baseNavigatorOptions": {
+    "webdriver": false,
+    "languages": ["en-US", "ar", "en"],
+    "language": "en-US",
+    "deviceMemory": 8,
+    "hardwareConcurrency": 8,
+    "maxTouchPoints": 0,
+    "platform": "Win32",
+    "vendor": "Google Inc.",
+    "pdfViewerEnabled": true,
+    "appName": "Netscape",
+    "appVersion": "5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "appCodeName": "Mozilla",
+    "product": "Gecko",
+    "productSub": "20030107",
+    "doNotTrack": null,
+    "userActivation": {
+      "hasBeenActive": true,
+      "isActive": true
+    }
+  },
+  "heapSizeLimit": 4294705152,
+  "languagesString": "en-US,ar,en",
+  "languagesCount": 3,
+  "webrtcPrivateIP": "xxx.xx.xx.x",
+  "timezoneInfo": {
+    "timezoneOffsetHours": 3,
+    "timezoneOffsetMinutes": -180,
+    "timezoneOffsetMs": -10800000,
+    "timezoneOffsetString": "+03:00",
+    "compactOffset": "+0300",
+    "localDate": "Thu Jun 26 2025 02:07:14 GMT+0300 (Arabian Standard Time)",
+    "utcDate": "Thu, 26 Jun 2025 02:07:14 GMT",
+    "localDateISO": "2025-06-26T02:07:14.160Z",
+    "timezoneOffsetUtcString": "03:00Z"
+  },
+  "dateTimeOptions": {
+    "locale": "en-US",
+    "calendar": "gregory",
+    "numberingSystem": "latn",
+    "timeZone": "Asia/Riyadh",
+    "year": "numeric",
+    "month": "numeric",
+    "day": "numeric"
+  },
+  "numberFormatOptions": {
+    "locale": "en-US",
+    "numberingSystem": "latn",
+    "style": "decimal",
+    "minimumIntegerDigits": 1,
+    "minimumFractionDigits": 0,
+    "maximumFractionDigits": 3,
+    "useGrouping": "auto",
+    "notation": "standard",
+    "signDisplay": "auto",
+    "roundingIncrement": 1,
+    "roundingMode": "halfExpand",
+    "roundingPriority": "auto",
+    "trailingZeroDisplay": "auto"
+  },
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+  "userAgentData": {
+    "brands": [
+      {
+        "brand": "Google Chrome",
+        "version": "137"
+      },
+      {
+        "brand": "Chromium",
+        "version": "137"
+      },
+      {
+        "brand": "Not/A)Brand",
+        "version": "24"
+      }
+    ],
+    "mobile": false,
+    "platform": "Windows"
+  },
+  "userAgentFullBrands": {
+    "architecture": "x86",
+    "brands": [
+      {
+        "brand": "Google Chrome",
+        "version": "137"
+      },
+      {
+        "brand": "Chromium",
+        "version": "137"
+      },
+      {
+        "brand": "Not/A)Brand",
+        "version": "24"
+      }
+    ],
+    "fullVersionList": [
+      {
+        "brand": "Google Chrome",
+        "version": "137.0.7151.120"
+      },
+      {
+        "brand": "Chromium",
+        "version": "137.0.7151.120"
+      },
+      {
+        "brand": "Not/A)Brand",
+        "version": "24.0.0.0"
+      }
+    ],
+    "mobile": false,
+    "model": "",
+    "platform": "Windows",
+    "platformVersion": "19.0.0",
+    "uaFullVersion": "137.0.7151.120"
+  },
+  "batteryInfo": {
+    "charging": false,
+    "chargingTime": null,
+    "dischargingTime": 2488,
+    "level": 0.2
+  },
+  "storage": {
+    "persisted": false,
+    "quota": 149433402162,
+    "usage": 0,
+    "usageDetails": {},
+    "supportsPersistence": true,
+    "supportsEstimate": true
+  },
+  "gamepads": [],
+  "connection": {
+    "effectiveType": "4g",
+    "rtt": 100,
+    "downlink": 10,
+    "saveData": false
+  },
+  "mediaQueries": {
+    "(prefers-color-scheme: dark)": false,
+    "(prefers-color-scheme: light)": true,
+    "(prefers-reduced-motion: reduce)": false,
+    "(prefers-contrast: more)": false,
+    "(hover: hover)": true,
+    "(hover: none)": false,
+    "(pointer: fine)": true,
+    "(pointer: coarse)": false,
+    "(any-pointer: fine)": true,
+    "(any-hover: hover)": true,
+    "(aspect-ratio: 16/9)": false,
+    "(orientation: landscape)": true,
+    "(orientation: portrait)": false,
+    "(resolution: 96dpi)": false,
+    "(min-width: 768px)": true,
+    "(max-width: 1920px)": true
+  },
+  "mediaMediaValues": {
+    "(prefers-color-scheme: dark)": "(prefers-color-scheme: dark)",
+    "(prefers-color-scheme: light)": "(prefers-color-scheme: light)",
+    "(prefers-reduced-motion: reduce)": "(prefers-reduced-motion: reduce)",
+    "(prefers-contrast: more)": "(prefers-contrast: more)",
+    "(hover: hover)": "(hover: hover)",
+    "(hover: none)": "(hover: none)",
+    "(pointer: fine)": "(pointer: fine)",
+    "(pointer: coarse)": "(pointer: coarse)",
+    "(any-pointer: fine)": "(any-pointer: fine)",
+    "(any-hover: hover)": "(any-hover: hover)",
+    "(aspect-ratio: 16/9)": "(aspect-ratio: 16 / 9)",
+    "(orientation: landscape)": "(orientation: landscape)",
+    "(orientation: portrait)": "(orientation: portrait)",
+    "(resolution: 96dpi)": "(resolution: 96dpi)",
+    "(min-width: 768px)": "(min-width: 768px)",
+    "(max-width: 1920px)": "(max-width: 1920px)"
+  },
+  "cssSupports": {
+    "display: grid": true,
+    "display: contents": true,
+    "color: color(display-p3 1 0 0)": true,
+    "backdrop-filter: blur(4px)": true,
+    "position: sticky": true,
+    "text-decoration: underline dotted": true,
+    "-webkit-appearance: none": true,
+    "font-variation-settings: \"wght\" 700": true
+  },
+  "orientation": {
+    "angle": 0,
+    "type": "landscape-primary",
+    "onchangeExists": false,
+    "lockExists": false,
+    "unlockExists": false,
+    "mediaOrientation": "landscape",
+    "orientationMatch": true
+  },
+  "matchMediaNative": true,
+  "matchMediaPrototype": [
+    "addListener",
+    "constructor",
+    "matches",
+    "media",
+    "onchange",
+    "removeListener"
+  ],
+  "dimensionsData": {
+    "innerWidth": 1536,
+    "innerHeight": 282,
+    "outerHeight": 816,
+    "outerWidth": 1536,
+    "availWidth": 1536,
+    "availHeight": 816,
+    "availTop": 0,
+    "availLeft": 0,
+    "colorDepth": 24,
+    "pixelDepth": 24,
+    "screenHeight": 864,
+    "screenWidth": 1536,
+    "pixelRatio": 1.25,
+    "visualViewportWidth": 1520.800048828125,
+    "visualViewportHeight": 281.6000061035156,
+    "visualViewportScale": 1,
+    "visualViewportOffsetLeft": 0,
+    "visualViewportOffsetTop": 0,
+    "visualViewportPageLeft": 0,
+    "visualViewportPageTop": 0
+  },
+  "touchSupport": {
+    "ontouchstart": false,
+    "ontouchend": false,
+    "pointerEventInWindow": true,
+    "touchEventInWindow": true,
+    "deviceMotionEventInWindow": true
+  },
+  "visibility": {
+    "visibilityState": "visible",
+    "hidden": false,
+    "lastVisibilityChange": "visible"
+  },
+  "mediaCapabilities": {
+    "hasGetUserMedia": true,
+    "getUserMediaIsFunction": true,
+    "enumeratedDevices": [
+      {
+        "deviceId": "default",
+        "kind": "audioinput",
+        "label": "Default - Microphone (Realtek(R) Audio)",
+        "groupId": "0fa5c2ba050b826a6e4cf88178b76dede9c3879da0dcb3300865cd236395ce7e"
+      },
+      {
+        "deviceId": "communications",
+        "kind": "audioinput",
+        "label": "Communications - Microphone (Realtek(R) Audio)",
+        "groupId": "0fa5c2ba050b826a6e4cf88178b76dede9c3879da0dcb3300865cd236395ce7e"
+      },
+      {
+        "deviceId": "8dc058ca3c6941dea93f8530c2ad1181fd1cbc0656b5c473a0bf57d5c8d7e168",
+        "kind": "audioinput",
+        "label": "Microphone (Realtek(R) Audio)",
+        "groupId": "0fa5c2ba050b826a6e4cf88178b76dede9c3879da0dcb3300865cd236395ce7e"
+      },
+      {
+        "deviceId": "",
+        "kind": "videoinput",
+        "label": "",
+        "groupId": ""
+      },
+      {
+        "deviceId": "default",
+        "kind": "audiooutput",
+        "label": "Default - Speakers (Realtek(R) Audio)",
+        "groupId": "0fa5c2ba050b826a6e4cf88178b76dede9c3879da0dcb3300865cd236395ce7e"
+      },
+      {
+        "deviceId": "communications",
+        "kind": "audiooutput",
+        "label": "Communications - Speakers (Realtek(R) Audio)",
+        "groupId": "0fa5c2ba050b826a6e4cf88178b76dede9c3879da0dcb3300865cd236395ce7e"
+      },
+      {
+        "deviceId": "2a5ae0008e7c4d9b1bfca2576f084adeed7d8680b3ff6ccc4bc732492ff7f187",
+        "kind": "audiooutput",
+        "label": "Speakers (Realtek(R) Audio)",
+        "groupId": "0fa5c2ba050b826a6e4cf88178b76dede9c3879da0dcb3300865cd236395ce7e"
+      }
+    ],
+    "supportedConstraints": {
+      "aspectRatio": true,
+      "autoGainControl": true,
+      "brightness": true,
+      "channelCount": true,
+      "colorTemperature": true,
+      "contrast": true,
+      "deviceId": true,
+      "displaySurface": true,
+      "echoCancellation": true,
+      "exposureCompensation": true,
+      "exposureMode": true,
+      "exposureTime": true,
+      "facingMode": true,
+      "focusDistance": true,
+      "focusMode": true,
+      "frameRate": true,
+      "groupId": true,
+      "height": true,
+      "iso": true,
+      "latency": true,
+      "noiseSuppression": true,
+      "pan": true,
+      "pointsOfInterest": true,
+      "resizeMode": true,
+      "sampleRate": true,
+      "sampleSize": true,
+      "saturation": true,
+      "sharpness": true,
+      "suppressLocalAudioPlayback": true,
+      "tilt": true,
+      "torch": true,
+      "voiceIsolation": true,
+      "whiteBalanceMode": true,
+      "width": true,
+      "zoom": true
+    },
+    "labeledDevices": [
+      "Default - Microphone (Realtek(R) Audio)",
+      "Communications - Microphone (Realtek(R) Audio)",
+      "Microphone (Realtek(R) Audio)",
+      "",
+      "Default - Speakers (Realtek(R) Audio)",
+      "Communications - Speakers (Realtek(R) Audio)",
+      "Speakers (Realtek(R) Audio)"
+    ]
+  },
+  "windowName": "",
+  "windowChrome": {
+    "metricsPrivate": {
+      "MetricTypeType": {
+        "HISTOGRAM_LINEAR": "histogram-linear",
+        "HISTOGRAM_LOG": "histogram-log"
+      }
+    },
+    "runtime": {
+      "ContextType": {
+        "BACKGROUND": "BACKGROUND",
+        "DEVELOPER_TOOLS": "DEVELOPER_TOOLS",
+        "OFFSCREEN_DOCUMENT": "OFFSCREEN_DOCUMENT",
+        "POPUP": "POPUP",
+        "SIDE_PANEL": "SIDE_PANEL",
+        "TAB": "TAB"
+      },
+      "OnInstalledReason": {
+        "CHROME_UPDATE": "chrome_update",
+        "INSTALL": "install",
+        "SHARED_MODULE_UPDATE": "shared_module_update",
+        "UPDATE": "update"
+      },
+      "OnRestartRequiredReason": {
+        "APP_UPDATE": "app_update",
+        "OS_UPDATE": "os_update",
+        "PERIODIC": "periodic"
+      },
+      "PlatformArch": {
+        "ARM": "arm",
+        "ARM64": "arm64",
+        "MIPS": "mips",
+        "MIPS64": "mips64",
+        "X86_32": "x86-32",
+        "X86_64": "x86-64"
+      },
+      "PlatformNaclArch": {
+        "ARM": "arm",
+        "MIPS": "mips",
+        "MIPS64": "mips64",
+        "X86_32": "x86-32",
+        "X86_64": "x86-64"
+      },
+      "PlatformOs": {
+        "ANDROID": "android",
+        "CROS": "cros",
+        "FUCHSIA": "fuchsia",
+        "LINUX": "linux",
+        "MAC": "mac",
+        "OPENBSD": "openbsd",
+        "WIN": "win"
+      },
+      "RequestUpdateCheckStatus": {
+        "NO_UPDATE": "no_update",
+        "THROTTLED": "throttled",
+        "UPDATE_AVAILABLE": "update_available"
+      }
+    },
+    "timeTicks": {}
+  },
+  "permissions": {
+    "camera": {
+      "name": "video_capture",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "microphone": {
+      "name": "audio_capture",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "geolocation": {
+      "name": "geolocation",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "notifications": {
+      "name": "notifications",
+      "state": "denied",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "persistent-storage": {
+      "name": "durable_storage",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "push": {
+      "name": "push",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Push Permission without userVisibleOnly:true isn't supported yet.",
+      "errorType": "DOMException"
+    },
+    "accelerometer": {
+      "name": "sensors",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "gyroscope": {
+      "name": "sensors",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "ambient-light-sensor": {
+      "name": "ambient-light-sensor",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': GenericSensorExtraClasses flag is not enabled.",
+      "errorType": "TypeError"
+    },
+    "clipboard-read": {
+      "name": "clipboard_read",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "clipboard-write": {
+      "name": "clipboard_write",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "background-sync": {
+      "name": "background_sync",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "midi": {
+      "name": "midi",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "magnetometer": {
+      "name": "sensors",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "accessibility-events": {
+      "name": "accessibility-events",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'accessibility-events' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "clipboard": {
+      "name": "clipboard",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'clipboard' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "payment-handler": {
+      "name": "payment_handler",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "periodic-background-sync": {
+      "name": "periodic_background_sync",
+      "state": "denied",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "window-placement": {
+      "name": "window-placement",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'window-placement' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    }
+  },
+  "usbDevices": [],
+  "isBluetoothAvailable": true,
+  "pluginsItemProptype": "function item() { [native code] }",
+  "plugins": [
+    {
+      "name": "PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format"
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chrome PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chrome PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format"
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chrome PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chromium PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chromium PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format"
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chromium PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Microsoft Edge PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Microsoft Edge PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format"
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Microsoft Edge PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format"
+          }
+        }
+      ]
+    },
+    {
+      "name": "WebKit built-in PDF",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "WebKit built-in PDF",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format"
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "WebKit built-in PDF",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format"
+          }
+        }
+      ]
+    }
+  ],
+  "pluginsLength": 5,
+  "mimeTypes": [
+    {
+      "type": "application/pdf",
+      "description": "Portable Document Format",
+      "suffixes": "pdf",
+      "enabledPlugin": {
+        "name": "PDF Viewer",
+        "filename": "internal-pdf-viewer",
+        "description": "Portable Document Format"
+      }
+    },
+    {
+      "type": "text/pdf",
+      "description": "Portable Document Format",
+      "suffixes": "pdf",
+      "enabledPlugin": {
+        "name": "PDF Viewer",
+        "filename": "internal-pdf-viewer",
+        "description": "Portable Document Format"
+      }
+    }
+  ],
+  "mimeTypesLength": 2,
+  "webglFP": {
+    "contextType": "webgl",
+    "canvasSize": {
+      "width": 300,
+      "height": 150
+    },
+    "drawingBufferWidth": 300,
+    "drawingBufferHeight": 150,
+    "contextToString": "function getParameter() { [native code] }",
+    "contextIsNative": true,
+    "webglRenderingGetParameterprototypeCheck": "function getParameter() { [native code] }",
+    "contextClass": "WebGLRenderingContext",
+    "prototypeCheck": "function isContextLost() { [native code] }",
+    "prototypeIsNative": true,
+    "vertexShaderLog": "",
+    "vertexShaderStatus": true,
+    "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+    "glShadingLanguageVersion": "WebGL GLSL ES 1.0 (OpenGL ES GLSL ES 1.0 Chromium)",
+    "maxTextureSize": 16384,
+    "glRenderBufferSize": 16384,
+    "glLineWidthRange": {
+      "0": 1,
+      "1": 1
+    },
+    "glPointSizeRange": {
+      "0": 1,
+      "1": 1024
+    },
+    "glKHRDebugSupported": false,
+    "glMaxDebugLoggedMessages": null,
+    "glMaxDebugMessageLength": null,
+    "glMaxDebugMessageBufferSize": null,
+    "glMaxDebugMessageArguments": null,
+    "glDebugShaders": true,
+    "hasAnisotropicFiltering": true,
+    "hasFloatTextures": true,
+    "hasDrawBuffers": true,
+    "vendor": "Google Inc. (Intel)",
+    "renderer": "ANGLE (Intel, Intel(R) Iris(R) Plus Graphics (0x00008A52) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vertexFloatPrecision": {
+      "rangeMin": 127,
+      "rangeMax": 127,
+      "precision": 23
+    },
+    "fragmentFloatPrecision": {
+      "rangeMin": 127,
+      "rangeMax": 127,
+      "precision": 23
+    },
+    "getShaderPrecisionFormatSupported": true,
+    "extensions": [
+      "ANGLE_instanced_arrays",
+      "EXT_blend_minmax",
+      "EXT_clip_control",
+      "EXT_color_buffer_half_float",
+      "EXT_depth_clamp",
+      "EXT_disjoint_timer_query",
+      "EXT_float_blend",
+      "EXT_frag_depth",
+      "EXT_polygon_offset_clamp",
+      "EXT_shader_texture_lod",
+      "EXT_texture_compression_bptc",
+      "EXT_texture_compression_rgtc",
+      "EXT_texture_filter_anisotropic",
+      "EXT_texture_mirror_clamp_to_edge",
+      "EXT_sRGB",
+      "KHR_parallel_shader_compile",
+      "OES_element_index_uint",
+      "OES_fbo_render_mipmap",
+      "OES_standard_derivatives",
+      "OES_texture_float",
+      "OES_texture_float_linear",
+      "OES_texture_half_float",
+      "OES_texture_half_float_linear",
+      "OES_vertex_array_object",
+      "WEBGL_blend_func_extended",
+      "WEBGL_color_buffer_float",
+      "WEBGL_compressed_texture_s3tc",
+      "WEBGL_compressed_texture_s3tc_srgb",
+      "WEBGL_debug_renderer_info",
+      "WEBGL_debug_shaders",
+      "WEBGL_depth_texture",
+      "WEBGL_draw_buffers",
+      "WEBGL_lose_context",
+      "WEBGL_multi_draw",
+      "WEBGL_polygon_mode"
+    ],
+    "pixelRead": [128, 128, 128, 255],
+    "pixelReadSHA1": "a2259bc05eb9feb2cdc8d3c95ba64e80e5b522d5",
+    "errorAfterBuffer": 0,
+    "sha1": "c6a0b81487ded644c7bc2c0969d17cc40dab35c6"
+  },
+  "videoFP": {
+    "screenWidth": 1536,
+    "screenHeight": 864,
+    "canPlayTypeResults": {
+      "video/webm; codecs=\"vp8, vorbis\"": "probably",
+      "video/webm; codecs=\"vp9\"": "probably",
+      "video/mp4; codecs=\"avc1.42E01E\"": "probably",
+      "video/mp4; codecs=\"hev1\"": "",
+      "video/ogg; codecs=\"theora\"": "",
+      "video/mp4; codecs=\"av01.0.05M.08\"": "probably"
+    },
+    "mediaCapabilitiesDecodingInfo": {
+      "powerEfficient": true,
+      "smooth": true,
+      "supported": true,
+      "keySystemAccess": null
+    },
+    "videoProps": {
+      "autoplay": false,
+      "controls": false,
+      "loop": false,
+      "muted": false,
+      "defaultMuted": false,
+      "playsInline": false,
+      "preload": "metadata",
+      "volume": 1,
+      "readyState": 0,
+      "networkState": 0,
+      "width": 0,
+      "height": 0,
+      "videoWidth": 0,
+      "videoHeight": 0
+    },
+    "hasTracks": {
+      "textTracks": true,
+      "audioTracks": false,
+      "videoTracks": false
+    },
+    "isNative": {
+      "canPlayType": true,
+      "constructor": true,
+      "addTextTrack": true
+    },
+    "videoFingerprintToString": {
+      "canPlayType": "function canPlayType() { [native code] }",
+      "constructor": "function HTMLVideoElement() { [native code] }",
+      "addTextTrack": "function addTextTrack() { [native code] }"
+    }
+  },
+  "canvasFP": {
+    "dataURL": "data:image/png;base64,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",
+    "dataURLLength": 6550,
+    "sha1": "f611e2d034f49713ffd238813632c5e69f064568",
+    "toBlobHash": "ab392c669048681ddeee3467ddfab6652d6a3ccb",
+    "blobSize": 4894,
+    "imageDataHash": "aeb67cdca8e1fbc8879fc4c123c43f905e6f0e83",
+    "isToDataURLNative": true,
+    "isToBlobNative": true,
+    "toStringToDataURL": "function toDataURL() { [native code] }",
+    "toStringToBlob": "function toBlob() { [native code] }",
+    "toDataURLProps": {
+      "length": 0,
+      "name": "toDataURL"
+    },
+    "hasCanvasMutation": false,
+    "HTMLCanvasElementToBlobString": "function toBlob() { [native code] }",
+    "HTMLCanvasElementToDataURLString": "function toDataURL() { [native code] }",
+    "ctxProps": {
+      "shadowBlur": 5,
+      "shadowColor": "rgba(0, 0, 0, 0.5)",
+      "fillStyle": "rgba(102, 204, 0, 0.7)",
+      "font": "14px Arial",
+      "globalCompositeOperation": "multiply",
+      "textBaseline": "top"
+    },
+    "canvasClassName": "HTMLCanvasElement",
+    "ctxClassName": "CanvasRenderingContext2D"
+  },
+  "audioFP": {
+    "fingerprint": {
+      "sum": "10748.965",
+      "sha1": "6d50b0d9f60f7b47891564a0360f65bc8e141cfd",
+      "renderLatency": "173.50"
+    },
+    "metadata": {
+      "audioCtxSampleRate": 48000,
+      "audioCtxBaseLatency": 0.01,
+      "audioCtxState": "running",
+      "isRunning": true,
+      "sinkId": "",
+      "channelCount": 2,
+      "channelCountMode": "explicit",
+      "maxChannelCount": 2,
+      "numberOfInputs": 1,
+      "numberOfOutputs": 0,
+      "destinationToString": "[object AudioDestinationNode]",
+      "destinationClass": "AudioDestinationNode",
+      "closeIsNative": true,
+      "audioContextNative": "function AudioContext() { [native code] }",
+      "offlineContextNative": "function OfflineAudioContext() { [native code] }",
+      "audioContextToStringIsNative": true,
+      "offlineContextToStringIsNative": true,
+      "compressorToStringIsNative": true
+    }
+  },
+  "fontsData": {
+    "fontReadyTime": "1.50",
+    "statusBeforeReady": "loaded",
+    "statusAfterReady": "loaded",
+    "fontsStatus": "loaded",
+    "documentFontsCheckIsNative": true,
+    "fontFaceSetToString": "not available",
+    "fontFaceToString": null,
+    "hasCustomFonts": false,
+    "fontDetection": [
+      {
+        "font": "Arial",
+        "detected": true
+      },
+      {
+        "font": "Times New Roman",
+        "detected": true
+      },
+      {
+        "font": "Courier New",
+        "detected": true
+      },
+      {
+        "font": "Helvetica",
+        "detected": true
+      },
+      {
+        "font": "Segoe UI",
+        "detected": true
+      },
+      {
+        "font": "Tahoma",
+        "detected": true
+      },
+      {
+        "font": "Verdana",
+        "detected": true
+      },
+      {
+        "font": "Georgia",
+        "detected": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "detected": true
+      },
+      {
+        "font": "Impact",
+        "detected": true
+      },
+      {
+        "font": "Calibri",
+        "detected": true
+      },
+      {
+        "font": "Cambria",
+        "detected": true
+      },
+      {
+        "font": "Lucida Console",
+        "detected": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "detected": true
+      },
+      {
+        "font": "Gill Sans",
+        "detected": false
+      },
+      {
+        "font": "Trebuchet MS",
+        "detected": true
+      }
+    ],
+    "fontSizeChecks": [
+      {
+        "font": "Arial",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Arial",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Arial",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Arial",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 18,
+        "check": true
+      }
+    ],
+    "genericSupport": [
+      {
+        "font": "serif",
+        "check": true
+      },
+      {
+        "font": "sans-serif",
+        "check": true
+      },
+      {
+        "font": "monospace",
+        "check": true
+      },
+      {
+        "font": "cursive",
+        "check": true
+      },
+      {
+        "font": "fantasy",
+        "check": true
+      },
+      {
+        "font": "system-ui",
+        "check": true
+      }
+    ],
+    "renderWidths": {
+      "Arial": {
+        "monospace": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "sans-serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Times New Roman": {
+        "monospace": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "sans-serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Courier New": {
+        "monospace": {
+          "1234567890": 432.0703125,
+          "mmmmmmmmmmlli": 561.69140625,
+          "abcdefghijklmnopqrstuvwxyz": 1123.3828125,
+          "WWWWWWWWWW": 432.0703125
+        },
+        "sans-serif": {
+          "1234567890": 432.0703125,
+          "mmmmmmmmmmlli": 561.69140625,
+          "abcdefghijklmnopqrstuvwxyz": 1123.3828125,
+          "WWWWWWWWWW": 432.0703125
+        },
+        "serif": {
+          "1234567890": 432.0703125,
+          "mmmmmmmmmmlli": 561.69140625,
+          "abcdefghijklmnopqrstuvwxyz": 1123.3828125,
+          "WWWWWWWWWW": 432.0703125
+        }
+      },
+      "Helvetica": {
+        "monospace": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "sans-serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Segoe UI": {
+        "monospace": {
+          "1234567890": 388.125,
+          "mmmmmmmmmmlli": 672.46875,
+          "abcdefghijklmnopqrstuvwxyz": 923.4140625,
+          "WWWWWWWWWW": 672.5390625
+        },
+        "sans-serif": {
+          "1234567890": 388.125,
+          "mmmmmmmmmmlli": 672.46875,
+          "abcdefghijklmnopqrstuvwxyz": 923.4140625,
+          "WWWWWWWWWW": 672.5390625
+        },
+        "serif": {
+          "1234567890": 388.125,
+          "mmmmmmmmmmlli": 672.46875,
+          "abcdefghijklmnopqrstuvwxyz": 923.4140625,
+          "WWWWWWWWWW": 672.5390625
+        }
+      },
+      "Tahoma": {
+        "monospace": {
+          "1234567890": 393.046875,
+          "mmmmmmmmmmlli": 654.328125,
+          "abcdefghijklmnopqrstuvwxyz": 914.484375,
+          "WWWWWWWWWW": 649.3359375
+        },
+        "sans-serif": {
+          "1234567890": 393.046875,
+          "mmmmmmmmmmlli": 654.328125,
+          "abcdefghijklmnopqrstuvwxyz": 914.484375,
+          "WWWWWWWWWW": 649.3359375
+        },
+        "serif": {
+          "1234567890": 393.046875,
+          "mmmmmmmmmmlli": 654.328125,
+          "abcdefghijklmnopqrstuvwxyz": 914.484375,
+          "WWWWWWWWWW": 649.3359375
+        }
+      },
+      "Verdana": {
+        "monospace": {
+          "1234567890": 457.734375,
+          "mmmmmmmmmmlli": 759.5859375,
+          "abcdefghijklmnopqrstuvwxyz": 1051.76953125,
+          "WWWWWWWWWW": 711.9140625
+        },
+        "sans-serif": {
+          "1234567890": 457.734375,
+          "mmmmmmmmmmlli": 759.5859375,
+          "abcdefghijklmnopqrstuvwxyz": 1051.76953125,
+          "WWWWWWWWWW": 711.9140625
+        },
+        "serif": {
+          "1234567890": 457.734375,
+          "mmmmmmmmmmlli": 759.5859375,
+          "abcdefghijklmnopqrstuvwxyz": 1051.76953125,
+          "WWWWWWWWWW": 711.9140625
+        }
+      },
+      "Georgia": {
+        "monospace": {
+          "1234567890": 394.3828125,
+          "mmmmmmmmmmlli": 696.515625,
+          "abcdefghijklmnopqrstuvwxyz": 934.3828125,
+          "WWWWWWWWWW": 702.421875
+        },
+        "sans-serif": {
+          "1234567890": 394.3828125,
+          "mmmmmmmmmmlli": 696.515625,
+          "abcdefghijklmnopqrstuvwxyz": 934.3828125,
+          "WWWWWWWWWW": 702.421875
+        },
+        "serif": {
+          "1234567890": 394.3828125,
+          "mmmmmmmmmmlli": 696.515625,
+          "abcdefghijklmnopqrstuvwxyz": 934.3828125,
+          "WWWWWWWWWW": 702.421875
+        }
+      },
+      "Comic Sans MS": {
+        "monospace": {
+          "1234567890": 427.921875,
+          "mmmmmmmmmmlli": 618.9609375,
+          "abcdefghijklmnopqrstuvwxyz": 973.93359375,
+          "WWWWWWWWWW": 748.4765625
+        },
+        "sans-serif": {
+          "1234567890": 427.921875,
+          "mmmmmmmmmmlli": 618.9609375,
+          "abcdefghijklmnopqrstuvwxyz": 973.93359375,
+          "WWWWWWWWWW": 748.4765625
+        },
+        "serif": {
+          "1234567890": 427.921875,
+          "mmmmmmmmmmlli": 618.9609375,
+          "abcdefghijklmnopqrstuvwxyz": 973.93359375,
+          "WWWWWWWWWW": 748.4765625
+        }
+      },
+      "Impact": {
+        "monospace": {
+          "1234567890": 358.6640625,
+          "mmmmmmmmmmlli": 614.28515625,
+          "abcdefghijklmnopqrstuvwxyz": 867.12890625,
+          "WWWWWWWWWW": 586.40625
+        },
+        "sans-serif": {
+          "1234567890": 358.6640625,
+          "mmmmmmmmmmlli": 614.28515625,
+          "abcdefghijklmnopqrstuvwxyz": 867.12890625,
+          "WWWWWWWWWW": 586.40625
+        },
+        "serif": {
+          "1234567890": 358.6640625,
+          "mmmmmmmmmmlli": 614.28515625,
+          "abcdefghijklmnopqrstuvwxyz": 867.12890625,
+          "WWWWWWWWWW": 586.40625
+        }
+      },
+      "Calibri": {
+        "monospace": {
+          "1234567890": 364.921875,
+          "mmmmmmmmmmlli": 624.7265625,
+          "abcdefghijklmnopqrstuvwxyz": 848.53125,
+          "WWWWWWWWWW": 640.546875
+        },
+        "sans-serif": {
+          "1234567890": 364.921875,
+          "mmmmmmmmmmlli": 624.7265625,
+          "abcdefghijklmnopqrstuvwxyz": 848.53125,
+          "WWWWWWWWWW": 640.546875
+        },
+        "serif": {
+          "1234567890": 364.921875,
+          "mmmmmmmmmmlli": 624.7265625,
+          "abcdefghijklmnopqrstuvwxyz": 848.53125,
+          "WWWWWWWWWW": 640.546875
+        }
+      },
+      "Cambria": {
+        "monospace": {
+          "1234567890": 398.671875,
+          "mmmmmmmmmmlli": 658.16015625,
+          "abcdefghijklmnopqrstuvwxyz": 910.72265625,
+          "WWWWWWWWWW": 663.3984375
+        },
+        "sans-serif": {
+          "1234567890": 398.671875,
+          "mmmmmmmmmmlli": 658.16015625,
+          "abcdefghijklmnopqrstuvwxyz": 910.72265625,
+          "WWWWWWWWWW": 663.3984375
+        },
+        "serif": {
+          "1234567890": 398.671875,
+          "mmmmmmmmmmlli": 658.16015625,
+          "abcdefghijklmnopqrstuvwxyz": 910.72265625,
+          "WWWWWWWWWW": 663.3984375
+        }
+      },
+      "Lucida Console": {
+        "monospace": {
+          "1234567890": 433.828125,
+          "mmmmmmmmmmlli": 563.9765625,
+          "abcdefghijklmnopqrstuvwxyz": 1127.953125,
+          "WWWWWWWWWW": 433.828125
+        },
+        "sans-serif": {
+          "1234567890": 433.828125,
+          "mmmmmmmmmmlli": 563.9765625,
+          "abcdefghijklmnopqrstuvwxyz": 1127.953125,
+          "WWWWWWWWWW": 433.828125
+        },
+        "serif": {
+          "1234567890": 433.828125,
+          "mmmmmmmmmmlli": 563.9765625,
+          "abcdefghijklmnopqrstuvwxyz": 1127.953125,
+          "WWWWWWWWWW": 433.828125
+        }
+      },
+      "Palatino Linotype": {
+        "monospace": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 698.484375,
+          "abcdefghijklmnopqrstuvwxyz": 959.1328125,
+          "WWWWWWWWWW": 720
+        },
+        "sans-serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 698.484375,
+          "abcdefghijklmnopqrstuvwxyz": 959.1328125,
+          "WWWWWWWWWW": 720
+        },
+        "serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 698.484375,
+          "abcdefghijklmnopqrstuvwxyz": 959.1328125,
+          "WWWWWWWWWW": 720
+        }
+      },
+      "Gill Sans": {
+        "monospace": {
+          "1234567890": 395.859375,
+          "mmmmmmmmmmlli": 514.6171875,
+          "abcdefghijklmnopqrstuvwxyz": 1029.234375,
+          "WWWWWWWWWW": 395.859375
+        },
+        "sans-serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Trebuchet MS": {
+        "monospace": {
+          "1234567890": 377.578125,
+          "mmmmmmmmmmlli": 660.65625,
+          "abcdefghijklmnopqrstuvwxyz": 937.125,
+          "WWWWWWWWWW": 613.4765625
+        },
+        "sans-serif": {
+          "1234567890": 377.578125,
+          "mmmmmmmmmmlli": 660.65625,
+          "abcdefghijklmnopqrstuvwxyz": 937.125,
+          "WWWWWWWWWW": 613.4765625
+        },
+        "serif": {
+          "1234567890": 377.578125,
+          "mmmmmmmmmmlli": 660.65625,
+          "abcdefghijklmnopqrstuvwxyz": 937.125,
+          "WWWWWWWWWW": 613.4765625
+        }
+      }
+    },
+    "renderWidthsSHA1": "9764491b90fae7deb68342d61755fd92863ead43",
+    "loadedFontFaces": [],
+    "canvasRenderHash": "5ca060810f9c0fb3f0c8eb2b4cc7e8cd644e7701"
+  }
+}

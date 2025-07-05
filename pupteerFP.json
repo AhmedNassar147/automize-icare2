@@ -1,0 +1,2157 @@
+{
+  "hasResizeObserver": true,
+  "webDriver": false,
+  "navigator": {
+    "language": "en-US",
+    "languages": ["en-US", "en"],
+    "deviceMemory": 8,
+    "hardwareConcurrency": 20,
+    "maxTouchPoints": 0,
+    "platform": "Win32",
+    "vendor": "Google Inc.",
+    "pdfViewerEnabled": true,
+    "appName": "Netscape",
+    "appVersion": "5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "appCodeName": "Mozilla",
+    "product": "Gecko",
+    "productSub": "20030107",
+    "doNotTrack": null,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "userAgentData": {
+      "brands": [
+        {
+          "brand": "Google Chrome",
+          "version": "137"
+        },
+        {
+          "brand": "Chromium",
+          "version": "137"
+        },
+        {
+          "brand": "Not/A)Brand",
+          "version": "24"
+        }
+      ],
+      "mobile": false,
+      "platform": "Windows"
+    },
+    "userAgentHighEntropyValues": {
+      "architecture": "x86",
+      "brands": [
+        {
+          "brand": "Google Chrome",
+          "version": "137"
+        },
+        {
+          "brand": "Chromium",
+          "version": "137"
+        },
+        {
+          "brand": "Not/A)Brand",
+          "version": "24"
+        }
+      ],
+      "fullVersionList": [
+        {
+          "brand": "Google Chrome",
+          "version": "137.0.7151.120"
+        },
+        {
+          "brand": "Chromium",
+          "version": "137.0.7151.120"
+        },
+        {
+          "brand": "Not/A)Brand",
+          "version": "24.0.0.0"
+        }
+      ],
+      "mobile": false,
+      "model": "",
+      "platform": "Windows",
+      "platformVersion": "19.0.0",
+      "uaFullVersion": "137.0.7151.120"
+    }
+  },
+  "userActivation": {
+    "hasBeenActive": true,
+    "isActive": true
+  },
+  "visualViewport": {
+    "width": 968,
+    "height": 811,
+    "scale": 1,
+    "offsetLeft": 0,
+    "offsetTop": 0,
+    "pageLeft": 0,
+    "pageTop": 0
+  },
+  "window": {
+    "windowName": "",
+    "innerWidth": 968,
+    "innerHeight": 811,
+    "outerWidth": 1600,
+    "outerHeight": 900,
+    "devicePixelRatio": 1,
+    "scrollX": 0,
+    "scrollY": 0
+  },
+  "windowChrome": {
+    "metricsPrivate": {
+      "MetricTypeType": {
+        "HISTOGRAM_LINEAR": "histogram-linear",
+        "HISTOGRAM_LOG": "histogram-log"
+      }
+    },
+    "runtime": {
+      "ContextType": {
+        "BACKGROUND": "BACKGROUND",
+        "DEVELOPER_TOOLS": "DEVELOPER_TOOLS",
+        "OFFSCREEN_DOCUMENT": "OFFSCREEN_DOCUMENT",
+        "POPUP": "POPUP",
+        "SIDE_PANEL": "SIDE_PANEL",
+        "TAB": "TAB"
+      },
+      "OnInstalledReason": {
+        "CHROME_UPDATE": "chrome_update",
+        "INSTALL": "install",
+        "SHARED_MODULE_UPDATE": "shared_module_update",
+        "UPDATE": "update"
+      },
+      "OnRestartRequiredReason": {
+        "APP_UPDATE": "app_update",
+        "OS_UPDATE": "os_update",
+        "PERIODIC": "periodic"
+      },
+      "PlatformArch": {
+        "ARM": "arm",
+        "ARM64": "arm64",
+        "MIPS": "mips",
+        "MIPS64": "mips64",
+        "X86_32": "x86-32",
+        "X86_64": "x86-64"
+      },
+      "PlatformNaclArch": {
+        "ARM": "arm",
+        "MIPS": "mips",
+        "MIPS64": "mips64",
+        "X86_32": "x86-32",
+        "X86_64": "x86-64"
+      },
+      "PlatformOs": {
+        "ANDROID": "android",
+        "CROS": "cros",
+        "FUCHSIA": "fuchsia",
+        "LINUX": "linux",
+        "MAC": "mac",
+        "OPENBSD": "openbsd",
+        "WIN": "win"
+      },
+      "RequestUpdateCheckStatus": {
+        "NO_UPDATE": "no_update",
+        "THROTTLED": "throttled",
+        "UPDATE_AVAILABLE": "update_available"
+      }
+    },
+    "timeTicks": {}
+  },
+  "chromeFunctionsValues": {
+    "packageDirectoryEntry": {}
+  },
+  "screen": {
+    "availWidth": 1600,
+    "availHeight": 900,
+    "availTop": 0,
+    "availLeft": 0,
+    "colorDepth": 24,
+    "pixelDepth": 24,
+    "height": 900,
+    "width": 1600
+  },
+  "documentElement": {
+    "clientWidth": 968,
+    "clientHeight": 811,
+    "scrollWidth": 968,
+    "scrollHeight": 811,
+    "offsetLeft": 0,
+    "offsetTop": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "offsetWidth": 968,
+    "offsetHeight": 811
+  },
+  "performanceMemory": {
+    "jsHeapSizeLimit": 4294705152,
+    "totalJSHeapSize": 10124975,
+    "usedJSHeapSize": 7853483
+  },
+  "visibility": {
+    "hidden": false,
+    "visibilityState": "visible"
+  },
+  "touchSupport": {
+    "ontouchstart_in_Window": false,
+    "ontouchend_in_Window": false,
+    "pointerEvent_in_Window": true,
+    "touchEvent_in_Window": true,
+    "deviceMotionEvent_in_Window": true,
+    "maxTouchPoints": 0
+  },
+  "clipboard": {
+    "hasReadText": true,
+    "hasWriteText": true
+  },
+  "math": {
+    "acos": 1.4470237543681796,
+    "sin": 0.8414709848078965,
+    "tan": -1.5574077246549023,
+    "exp": 2.718281828459045
+  },
+  "evalFunction": {
+    "typeofEval": "function",
+    "typeofFunction": "function"
+  },
+  "chromeRuntime": true,
+  "pluginsLength": 5,
+  "mimeTypesLength": 2,
+  "plugins": [
+    {
+      "name": "PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chrome PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chrome PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chrome PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chromium PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chromium PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Chromium PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "Microsoft Edge PDF Viewer",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Microsoft Edge PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "Microsoft Edge PDF Viewer",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "WebKit built-in PDF",
+      "filename": "internal-pdf-viewer",
+      "description": "Portable Document Format",
+      "length": 2,
+      "mimeTypes": [
+        {
+          "type": "application/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "WebKit built-in PDF",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        },
+        {
+          "type": "text/pdf",
+          "description": "Portable Document Format",
+          "suffixes": "pdf",
+          "enabledPlugin": {
+            "name": "WebKit built-in PDF",
+            "filename": "internal-pdf-viewer",
+            "description": "Portable Document Format",
+            "length": 2
+          }
+        }
+      ]
+    }
+  ],
+  "mimeTypes": [
+    {
+      "type": "application/pdf",
+      "description": "Portable Document Format",
+      "suffixes": "pdf",
+      "enabledPlugin": {
+        "name": "PDF Viewer",
+        "filename": "internal-pdf-viewer",
+        "description": "Portable Document Format"
+      }
+    },
+    {
+      "type": "text/pdf",
+      "description": "Portable Document Format",
+      "suffixes": "pdf",
+      "enabledPlugin": {
+        "name": "PDF Viewer",
+        "filename": "internal-pdf-viewer",
+        "description": "Portable Document Format"
+      }
+    }
+  ],
+  "connection": {
+    "effectiveType": "4g",
+    "rtt": 150,
+    "downlink": 1.55,
+    "saveData": false
+  },
+  "gamepads": [],
+  "dateValues": {
+    "intlDateTimeOptions": {
+      "locale": "en-US",
+      "calendar": "gregory",
+      "numberingSystem": "latn",
+      "timeZone": "Africa/Cairo",
+      "year": "numeric",
+      "month": "numeric",
+      "day": "numeric"
+    },
+    "intlNumberFormatOptions": {
+      "locale": "en-US",
+      "numberingSystem": "latn",
+      "style": "decimal",
+      "minimumIntegerDigits": 1,
+      "minimumFractionDigits": 0,
+      "maximumFractionDigits": 3,
+      "useGrouping": "auto",
+      "notation": "standard",
+      "signDisplay": "auto",
+      "roundingIncrement": 1,
+      "roundingMode": "halfExpand",
+      "roundingPriority": "auto",
+      "trailingZeroDisplay": "auto"
+    },
+    "timezoneOffset": -180,
+    "timezoneOffsetString": "+03:00",
+    "compactOffset": "+0300",
+    "localDate": "Sun Jun 29 2025 02:26:58 GMT+0300 (Eastern European Summer Time)",
+    "utcDate": "Sun, 29 Jun 2025 02:26:58 GMT",
+    "localDateISO": "2025-06-29T02:26:58.965Z",
+    "timezoneOffsetUtcString": "03:00Z"
+  },
+  "mediaQueriesNamesChecked": {
+    "(prefers-color-scheme: dark)": false,
+    "(prefers-color-scheme: light)": true,
+    "(prefers-reduced-motion: reduce)": false,
+    "(prefers-contrast: more)": false,
+    "(hover: hover)": true,
+    "(hover: none)": false,
+    "(pointer: fine)": true,
+    "(pointer: coarse)": false,
+    "(any-pointer: fine)": true,
+    "(any-hover: hover)": true,
+    "(aspect-ratio: 16/9)": false,
+    "(orientation: landscape)": true,
+    "(orientation: portrait)": false,
+    "(resolution: 96dpi)": true,
+    "(min-width: 768px)": true,
+    "(max-width: 1920px)": true
+  },
+  "mediaOrientation": "landscape",
+  "orientationMatchMediaOrientation": true,
+  "objectProtoToStringCall_WinMatchMedia": "[object Function]",
+  "cssSupports": {
+    "display: grid": true,
+    "display: contents": true,
+    "color: color(display-p3 1 0 0)": true,
+    "backdrop-filter: blur(4px)": true,
+    "position: sticky": true,
+    "text-decoration: underline dotted": true,
+    "-webkit-appearance: none": true,
+    "font-variation-settings: \"wght\" 700": true,
+    "aspect-ratio: 1/1": true
+  },
+  "matchMediaPrototype": [
+    "addListener",
+    "constructor",
+    "matches",
+    "media",
+    "onchange",
+    "removeListener"
+  ],
+  "mediaCapabilities": {
+    "hasGetUserMedia": true,
+    "getUserMediaIsFunction": true,
+    "enumeratedDevices": [
+      {
+        "deviceId": "",
+        "kind": "audioinput",
+        "label": "",
+        "groupId": ""
+      },
+      {
+        "deviceId": "",
+        "kind": "videoinput",
+        "label": "",
+        "groupId": ""
+      },
+      {
+        "deviceId": "",
+        "kind": "audiooutput",
+        "label": "",
+        "groupId": ""
+      }
+    ],
+    "supportedConstraints": {
+      "aspectRatio": true,
+      "autoGainControl": true,
+      "brightness": true,
+      "channelCount": true,
+      "colorTemperature": true,
+      "contrast": true,
+      "deviceId": true,
+      "displaySurface": true,
+      "echoCancellation": true,
+      "exposureCompensation": true,
+      "exposureMode": true,
+      "exposureTime": true,
+      "facingMode": true,
+      "focusDistance": true,
+      "focusMode": true,
+      "frameRate": true,
+      "groupId": true,
+      "height": true,
+      "iso": true,
+      "latency": true,
+      "noiseSuppression": true,
+      "pan": true,
+      "pointsOfInterest": true,
+      "resizeMode": true,
+      "sampleRate": true,
+      "sampleSize": true,
+      "saturation": true,
+      "sharpness": true,
+      "suppressLocalAudioPlayback": true,
+      "tilt": true,
+      "torch": true,
+      "voiceIsolation": true,
+      "whiteBalanceMode": true,
+      "width": true,
+      "zoom": true
+    }
+  },
+  "orientationInfo": {
+    "angle": 0,
+    "type": "landscape-primary",
+    "onchangeExists": false,
+    "lockExists": false,
+    "unlockExists": false
+  },
+  "stoarge": {
+    "hasLocalStorage": true,
+    "hasSessionStorage": true,
+    "hasIndexedDB": true,
+    "persisted": false,
+    "quota": 93753387417,
+    "usage": 0,
+    "usageDetails": {},
+    "supportsPersistence": true,
+    "supportsEstimate": true,
+    "supportsGetDirectory": true
+  },
+  "permissions": {
+    "camera": {
+      "name": "video_capture",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "microphone": {
+      "name": "audio_capture",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "geolocation": {
+      "name": "geolocation",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "notifications": {
+      "name": "notifications",
+      "state": "denied",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "persistent-storage": {
+      "name": "durable_storage",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "push": {
+      "name": "push",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Push Permission without userVisibleOnly:true isn't supported yet.",
+      "errorType": "DOMException"
+    },
+    "accelerometer": {
+      "name": "sensors",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "gyroscope": {
+      "name": "sensors",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "ambient-light-sensor": {
+      "name": "ambient-light-sensor",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': GenericSensorExtraClasses flag is not enabled.",
+      "errorType": "TypeError"
+    },
+    "clipboard-read": {
+      "name": "clipboard_read",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "clipboard-write": {
+      "name": "clipboard_write",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "background-sync": {
+      "name": "background_sync",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "midi": {
+      "name": "midi",
+      "state": "prompt",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "magnetometer": {
+      "name": "sensors",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "accessibility-events": {
+      "name": "accessibility-events",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'accessibility-events' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "clipboard": {
+      "name": "clipboard",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'clipboard' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "payment-handler": {
+      "name": "payment_handler",
+      "state": "granted",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "periodic-background-sync": {
+      "name": "periodic_background_sync",
+      "state": "denied",
+      "onchangeExists": false,
+      "addEventListenerExists": true,
+      "removeEventListenerExists": true
+    },
+    "window-placement": {
+      "name": "window-placement",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'window-placement' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "idle_detection": {
+      "name": "idle_detection",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'idle_detection' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "bluetooth": {
+      "name": "bluetooth",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'bluetooth' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    },
+    "usb": {
+      "name": "usb",
+      "state": "unsupported",
+      "error": "Failed to execute 'query' on 'Permissions': Failed to read the 'name' property from 'PermissionDescriptor': The provided value 'usb' is not a valid enum value of type PermissionName.",
+      "errorType": "TypeError"
+    }
+  },
+  "webrtcCandidates": [
+    {
+      "candidate": "candidate:922159374 1 udp 2113937151 2c30dec4-9383-4a9f-9275-6f12f193b695.local 49878 typ host generation 0 ufrag KKBl network-cost 999",
+      "address": "2c30dec4-9383-4a9f-9275-6f12f193b695.local",
+      "relatedAddress": null,
+      "relatedPort": null,
+      "foundation": "922159374",
+      "component": "rtp",
+      "protocol": "udp",
+      "priority": 2113937151,
+      "port": 49878,
+      "type": "host"
+    }
+  ],
+  "batteryInfo": {
+    "charging": true,
+    "chargingTime": 0,
+    "dischargingTime": null,
+    "level": 1
+  },
+  "usbDevices": [],
+  "isBluetoothAvailable": true,
+  "canvasFP": {
+    "width": 300,
+    "height": 150,
+    "devicePixelRatio": 1,
+    "dataURL": "data:image/png;base64,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",
+    "dataURLLength": 7850,
+    "sha1": "59241f3fe1edccffc905f342d94d683157c5115e",
+    "toDataURLDuration": 1,
+    "toBlobDuration": 1.9000000059604645,
+    "toBlobHash": "22f89caf15123fc55a40e8f408d823c49c5c2466",
+    "blobSize": 5869,
+    "imageDataHash": "f1ebd835c2ac431da7c4884dd04ee1dc5e38814c",
+    "meanPixelValue": 8.4922,
+    "pixelVariance": 1547.3034724933334,
+    "avgPixelNeighborDiff": 4.644816053511706,
+    "isToDataURLNative": true,
+    "isToBlobNative": true,
+    "isGetContextNative": true,
+    "toStringToDataURL": "function toDataURL() { [native code] }",
+    "toStringToBlob": "function toBlob() { [native code] }",
+    "toStringGetContext": "function getContext() { [native code] }",
+    "toDataURLProps": {
+      "length": 0,
+      "name": "toDataURL"
+    },
+    "hasCanvasMutation": false,
+    "ctxStateProps": {
+      "shadowBlur": 5,
+      "shadowColor": "rgba(0, 0, 0, 0.5)",
+      "fillStyle": "rgba(102, 204, 0, 0.7)",
+      "font": "14px Arial",
+      "globalCompositeOperation": "multiply",
+      "textBaseline": "top",
+      "lineWidth": 1,
+      "lineCap": "butt",
+      "lineJoin": "miter",
+      "miterLimit": 10,
+      "shadowOffsetX": 0,
+      "shadowOffsetY": 0,
+      "globalAlpha": 1
+    },
+    "ctxNativeMethods": {
+      "fillRect": {
+        "spoof": true,
+        "length": 4,
+        "name": "fillRect",
+        "toString": "function fillRect() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 4,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "fillRect",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "fillText": {
+        "spoof": true,
+        "length": 3,
+        "name": "fillText",
+        "toString": "function fillText() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 3,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "fillText",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "beginPath": {
+        "spoof": true,
+        "length": 0,
+        "name": "beginPath",
+        "toString": "function beginPath() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 0,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "beginPath",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "arc": {
+        "spoof": true,
+        "length": 5,
+        "name": "arc",
+        "toString": "function arc() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 5,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "arc",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "getImageData": {
+        "spoof": true,
+        "length": 4,
+        "name": "getImageData",
+        "toString": "function getImageData() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 4,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "getImageData",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "toDataURL": {
+        "spoof": true,
+        "length": 0,
+        "name": "toDataURL",
+        "toString": "function toDataURL() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 0,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "toDataURL",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      },
+      "toBlob": {
+        "spoof": true,
+        "length": 1,
+        "name": "toBlob",
+        "toString": "function toBlob() { [native code] }",
+        "prototypeIsUndefined": false,
+        "hasOwnPropertyToString": false,
+        "descriptors": {
+          "length": {
+            "value": 1,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "name": {
+            "value": "toBlob",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        }
+      }
+    },
+    "canvasClassName": "HTMLCanvasElement",
+    "ctxClassName": "CanvasRenderingContext2D",
+    "cssWidth": "",
+    "cssHeight": ""
+  },
+  "audioFP": {
+    "fingerprint": {
+      "sum": "10748.965",
+      "sha1": "6d50b0d9f60f7b47891564a0360f65bc8e141cfd",
+      "renderLatency": "141.40"
+    },
+    "metadata": {
+      "audioCtxSampleRate": 48000,
+      "audioCtxBaseLatency": 0.01,
+      "audioCtxState": "running",
+      "isRunning": true,
+      "sinkId": "",
+      "channelCount": 2,
+      "channelCountMode": "explicit",
+      "maxChannelCount": 2,
+      "numberOfInputs": 1,
+      "numberOfOutputs": 0,
+      "destinationToString": "[object AudioDestinationNode]",
+      "destinationClass": "AudioDestinationNode",
+      "closeIsNative": true,
+      "audioContextNative": "function AudioContext() { [native code] }",
+      "offlineContextNative": "function OfflineAudioContext() { [native code] }",
+      "audioContextToStringIsNative": true,
+      "offlineContextToStringIsNative": true,
+      "compressorToStringIsNative": true,
+      "analyserBinCount": 1024,
+      "analyserSample": {
+        "0": null,
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": null,
+        "6": null,
+        "7": null,
+        "8": null,
+        "9": null,
+        "10": null,
+        "11": null,
+        "12": null,
+        "13": null,
+        "14": null,
+        "15": null,
+        "16": null,
+        "17": null,
+        "18": null,
+        "19": null,
+        "20": null,
+        "21": null,
+        "22": null,
+        "23": null,
+        "24": null,
+        "25": null,
+        "26": null,
+        "27": null,
+        "28": null,
+        "29": null,
+        "30": null,
+        "31": null
+      },
+      "gainValue": 0,
+      "compressor": {
+        "threshold": {
+          "value": -24,
+          "automationRate": "k-rate",
+          "defaultValue": -24,
+          "minValue": -100,
+          "maxValue": 0
+        },
+        "knee": {
+          "value": 30,
+          "automationRate": "k-rate",
+          "defaultValue": 30,
+          "minValue": 0,
+          "maxValue": 40
+        },
+        "ratio": {
+          "value": 12,
+          "automationRate": "k-rate",
+          "defaultValue": 12,
+          "minValue": 1,
+          "maxValue": 20
+        },
+        "attack": {
+          "value": 0.003000000026077032,
+          "automationRate": "k-rate",
+          "defaultValue": 0.003000000026077032,
+          "minValue": 0,
+          "maxValue": 1
+        },
+        "release": {
+          "value": 0.25,
+          "automationRate": "k-rate",
+          "defaultValue": 0.25,
+          "minValue": 0,
+          "maxValue": 1
+        }
+      }
+    }
+  },
+  "videoFP": {
+    "screenWidth": 1600,
+    "screenHeight": 900,
+    "canPlayTypeResults": {
+      "video/webm; codecs=\"vp8, vorbis\"": "probably",
+      "video/webm; codecs=\"vp9\"": "probably",
+      "video/mp4; codecs=\"avc1.42E01E\"": "probably",
+      "video/mp4; codecs=\"hev1\"": "",
+      "video/ogg; codecs=\"theora\"": "",
+      "video/mp4; codecs=\"av01.0.05M.08\"": "probably"
+    },
+    "mediaCapabilitiesDecodingInfo": {
+      "powerEfficient": false,
+      "smooth": true,
+      "supported": true,
+      "keySystemAccess": null
+    },
+    "videoProps": {
+      "autoplay": false,
+      "controls": false,
+      "loop": false,
+      "muted": false,
+      "defaultMuted": false,
+      "playsInline": false,
+      "preload": "metadata",
+      "volume": 1,
+      "readyState": 0,
+      "networkState": 0,
+      "width": 0,
+      "height": 0,
+      "videoWidth": 0,
+      "videoHeight": 0
+    },
+    "hasTracks": {
+      "textTracks": true,
+      "audioTracks": false,
+      "videoTracks": false
+    },
+    "isNative": {
+      "canPlayType": true,
+      "constructor": true,
+      "addTextTrack": true
+    },
+    "videoFingerprintToString": {
+      "canPlayType": "function canPlayType() { [native code] }",
+      "constructor": "function HTMLVideoElement() { [native code] }",
+      "addTextTrack": "function addTextTrack() { [native code] }"
+    }
+  },
+  "audioAndVideoData": {
+    "mediaDevices": {
+      "prototype": "MediaDevices",
+      "props": []
+    },
+    "audio": {
+      "prototype": "HTMLAudioElement",
+      "props": ["constructor"],
+      "events": []
+    },
+    "video": {
+      "prototype": "HTMLVideoElement",
+      "props": [
+        "width",
+        "height",
+        "videoWidth",
+        "videoHeight",
+        "poster",
+        "webkitDecodedFrameCount",
+        "webkitDroppedFrameCount",
+        "playsInline",
+        "onenterpictureinpicture",
+        "onleavepictureinpicture",
+        "disablePictureInPicture",
+        "cancelVideoFrameCallback",
+        "getVideoPlaybackQuality",
+        "requestPictureInPicture",
+        "requestVideoFrameCallback",
+        "constructor"
+      ],
+      "events": []
+    },
+    "supportedMimeTypes": [
+      "audio/webm",
+      "audio/mp4",
+      "video/webm",
+      "video/mp4"
+    ],
+    "streamCapabilities": [
+      {
+        "kind": "audio",
+        "capabilities": {
+          "autoGainControl": [true, false],
+          "channelCount": {
+            "max": 2,
+            "min": 1
+          },
+          "deviceId": "default",
+          "echoCancellation": [true, false],
+          "groupId": "777b6847270a96763f36e3482186cc495784f04c9ed34634612653b912e85eda",
+          "latency": {
+            "max": 0.01,
+            "min": 0.002
+          },
+          "noiseSuppression": [true, false],
+          "sampleRate": {
+            "max": 48000,
+            "min": 48000
+          },
+          "sampleSize": {
+            "max": 16,
+            "min": 16
+          },
+          "voiceIsolation": [true, false]
+        },
+        "settings": {
+          "autoGainControl": true,
+          "channelCount": 1,
+          "deviceId": "default",
+          "echoCancellation": true,
+          "groupId": "777b6847270a96763f36e3482186cc495784f04c9ed34634612653b912e85eda",
+          "latency": 0.01,
+          "noiseSuppression": true,
+          "sampleRate": 48000,
+          "sampleSize": 16,
+          "voiceIsolation": false
+        },
+        "constraints": {}
+      },
+      {
+        "kind": "video",
+        "capabilities": {
+          "aspectRatio": {
+            "max": 1280,
+            "min": 0.001388888888888889
+          },
+          "brightness": {
+            "max": 64,
+            "min": -64,
+            "step": 1
+          },
+          "colorTemperature": {
+            "max": 6500,
+            "min": 2800,
+            "step": 1
+          },
+          "contrast": {
+            "max": 100,
+            "min": 0,
+            "step": 1
+          },
+          "deviceId": "64f7bc0f363e5f831a78bbe8d5e2246e1ae868103531e7fa2a1e33dd5c36f673",
+          "exposureCompensation": {
+            "max": 128,
+            "min": 0,
+            "step": 1
+          },
+          "exposureMode": ["continuous", "manual"],
+          "exposureTime": {
+            "max": 2500,
+            "min": 9.765625,
+            "step": 9.765625
+          },
+          "facingMode": ["user"],
+          "frameRate": {
+            "max": 30,
+            "min": 0
+          },
+          "groupId": "6e94754b57ec893ff13eca01418ac23a76e737af5143819d3fdde8411f2805f5",
+          "height": {
+            "max": 720,
+            "min": 1
+          },
+          "resizeMode": ["none", "crop-and-scale"],
+          "saturation": {
+            "max": 100,
+            "min": 0,
+            "step": 1
+          },
+          "sharpness": {
+            "max": 100,
+            "min": 0,
+            "step": 1
+          },
+          "whiteBalanceMode": ["continuous", "manual"],
+          "width": {
+            "max": 1280,
+            "min": 1
+          }
+        },
+        "settings": {
+          "aspectRatio": 1.3333333333333333,
+          "brightness": 0,
+          "colorTemperature": 4600,
+          "contrast": 50,
+          "deviceId": "64f7bc0f363e5f831a78bbe8d5e2246e1ae868103531e7fa2a1e33dd5c36f673",
+          "exposureCompensation": 0,
+          "exposureMode": "continuous",
+          "exposureTime": 312.5,
+          "facingMode": "user",
+          "frameRate": 30,
+          "groupId": "6e94754b57ec893ff13eca01418ac23a76e737af5143819d3fdde8411f2805f5",
+          "height": 480,
+          "resizeMode": "none",
+          "saturation": 64,
+          "sharpness": 50,
+          "whiteBalanceMode": "continuous",
+          "width": 640
+        },
+        "constraints": {}
+      }
+    ]
+  },
+  "fontsData": {
+    "fontReadyTime": "6.00",
+    "statusBeforeReady": "loaded",
+    "statusAfterReady": "loaded",
+    "fontsStatus": "loaded",
+    "documentFontsCheckIsNative": true,
+    "fontFaceSetToString": "not available",
+    "fontFaceToString": null,
+    "hasCustomFonts": false,
+    "fontDetection": [
+      {
+        "font": "Arial",
+        "detected": true
+      },
+      {
+        "font": "Times New Roman",
+        "detected": true
+      },
+      {
+        "font": "Courier New",
+        "detected": true
+      },
+      {
+        "font": "Helvetica",
+        "detected": true
+      },
+      {
+        "font": "Segoe UI",
+        "detected": true
+      },
+      {
+        "font": "Tahoma",
+        "detected": true
+      },
+      {
+        "font": "Verdana",
+        "detected": true
+      },
+      {
+        "font": "Georgia",
+        "detected": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "detected": true
+      },
+      {
+        "font": "Impact",
+        "detected": true
+      },
+      {
+        "font": "Calibri",
+        "detected": true
+      },
+      {
+        "font": "Cambria",
+        "detected": true
+      },
+      {
+        "font": "Lucida Console",
+        "detected": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "detected": true
+      },
+      {
+        "font": "Gill Sans",
+        "detected": false
+      },
+      {
+        "font": "Trebuchet MS",
+        "detected": true
+      }
+    ],
+    "fontSizeChecks": [
+      {
+        "font": "Arial",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Arial",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Arial",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Arial",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Times New Roman",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Courier New",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Helvetica",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Segoe UI",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Tahoma",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Verdana",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Georgia",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Comic Sans MS",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Impact",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Calibri",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Cambria",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Lucida Console",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Palatino Linotype",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Gill Sans",
+        "size": 18,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 12,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 14,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 16,
+        "check": true
+      },
+      {
+        "font": "Trebuchet MS",
+        "size": 18,
+        "check": true
+      }
+    ],
+    "genericSupport": [
+      {
+        "font": "serif",
+        "check": true
+      },
+      {
+        "font": "sans-serif",
+        "check": true
+      },
+      {
+        "font": "monospace",
+        "check": true
+      },
+      {
+        "font": "cursive",
+        "check": true
+      },
+      {
+        "font": "fantasy",
+        "check": true
+      },
+      {
+        "font": "system-ui",
+        "check": true
+      }
+    ],
+    "renderWidths": {
+      "Arial": {
+        "monospace": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "sans-serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Times New Roman": {
+        "monospace": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "sans-serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Courier New": {
+        "monospace": {
+          "1234567890": 432.0703125,
+          "mmmmmmmmmmlli": 561.69140625,
+          "abcdefghijklmnopqrstuvwxyz": 1123.3828125,
+          "WWWWWWWWWW": 432.0703125
+        },
+        "sans-serif": {
+          "1234567890": 432.0703125,
+          "mmmmmmmmmmlli": 561.69140625,
+          "abcdefghijklmnopqrstuvwxyz": 1123.3828125,
+          "WWWWWWWWWW": 432.0703125
+        },
+        "serif": {
+          "1234567890": 432.0703125,
+          "mmmmmmmmmmlli": 561.69140625,
+          "abcdefghijklmnopqrstuvwxyz": 1123.3828125,
+          "WWWWWWWWWW": 432.0703125
+        }
+      },
+      "Helvetica": {
+        "monospace": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "sans-serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Segoe UI": {
+        "monospace": {
+          "1234567890": 388.125,
+          "mmmmmmmmmmlli": 672.46875,
+          "abcdefghijklmnopqrstuvwxyz": 923.4140625,
+          "WWWWWWWWWW": 672.5390625
+        },
+        "sans-serif": {
+          "1234567890": 388.125,
+          "mmmmmmmmmmlli": 672.46875,
+          "abcdefghijklmnopqrstuvwxyz": 923.4140625,
+          "WWWWWWWWWW": 672.5390625
+        },
+        "serif": {
+          "1234567890": 388.125,
+          "mmmmmmmmmmlli": 672.46875,
+          "abcdefghijklmnopqrstuvwxyz": 923.4140625,
+          "WWWWWWWWWW": 672.5390625
+        }
+      },
+      "Tahoma": {
+        "monospace": {
+          "1234567890": 393.046875,
+          "mmmmmmmmmmlli": 654.328125,
+          "abcdefghijklmnopqrstuvwxyz": 914.484375,
+          "WWWWWWWWWW": 649.3359375
+        },
+        "sans-serif": {
+          "1234567890": 393.046875,
+          "mmmmmmmmmmlli": 654.328125,
+          "abcdefghijklmnopqrstuvwxyz": 914.484375,
+          "WWWWWWWWWW": 649.3359375
+        },
+        "serif": {
+          "1234567890": 393.046875,
+          "mmmmmmmmmmlli": 654.328125,
+          "abcdefghijklmnopqrstuvwxyz": 914.484375,
+          "WWWWWWWWWW": 649.3359375
+        }
+      },
+      "Verdana": {
+        "monospace": {
+          "1234567890": 457.734375,
+          "mmmmmmmmmmlli": 759.5859375,
+          "abcdefghijklmnopqrstuvwxyz": 1051.76953125,
+          "WWWWWWWWWW": 711.9140625
+        },
+        "sans-serif": {
+          "1234567890": 457.734375,
+          "mmmmmmmmmmlli": 759.5859375,
+          "abcdefghijklmnopqrstuvwxyz": 1051.76953125,
+          "WWWWWWWWWW": 711.9140625
+        },
+        "serif": {
+          "1234567890": 457.734375,
+          "mmmmmmmmmmlli": 759.5859375,
+          "abcdefghijklmnopqrstuvwxyz": 1051.76953125,
+          "WWWWWWWWWW": 711.9140625
+        }
+      },
+      "Georgia": {
+        "monospace": {
+          "1234567890": 394.3828125,
+          "mmmmmmmmmmlli": 696.515625,
+          "abcdefghijklmnopqrstuvwxyz": 934.3828125,
+          "WWWWWWWWWW": 702.421875
+        },
+        "sans-serif": {
+          "1234567890": 394.3828125,
+          "mmmmmmmmmmlli": 696.515625,
+          "abcdefghijklmnopqrstuvwxyz": 934.3828125,
+          "WWWWWWWWWW": 702.421875
+        },
+        "serif": {
+          "1234567890": 394.3828125,
+          "mmmmmmmmmmlli": 696.515625,
+          "abcdefghijklmnopqrstuvwxyz": 934.3828125,
+          "WWWWWWWWWW": 702.421875
+        }
+      },
+      "Comic Sans MS": {
+        "monospace": {
+          "1234567890": 427.921875,
+          "mmmmmmmmmmlli": 618.9609375,
+          "abcdefghijklmnopqrstuvwxyz": 973.93359375,
+          "WWWWWWWWWW": 748.4765625
+        },
+        "sans-serif": {
+          "1234567890": 427.921875,
+          "mmmmmmmmmmlli": 618.9609375,
+          "abcdefghijklmnopqrstuvwxyz": 973.93359375,
+          "WWWWWWWWWW": 748.4765625
+        },
+        "serif": {
+          "1234567890": 427.921875,
+          "mmmmmmmmmmlli": 618.9609375,
+          "abcdefghijklmnopqrstuvwxyz": 973.93359375,
+          "WWWWWWWWWW": 748.4765625
+        }
+      },
+      "Impact": {
+        "monospace": {
+          "1234567890": 358.6640625,
+          "mmmmmmmmmmlli": 614.28515625,
+          "abcdefghijklmnopqrstuvwxyz": 867.12890625,
+          "WWWWWWWWWW": 586.40625
+        },
+        "sans-serif": {
+          "1234567890": 358.6640625,
+          "mmmmmmmmmmlli": 614.28515625,
+          "abcdefghijklmnopqrstuvwxyz": 867.12890625,
+          "WWWWWWWWWW": 586.40625
+        },
+        "serif": {
+          "1234567890": 358.6640625,
+          "mmmmmmmmmmlli": 614.28515625,
+          "abcdefghijklmnopqrstuvwxyz": 867.12890625,
+          "WWWWWWWWWW": 586.40625
+        }
+      },
+      "Calibri": {
+        "monospace": {
+          "1234567890": 364.921875,
+          "mmmmmmmmmmlli": 624.7265625,
+          "abcdefghijklmnopqrstuvwxyz": 848.53125,
+          "WWWWWWWWWW": 640.546875
+        },
+        "sans-serif": {
+          "1234567890": 364.921875,
+          "mmmmmmmmmmlli": 624.7265625,
+          "abcdefghijklmnopqrstuvwxyz": 848.53125,
+          "WWWWWWWWWW": 640.546875
+        },
+        "serif": {
+          "1234567890": 364.921875,
+          "mmmmmmmmmmlli": 624.7265625,
+          "abcdefghijklmnopqrstuvwxyz": 848.53125,
+          "WWWWWWWWWW": 640.546875
+        }
+      },
+      "Cambria": {
+        "monospace": {
+          "1234567890": 398.671875,
+          "mmmmmmmmmmlli": 658.16015625,
+          "abcdefghijklmnopqrstuvwxyz": 910.72265625,
+          "WWWWWWWWWW": 663.3984375
+        },
+        "sans-serif": {
+          "1234567890": 398.671875,
+          "mmmmmmmmmmlli": 658.16015625,
+          "abcdefghijklmnopqrstuvwxyz": 910.72265625,
+          "WWWWWWWWWW": 663.3984375
+        },
+        "serif": {
+          "1234567890": 398.671875,
+          "mmmmmmmmmmlli": 658.16015625,
+          "abcdefghijklmnopqrstuvwxyz": 910.72265625,
+          "WWWWWWWWWW": 663.3984375
+        }
+      },
+      "Lucida Console": {
+        "monospace": {
+          "1234567890": 433.828125,
+          "mmmmmmmmmmlli": 563.9765625,
+          "abcdefghijklmnopqrstuvwxyz": 1127.953125,
+          "WWWWWWWWWW": 433.828125
+        },
+        "sans-serif": {
+          "1234567890": 433.828125,
+          "mmmmmmmmmmlli": 563.9765625,
+          "abcdefghijklmnopqrstuvwxyz": 1127.953125,
+          "WWWWWWWWWW": 433.828125
+        },
+        "serif": {
+          "1234567890": 433.828125,
+          "mmmmmmmmmmlli": 563.9765625,
+          "abcdefghijklmnopqrstuvwxyz": 1127.953125,
+          "WWWWWWWWWW": 433.828125
+        }
+      },
+      "Palatino Linotype": {
+        "monospace": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 698.484375,
+          "abcdefghijklmnopqrstuvwxyz": 959.1328125,
+          "WWWWWWWWWW": 720
+        },
+        "sans-serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 698.484375,
+          "abcdefghijklmnopqrstuvwxyz": 959.1328125,
+          "WWWWWWWWWW": 720
+        },
+        "serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 698.484375,
+          "abcdefghijklmnopqrstuvwxyz": 959.1328125,
+          "WWWWWWWWWW": 720
+        }
+      },
+      "Gill Sans": {
+        "monospace": {
+          "1234567890": 395.859375,
+          "mmmmmmmmmmlli": 514.6171875,
+          "abcdefghijklmnopqrstuvwxyz": 1029.234375,
+          "WWWWWWWWWW": 395.859375
+        },
+        "sans-serif": {
+          "1234567890": 400.4296875,
+          "mmmmmmmmmmlli": 647.75390625,
+          "abcdefghijklmnopqrstuvwxyz": 916.41796875,
+          "WWWWWWWWWW": 679.5703125
+        },
+        "serif": {
+          "1234567890": 360,
+          "mmmmmmmmmmlli": 620.05078125,
+          "abcdefghijklmnopqrstuvwxyz": 859.81640625,
+          "WWWWWWWWWW": 679.5703125
+        }
+      },
+      "Trebuchet MS": {
+        "monospace": {
+          "1234567890": 377.578125,
+          "mmmmmmmmmmlli": 660.65625,
+          "abcdefghijklmnopqrstuvwxyz": 937.125,
+          "WWWWWWWWWW": 613.4765625
+        },
+        "sans-serif": {
+          "1234567890": 377.578125,
+          "mmmmmmmmmmlli": 660.65625,
+          "abcdefghijklmnopqrstuvwxyz": 937.125,
+          "WWWWWWWWWW": 613.4765625
+        },
+        "serif": {
+          "1234567890": 377.578125,
+          "mmmmmmmmmmlli": 660.65625,
+          "abcdefghijklmnopqrstuvwxyz": 937.125,
+          "WWWWWWWWWW": 613.4765625
+        }
+      }
+    },
+    "renderWidthsSHA1": "9764491b90fae7deb68342d61755fd92863ead43",
+    "loadedFontFaces": [],
+    "canvasRenderHash": "5ca060810f9c0fb3f0c8eb2b4cc7e8cd644e7701"
+  },
+  "canvasSize": {
+    "width": 300,
+    "height": 150
+  },
+  "webglFP": {
+    "contextType": "webgl",
+    "vendor": "Google Inc. (Google)",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "version": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+    "timeGetParameterVersion": 0.09999999403953552,
+    "shadingLanguageVersion": "WebGL GLSL ES 1.0 (OpenGL ES GLSL ES 1.0 Chromium)",
+    "supportedExtensions": [
+      "ANGLE_instanced_arrays",
+      "EXT_blend_minmax",
+      "EXT_clip_control",
+      "EXT_color_buffer_half_float",
+      "EXT_depth_clamp",
+      "EXT_float_blend",
+      "EXT_frag_depth",
+      "EXT_polygon_offset_clamp",
+      "EXT_shader_texture_lod",
+      "EXT_texture_compression_bptc",
+      "EXT_texture_compression_rgtc",
+      "EXT_texture_filter_anisotropic",
+      "EXT_texture_mirror_clamp_to_edge",
+      "EXT_sRGB",
+      "OES_element_index_uint",
+      "OES_fbo_render_mipmap",
+      "OES_standard_derivatives",
+      "OES_texture_float",
+      "OES_texture_float_linear",
+      "OES_texture_half_float",
+      "OES_texture_half_float_linear",
+      "OES_vertex_array_object",
+      "WEBGL_color_buffer_float",
+      "WEBGL_compressed_texture_astc",
+      "WEBGL_compressed_texture_etc",
+      "WEBGL_compressed_texture_etc1",
+      "WEBGL_compressed_texture_s3tc",
+      "WEBGL_compressed_texture_s3tc_srgb",
+      "WEBGL_debug_renderer_info",
+      "WEBGL_debug_shaders",
+      "WEBGL_depth_texture",
+      "WEBGL_draw_buffers",
+      "WEBGL_lose_context",
+      "WEBGL_multi_draw",
+      "WEBGL_polygon_mode"
+    ],
+    "debugInfo": {
+      "UNMASKED_VENDOR_WEBGL": 37445,
+      "UNMASKED_RENDERER_WEBGL": 37446
+    },
+    "contextClass": "WebGLRenderingContext",
+    "floatTextureSupported": true,
+    "floatColorBufferSupported": true,
+    "halfFloatTextureSupported": true,
+    "drawBuffersSupported": true,
+    "depthTextureSupported": true,
+    "shaderLodSupported": true,
+    "debugShadersSupported": true,
+    "loseContextSupported": true,
+    "hasKhrDebug": false,
+    "khrDebugMaxDebugLoggedMessages": null,
+    "khrDebugMaxDebugMessageLength": null,
+    "khrDebugMaxDebugMessageBufferSize": null,
+    "khrDebugMaxDebugMessageArguments": null,
+    "anisotropicFiltering": true,
+    "maxAnisotropy": 16,
+    "glShadingLanguageVersion": "WebGL GLSL ES 1.0 (OpenGL ES GLSL ES 1.0 Chromium)",
+    "timeGetParameterShadingLang": 0,
+    "maxTextureSize": 8192,
+    "glRenderBufferSize": 8192,
+    "glVendor": "WebKit",
+    "timeGetParameterVendor": 0,
+    "glRenderer": "WebKit WebGL",
+    "timeGetParameterGlRenderer": 0,
+    "glAliasedLineWidthRange": {
+      "0": 1,
+      "1": 1
+    },
+    "glAliasedPointSizeRange": {
+      "0": 1,
+      "1": 1023
+    },
+    "maxCubeMapSize": null,
+    "maxCubeMapTextureSize": 16384,
+    "maxRenderBufferSize": 8192,
+    "maxVertexAttribs": 16,
+    "maxVaryingVectors": 31,
+    "maxVertexUniformVectors": 4096,
+    "maxFragmentUniformVectors": 4096,
+    "subPixelBits": 4,
+    "precisionFormats": {
+      "vertex": {
+        "high": {
+          "rangeMin": 127,
+          "rangeMax": 127,
+          "precision": 23
+        },
+        "medium": {
+          "rangeMin": 15,
+          "rangeMax": 15,
+          "precision": 10
+        },
+        "low": {
+          "rangeMin": 15,
+          "rangeMax": 15,
+          "precision": 10
+        }
+      },
+      "fragment": {
+        "high": {
+          "rangeMin": 127,
+          "rangeMax": 127,
+          "precision": 23
+        },
+        "medium": {
+          "rangeMin": 15,
+          "rangeMax": 15,
+          "precision": 10
+        },
+        "low": {
+          "rangeMin": 15,
+          "rangeMax": 15,
+          "precision": 10
+        }
+      }
+    },
+    "programChecks": {
+      "linkStatus": true,
+      "shaderCompileStatus": true,
+      "shaderLog": ""
+    },
+    "framebufferStatus": 36055,
+    "isContextLost": false,
+    "pixelsHash": 0,
+    "pixelReadAfterTextureUpload": [0, 0, 0, 0],
+    "contextAttributes": {
+      "alpha": true,
+      "depth": true,
+      "stencil": false,
+      "antialias": true,
+      "premultipliedAlpha": true,
+      "preserveDrawingBuffer": false,
+      "failIfMajorPerformanceCaveat": false
+    },
+    "drawingBufferWidth": 300,
+    "drawingBufferHeight": 150,
+    "methodToStrings": {
+      "getParameter": "function getParameter() { [native code] }",
+      "getShaderPrecisionFormat": "function getShaderPrecisionFormat() { [native code] }",
+      "getSupportedExtensions": "function getSupportedExtensions() { [native code] }",
+      "getExtension": "function getExtension() { [native code] }",
+      "readPixels": "function readPixels() { [native code] }",
+      "getError": "function getError() { [native code] }",
+      "isContextLost": "function isContextLost() { [native code] }",
+      "createProgram": "function createProgram() { [native code] }",
+      "clear": "function clear() { [native code] }",
+      "clearColor": "function clearColor() { [native code] }",
+      "useProgram": "function useProgram() { [native code] }",
+      "enableVertexAttribArray": "function enableVertexAttribArray() { [native code] }",
+      "disableVertexAttribArray": "function disableVertexAttribArray() { [native code] }",
+      "bindBuffer": "function bindBuffer() { [native code] }",
+      "bufferData": "function bufferData() { [native code] }",
+      "createShader": "function createShader() { [native code] }",
+      "shaderSource": "function shaderSource() { [native code] }",
+      "compileShader": "function compileShader() { [native code] }",
+      "createTexture": "function createTexture() { [native code] }",
+      "texImage2D": "function texImage2D() { [native code] }",
+      "drawArrays": "function drawArrays() { [native code] }",
+      "drawElements": "function drawElements() { [native code] }",
+      "getContextAttributes": "function getContextAttributes() { [native code] }"
+    }
+  }
+}

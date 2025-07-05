@@ -1,0 +1,9 @@
+/html
+/node_modules
+/screenshots
+/results
+/eng.traineddata
+/.wwebjs_auth
+/.wwebjs_cache
+/.env
+/fingerprint.json
