@@ -40,7 +40,7 @@ const waitForWaitingCountWithInterval = async (options) => {
         currentPage
       );
     } catch (err) {
-      console.error("🛑 Error during login/home open:", err.message);
+      console.log("🛑 Error during login/home open:", err.message);
       await closePageSafely(page);
       await sleep(NORMAL_TIMEOUT_DURATION);
       currentPage = undefined;
@@ -139,13 +139,13 @@ const waitForWaitingCountWithInterval = async (options) => {
       continue;
     }
 
-    // await processCollectingPatients({
-    //   browser,
-    //   patientsStore,
-    //   page,
-    //   targetText,
-    // cursor
-    // });
+    await processCollectingPatients({
+      browser,
+      patientsStore,
+      page,
+      targetText,
+      cursor,
+    });
 
     await openUserMenuAndClickHome(page, cursor);
 

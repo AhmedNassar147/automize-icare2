@@ -35,6 +35,10 @@ const processCollectingPatients = async ({
       return;
     }
 
+    await patientsStore.addPatients(filteredPatientsData.filter(Boolean));
+
+    return;
+
     const results = [];
     console.time("collecting patient data from details page");
 

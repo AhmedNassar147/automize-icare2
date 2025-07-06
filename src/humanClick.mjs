@@ -4,7 +4,6 @@
  *
  */
 import humanMouseMove from "./humanMouseMove.mjs";
-import maybeDoSomethingHuman from "./maybeDoSomethingHuman.mjs";
 
 const humanClick = async (page, cursor, selectorOrElementHandle) => {
   try {
@@ -29,8 +28,6 @@ const humanClick = async (page, cursor, selectorOrElementHandle) => {
       console.log(`Element ${selectorOrElementHandle} not found, (humanClick)`);
       return;
     }
-
-    await maybeDoSomethingHuman(cursor, 0.4);
 
     const box = await elementHandle.boundingBox();
 
