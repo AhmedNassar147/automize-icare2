@@ -5,7 +5,6 @@
  */
 import humanMouseMove from "./humanMouseMove.mjs";
 import maybeDoSomethingHuman from "./maybeDoSomethingHuman.mjs";
-import sleep from "./sleep.mjs";
 
 const humanClick = async (page, cursor, selectorOrElementHandle) => {
   try {
@@ -55,8 +54,6 @@ const humanClick = async (page, cursor, selectorOrElementHandle) => {
 
     await humanMouseMove(cursor, screenStart, target);
 
-    await sleep(100 + Math.random() * 100);
-
     const moveDelay = 40 + Math.random() * 40;
 
     // Move to and click submit
@@ -65,10 +62,8 @@ const humanClick = async (page, cursor, selectorOrElementHandle) => {
       moveDelay: moveDelay,
       randomizeMoveDelay: moveDelay * 0.4,
       radius: 4,
-      hesitate: 55,
+      hesitate: 15,
     });
-
-    await sleep(100 + Math.random() * 100);
   } catch (error) {
     console.log(
       `❌ humanClick error for selector "${selectorOrElementHandle}":`,

@@ -18,7 +18,7 @@ const humanType = async (page, cursor, selector, text) => {
 
     await cursor.click(elementHandle, {
       clickCount: 2,
-      hesitate: 15,
+      hesitate: 10,
       moveDelay: moveDelay,
       randomizeMoveDelay: moveDelay * 0.3,
       radius: 3,

@@ -4,7 +4,7 @@
  *
  */
 const randomIdleDelay = async () => {
-  const delay = 250 + Math.random() * 400;
+  const delay = 150 + Math.random() * 300;
   await new Promise((r) => setTimeout(r, delay));
 };
 

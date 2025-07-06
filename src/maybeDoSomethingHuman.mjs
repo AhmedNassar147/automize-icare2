@@ -8,7 +8,7 @@ import randomMouseJitter from "./randomMouseJitter.mjs";
 
 const maybeDoSomethingHuman = async (cursor, probability = 0.8) => {
   if (Math.random() > probability) {
-    await randomMouseJitter(cursor, 2);
+    await randomMouseJitter(cursor, 1);
     await randomIdleDelay();
   }
 };

@@ -66,8 +66,8 @@ const randomMouseJitter = async (cursor, jitterCount = 3) => {
     baseX = targetX;
     baseY = targetY;
 
-    // Pause between jitters randomly 200–600ms
-    await randomSleep(200, 600);
+    // Pause between jitters randomly 200–400ms
+    await randomSleep(200, 400);
   }
 };
 
