@@ -51,7 +51,6 @@ const makeUserLoggedInOrOpenHomePage = async (
         timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
       });
 
-      // Wait for redirect (if it happens)
       await page.waitForNavigation({
         waitUntil: "networkidle2",
         timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
@@ -66,41 +65,44 @@ const makeUserLoggedInOrOpenHomePage = async (
   }
 
   await sleep(900);
-
   if (!pageLoaded) return [page, cursor, false];
-
-  await randomMouseJitter(cursor, 2);
 
   const isLoginPage = await checkIfLoginPage(page);
   let isThereErrorWhenTryingToLogin = false;
 
-  await randomMouseJitter(cursor, 4);
+  if (!isLoginPage) {
+    await randomMouseJitter(cursor, 2);
+  }
 
   if (isLoginPage) {
     try {
-      const loginApiWaitPromise = page.waitForResponse((response) => {
-        const url = response.url();
-        const status = response.status();
-        const method = response.request().method();
-        return (
-          url.includes("/Account/Login") && status === 200 && method === "POST"
-        );
-      });
-
-      await scrollIntoView(page, cursor, "#Input_Username");
+      const loginApiWaitPromise = page.waitForResponse(
+        (response) => {
+          const url = response.url();
+          const status = response.status();
+          const method = response.request().method();
+          return (
+            url.includes("/Account/Login") &&
+            status === 200 &&
+            method === "POST"
+          );
+        },
+        { timeout: ONE_AND_HALF_MINUTE_DELAY_MS * 2 }
+      );
 
       await humanType(page, cursor, "#Input_Username", userName);
-
       await humanType(page, cursor, "#Input_Password", password);
 
-      await Promise.all([
-        page.waitForNavigation({
-          waitUntil: ["load", "networkidle2"],
-          timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
-        }),
-        humanClick(page, cursor, loginButtonSelector),
-      ]);
+      // SAFELY handle navigation
 
+      await humanClick(page, cursor, loginButtonSelector);
+
+      const navPromise = page.waitForNavigation({
+        waitUntil: ["load", "networkidle2"],
+        timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
+      });
+
+      await navPromise;
       await loginApiWaitPromise;
     } catch (error) {
       isThereErrorWhenTryingToLogin = true;
@@ -111,8 +113,6 @@ const makeUserLoggedInOrOpenHomePage = async (
   if (isThereErrorWhenTryingToLogin) return [page, cursor, false];
 
   try {
-    await maybeDoSomethingHuman(cursor, 0.6);
-
     await Promise.race([
       page.waitForURL(/\/dashboard\/referral(\/.*|\?.*)?$/i, {
         timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
@@ -123,8 +123,9 @@ const makeUserLoggedInOrOpenHomePage = async (
             timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
           });
 
-          await maybeDoSomethingHuman(cursor, 0.5);
-          await humanClick(page, cursor, dashboardLinkSelector);
+          await maybeDoSomethingHuman(cursor, 0.4);
+          // Optional: click to go to dashboard
+          // await humanClick(page, cursor, dashboardLinkSelector);
         } catch (innerError) {
           await page.screenshot({
             path: `screenshots/home-link-wait-error-${Date.now()}.png`,
@@ -138,7 +139,7 @@ const makeUserLoggedInOrOpenHomePage = async (
       })(),
     ]);
 
-    await randomMouseJitter(cursor, 3);
+    await randomMouseJitter(cursor, 1);
 
     const message = isLoginPage
       ? `✅ User ${userName} logged in successfully and landed on home page.`

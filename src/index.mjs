@@ -29,7 +29,7 @@ import {
   htmlFilesPath,
 } from "./constants.mjs";
 
-const collectConfimrdPatient = true;
+const collectConfimrdPatient = false;
 // puppeteer.use(StealthPlugin());
 
 function runSafe(fn) {

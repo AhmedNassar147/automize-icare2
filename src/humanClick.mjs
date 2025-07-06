@@ -3,8 +3,6 @@
  * Helper: `humanClick`.
  *
  */
-import humanMouseMove from "./humanMouseMove.mjs";
-
 const humanClick = async (page, cursor, selectorOrElementHandle) => {
   try {
     let elementHandle = selectorOrElementHandle;
@@ -13,7 +11,7 @@ const humanClick = async (page, cursor, selectorOrElementHandle) => {
       try {
         await page.waitForSelector(selectorOrElementHandle, {
           visible: true,
-          timeout: 2000,
+          timeout: 4000,
         });
 
         elementHandle = await page.$(selectorOrElementHandle);
@@ -38,20 +36,7 @@ const humanClick = async (page, cursor, selectorOrElementHandle) => {
       return;
     }
 
-    const target = {
-      x: box.x + box.width / 2 + (Math.random() * 4 - 2),
-      y: box.y + box.height / 2 + (Math.random() * 4 - 2),
-    };
-
-    // Optional: move from a random point on screen
-    const screenStart = {
-      x: Math.random() * 300 + 100,
-      y: Math.random() * 300 + 100,
-    };
-
-    await humanMouseMove(cursor, screenStart, target);
-
-    const moveDelay = 40 + Math.random() * 40;
+    const moveDelay = 50 + Math.random() * 30;
 
     // Move to and click submit
     await cursor.click(elementHandle, {
@@ -59,7 +44,7 @@ const humanClick = async (page, cursor, selectorOrElementHandle) => {
       moveDelay: moveDelay,
       randomizeMoveDelay: moveDelay * 0.4,
       radius: 4,
-      hesitate: 15,
+      hesitate: 12,
     });
   } catch (error) {
     console.log(
