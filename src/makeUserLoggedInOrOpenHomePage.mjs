@@ -10,6 +10,7 @@ import humanClick from "./humanClick.mjs";
 import moveFromCurrentToRandomPosition from "./moveFromCurrentToRandomPosition.mjs";
 import randomIdleDelay from "./randomIdleDelay.mjs";
 import { dashboardLinkSelector } from "./constants.mjs";
+import sleep from "./sleep.mjs";
 
 const ONE_AND_HALF_MINUTE_DELAY_MS = 1.5 * 60 * 1000;
 const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
@@ -52,6 +53,8 @@ const makeUserLoggedInOrOpenHomePage = async (
         timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
       });
 
+      await sleep(500);
+
       pageLoaded = true;
     } catch (error) {
       pageLoaded = false;
@@ -62,25 +65,19 @@ const makeUserLoggedInOrOpenHomePage = async (
 
   if (!pageLoaded) return [page, cursor, false];
 
+  console.log("CHECKING LOGIN");
+
   const isLoginPage = await checkIfLoginPage(page);
   let isThereErrorWhenTryingToLogin = false;
 
+  console.log("AFTER CHECKING LOGIN", {
+    isLoginPage,
+    pageLoaded,
+    isThereErrorWhenTryingToLogin,
+  });
+
   if (isLoginPage) {
     try {
-      const loginApiWaitPromise = page.waitForResponse(
-        (response) => {
-          const url = response.url();
-          const status = response.status();
-          const method = response.request().method();
-          return (
-            url.includes("/Account/Login") &&
-            status === 200 &&
-            method === "POST"
-          );
-        },
-        { timeout: ONE_AND_HALF_MINUTE_DELAY_MS * 2 }
-      );
-
       await humanType(page, cursor, "#Input_Username", userName);
       await humanType(page, cursor, "#Input_Password", password);
 
@@ -88,32 +85,37 @@ const makeUserLoggedInOrOpenHomePage = async (
 
       await humanClick(page, cursor, loginButtonSelector);
 
-      const navPromise = page.waitForNavigation({
+      await page.waitForNavigation({
         waitUntil: ["load", "networkidle2"],
-        timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
+        timeout: ONE_AND_HALF_MINUTE_DELAY_MS * 2,
       });
-
-      await navPromise;
-      await loginApiWaitPromise;
     } catch (error) {
       isThereErrorWhenTryingToLogin = true;
       console.error(`❌ Login failed for ${userName}: ${error.message}`);
     }
   }
 
-  if (isThereErrorWhenTryingToLogin) return [page, cursor, false];
+  console.log("AFTER LOGIN", {
+    isLoginPage,
+    pageLoaded,
+    isThereErrorWhenTryingToLogin,
+  });
+
+  if (isThereErrorWhenTryingToLogin) {
+    return [page, cursor, false];
+  }
 
   try {
-    await Promise.race([
+    await Promise.all([
       page.waitForFunction(
         () =>
           window.location.pathname
             .toLowerCase()
             .includes("/dashboard/referral"),
-        { timeout: ONE_AND_HALF_MINUTE_DELAY_MS }
+        { timeout: ONE_AND_HALF_MINUTE_DELAY_MS * 2 }
       ),
       page.waitForSelector(dashboardLinkSelector, {
-        timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
+        timeout: ONE_AND_HALF_MINUTE_DELAY_MS * 2,
       }),
     ]);
 
@@ -128,7 +130,7 @@ const makeUserLoggedInOrOpenHomePage = async (
       path: `screenshots/login-home-error-${Date.now()}.png`,
     });
 
-    console.error(
+    console.log(
       `❌ User ${userName} login succeeded, but failed to detect home page. Current URL: ${page.url()}`,
       error.message
     );

@@ -54,7 +54,7 @@ const waitForWaitingCountWithInterval = async (options) => {
     }
 
     if (!page) {
-      console.warn("⚠️ Page not available, skipping...");
+      console.log("⚠️ Page not available, skipping...");
       await sleep(NORMAL_TIMEOUT_DURATION);
       currentPage = undefined;
       cursor = undefined;
@@ -71,7 +71,7 @@ const waitForWaitingCountWithInterval = async (options) => {
         ? "Reached 5 minutes. Closing page..."
         : "Refreshing page...";
 
-      console.warn(`⚠️ Login failed. ${warningMessage}`);
+      console.log(`⚠️ Login failed. ${warningMessage}`);
 
       if (isMaxFailureReached) {
         await closePageSafely(page);
@@ -90,7 +90,7 @@ const waitForWaitingCountWithInterval = async (options) => {
       }
 
       if (refreshCount >= MAX_REFRESH_RETRIES) {
-        console.warn("⏹️ Too many refreshes. Pausing for cooldown.");
+        console.log("⏹️ Too many refreshes. Pausing for cooldown.");
         await sleep(4 * NORMAL_TIMEOUT_DURATION);
         refreshCount = 0;
       }

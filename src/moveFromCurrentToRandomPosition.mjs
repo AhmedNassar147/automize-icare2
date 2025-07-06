@@ -7,7 +7,7 @@ import humanMouseMove from "./humanMouseMove.mjs";
 import randomIdleDelay from "./randomIdleDelay.mjs";
 
 const moveFromCurrentToRandomPosition = async (cursor) => {
-  const start = cursor.getPosition();
+  const start = cursor.getLocation();
 
   // Random offset direction and distance
   const offsetX = (Math.random() > 0.5 ? 1 : -1) * (80 + Math.random() * 60);

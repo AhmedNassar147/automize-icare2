@@ -6,8 +6,8 @@
 // import extractReferralTableData from "./extractReferralTableData.mjs";
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 import openDetailsPageAndDoUserAction from "./openDetailsPageAndDoUserAction.mjs";
-import { USER_ACTION_TYPES } from "./constants.mjs";
 import processHomeTableAndCollectPatients from "./new/processHomeTableAndCollectPatients.mjs";
+import { USER_ACTION_TYPES } from "./constants.mjs";
 
 const processCollectingPatients = async ({
   browser,
@@ -25,7 +25,7 @@ const processCollectingPatients = async ({
 
     const filteredPatientLength = foundPatients.length;
 
-    if (!foundPatients) {
+    if (!filteredPatientLength) {
       console.log("✅ No new patients found.");
       return;
     }

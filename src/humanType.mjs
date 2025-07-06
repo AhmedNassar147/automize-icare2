@@ -17,10 +17,10 @@ const humanType = async (page, cursor, selector, text) => {
       hesitate: 5,
       moveDelay: moveDelay,
       randomizeMoveDelay: moveDelay * 0.3,
-      radius: 3,
+      radius: 4,
     });
 
-    const baseTypingDelay = 70 + Math.random() * 70; // 50–120ms per key
+    const baseTypingDelay = 80 + Math.random() * 70; // 50–120ms per key
 
     await page.keyboard.type(text, { delay: baseTypingDelay });
     await sleep(80 + Math.random());
