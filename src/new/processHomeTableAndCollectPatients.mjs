@@ -161,6 +161,8 @@ const processHomeTableAndCollectPatients = async ({
     await sleep(200 + Math.random() * 300); // 200–500ms
     await page.keyboard.press("ArrowDown");
 
+    return [];
+
     // Find collapsible section to scroll
     let target = null;
     try {

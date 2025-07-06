@@ -4,7 +4,7 @@
  *
  */
 import { USER_ACTION_TYPES } from "./constants.mjs";
-import clickButtonForReferralId from "./clickRowButtonForReferralIdViewer.mjs";
+// import clickButtonForReferralId from "./clickRowButtonForReferralIdViewer.mjs";
 // import openUserMenuAndClickHome from "./openUserMenuAndClickHome.mjs";
 // import closePageSafely from "./closePageSafely.mjs";
 // import getWhenCaseStarted from "./getWhenCaseStarted.mjs";
@@ -39,22 +39,24 @@ const openDetailsPageAndDoUserAction = async (options) => {
   );
 
   try {
-    const areWeInDetailsPage = await clickButtonForReferralId(page, referralId);
+    // const areWeInDetailsPage = await clickButtonForReferralId(page, referralId);
 
-    if (!areWeInDetailsPage && visitRetryCount >= MAX_VISIT_RETRIES) {
-      return {
-        success: false,
-        message: `❌ patient=${patientName} referralId=${referralId} not found in table, tried ${MAX_VISIT_RETRIES} times.`,
-        patientDetails,
-      };
-    }
+    // if (!areWeInDetailsPage && visitRetryCount >= MAX_VISIT_RETRIES) {
+    //   return {
+    //     success: false,
+    //     message: `❌ patient=${patientName} referralId=${referralId} not found in table, tried ${MAX_VISIT_RETRIES} times.`,
+    //     patientDetails,
+    //   };
+    // }
 
-    if (!areWeInDetailsPage) {
-      return await openDetailsPageAndDoUserAction({
-        ...options,
-        visitRetryCount: visitRetryCount + 1,
-      });
-    }
+    // if (!areWeInDetailsPage) {
+    //   return await openDetailsPageAndDoUserAction({
+    //     ...options,
+    //     visitRetryCount: visitRetryCount + 1,
+    //   });
+    // }
+
+    return;
 
     // ----------------------- we are in details page --------------------------
     if (isCollectType) {
