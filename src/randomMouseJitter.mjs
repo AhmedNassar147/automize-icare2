@@ -18,7 +18,7 @@ const randomMouseJitter = async (cursor, jitterCount = 3) => {
     const targetY = baseY + (Math.random() * 10 - 5);
 
     // Dynamic speed and delay
-    const speed = 0.3 + Math.random() * 0.7; // 0.3 to 1.0
+    const speed = 0.3 + Math.random() * 0.6; // 0.3 to 1.0
     const moveDelay = 20 + Math.random() * 50;
     const randomizeMoveDelay = 3 + Math.random() * 5;
 
@@ -66,8 +66,8 @@ const randomMouseJitter = async (cursor, jitterCount = 3) => {
     baseX = targetX;
     baseY = targetY;
 
-    // Pause between jitters randomly 200–800ms
-    await randomSleep(200, 800);
+    // Pause between jitters randomly 200–600ms
+    await randomSleep(200, 600);
   }
 };
 

@@ -6,6 +6,7 @@
  */
 
 import maybeDoSomethingHuman from "./maybeDoSomethingHuman.mjs";
+import sleep from "./sleep.mjs";
 
 const humanType = async (page, cursor, selector, text) => {
   try {
@@ -13,11 +14,11 @@ const humanType = async (page, cursor, selector, text) => {
 
     const elementHandle = await page.$(selector);
 
-    const moveDelay = 40 + Math.random() * 40;
+    const moveDelay = 30 + Math.random() * 30;
 
     await cursor.click(elementHandle, {
       clickCount: 2,
-      hesitate: 30,
+      hesitate: 15,
       moveDelay: moveDelay,
       randomizeMoveDelay: moveDelay * 0.3,
       radius: 3,
@@ -27,7 +28,7 @@ const humanType = async (page, cursor, selector, text) => {
 
     await page.keyboard.type(text, { delay: baseTypingDelay });
 
-    await sleep(250 + Math.random());
+    await sleep(150 + Math.random());
   } catch (error) {
     console.log(`❌ humanType error for selector "${selector}":`, error);
   }

@@ -138,7 +138,7 @@ const makeUserLoggedInOrOpenHomePage = async (
       })(),
     ]);
 
-    await randomMouseJitter(cursor, 4);
+    await randomMouseJitter(cursor, 3);
 
     const message = isLoginPage
       ? `✅ User ${userName} logged in successfully and landed on home page.`
