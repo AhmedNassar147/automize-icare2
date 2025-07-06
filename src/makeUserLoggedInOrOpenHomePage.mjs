@@ -114,32 +114,17 @@ const makeUserLoggedInOrOpenHomePage = async (
 
   try {
     await Promise.race([
-      page.waitForURL(/\/dashboard\/referral(\/.*|\?.*)?$/i, {
+      page.waitForFunction(
+        () =>
+          window.location.pathname
+            .toLowerCase()
+            .includes("/dashboard/referral"),
+        { timeout: ONE_AND_HALF_MINUTE_DELAY_MS }
+      ),
+      page.waitForSelector(dashboardLinkSelector, {
         timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
       }),
-      (async () => {
-        try {
-          await page.waitForSelector(dashboardLinkSelector, {
-            timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
-          });
-
-          await maybeDoSomethingHuman(cursor, 0.4);
-          // Optional: click to go to dashboard
-          // await humanClick(page, cursor, dashboardLinkSelector);
-        } catch (innerError) {
-          await page.screenshot({
-            path: `screenshots/home-link-wait-error-${Date.now()}.png`,
-          });
-          console.error(
-            `❌ Dashboard click failed. URL: ${page.url()}. Error: ${
-              innerError.message
-            }`
-          );
-        }
-      })(),
     ]);
-
-    await randomMouseJitter(cursor, 1);
 
     const message = isLoginPage
       ? `✅ User ${userName} logged in successfully and landed on home page.`
@@ -153,7 +138,8 @@ const makeUserLoggedInOrOpenHomePage = async (
     });
 
     console.error(
-      `❌ User ${userName} login succeeded, but failed to detect home page. Current URL: ${page.url()}`
+      `❌ User ${userName} login succeeded, but failed to detect home page. Current URL: ${page.url()}`,
+      error.message
     );
     return [page, cursor, false];
   } finally {
