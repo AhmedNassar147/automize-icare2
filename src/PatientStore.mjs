@@ -252,6 +252,11 @@ class PatientStore extends EventEmitter {
     });
   }
 
+  getIds() {
+    const ids = [...this.patientsById.keys()];
+    return ids;
+  }
+
   cancelPatient(referralId) {
     const isAccepted = this.goingPatientsToBeAccepted.has(referralId);
     const isRejected = this.goingPatientsToBeRejected.has(referralId);

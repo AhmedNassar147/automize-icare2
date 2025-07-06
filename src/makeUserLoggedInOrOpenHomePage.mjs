@@ -6,14 +6,10 @@
 import { createCursor } from "ghost-cursor";
 import checkIfLoginPage from "./checkIfLoginPage.mjs";
 import humanType from "./humanType.mjs";
-import humanMouseMove from "./humanMouseMove.mjs";
 import humanClick from "./humanClick.mjs";
+import moveFromCurrentToRandomPosition from "./moveFromCurrentToRandomPosition.mjs";
 import randomIdleDelay from "./randomIdleDelay.mjs";
-import randomMouseJitter from "./randomMouseJitter.mjs";
-import maybeDoSomethingHuman from "./maybeDoSomethingHuman.mjs";
-import scrollIntoView from "./scrollIntoView.mjs";
 import { dashboardLinkSelector } from "./constants.mjs";
-import sleep from "./sleep.mjs";
 
 const ONE_AND_HALF_MINUTE_DELAY_MS = 1.5 * 60 * 1000;
 const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
@@ -64,15 +60,10 @@ const makeUserLoggedInOrOpenHomePage = async (
     }
   }
 
-  await sleep(900);
   if (!pageLoaded) return [page, cursor, false];
 
   const isLoginPage = await checkIfLoginPage(page);
   let isThereErrorWhenTryingToLogin = false;
-
-  if (!isLoginPage) {
-    await randomMouseJitter(cursor, 2);
-  }
 
   if (isLoginPage) {
     try {
@@ -144,7 +135,7 @@ const makeUserLoggedInOrOpenHomePage = async (
     return [page, cursor, false];
   } finally {
     await randomIdleDelay();
-    await humanMouseMove(cursor, { x: 250, y: 300 }, { x: 500, y: 320 });
+    await moveFromCurrentToRandomPosition(cursor);
   }
 };
 

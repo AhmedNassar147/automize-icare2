@@ -43,8 +43,8 @@ const humanClick = async (page, cursor, selectorOrElementHandle) => {
       clickCount: 1,
       moveDelay: moveDelay,
       randomizeMoveDelay: moveDelay * 0.4,
-      radius: 4,
-      hesitate: 12,
+      radius: 3,
+      hesitate: 4,
     });
   } catch (error) {
     console.log(

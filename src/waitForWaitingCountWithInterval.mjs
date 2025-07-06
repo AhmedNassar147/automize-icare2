@@ -8,9 +8,12 @@ import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs
 import closePageSafely from "./closePageSafely.mjs";
 import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 import processCollectingPatients from "./processCollectingPatients.mjs";
-import openUserMenuAndClickHome from "./openUserMenuAndClickHome.mjs";
-import randomMouseJitter from "./randomMouseJitter.mjs";
-import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
+// import openUserMenuAndClickHome from "./openUserMenuAndClickHome.mjs";
+import humanClick from "./humanClick.mjs";
+import {
+  dashboardLinkSelector,
+  PATIENT_SECTIONS_STATUS,
+} from "./constants.mjs";
 
 const MAX_FAILURE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 const RETRY_FAILURE_DURATION_MS = 3 * 60 * 1000; // 3 minutes
@@ -123,7 +126,7 @@ const waitForWaitingCountWithInterval = async (options) => {
         err.message
       );
       await sleep(NORMAL_TIMEOUT_DURATION);
-      await openUserMenuAndClickHome(page, cursor);
+      await humanClick(page, cursor, dashboardLinkSelector);
       currentPage = page;
       cursor = cursor;
       refreshCount++;
@@ -133,14 +136,13 @@ const waitForWaitingCountWithInterval = async (options) => {
     if (!count) {
       console.log(`${noCountText}, refreshing...`);
       await sleep(NORMAL_TIMEOUT_DURATION);
-      await openUserMenuAndClickHome(page, cursor);
+      await humanClick(page, cursor, dashboardLinkSelector);
       currentPage = page;
       cursor = cursor;
       refreshCount++;
       continue;
     }
 
-    await randomMouseJitter(cursor, 1);
     await processCollectingPatients({
       browser,
       patientsStore,
@@ -148,8 +150,6 @@ const waitForWaitingCountWithInterval = async (options) => {
       targetText,
       cursor,
     });
-
-    await openUserMenuAndClickHome(page, cursor);
 
     currentPage = page;
     cursor = cursor;

@@ -3,39 +3,34 @@
  * Helper: `processCollectingPatients`.
  *
  */
-import extractReferralTableData from "./extractReferralTableData.mjs";
+// import extractReferralTableData from "./extractReferralTableData.mjs";
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 import openDetailsPageAndDoUserAction from "./openDetailsPageAndDoUserAction.mjs";
 import { USER_ACTION_TYPES } from "./constants.mjs";
+import processHomeTableAndCollectPatients from "./new/processHomeTableAndCollectPatients.mjs";
 
 const processCollectingPatients = async ({
   browser,
   patientsStore,
   page,
-  targetText,
+  cursor,
 }) => {
   console.log("✅ start Collecting Patients...");
   try {
-    const patientsData = await extractReferralTableData(page, targetText);
-
-    if (!patientsData || !patientsData.length) {
-      return;
-    }
-
-    const filteredPatientsData = patientsData.filter(({ referralId }) => {
-      const { patient: found } =
-        patientsStore.findPatientByReferralId(referralId);
-      return !found && !!referralId;
+    const foundPatients = await processHomeTableAndCollectPatients({
+      page,
+      cursor,
+      alreadyCollectedIds: patientsStore.getIds(),
     });
 
-    const filteredPatientLength = filteredPatientsData.length;
+    const filteredPatientLength = foundPatients.length;
 
-    if (!filteredPatientLength) {
+    if (!foundPatients) {
       console.log("✅ No new patients found.");
       return;
     }
 
-    await patientsStore.addPatients(filteredPatientsData.filter(Boolean));
+    await patientsStore.addPatients(foundPatients.filter(Boolean));
 
     return;
 

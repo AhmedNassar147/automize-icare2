@@ -1,11 +1,10 @@
+import sleep from "./sleep.mjs";
+
 /*
  *
  * Helper: `randomIdleDelay`.
  *
  */
-const randomIdleDelay = async () => {
-  const delay = 150 + Math.random() * 300;
-  await new Promise((r) => setTimeout(r, delay));
-};
+const randomIdleDelay = async () => await sleep(100 + Math.random() * 200);
 
 export default randomIdleDelay;

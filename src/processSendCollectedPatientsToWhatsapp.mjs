@@ -36,16 +36,19 @@ const processSendCollectedPatientsToWhatsapp =
       {
         patientName,
         referralDate,
+        requestDate,
+        mobileNumber,
         referralId,
         nationality,
         nationalId,
-        referralType,
+        refType: referralType,
         requiredSpecialty,
-        providerSourceName,
-        sourceZone,
-        referralReason,
+        specialty,
+        sourceProvider,
+        providerZone,
         files,
         startedAt,
+        referralCause,
         // startedAtMessage,
       },
       i
@@ -55,15 +58,17 @@ const processSendCollectedPatientsToWhatsapp =
         `⏰ *Arrived at:* \`${getReadableDate(startedAt)}\`\n` +
         `─────────────────────────────\n` +
         `👤 *Name:* ${patientName}\n` +
+        `📞 *Mobile:* ${mobileNumber}\n` +
         `🌍 *Nationality:* ${nationality || ""}\n` +
         `🆔 *National ID:* ${nationalId}\n` +
         `🔢 *Referral ID:* ${referralId}\n` +
         `🏷️ *Referral Type:* ${referralType}\n` +
         `🩺 *Specialty:* ${requiredSpecialty || ""}\n` +
-        `🏥 *Provider:* ${providerSourceName || ""}\n` +
-        `📍 *Zone:* ${sourceZone}\n` +
-        `📅 *Requested At:* ${referralDate}\n` +
-        `📅 *Reason:* ${referralReason}\n` +
+        `🩺 *sub-Specialty:* ${specialty || ""}\n` +
+        `🏥 *Provider:* ${sourceProvider || ""}\n` +
+        `📍 *Zone:* ${providerZone}\n` +
+        `📅 *Requested At:* ${referralDate || requestDate}\n` +
+        `📅 *Reason:* ${referralCause}\n` +
         `─────────────────────────────\n` +
         `🚨 *‼️ ATTENTION ‼️*\n` +
         // `*${startedAtMessage}*\n` +
