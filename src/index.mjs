@@ -21,7 +21,6 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 // import processPatientAcceptanceOrRejection from "./processPatientAcceptanceOrRejection.mjs";
-// import createBrowserFingerprint from "./createFingerprint.mjs";
 import {
   waitingPatientsFolderDirectory,
   generatedPdfsPath,
@@ -538,7 +537,6 @@ async function collectFingerprint() {
         collectConfimrdPatient,
         browser,
         patientsStore,
-        browserFingerprint,
       }))();
 
     const sendWhatsappMessage = sendMessageUsingWhatsapp(patientsStore);
@@ -568,8 +566,8 @@ async function collectFingerprint() {
     //   })
     // );
   } catch (error) {
-    console.error("❌ An error occurred in Index.mjs:", error.message);
-    console.error("Stack trace in Index.mjs:", error.stack);
+    console.log("❌ An error occurred in Index.mjs:", error.message);
+    console.log("Stack trace in Index.mjs:", error.stack);
     await shutdownAllClients();
   }
 })();
