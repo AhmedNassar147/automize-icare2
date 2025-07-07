@@ -6,10 +6,10 @@
  */
 import sleep from "./sleep.mjs";
 
-const scrollIntoView = async (page, cursor, selector, options) => {
-  const scrollDelay = options.scrollDelay ?? 30 + Math.random() * 100;
-  const scrollSpeed = options.scrollSpeed ?? 2 + Math.random() * 0.5;
-  const waitForSelector = options.waitForSelector ?? true;
+const scrollIntoView = async (page, cursor, selector, options = {}) => {
+  const scrollDelay = options?.scrollDelay ?? 30 + Math.random() * 100;
+  const scrollSpeed = options?.scrollSpeed ?? 2 + Math.random() * 0.5;
+  const waitForSelector = options?.waitForSelector ?? true;
 
   if (!selector) {
     return;

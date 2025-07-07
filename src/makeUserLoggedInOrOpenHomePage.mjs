@@ -53,7 +53,7 @@ const makeUserLoggedInOrOpenHomePage = async (
         timeout: ONE_AND_HALF_MINUTE_DELAY_MS,
       });
 
-      await sleep(500);
+      await sleep(900);
 
       pageLoaded = true;
     } catch (error) {
@@ -106,6 +106,8 @@ const makeUserLoggedInOrOpenHomePage = async (
   }
 
   try {
+    await sleep(200);
+
     await Promise.all([
       page.waitForFunction(
         () =>
@@ -136,8 +138,10 @@ const makeUserLoggedInOrOpenHomePage = async (
     );
     return [page, cursor, false];
   } finally {
+    console.log("Finally called");
     await randomIdleDelay();
     await moveFromCurrentToRandomPosition(cursor);
+    console.log("Finally called and finsihed");
   }
 };
 

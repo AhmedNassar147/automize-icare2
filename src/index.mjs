@@ -9,7 +9,6 @@ dotenv.config();
 import puppeteer from "puppeteer";
 // import puppeteer from "puppeteer-extra";
 // import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import { createCursor } from "ghost-cursor";
 import fs from "fs/promises";
 import path from "path";
 import PatientStore from "./PatientStore.mjs";
