@@ -100,11 +100,11 @@ const processHomeTableAndCollectPatients = async ({
     rows = [];
   }
 
-  console.log(`📋 Found "${rows.length}" rows to process.`);
-
   if (!rows || !rows.length) {
     return [];
   }
+
+  console.log(`📋 Found "${rows.length}" rows to process.`);
 
   for (let i = 0; i < rows.length; i++) {
     const rowId = i + 1;
