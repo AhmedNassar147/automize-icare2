@@ -42,20 +42,20 @@ const processSendCollectedPatientsToWhatsapp =
         nationality,
         nationalId,
         refType: referralType,
-        requiredSpecialty,
         specialty,
+        subSpecialty,
         sourceProvider,
         providerZone,
         files,
-        startedAt,
         referralCause,
-        // startedAtMessage,
+        caseStartedAt,
+        caseStartedAtMessage,
       },
       i
     ) => {
       const message =
         `🚨 *New Case Alert!* 🚨\n` +
-        `⏰ *Arrived at:* \`${getReadableDate(startedAt)}\`\n` +
+        `⏰ *Arrived at:* \`${getReadableDate(caseStartedAt)}\`\n` +
         `─────────────────────────────\n` +
         `👤 *Name:* ${patientName}\n` +
         `📞 *Mobile:* ${mobileNumber}\n` +
@@ -63,15 +63,15 @@ const processSendCollectedPatientsToWhatsapp =
         `🆔 *National ID:* ${nationalId}\n` +
         `🔢 *Referral ID:* ${referralId}\n` +
         `🏷️ *Referral Type:* ${referralType}\n` +
-        `🩺 *Specialty:* ${requiredSpecialty || ""}\n` +
-        `🩺 *sub-Specialty:* ${specialty || ""}\n` +
+        `🩺 *Specialty:* ${specialty || ""}\n` +
+        `🩺 *sub-Specialty:* ${subSpecialty || ""}\n` +
         `🏥 *Provider:* ${sourceProvider || ""}\n` +
         `📍 *Zone:* ${providerZone}\n` +
         `📅 *Requested At:* ${referralDate || requestDate}\n` +
         `📅 *Reason:* ${referralCause}\n` +
         `─────────────────────────────\n` +
         `🚨 *‼️ ATTENTION ‼️*\n` +
-        // `*${startedAtMessage}*\n` +
+        `*${caseStartedAtMessage}*\n` +
         `*Please review And Reply on this message with:*\n` +
         `${createConfirmationMessage()}`;
 

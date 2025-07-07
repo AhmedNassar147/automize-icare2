@@ -7,9 +7,9 @@
  * - Puppeteer
  * - Designed to work with `fingerprint-injector` (if in use)
  */
-import randomMouseJitter from "./randomMouseJitter.mjs";
-import randomIdleDelay from "./randomIdleDelay.mjs";
-import readJsonFile from "./readJsonFile.mjs";
+import randomMouseJitter from "../randomMouseJitter.mjs";
+import randomIdleDelay from "../randomIdleDelay.mjs";
+import readJsonFile from "../readJsonFile.mjs";
 
 // const fakeBrands = shuffle([
 //   { brand: "Google Chrome", version: "137" },

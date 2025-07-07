@@ -4,7 +4,7 @@
  * @param {import('puppeteer').Page} page - Puppeteer page instance
  * @param {string} targetText - The text to match (e.g. "Pending Referrals")
  * @param {boolean} shouldClickHeaderItem - Whether to click the card when found
- * @returns {{ clicked: boolean, count: number }} - Click result and count
+ * @returns Promise<{{ clicked: boolean, count: number }}> - Click result and count
  */
 const searchForItemCountAndClickItIfFound = async (
   page,

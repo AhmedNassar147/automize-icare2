@@ -273,7 +273,7 @@ const collectReferralDetailsFromApis = async (page, referralId) => {
             res.url().toLowerCase().includes(endpoint.toLowerCase()) &&
             res.status() === 200 &&
             res.request().method() === "POST",
-          { timeout: 20_000 }
+          { timeout: 15_000 }
         )
         .then(async (r) => {
           console.log(`✅ Got ${key} response`);
@@ -308,9 +308,9 @@ const collectReferralDetailsFromApis = async (page, referralId) => {
   const patientName = `${firstName} ${lastName}`.trim();
 
   const finalResult = {
-    ...patientData,
-    patientName,
     referralId,
+    patientName,
+    ...patientData,
     specialty: requiredSpecialty,
     subSpecialty: specialty || requiredSpecialty,
     ...otherDetailsData,

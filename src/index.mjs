@@ -7,10 +7,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import puppeteer from "puppeteer";
-// import puppeteer from "puppeteer-extra";
-// import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import fs from "fs/promises";
-import path from "path";
 import PatientStore from "./PatientStore.mjs";
 import waitForWaitingCountWithInterval from "./waitForWaitingCountWithInterval.mjs";
 import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
@@ -19,7 +15,7 @@ import sendMessageUsingWhatsapp, {
   shutdownAllClients,
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
-// import processPatientAcceptanceOrRejection from "./processPatientAcceptanceOrRejection.mjs";
+import processClientActionOnPatient from "./processClientActionOnPatient.mjs";
 import {
   waitingPatientsFolderDirectory,
   generatedPdfsPath,
@@ -30,456 +26,6 @@ import {
 
 const collectConfimrdPatient = false;
 // puppeteer.use(StealthPlugin());
-
-function runSafe(fn) {
-  return async (...args) => {
-    try {
-      return await fn(...args);
-    } catch (err) {
-      err.stack = err.stack
-        .split("\n")
-        .filter(
-          (line) =>
-            !line.includes("puppeteer") &&
-            !line.includes("node_modules") &&
-            !line.includes("internal")
-        )
-        .join("\n");
-      throw err;
-    }
-  };
-}
-
-const sleep = async (ms) =>
-  await new Promise((resolve) => setTimeout(resolve, ms));
-
-async function collectFingerprint() {
-  const getBrands = () => navigator.userAgentData?.brands || [];
-
-  const getValuesOfObject = (obj) => {
-    const keys = Object.getOwnPropertyNames(Object.getPrototypeOf(obj));
-
-    return keys.reduce((acc, key) => {
-      const value = obj[key];
-      const type = typeof value;
-      if (
-        type === "string" ||
-        type === "number" ||
-        type === "boolean" ||
-        type === "undefined"
-      ) {
-        acc[key] = value;
-      }
-      return acc;
-    }, {});
-  };
-
-  const getChrome = () => {
-    try {
-      return {
-        runtime: window.chrome?.runtime,
-        loadTimes: !!window.chrome?.loadTimes,
-        csi: !!window.chrome?.csi,
-        app: window.chrome?.app,
-      };
-    } catch {
-      return null;
-    }
-  };
-
-  const getPlugins = () =>
-    navigator.plugins
-      ? Array.from(navigator.plugins).map((p) => ({
-          name: p.name,
-          filename: p.filename,
-          description: p.description,
-          mimeTypes: Array.from(p).map((m) => ({
-            type: m.type,
-            description: m.description,
-            suffixes: m.suffixes,
-          })),
-        }))
-      : [];
-
-  const getMimeTypes = () =>
-    navigator.mimeTypes
-      ? Array.from(navigator.mimeTypes).map((m) => ({
-          type: m.type,
-          description: m.description,
-          suffixes: m.suffixes,
-        }))
-      : [];
-
-  const highEntropyWithEmptyArrayParam =
-    await navigator.userAgentData?.getHighEntropyValues([]);
-
-  const highEntropyWithAllParamsInArray =
-    await navigator.userAgentData?.getHighEntropyValues([
-      "architecture",
-      "bitness",
-      "brands",
-      "fullVersionList",
-      "model",
-      "mobile",
-      "platform",
-      "platformVersion",
-      "uaFullVersion",
-      "wow64",
-    ]);
-
-  return {
-    oscpu: navigator.oscpu || null,
-    buildID: navigator.buildID || null,
-    webDriver: navigator.webdriver,
-    userAgent: navigator.userAgent,
-    "navigator.userAgentData.brands": getBrands(),
-    "navigator.userAgentData.platform":
-      navigator.userAgentData?.platform || null,
-    "navigator.userAgentData.mobile": navigator.userAgentData?.mobile ?? null,
-    highEntropyWithEmptyArrayParam,
-    highEntropyWithAllParamsInArray,
-    language: navigator.language,
-    languages: navigator.languages,
-    platform: navigator.platform,
-    vendor: navigator.vendor,
-    plugins: getPlugins(),
-    plugins_length: navigator.plugins?.length || 0,
-    mimeTypes: getMimeTypes(),
-    mimeTypes_length: navigator.mimeTypes?.length || 0,
-    appCodeName: navigator.appCodeName,
-    appName: navigator.appName,
-    appVersion: navigator.appVersion,
-    product: navigator.product,
-    productSub: navigator.productSub,
-    doNotTrack: navigator.doNotTrack,
-    maxTouchPoints: navigator.maxTouchPoints,
-    hardwareConcurrency: navigator.hardwareConcurrency,
-    deviceMemory: navigator.deviceMemory,
-    pdfViewerEnabled: navigator.pdfViewerEnabled ?? null,
-    keyboardSupport: typeof navigator.keyboard !== "undefined",
-    intl: {
-      locale: Intl.DateTimeFormat().resolvedOptions().locale,
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      hourCycle: Intl.DateTimeFormat().resolvedOptions().hourCycle,
-    },
-    documentFeatures: {
-      hasHidden: "hidden" in document,
-      hasVisibilityState: "visibilityState" in document,
-      hasDocumentElement: !!document.documentElement,
-      characterSet: document.characterSet,
-    },
-    permissionsStates: await Promise.all(
-      [
-        "geolocation",
-        "notifications",
-        "camera",
-        "microphone",
-        "clipboard-read",
-        "clipboard-write",
-        "background-sync",
-        "persistent-storage",
-      ].map(async (name) => {
-        try {
-          const status = await navigator.permissions.query({ name });
-          return { name, state: status.state, statusName: status.name };
-        } catch {
-          return { name, state: "unsupported" };
-        }
-      })
-    ),
-    clipboardSupport: typeof navigator.clipboard !== "undefined",
-    geolocationSupport: typeof navigator.geolocation !== "undefined",
-    visibilityState: document.visibilityState,
-    width: window.innerWidth,
-    height: window.innerHeight,
-    outerWidth: window.outerWidth,
-    outerHeight: window.outerHeight,
-    devicePixelRatio: window.devicePixelRatio,
-    widthDiff: window.outerWidth - window.innerWidth,
-    heightDiff: window.outerHeight - window.innerHeight,
-    screen: {
-      width: screen.width,
-      height: screen.height,
-      availWidth: screen.availWidth,
-      availHeight: screen.availHeight,
-      availTop: screen.availTop,
-      availLeft: screen.availLeft,
-      colorDepth: screen.colorDepth,
-      pixelDepth: screen.pixelDepth,
-      "screen.orientation": {
-        type: screen.orientation.type,
-        angle: screen.orientation.angle,
-        lockIsFunction: typeof screen.orientation.lock === "function",
-      },
-    },
-    visualViewport: {
-      width: window.visualViewport?.width || null,
-      height: window.visualViewport?.height || null,
-      scale: window.visualViewport?.scale || null,
-    },
-    "window.chrome": getChrome(),
-    // errorStackTrace: (() => {
-    //   try {
-    //     throw new Error("test");
-    //   } catch (e) {
-    //     console.log(`ERROR`, e);
-    //     return e.stack?.split("\n");
-    //   }
-    // })(),
-    popupBlocked: (() => {
-      try {
-        const popup = window.open("", "", "width=100,height=100");
-        const blocked =
-          !popup || popup.closed || typeof popup.closed === "undefined";
-        if (popup && !popup.closed) popup.close();
-        return blocked ? "likely_blocked" : "allowed";
-      } catch {
-        return "error";
-      }
-    })(),
-    audioFingerprint: (() => {
-      try {
-        const context = new (window.AudioContext ||
-          window.webkitAudioContext)();
-        const analyser = context.createAnalyser();
-        const buffer = new Float32Array(analyser.frequencyBinCount);
-        analyser.getFloatFrequencyData(buffer);
-        return buffer.slice(0, 10);
-      } catch (e) {
-        return `Error: ${e.message}`;
-      }
-    })(),
-    canvasFingerprint: (() => {
-      try {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        ctx.textBaseline = "top";
-        ctx.font = "14px Arial";
-        ctx.fillStyle = "#f60";
-        ctx.fillRect(0, 0, 100, 100);
-        ctx.fillStyle = "#069";
-        ctx.fillText("Hello, world!", 2, 2);
-        return canvas.toDataURL();
-      } catch (e) {
-        return null;
-      }
-    })(),
-
-    canvasFingerprintHash: (() => {
-      try {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        ctx.textBaseline = "top";
-        ctx.font = "14px Arial";
-        ctx.fillStyle = "#f60";
-        ctx.fillRect(0, 0, 100, 100);
-        ctx.fillStyle = "#069";
-        ctx.fillText("Hello, world!", 2, 2);
-        const dataUrl = canvas.toDataURL();
-        let hash = 0;
-        for (let i = 0; i < dataUrl.length; i++) {
-          hash = (hash << 5) - hash + dataUrl.charCodeAt(i);
-          hash |= 0;
-        }
-        return hash;
-      } catch (e) {
-        return null;
-      }
-    })(),
-
-    offscreenCanvasSupported: typeof OffscreenCanvas !== "undefined",
-    offscreenCanvasFingerprint: await (async () => {
-      try {
-        const offscreen = new OffscreenCanvas(200, 50);
-        const ctx = offscreen.getContext("2d");
-        ctx.textBaseline = "top";
-        ctx.font = "14px Arial";
-        ctx.fillStyle = "#f60";
-        ctx.fillRect(0, 0, 100, 100);
-        ctx.fillStyle = "#069";
-        ctx.fillText("Hello, world!", 2, 2);
-        const blob = await offscreen.convertToBlob();
-        const reader = new FileReader();
-        return await new Promise((resolve, reject) => {
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      } catch (e) {
-        return null;
-      }
-    })(),
-    canvasVsOffscreenCanvasComparison: await (async () => {
-      try {
-        const draw = (ctx) => {
-          ctx.textBaseline = "top";
-          ctx.font = "14px Arial";
-          ctx.fillStyle = "#f60";
-          ctx.fillRect(0, 0, 100, 100);
-          ctx.fillStyle = "#069";
-          ctx.fillText("Hello, world!", 2, 2);
-        };
-
-        // CanvasRenderingContext2D
-        const canvas = document.createElement("canvas");
-        canvas.width = 200;
-        canvas.height = 50;
-        draw(canvas.getContext("2d"));
-        const canvasDataUrl = canvas.toDataURL();
-
-        // OffscreenCanvasRenderingContext2D
-        const offscreen = new OffscreenCanvas(200, 50);
-        draw(offscreen.getContext("2d"));
-        const blob = await offscreen.convertToBlob();
-        const offscreenDataUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-
-        return {
-          canvasDataUrl,
-          offscreenDataUrl,
-          match: canvasDataUrl === offscreenDataUrl,
-        };
-      } catch (e) {
-        return { error: e.message };
-      }
-    })(),
-    renderingTests: (() => {
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = 100;
-        canvas.height = 100;
-        const ctx = canvas.getContext("2d");
-        ctx.font = "12px Arial";
-        ctx.fillStyle = "#000";
-        ctx.fillText("x", 10.5, 10.5); // subpixel rendering
-        const data = ctx.getImageData(10, 10, 1, 1).data;
-        return {
-          pixelAtCenter: Array.from(data),
-          alphaUsed: data[3] !== 255, // transparency = possible anti-aliasing
-          likelyAntiAliased: data[0] !== 0 || data[1] !== 0 || data[2] !== 0,
-        };
-      } catch {
-        return null;
-      }
-    })(),
-
-    webgl: (() => {
-      try {
-        const canvas = document.createElement("canvas");
-        const gl =
-          canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-        const dbg = gl.getExtension("WEBGL_debug_renderer_info");
-        return {
-          VENDOR: gl.getParameter(gl.VENDOR),
-          RENDERER: gl.getParameter(gl.RENDERER),
-          UNMASKED_VENDOR_WEBGL: dbg
-            ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)
-            : null,
-          UNMASKED_RENDERER_WEBGL: dbg
-            ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
-            : null,
-          supportedExtensions: gl.getSupportedExtensions(),
-          shaderPrecision: {
-            vertex: {
-              high: getValuesOfObject(
-                gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT)
-              ),
-              medium: getValuesOfObject(
-                gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.MEDIUM_FLOAT)
-              ),
-              low: getValuesOfObject(
-                gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.LOW_FLOAT)
-              ),
-            },
-            fragment: {
-              high: getValuesOfObject(
-                gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT)
-              ),
-              medium: getValuesOfObject(
-                gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_FLOAT)
-              ),
-              low: getValuesOfObject(
-                gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.LOW_FLOAT)
-              ),
-            },
-          },
-        };
-      } catch (e) {
-        return null;
-      }
-    })(),
-    connection: (() => {
-      try {
-        const conn =
-          navigator.connection ||
-          navigator.mozConnection ||
-          navigator.webkitConnection;
-        return conn
-          ? {
-              downlink: conn.downlink,
-              effectiveType: conn.effectiveType,
-              rtt: conn.rtt,
-              saveData: conn.saveData,
-            }
-          : null;
-      } catch (e) {
-        return null;
-      }
-    })(),
-
-    mediaQueries: {
-      prefersColorScheme: window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light",
-      forcedColors: window.matchMedia("(forced-colors: active)").matches,
-      colorGamut: ["srgb", "p3", "rec2020"].find(
-        (gamut) => window.matchMedia(`(color-gamut: ${gamut})`).matches
-      ),
-    },
-
-    mediaDevices: await navigator.mediaDevices
-      ?.enumerateDevices?.()
-      .then((devices) => devices.map((d) => ({ kind: d.kind, label: d.label })))
-      .catch(() => null),
-
-    battery: await navigator
-      .getBattery?.()
-      .then((b) => ({
-        charging: b.charging,
-        chargingTime: b.chargingTime,
-        level: b.level,
-        dischargingTime: b.dischargingTime,
-      }))
-      .catch(() => null),
-
-    storageEstimate: await navigator.storage
-      ?.estimate?.()
-      .then((d) => ({
-        quota: d.quota,
-        usage: d.usage,
-      }))
-      .catch(() => null),
-
-    rtcFingerprint: await (async () => {
-      try {
-        const pc = new RTCPeerConnection({ iceServers: [] });
-        pc.createDataChannel("test");
-        const offer = await pc.createOffer();
-        pc.close();
-        return {
-          sdp: offer.sdp?.split("\n").filter((l) => l.includes("candidate")),
-        };
-      } catch {
-        return null;
-      }
-    })(),
-  };
-}
 
 // "--no-sandbox", // avoid sandbox restrictions (detectable, but sometimes needed)
 // "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
@@ -545,31 +91,481 @@ async function collectFingerprint() {
       processSendCollectedPatientsToWhatsapp(sendWhatsappMessage)
     );
 
-    // patientsStore.on("patientAccepted", async (patient) =>
-    //   processPatientAcceptanceOrRejection({
-    //     browser,
-    //     actionType: USER_ACTION_TYPES.ACCEPT,
-    //     patient,
-    //     patientsStore,
-    //     sendWhatsappMessage,
-    //   })
-    // );
+    patientsStore.on("patientAccepted", async (patient) =>
+      processClientActionOnPatient({
+        browser,
+        actionType: USER_ACTION_TYPES.ACCEPT,
+        patient,
+        patientsStore,
+        sendWhatsappMessage,
+      })
+    );
 
-    // patientsStore.on("patientRejected", async (patient) =>
-    //   processPatientAcceptanceOrRejection({
-    //     browser,
-    //     actionType: USER_ACTION_TYPES.REJECT,
-    //     patient,
-    //     patientsStore,
-    //     sendWhatsappMessage,
-    //   })
-    // );
+    patientsStore.on("patientRejected", async (patient) =>
+      processClientActionOnPatient({
+        browser,
+        actionType: USER_ACTION_TYPES.REJECT,
+        patient,
+        patientsStore,
+        sendWhatsappMessage,
+      })
+    );
   } catch (error) {
     console.log("❌ An error occurred in Index.mjs:", error.message);
     console.log("Stack trace in Index.mjs:", error.stack);
     await shutdownAllClients();
   }
 })();
+
+// function runSafe(fn) {
+//   return async (...args) => {
+//     try {
+//       return await fn(...args);
+//     } catch (err) {
+//       err.stack = err.stack
+//         .split("\n")
+//         .filter(
+//           (line) =>
+//             !line.includes("puppeteer") &&
+//             !line.includes("node_modules") &&
+//             !line.includes("internal")
+//         )
+//         .join("\n");
+//       throw err;
+//     }
+//   };
+// }
+
+// const sleep = async (ms) =>
+//   await new Promise((resolve) => setTimeout(resolve, ms));
+
+// async function collectFingerprint() {
+//   const getBrands = () => navigator.userAgentData?.brands || [];
+
+//   const getValuesOfObject = (obj) => {
+//     const keys = Object.getOwnPropertyNames(Object.getPrototypeOf(obj));
+
+//     return keys.reduce((acc, key) => {
+//       const value = obj[key];
+//       const type = typeof value;
+//       if (
+//         type === "string" ||
+//         type === "number" ||
+//         type === "boolean" ||
+//         type === "undefined"
+//       ) {
+//         acc[key] = value;
+//       }
+//       return acc;
+//     }, {});
+//   };
+
+//   const getChrome = () => {
+//     try {
+//       return {
+//         runtime: window.chrome?.runtime,
+//         loadTimes: !!window.chrome?.loadTimes,
+//         csi: !!window.chrome?.csi,
+//         app: window.chrome?.app,
+//       };
+//     } catch {
+//       return null;
+//     }
+//   };
+
+//   const getPlugins = () =>
+//     navigator.plugins
+//       ? Array.from(navigator.plugins).map((p) => ({
+//           name: p.name,
+//           filename: p.filename,
+//           description: p.description,
+//           mimeTypes: Array.from(p).map((m) => ({
+//             type: m.type,
+//             description: m.description,
+//             suffixes: m.suffixes,
+//           })),
+//         }))
+//       : [];
+
+//   const getMimeTypes = () =>
+//     navigator.mimeTypes
+//       ? Array.from(navigator.mimeTypes).map((m) => ({
+//           type: m.type,
+//           description: m.description,
+//           suffixes: m.suffixes,
+//         }))
+//       : [];
+
+//   const highEntropyWithEmptyArrayParam =
+//     await navigator.userAgentData?.getHighEntropyValues([]);
+
+//   const highEntropyWithAllParamsInArray =
+//     await navigator.userAgentData?.getHighEntropyValues([
+//       "architecture",
+//       "bitness",
+//       "brands",
+//       "fullVersionList",
+//       "model",
+//       "mobile",
+//       "platform",
+//       "platformVersion",
+//       "uaFullVersion",
+//       "wow64",
+//     ]);
+
+//   return {
+//     oscpu: navigator.oscpu || null,
+//     buildID: navigator.buildID || null,
+//     webDriver: navigator.webdriver,
+//     userAgent: navigator.userAgent,
+//     "navigator.userAgentData.brands": getBrands(),
+//     "navigator.userAgentData.platform":
+//       navigator.userAgentData?.platform || null,
+//     "navigator.userAgentData.mobile": navigator.userAgentData?.mobile ?? null,
+//     highEntropyWithEmptyArrayParam,
+//     highEntropyWithAllParamsInArray,
+//     language: navigator.language,
+//     languages: navigator.languages,
+//     platform: navigator.platform,
+//     vendor: navigator.vendor,
+//     plugins: getPlugins(),
+//     plugins_length: navigator.plugins?.length || 0,
+//     mimeTypes: getMimeTypes(),
+//     mimeTypes_length: navigator.mimeTypes?.length || 0,
+//     appCodeName: navigator.appCodeName,
+//     appName: navigator.appName,
+//     appVersion: navigator.appVersion,
+//     product: navigator.product,
+//     productSub: navigator.productSub,
+//     doNotTrack: navigator.doNotTrack,
+//     maxTouchPoints: navigator.maxTouchPoints,
+//     hardwareConcurrency: navigator.hardwareConcurrency,
+//     deviceMemory: navigator.deviceMemory,
+//     pdfViewerEnabled: navigator.pdfViewerEnabled ?? null,
+//     keyboardSupport: typeof navigator.keyboard !== "undefined",
+//     intl: {
+//       locale: Intl.DateTimeFormat().resolvedOptions().locale,
+//       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+//       hourCycle: Intl.DateTimeFormat().resolvedOptions().hourCycle,
+//     },
+//     documentFeatures: {
+//       hasHidden: "hidden" in document,
+//       hasVisibilityState: "visibilityState" in document,
+//       hasDocumentElement: !!document.documentElement,
+//       characterSet: document.characterSet,
+//     },
+//     permissionsStates: await Promise.all(
+//       [
+//         "geolocation",
+//         "notifications",
+//         "camera",
+//         "microphone",
+//         "clipboard-read",
+//         "clipboard-write",
+//         "background-sync",
+//         "persistent-storage",
+//       ].map(async (name) => {
+//         try {
+//           const status = await navigator.permissions.query({ name });
+//           return { name, state: status.state, statusName: status.name };
+//         } catch {
+//           return { name, state: "unsupported" };
+//         }
+//       })
+//     ),
+//     clipboardSupport: typeof navigator.clipboard !== "undefined",
+//     geolocationSupport: typeof navigator.geolocation !== "undefined",
+//     visibilityState: document.visibilityState,
+//     width: window.innerWidth,
+//     height: window.innerHeight,
+//     outerWidth: window.outerWidth,
+//     outerHeight: window.outerHeight,
+//     devicePixelRatio: window.devicePixelRatio,
+//     widthDiff: window.outerWidth - window.innerWidth,
+//     heightDiff: window.outerHeight - window.innerHeight,
+//     screen: {
+//       width: screen.width,
+//       height: screen.height,
+//       availWidth: screen.availWidth,
+//       availHeight: screen.availHeight,
+//       availTop: screen.availTop,
+//       availLeft: screen.availLeft,
+//       colorDepth: screen.colorDepth,
+//       pixelDepth: screen.pixelDepth,
+//       "screen.orientation": {
+//         type: screen.orientation.type,
+//         angle: screen.orientation.angle,
+//         lockIsFunction: typeof screen.orientation.lock === "function",
+//       },
+//     },
+//     visualViewport: {
+//       width: window.visualViewport?.width || null,
+//       height: window.visualViewport?.height || null,
+//       scale: window.visualViewport?.scale || null,
+//     },
+//     "window.chrome": getChrome(),
+//     // errorStackTrace: (() => {
+//     //   try {
+//     //     throw new Error("test");
+//     //   } catch (e) {
+//     //     console.log(`ERROR`, e);
+//     //     return e.stack?.split("\n");
+//     //   }
+//     // })(),
+//     popupBlocked: (() => {
+//       try {
+//         const popup = window.open("", "", "width=100,height=100");
+//         const blocked =
+//           !popup || popup.closed || typeof popup.closed === "undefined";
+//         if (popup && !popup.closed) popup.close();
+//         return blocked ? "likely_blocked" : "allowed";
+//       } catch {
+//         return "error";
+//       }
+//     })(),
+//     audioFingerprint: (() => {
+//       try {
+//         const context = new (window.AudioContext ||
+//           window.webkitAudioContext)();
+//         const analyser = context.createAnalyser();
+//         const buffer = new Float32Array(analyser.frequencyBinCount);
+//         analyser.getFloatFrequencyData(buffer);
+//         return buffer.slice(0, 10);
+//       } catch (e) {
+//         return `Error: ${e.message}`;
+//       }
+//     })(),
+//     canvasFingerprint: (() => {
+//       try {
+//         const canvas = document.createElement("canvas");
+//         const ctx = canvas.getContext("2d");
+//         ctx.textBaseline = "top";
+//         ctx.font = "14px Arial";
+//         ctx.fillStyle = "#f60";
+//         ctx.fillRect(0, 0, 100, 100);
+//         ctx.fillStyle = "#069";
+//         ctx.fillText("Hello, world!", 2, 2);
+//         return canvas.toDataURL();
+//       } catch (e) {
+//         return null;
+//       }
+//     })(),
+
+//     canvasFingerprintHash: (() => {
+//       try {
+//         const canvas = document.createElement("canvas");
+//         const ctx = canvas.getContext("2d");
+//         ctx.textBaseline = "top";
+//         ctx.font = "14px Arial";
+//         ctx.fillStyle = "#f60";
+//         ctx.fillRect(0, 0, 100, 100);
+//         ctx.fillStyle = "#069";
+//         ctx.fillText("Hello, world!", 2, 2);
+//         const dataUrl = canvas.toDataURL();
+//         let hash = 0;
+//         for (let i = 0; i < dataUrl.length; i++) {
+//           hash = (hash << 5) - hash + dataUrl.charCodeAt(i);
+//           hash |= 0;
+//         }
+//         return hash;
+//       } catch (e) {
+//         return null;
+//       }
+//     })(),
+
+//     offscreenCanvasSupported: typeof OffscreenCanvas !== "undefined",
+//     offscreenCanvasFingerprint: await (async () => {
+//       try {
+//         const offscreen = new OffscreenCanvas(200, 50);
+//         const ctx = offscreen.getContext("2d");
+//         ctx.textBaseline = "top";
+//         ctx.font = "14px Arial";
+//         ctx.fillStyle = "#f60";
+//         ctx.fillRect(0, 0, 100, 100);
+//         ctx.fillStyle = "#069";
+//         ctx.fillText("Hello, world!", 2, 2);
+//         const blob = await offscreen.convertToBlob();
+//         const reader = new FileReader();
+//         return await new Promise((resolve, reject) => {
+//           reader.onloadend = () => resolve(reader.result);
+//           reader.onerror = reject;
+//           reader.readAsDataURL(blob);
+//         });
+//       } catch (e) {
+//         return null;
+//       }
+//     })(),
+//     canvasVsOffscreenCanvasComparison: await (async () => {
+//       try {
+//         const draw = (ctx) => {
+//           ctx.textBaseline = "top";
+//           ctx.font = "14px Arial";
+//           ctx.fillStyle = "#f60";
+//           ctx.fillRect(0, 0, 100, 100);
+//           ctx.fillStyle = "#069";
+//           ctx.fillText("Hello, world!", 2, 2);
+//         };
+
+//         // CanvasRenderingContext2D
+//         const canvas = document.createElement("canvas");
+//         canvas.width = 200;
+//         canvas.height = 50;
+//         draw(canvas.getContext("2d"));
+//         const canvasDataUrl = canvas.toDataURL();
+
+//         // OffscreenCanvasRenderingContext2D
+//         const offscreen = new OffscreenCanvas(200, 50);
+//         draw(offscreen.getContext("2d"));
+//         const blob = await offscreen.convertToBlob();
+//         const offscreenDataUrl = await new Promise((resolve, reject) => {
+//           const reader = new FileReader();
+//           reader.onloadend = () => resolve(reader.result);
+//           reader.onerror = reject;
+//           reader.readAsDataURL(blob);
+//         });
+
+//         return {
+//           canvasDataUrl,
+//           offscreenDataUrl,
+//           match: canvasDataUrl === offscreenDataUrl,
+//         };
+//       } catch (e) {
+//         return { error: e.message };
+//       }
+//     })(),
+//     renderingTests: (() => {
+//       try {
+//         const canvas = document.createElement("canvas");
+//         canvas.width = 100;
+//         canvas.height = 100;
+//         const ctx = canvas.getContext("2d");
+//         ctx.font = "12px Arial";
+//         ctx.fillStyle = "#000";
+//         ctx.fillText("x", 10.5, 10.5); // subpixel rendering
+//         const data = ctx.getImageData(10, 10, 1, 1).data;
+//         return {
+//           pixelAtCenter: Array.from(data),
+//           alphaUsed: data[3] !== 255, // transparency = possible anti-aliasing
+//           likelyAntiAliased: data[0] !== 0 || data[1] !== 0 || data[2] !== 0,
+//         };
+//       } catch {
+//         return null;
+//       }
+//     })(),
+
+//     webgl: (() => {
+//       try {
+//         const canvas = document.createElement("canvas");
+//         const gl =
+//           canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+//         const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+//         return {
+//           VENDOR: gl.getParameter(gl.VENDOR),
+//           RENDERER: gl.getParameter(gl.RENDERER),
+//           UNMASKED_VENDOR_WEBGL: dbg
+//             ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)
+//             : null,
+//           UNMASKED_RENDERER_WEBGL: dbg
+//             ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
+//             : null,
+//           supportedExtensions: gl.getSupportedExtensions(),
+//           shaderPrecision: {
+//             vertex: {
+//               high: getValuesOfObject(
+//                 gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT)
+//               ),
+//               medium: getValuesOfObject(
+//                 gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.MEDIUM_FLOAT)
+//               ),
+//               low: getValuesOfObject(
+//                 gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.LOW_FLOAT)
+//               ),
+//             },
+//             fragment: {
+//               high: getValuesOfObject(
+//                 gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT)
+//               ),
+//               medium: getValuesOfObject(
+//                 gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_FLOAT)
+//               ),
+//               low: getValuesOfObject(
+//                 gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.LOW_FLOAT)
+//               ),
+//             },
+//           },
+//         };
+//       } catch (e) {
+//         return null;
+//       }
+//     })(),
+//     connection: (() => {
+//       try {
+//         const conn =
+//           navigator.connection ||
+//           navigator.mozConnection ||
+//           navigator.webkitConnection;
+//         return conn
+//           ? {
+//               downlink: conn.downlink,
+//               effectiveType: conn.effectiveType,
+//               rtt: conn.rtt,
+//               saveData: conn.saveData,
+//             }
+//           : null;
+//       } catch (e) {
+//         return null;
+//       }
+//     })(),
+
+//     mediaQueries: {
+//       prefersColorScheme: window.matchMedia("(prefers-color-scheme: dark)")
+//         .matches
+//         ? "dark"
+//         : "light",
+//       forcedColors: window.matchMedia("(forced-colors: active)").matches,
+//       colorGamut: ["srgb", "p3", "rec2020"].find(
+//         (gamut) => window.matchMedia(`(color-gamut: ${gamut})`).matches
+//       ),
+//     },
+
+//     mediaDevices: await navigator.mediaDevices
+//       ?.enumerateDevices?.()
+//       .then((devices) => devices.map((d) => ({ kind: d.kind, label: d.label })))
+//       .catch(() => null),
+
+//     battery: await navigator
+//       .getBattery?.()
+//       .then((b) => ({
+//         charging: b.charging,
+//         chargingTime: b.chargingTime,
+//         level: b.level,
+//         dischargingTime: b.dischargingTime,
+//       }))
+//       .catch(() => null),
+
+//     storageEstimate: await navigator.storage
+//       ?.estimate?.()
+//       .then((d) => ({
+//         quota: d.quota,
+//         usage: d.usage,
+//       }))
+//       .catch(() => null),
+
+//     rtcFingerprint: await (async () => {
+//       try {
+//         const pc = new RTCPeerConnection({ iceServers: [] });
+//         pc.createDataChannel("test");
+//         const offer = await pc.createOffer();
+//         pc.close();
+//         return {
+//           sdp: offer.sdp?.split("\n").filter((l) => l.includes("candidate")),
+//         };
+//       } catch {
+//         return null;
+//       }
+//     })(),
+//   };
+// }
 
 // await page.goto(
 //   "https://szchenghuang.github.io/react-google-invisible-recaptcha",
@@ -1086,80 +1082,6 @@ async function collectFingerprint() {
 // 200 Ok
 
 // ----------------------
-// download attachment
-// Request URL
-// https://referralprogram.globemedsaudi.com/referrals/download-attachment/3090
-// Request Method
-// GET
-// Status Code
-// 200 Ok
-
-// get attachment files
-// https://referralprogram.globemedsaudi.com/referrals/attachments
-// {
-//     "data": [
-//         {
-//             "idProvider": null,
-//             "canAttach": false,
-//             "idAttachment": "3090",
-//             "fileName": "1122766551.pdf",
-//             "fileExtension": 0,
-//             "attachmentType": "Medical Report",
-//             "attachmentDate": "0001-01-01T00:00:00",
-//             "content": null
-//         },
-//         {
-//             "idProvider": null,
-//             "canAttach": false,
-//             "idAttachment": "3091",
-//             "fileName": "__احالة بيبي امل حسن001_.pdf",
-//             "fileExtension": 0,
-//             "attachmentType": "Medical Report",
-//             "attachmentDate": "0001-01-01T00:00:00",
-//             "content": null
-//         },
-//         {
-//             "idProvider": "H509821",
-//             "canAttach": false,
-//             "idAttachment": "3107",
-//             "fileName": "350783.pdf",
-//             "fileExtension": 0,
-//             "attachmentType": "Acceptance",
-//             "attachmentDate": "0001-01-01T00:00:00",
-//             "content": null
-//         }
-//     ],
-//     "statusCode": "Success",
-//     "errorMessage": null
-// }
-
-// attachment types
-// Request URL
-// https://referralprogram.globemedsaudi.com/referrals/attachment-types?languageCode=1
-// Request Method
-// GET
-// Status Code
-// 200 OK
-
-// returns
-// {
-//     "data": [
-//         {
-//             "id": 14,
-//             "code": "14",
-//             "languageCode": "1",
-//             "description": "Acceptance"
-//         },
-//         {
-//             "id": 21,
-//             "code": "21",
-//             "languageCode": "1",
-//             "description": "Rejection"
-//         }
-//     ],
-//     "statusCode": "Success",
-//     "errorMessage": null
-// }
 
 // loginpage link https://identityserver.globemedsaudi.com
 // https://referralprogram.globemedsaudi.com/referral/details

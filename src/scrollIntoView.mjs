@@ -2,18 +2,14 @@
  *
  * Helper: `scrollIntoView`.
  *
- * Human-like scrollIntoView using ghost-cursor with fallback and stealth.
  */
 import sleep from "./sleep.mjs";
 
 const scrollIntoView = async (page, cursor, selector, options = {}) => {
-  const scrollDelay = options?.scrollDelay ?? 30 + Math.random() * 100;
-  const scrollSpeed = options?.scrollSpeed ?? 2 + Math.random() * 0.5;
+  const scrollSpeed = options?.scrollSpeed ?? 40 + Math.random() + 0.5;
   const waitForSelector = options?.waitForSelector ?? true;
 
-  if (!selector) {
-    return;
-  }
+  if (!selector) return;
 
   const isStringSelector = typeof selector === "string";
   let elementHandle = null;
@@ -23,46 +19,61 @@ const scrollIntoView = async (page, cursor, selector, options = {}) => {
       await page.waitForSelector(selector, { timeout: 12000 });
     }
 
-    if (isStringSelector) {
-      elementHandle = await page.$(selector);
-      if (!elementHandle) {
-        console.log(`⚠️ Element not found for selector: ${selector}`);
-        return;
-      }
-    } else {
-      elementHandle = selector;
+    elementHandle = isStringSelector ? await page.$(selector) : selector;
+
+    if (!elementHandle) {
+      console.log(`⚠️ Element not found for selector: ${selector}`);
+      return;
     }
 
-    if (elementHandle) {
-      try {
-        await cursor.scrollIntoView(elementHandle, {
-          scrollDelay,
-          scrollSpeed,
-        });
-      } catch (err) {
-        console.log(
-          "⚠️ cursor.scrollIntoView failed, using fallback",
-          err.message
-        );
+    const afterScrollDelay = 25 + Math.random() * 25;
 
-        const box = await elementHandle.boundingBox();
+    try {
+      await cursor.scrollIntoView(elementHandle, {
+        scrollSpeed,
+        scrollDelay: afterScrollDelay,
+      });
+    } catch (err) {
+      console.log("⚠️ cursor.scrollIntoView failed, using fallback");
 
-        if (box) {
-          await page.mouse.wheel({ deltaY: box.y });
-          // Optional: simulate user-triggered scroll event
-          await page.evaluate((el) => {
-            el.dispatchEvent(
-              new WheelEvent("wheel", {
-                bubbles: true,
-                cancelable: true,
-                deltaY: 100,
-              })
-            );
-          }, elementHandle);
+      const box = await elementHandle.boundingBox();
+      if (!box) return;
+
+      const totalScroll = box.y;
+      const stepHeight = 72 + Math.random() * 20; // Random: 72–90 px
+      const steps = Math.ceil(totalScroll / stepHeight);
+      const triggerEvery = Math.floor(5 + Math.random() * 3); // Random: 5–7
+
+      for (let i = 0; i < steps; i++) {
+        const progress = i / steps;
+        const inertiaFactor = 1 - Math.pow(progress, 2); // ease out
+        const delay = 15 + Math.random() * 25 + inertiaFactor * 30;
+
+        const deltaY = stepHeight * (0.9 + Math.random() * 0.2); // ~±10%
+        const deltaX = (Math.random() - 0.5) * 4; // jitter [-2, 2]
+
+        await page.mouse.wheel({ deltaY, deltaX });
+
+        if (i % triggerEvery === 0) {
+          await page.evaluate(
+            (el, dy, dx) => {
+              el.dispatchEvent(
+                new WheelEvent("wheel", {
+                  bubbles: true,
+                  cancelable: true,
+                  deltaY: dy,
+                  deltaX: dx,
+                })
+              );
+            },
+            elementHandle,
+            deltaY,
+            deltaX
+          );
         }
-      }
 
-      await sleep(100 + Math.random() * 300);
+        await sleep(delay);
+      }
     }
   } catch (error) {
     console.error(

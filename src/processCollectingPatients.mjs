@@ -3,11 +3,18 @@
  * Helper: `processCollectingPatients`.
  *
  */
-// import extractReferralTableData from "./extractReferralTableData.mjs";
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
-import openDetailsPageAndDoUserAction from "./openDetailsPageAndDoUserAction.mjs";
-import processHomeTableAndCollectPatients from "./new/processHomeTableAndCollectPatients.mjs";
-import { USER_ACTION_TYPES } from "./constants.mjs";
+import humanClick from "./humanClick.mjs";
+import collectReferralDetailsFromApis from "./collectReferralDetailsFromApis.mjs";
+import sleep from "./sleep.mjs";
+import moveFromCurrentToRandomPosition from "./moveFromCurrentToRandomPosition.mjs";
+import collectPatientAttachments from "./collectPatientAttachments.mjs";
+import goToHomePage from "./goToHomePage.mjs";
+import getWhenCaseStarted from "./getWhenCaseStarted.mjs";
+import collectHomePageTableRows from "./collectHomeTableRows.mjs";
+import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
+import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
+import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
 
 const processCollectingPatients = async ({
   browser,
@@ -15,58 +22,126 @@ const processCollectingPatients = async ({
   page,
   cursor,
 }) => {
-  console.log("✅ start Collecting Patients...");
   try {
-    const foundPatients = await processHomeTableAndCollectPatients({
-      page,
-      cursor,
-      alreadyCollectedIds: patientsStore.getIds(),
-    });
+    const currentCollectdListId = [...(patientsStore.getIds() || [])];
 
-    const filteredPatientLength = foundPatients.length;
+    let processedCount = 0;
 
-    if (!filteredPatientLength) {
-      console.log("✅ No new patients found.");
-      return;
-    }
+    while (true) {
+      // 🔁 Always re-fetch rows after page changes
+      const rows = await collectHomePageTableRows(page);
 
-    await patientsStore.addPatients(foundPatients.filter(Boolean));
+      if (processedCount >= rows.length) break;
 
-    return;
+      const row = rows[processedCount];
+      processedCount++;
 
-    const results = [];
-    console.time("collecting patient data from details page");
+      console.log(`\n👉 Processing row ${processedCount} of ${rows.length}`);
 
-    for (let i = 0; i < filteredPatientLength; i++) {
-      const patient = filteredPatientsData[i];
-      const { patientDetails, message } = await openDetailsPageAndDoUserAction({
-        actionType: USER_ACTION_TYPES.COLLECT,
-        browser,
-        page,
-        patient,
-        goBackFinally: true,
-      });
+      const referralId = await getReferralIdBasedTableRow(page, row);
 
-      if (patientDetails) {
-        results.push(patientDetails);
+      if (!referralId) {
+        console.log(`⏩ Skipping not found referralId: ${referralId}`);
+        continue;
       }
 
-      console.log(message);
-    }
+      if (currentCollectdListId.includes(referralId)) {
+        continue;
+      }
 
-    await patientsStore.addPatients(results.filter(Boolean));
-    console.timeEnd("collecting patient data from details page");
+      const button = await row.$("td:last-child button");
+      if (!button) {
+        console.log("⚠️ No button found in this row, skipping...");
+        continue;
+      }
 
-    (async () => {
+      // const isButtonInvisible = await isElementInvisible(button, viewportHeight);
+
+      // if (isButtonInvisible) {
+      //   await scrollIntoView(page, cursor, button);
+      // }
+
+      console.log("✅ start monitoring apis");
+      const apiWaiter = collectReferralDetailsFromApis(page, referralId);
+
+      console.log(`✅ clicking patient button for referralId=(${referralId})`);
+
+      await Promise.all([
+        page.waitForNavigation({
+          waitUntil: "domcontentloaded",
+        }),
+        humanClick(page, cursor, button),
+      ]);
+
+      const logString = `details page for referralId=(${referralId})`;
+
+      console.log(`✅ waiting for ${logString}`);
+
+      const delayMs = 50 + Math.random() * 50;
+      await sleep(delayMs);
+
+      const caseStartedData = await getWhenCaseStarted(page, delayMs);
+
+      console.log(`✅ moving radnom cursor in ${logString}`);
+      await moveFromCurrentToRandomPosition(cursor);
+
+      await makeKeyboardNoise(page, logString);
+
+      const targetIndexes = [1, 3, 5].sort(() => Math.random() - 0.5);
+
+      const [viewportHeight] = await scrollDetailsPageSections({
+        cursor,
+        logString,
+        page,
+        sectionsIndices: targetIndexes,
+      });
+
+      const data = await apiWaiter;
+      const { patientName, specialty } = data || {};
+
+      if (!patientName && !specialty) {
+        console.log(`⚠️ Incomplete data in ${logString}. Skipping.`);
+        continue;
+      }
+
+      const attachmentData = await collectPatientAttachments({
+        page,
+        cursor,
+        viewportHeight,
+        patientName,
+        specialty,
+        referralId,
+      });
+
+      const finalData = {
+        ...caseStartedData,
+        ...data,
+        files: attachmentData,
+      };
+
+      await patientsStore.addPatients(finalData);
+      currentCollectdListId.push(referralId);
+
+      try {
+        await goToHomePage(page, cursor);
+      } catch (error) {
+        console.log(
+          `Error when get back to home in when collecting patient data`,
+          error.message
+        );
+      }
+
       try {
         await Promise.all([
-          generateAcceptancePdfLetters(browser, filteredPatientsData, true),
-          generateAcceptancePdfLetters(browser, filteredPatientsData),
+          generateAcceptancePdfLetters(browser, [finalData], true),
+          generateAcceptancePdfLetters(browser, [finalData], false),
         ]);
       } catch (error) {
         console.error(`🛑 Error generating PDFs`, error.message);
       }
-    })();
+    }
+
+    console.log(`✅ Collected ${processedCount} patients successfully.`);
   } catch (err) {
     console.error("🛑 Fatal error during collecting patients:", err.message);
   }

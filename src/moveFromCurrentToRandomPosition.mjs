@@ -25,18 +25,10 @@ const moveFromCurrentToRandomPosition = async (cursor) => {
   };
 
   // Step 1: Move to midpoint with human noise
-  await humanMouseMove(cursor, start, midPoint, {
-    moveDelay: 30 + Math.random() * 30,
-    randomizeMoveDelay: 5 + Math.random() * 5,
-    moveSpeed: 0.5 + Math.random() * 0.2,
-  });
+  await humanMouseMove(cursor, start, midPoint);
 
   // Step 2: Move from midpoint to final point
-  await humanMouseMove(cursor, midPoint, end, {
-    moveDelay: 30 + Math.random() * 40,
-    randomizeMoveDelay: 4 + Math.random() * 4,
-    moveSpeed: 0.6 + Math.random() * 0.2,
-  });
+  await humanMouseMove(cursor, midPoint, end);
 
   // Small final pause
   if (Math.random() > 0.3) {

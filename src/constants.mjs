@@ -32,15 +32,13 @@ export const USER_ACTION_TYPES = {
   COLLECT: "collect",
 };
 
-// the user will review patient till the 12 minute of the counter
-export const ALLOWED_MINUTES_TO_REVIEW_PATIENTS = 15;
-export const STOP_USER_ACTION_MINUTES = ALLOWED_MINUTES_TO_REVIEW_PATIENTS - 12;
+// the user will review patient till the 13 minute of the counter
+// export const STOP_USER_ACTION_MINUTES = ALLOWED_MINUTES_TO_REVIEW_PATIENTS - 13;
 
-export const SUBTRACTED_TIME_TO_PROCESS_PATIENT_MS = 30;
+export const ALLOWED_MINUTES_TO_REVIEW_PATIENTS = 15;
 
 export const EFFECTIVE_REVIEW_DURATION_MS =
-  ALLOWED_MINUTES_TO_REVIEW_PATIENTS * 60 * 1000 -
-  SUBTRACTED_TIME_TO_PROCESS_PATIENT_MS;
+  ALLOWED_MINUTES_TO_REVIEW_PATIENTS * 60_000;
 
 export const USER_MESSAGES = {
   alreadyScheduledAccept: "Patient is already scheduled for acceptance.",
@@ -70,3 +68,5 @@ export const SECTIONS_IN_DETAILS_PAGE = [
 ];
 
 export const dashboardLinkSelector = 'a[href="/dashboard/referral"]';
+
+export const APP_URL = "https://referralprogram.globemedsaudi.com";

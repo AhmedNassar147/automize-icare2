@@ -1,11 +1,11 @@
-import spoofStorage from "./spoofing/spoofStorage.mjs";
-import spoofUSB from "./spoofing/spoofUSB.mjs";
-import spoofGamepads from "./spoofing/spoofGamepads.mjs";
-import spoofBattery from "./spoofing/spoofBattery.mjs";
-import spoofCanvas from "./spoofing/spoofCanvas.mjs";
-import spoofVideoAndAudio from "./spoofing/spoofVideoAndAudio.mjs";
-import spoofPlugins from "./spoofing/spoofPlugins.mjs";
-import spoofoOrientation from "./spoofing/spoofoOrientation.mjs";
+import spoofStorage from "./spoofStorage.mjs";
+import spoofUSB from "./spoofUSB.mjs";
+import spoofGamepads from "./spoofGamepads.mjs";
+import spoofBattery from "./spoofBattery.mjs";
+import spoofCanvas from "./spoofCanvas.mjs";
+import spoofVideoAndAudio from "./spoofVideoAndAudio.mjs";
+import spoofPlugins from "./spoofPlugins.mjs";
+import spoofoOrientation from "./spoofoOrientation.mjs";
 
 (() => {
   const fp = JSON.parse(`__FINGERPRINT_JSON__`);
