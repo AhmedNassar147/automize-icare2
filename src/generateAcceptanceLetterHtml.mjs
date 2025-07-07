@@ -31,7 +31,7 @@ const tadawiFileUrl = toBase64(tadawiLogo);
 const generateAcceptanceLetterHtml = ({
   nationalId,
   patientName,
-  requestDate,
+  requestDate: _requestDate,
   referralId,
   specialty,
   subSpecialty,
@@ -41,7 +41,7 @@ const generateAcceptanceLetterHtml = ({
   bedType,
   isRejection,
 }) => {
-  const [date] = requestDate.split("T");
+  const [date] = _requestDate.split("T");
   const [year, month, day] = date.split("-");
   const requestDate = `${day}/${month}/${year}`;
 
