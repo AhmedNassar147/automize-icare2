@@ -21,9 +21,11 @@ const generateAcceptancePdfLetters = async (
 
   const tasks = patientsArray.map((patient) =>
     limit(async () => {
+      const { referralCauseDetails, ...otherPatientData } = patient;
       const page = await browser.newPage();
       const html = generateAcceptanceLetterHtml({
-        ...patient,
+        ...otherPatientData,
+        bedType: referralCauseDetails?.note,
         isRejection: !isAcceptance,
       }); // Assume you already have this
       await page.setContent(html, { waitUntil: "domcontentloaded" });

@@ -17,35 +17,33 @@ const ministryLogo = path.resolve(
 );
 
 const ehalaLogo = path.resolve(__dirname, "../images/ehala-compressed.png");
+const tadawiLogo = path.resolve(__dirname, "../images/tadawi.jpeg");
 
 const toBase64 = (imgPath) =>
   `data:image/png;base64,${fs.readFileSync(imgPath, { encoding: "base64" })}`;
 
 const ministryFileUrl = toBase64(ministryLogo);
 const ehalaFileUrl = toBase64(ehalaLogo);
+const tadawiFileUrl = toBase64(tadawiLogo);
+
+// Requested Bed Type = ICU
 
 const generateAcceptanceLetterHtml = ({
-  referralDate,
-  referralId,
-  patientName,
   nationalId,
-  referralType,
-  mainSpecialty,
+  patientName,
+  requestDate,
+  referralId,
+  specialty,
   subSpecialty,
   sourceProvider,
   nationality,
+  mobileNumber,
+  bedType,
   isRejection,
 }) => {
-  const requiredSpecialty = mainSpecialty || subSpecialty;
-
-  const localDate = new Date(referralDate || Date.now());
-
-  const requestDate = localDate.toLocaleDateString("en-SA", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    timeZone: "Asia/Riyadh",
-  }); // e.g., "22/06/2025"
+  const [date] = requestDate.split("T");
+  const [year, month, day] = date.split("-");
+  const requestDate = `${day}/${month}/${year}`;
 
   return `
 <!DOCTYPE html>
@@ -181,7 +179,10 @@ const generateAcceptanceLetterHtml = ({
     <div class="header-logos">
       <img src="${ehalaFileUrl}" alt="Referral Program">
       <div class="header-center-text">
-        المملكة العربية السعودية<br>وزارة الصحة<br>برنامج الإحالة
+        المملكة العربية السعودية
+        <br>وزارة الصحة
+        <br>برنامج الإحالة
+        <br>${isRejection ? "إشعار رفض الإحالة" : "إشعار قبول الإحالة"}
       </div>
       <img src="${ministryFileUrl}" alt="Ministry of Health">
     </div>
@@ -192,7 +193,7 @@ const generateAcceptanceLetterHtml = ({
         <td><strong>اسم المريض:</strong> ${patientName}</td>
         <td><strong>رقم الإثبات:</strong> ${nationalId}</td>
         <td><strong>الجنسية:</strong> ${nationality || "SAUDI"}</td>
-        <td><strong>رقم التواصل:</strong> -</td>
+        <td><strong>رقم التواصل:</strong> ${mobileNumber || ""}</td>
       </tr>
 
       ${
@@ -209,15 +210,13 @@ const generateAcceptanceLetterHtml = ({
       <tr class="section-title"><td colspan="4">بيانات القبول</td></tr>
       <tr>
         <td><strong>رقم الملف الطبي:</strong></td>
-        <td><strong>القسم:</strong> ${referralType || ""}</td>
-        <td><strong>الطبيب المعالج:</strong> ${requiredSpecialty || ""}</td>
+        <td><strong>القسم:</strong> ${specialty || ""}</td>
+        <td><strong>الطبيب المعالج:</strong>${subSpecialty || ""}</td>
         <td><strong>رقم الغرفة:</strong></td>
       </tr>
       <tr>
-        <td><strong>رقم السرير:</strong></td>
-        <td><strong>مدة الحجز:</strong></td>
-        <td><strong>يوم الموعد:</strong></td>
-        <td><strong>وقت الموعد:</strong></td>
+        <td><strong>نوع السرير:</strong>${bedType}</td>
+        <td><strong>مدة الحجز:</strong> ٤٨ ساعة</td>
       </tr>
       <tr>
         <td colspan="2"><strong>التاريخ الميلادي:</strong> ${requestDate}</td>
@@ -241,7 +240,12 @@ const generateAcceptanceLetterHtml = ({
 
     <div class="footer">
       <p>وتقبلوا تحياتنا</p>
-      <p><strong>TADAWI MEDICAL HOSPITAL</strong></p>
+      <div style="position: relative; width: 100%; min-height: 100px;">
+        <img src="${tadawiFileUrl}" alt="TADAWI Logo" style="height: 100px; width: 100px; position: absolute; left: 0; top: 40%; transform: translateY(-40%);" />
+        <div style="text-align: center;">
+          <strong>TADAWI MEDICAL HOSPITAL</strong>
+        </div>
+      </div>
     </div>
 
     <div class="notes-section">
