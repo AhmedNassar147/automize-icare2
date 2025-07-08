@@ -4,32 +4,37 @@
  *
  */
 import humanClick from "./humanClick.mjs";
-import isElementInvisible from "./isElementInvisible.mjs";
 import scrollIntoView from "./scrollIntoView.mjs";
 import extractExtensionFromContentDisposition from "./extractExtensionFromContentDisposition.mjs";
+import sleep from "./sleep.mjs";
 
 const collectPatientAttachments = async ({
   page,
   cursor,
   patientName,
   specialty,
-  viewportHeight,
   referralId,
 }) => {
-  const downloadIndexes = await page.$$eval(
+  const downloadButtons = await page.$$eval(
     'button[type="button"]',
     (buttons) =>
       buttons
         .map((btn, idx) => ({
           index: idx,
           text: btn.innerText.trim().toLowerCase(),
+          icon: btn.querySelector("span.material-icons")?.innerText,
         }))
-        .filter((b) => b.text.includes("download"))
+        .filter(
+          (b) =>
+            b.text.includes("download") ||
+            b.icon?.toLowerCase().includes("download_2")
+        )
         .map((b) => b.index)
   );
 
   const allButtons = await page.$$('button[type="button"]');
-  const validDownloadButtons = downloadIndexes.map((i) => allButtons[i]);
+
+  const validDownloadButtons = downloadButtons.map((i) => allButtons[i]);
 
   const logString = `for patientName=${patientName} referralId=${referralId} specialty=${specialty}`;
 
@@ -51,12 +56,13 @@ const collectPatientAttachments = async ({
       const [response] = await Promise.all([
         page.waitForResponse(
           (res) =>
-            res.url().includes("/referrals/download-attachment") &&
+            res.url().includes("/referrals/download-attachment/") &&
             res.status() === 200 &&
             res.request().method() === "GET",
-          { timeout: 13_000 }
+          { timeout: 15_000 }
         ),
         humanClick(page, cursor, btn),
+        sleep(500),
       ]);
 
       if (!response) {
@@ -86,7 +92,7 @@ const collectPatientAttachments = async ({
 
       console.log(`✅ Downloaded: ${fileName} ${logString}`);
     } catch (err) {
-      console.error(`❌ Error downloading ${logString}:`, err);
+      console.error(`❌ Error downloading ${logString}: ${err.message}`);
     }
   }
 

@@ -6,6 +6,7 @@
 import isElementInvisible from "./isElementInvisible.mjs";
 import moveFromCurrentToRandomPosition from "./moveFromCurrentToRandomPosition.mjs";
 import scrollIntoView from "./scrollIntoView.mjs";
+import sleep from "./sleep.mjs";
 
 const scrollDetailsPageSections = async ({
   page,
@@ -30,6 +31,15 @@ const scrollDetailsPageSections = async ({
 
       if (invisible) {
         await scrollIntoView(page, cursor, section);
+
+        await sleep(200);
+      }
+
+      const stillInvisible = await isElementInvisible(section, viewportHeight);
+
+      if (stillInvisible) {
+        await scrollIntoView(page, cursor, section);
+        await sleep(200);
       }
 
       _section = section;
