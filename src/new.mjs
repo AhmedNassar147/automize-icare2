@@ -1,9 +1,3 @@
-/*
- *
- * Helper: `processClientActionOnPatient`.
- *
- *
- */
 import fs from "fs";
 import path from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
@@ -21,9 +15,6 @@ import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
 } from "./constants.mjs";
-
-// https://referralprogram.globemedsaudi.com/referrals/accept-referral
-// {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null}
 
 const checkIfButtonsFound = async (page) => {
   try {
@@ -58,8 +49,6 @@ const processClientActionOnPatient = async (options) => {
 
   const logString = `details page for referralId=(${referralId})`;
 
-  console.time(`action in ${logString}`);
-
   const baseMessage = `🚨 *\`${actionName.toUpperCase()}\`* Case Alert! 🚨
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
@@ -71,14 +60,24 @@ const processClientActionOnPatient = async (options) => {
     await sendWhatsappMessage(phoneNumber, {
       message: `${baseMessage}❌ Status: *ERROR*\n*Reason*: _${message}_ ⚠️`,
     });
-    console.log(`${message} in ${logString}`);
+    console.log(message);
   };
 
-  const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
-    browser,
-    currentPage: pageFromOptions,
-    cursor: cursorFromOptions,
-  });
+  // 🔄 Login loop with retry
+  let page, cursor, isLoggedIn;
+
+  for (let i = 0; i < 3; i++) {
+    [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+      browser,
+      currentPage: pageFromOptions,
+      cursor: cursorFromOptions,
+    });
+
+    if (isLoggedIn) {
+      await sleep(1000);
+      break;
+    }
+  }
 
   if (!isLoggedIn) {
     await sendErrorMessage("Login failed after 3 attempts.");
@@ -86,7 +85,7 @@ const processClientActionOnPatient = async (options) => {
   }
 
   try {
-    await sleep(300);
+    await sleep(500);
 
     const rows = await collectHomePageTableRows(page);
 
@@ -119,7 +118,7 @@ const processClientActionOnPatient = async (options) => {
       humanClick(page, cursor, button),
     ]);
 
-    await sleep(50 + Math.random() * 50);
+    await sleep(40 + Math.random() * 50);
 
     await makeKeyboardNoise(page, logString);
 
@@ -129,9 +128,11 @@ const processClientActionOnPatient = async (options) => {
       const { totalRemainingTimeMs, hasMessageFound } =
         await getCurrentAlertRemainingTime(page);
 
+      const baseDelay = 200 + Math.random() * 50;
+
       const delayTimeMS = hasMessageFound
-        ? totalRemainingTimeMs || 150 + Math.random() * 50
-        : 200 + Math.random() * 60;
+        ? totalRemainingTimeMs || baseDelay
+        : baseDelay;
 
       await goToHomePage(page, cursor);
 
@@ -187,7 +188,7 @@ const processClientActionOnPatient = async (options) => {
 
     if (!fs.existsSync(filePath)) {
       return await sendErrorMessage(
-        `The *${actionName}* file does not exist: _${filePath}_`
+        `The *${actionName}* file does not exist: _${fileName}_`
       );
     }
 
@@ -201,12 +202,9 @@ const processClientActionOnPatient = async (options) => {
     });
 
     await fileInput.uploadFile(filePath);
-    await sleep(800 + Math.random() * 800);
+    await sleep(500 + Math.random() * 700);
+
     console.log(`✅ File uploaded successfully in ${logString}`);
-
-    const [acceptButton, rejectButton] = referralButtons;
-
-    await humanClick(page, cursor, isAcceptance ? acceptButton : rejectButton);
   } catch (error) {
     console.log(
       `🛑 Error during ${actionName} of ${referralId}:`,
@@ -215,8 +213,6 @@ const processClientActionOnPatient = async (options) => {
 
     await sendErrorMessage(`Error: in ${logString} \n ${error.message}`);
   }
-
-  console.timeEnd(`action in ${logString}`);
 };
 
 export default processClientActionOnPatient;

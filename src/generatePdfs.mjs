@@ -6,7 +6,11 @@
 import os from "os";
 import pLimit from "p-limit";
 import generateAcceptanceLetterHtml from "./generateAcceptanceLetterHtml.mjs";
-import { generatedPdfsPath, USER_ACTION_TYPES } from "./constants.mjs";
+import {
+  USER_ACTION_TYPES,
+  generatedPdfsPathForAcceptance,
+  generatedPdfsPathForRejection,
+} from "./constants.mjs";
 
 const { ACCEPT, REJECT } = USER_ACTION_TYPES;
 
@@ -36,8 +40,12 @@ const generateAcceptancePdfLetters = async (
 
       const fielName = `${isAcceptance ? ACCEPT : REJECT}-${referralId}`;
 
+      const folderPath = isAcceptance
+        ? generatedPdfsPathForAcceptance
+        : generatedPdfsPathForRejection;
+
       await page.pdf({
-        path: `${generatedPdfsPath}/${fielName}.pdf`,
+        path: `${folderPath}/${fielName}.pdf`,
         format: "A4",
         // Avoid printBackground: true unless absolutely necessary — it increases size significantly
         printBackground: false,

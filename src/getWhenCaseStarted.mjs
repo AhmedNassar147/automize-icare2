@@ -1,23 +1,20 @@
+/*
+ *
+ * Helper: `getWhenCaseStarted`.
+ *
+ */
 import { EFFECTIVE_REVIEW_DURATION_MS } from "./constants.mjs";
 import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
 
-const estimatedTimeBeforeProcessingAction = 16_000;
-const FALLBACK_BACKWARD_MS = 60_000; // 1 minute
+const estimatedTimeBeforeProcessingAction = 15_000;
 
-const formatDateToYMDHM = (date) => {
-  const pad = (n) => String(n).padStart(2, "0");
-  const padMs = (n) => String(n).padStart(3, "0");
-
-  return (
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-      date.getDate()
-    )} ` +
-    `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
-      date.getSeconds()
-    )}` +
-    `.${padMs(date.getMilliseconds())}`
-  );
-};
+const formatDateToYMDHM = (date) =>
+  new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "long",
+    timeStyle: "medium",
+    timeZone: "Asia/Riyadh",
+    hourCycle: "h12",
+  }).format(date);
 
 const formatMsToMinutesSeconds = (ms) => {
   const totalSeconds = Math.floor(ms / 1000);
@@ -33,7 +30,7 @@ const pluralize = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
  *
  * @param {import('puppeteer').Page} page - Puppeteer Page instance.
  * @param {number} artificialDelayMs - Any delay that occurred before this function runs.
- * @returns Promise<{ caseStartTime: number, caseStartedAt: string, caseStartedAtMessage: string, reviewTimeMs: number, caseWillBeSubmitMSAt: number, caseWillBeSubmitFormatted: string }>
+ * @returns Promise<{ caseStartAtMs: number, caseStartedAt: string, caseStartedAtMessage: string, reviewTimeMs: number, caseWillBeSubmtitedAtMS: number, caseWillBeSubmitAtFormatted: string }>
  */
 const getWhenCaseStarted = async (page, artificialDelayMs = 0) => {
   const now = new Date();
@@ -41,44 +38,38 @@ const getWhenCaseStarted = async (page, artificialDelayMs = 0) => {
   const { hasMessageFound, totalRemainingTimeMs } =
     await getCurrentAlertRemainingTime(page);
 
-  const totalMs = hasMessageFound ? totalRemainingTimeMs : FALLBACK_BACKWARD_MS;
+  const backTime = EFFECTIVE_REVIEW_DURATION_MS - totalRemainingTimeMs;
 
   // Infer case start time
-  const startDate = new Date(now.getTime() - totalMs - artificialDelayMs);
-  const caseStartTime = startDate.getTime();
+  const startDate = new Date(now.getTime() - backTime - artificialDelayMs);
+  const caseStartAtMs = startDate.getTime();
 
   // Adjust review time
   const reviewTimeMs = hasMessageFound
-    ? Math.max(totalMs - estimatedTimeBeforeProcessingAction, 0)
-    : Math.max(
-        EFFECTIVE_REVIEW_DURATION_MS - estimatedTimeBeforeProcessingAction,
-        0
-      );
+    ? totalRemainingTimeMs < estimatedTimeBeforeProcessingAction
+      ? totalRemainingTimeMs
+      : totalRemainingTimeMs - estimatedTimeBeforeProcessingAction
+    : EFFECTIVE_REVIEW_DURATION_MS - estimatedTimeBeforeProcessingAction;
 
   // Format output
   const { minutes: reviewMinutes, seconds: reviewSeconds } =
     formatMsToMinutesSeconds(reviewTimeMs);
-
-  const caseStartedAt = formatDateToYMDHM(startDate);
 
   const caseStartedAtMessage = `You have ${pluralize(
     reviewMinutes,
     "minute"
   )} and ${pluralize(reviewSeconds, "second")} to review.`;
 
-  const caseWillBeSubmitMSAt = caseStartTime + reviewTimeMs;
-
-  const caseWillBeSubmitFormatted = formatDateToYMDHM(
-    new Date(caseWillBeSubmitMSAt)
-  );
+  const caseWillBeSubmittedAtMS = caseStartAtMs + reviewTimeMs;
 
   return {
-    caseStartTime,
-    caseStartedAt,
+    caseLeftOffTimeInMins: backTime / 1000 / 60,
+    caseStartAtMs,
+    caseStartedAt: formatDateToYMDHM(startDate),
     caseStartedAtMessage,
     reviewTimeMs,
-    caseWillBeSubmitMSAt,
-    caseWillBeSubmitFormatted,
+    caseWillBeSubmittedAtMS,
+    caseWillBeSubmitAt: formatDateToYMDHM(caseWillBeSubmittedAtMS),
   };
 };
 

@@ -5,154 +5,74 @@
  */
 import sleep from "./sleep.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-import closePageSafely from "./closePageSafely.mjs";
 import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 import processCollectingPatients from "./processCollectingPatients.mjs";
-// import openUserMenuAndClickHome from "./openUserMenuAndClickHome.mjs";
-import humanClick from "./humanClick.mjs";
-import {
-  dashboardLinkSelector,
-  PATIENT_SECTIONS_STATUS,
-} from "./constants.mjs";
+import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 
-const MAX_FAILURE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
-const RETRY_FAILURE_DURATION_MS = 3 * 60 * 1000; // 3 minutes
-const NORMAL_TIMEOUT_DURATION = 1.5 * 60 * 1000; // 1.5 minutes
-const MAX_REFRESH_RETRIES = 10;
+const INTERVAL = 60_000 + Math.random() * 4000;
+const NOT_LOGGED_SLEEP_TIME = 20_000;
 
-const waitForWaitingCountWithInterval = async (options) => {
-  let {
-    collectConfimrdPatient = false,
-    patientsStore,
-    browser,
-    currentPage,
-    failureStartTime = null,
-  } = options;
-
+const waitForWaitingCountWithInterval = async ({
+  collectConfimrdPatient = false,
+  patientsStore,
+  browser,
+}) => {
   const { targetText, noCountText } =
     PATIENT_SECTIONS_STATUS[collectConfimrdPatient ? "CONFIRMED" : "WAITING"];
 
-  let refreshCount = 0;
+  let page, cursor;
 
   while (true) {
-    let page, cursor, isLoggedIn;
-
     try {
-      [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage(
-        browser,
-        cursor,
-        currentPage
-      );
-    } catch (err) {
-      console.log("🛑 Error during login/home open:", err.message);
-      await closePageSafely(page);
-      await sleep(NORMAL_TIMEOUT_DURATION);
-      currentPage = undefined;
-      cursor = undefined;
-      failureStartTime = failureStartTime || Date.now();
-      continue;
-    }
+      const [newPage, newCursor, isLoggedIn] =
+        await makeUserLoggedInOrOpenHomePage({
+          browser,
+          cursor,
+          currentPage: page,
+        });
 
-    if (!page) {
-      console.log("⚠️ Page not available, skipping...");
-      await sleep(NORMAL_TIMEOUT_DURATION);
-      currentPage = undefined;
-      cursor = undefined;
-      continue;
-    }
+      page = newPage;
+      cursor = newCursor;
 
-    if (!isLoggedIn) {
-      const now = Date.now();
-      const start =
-        typeof failureStartTime === "number" ? failureStartTime : now;
-      const isMaxFailureReached = now - start > MAX_FAILURE_DURATION_MS;
-
-      const warningMessage = isMaxFailureReached
-        ? "Reached 5 minutes. Closing page..."
-        : "Refreshing page...";
-
-      console.log(`⚠️ Login failed. ${warningMessage}`);
-
-      if (isMaxFailureReached) {
-        await closePageSafely(page);
-        await sleep(RETRY_FAILURE_DURATION_MS);
-        currentPage = undefined;
-        cursor = undefined;
-        failureStartTime = null;
-        refreshCount = 0;
-      } else {
-        await sleep(NORMAL_TIMEOUT_DURATION);
-        await page.reload({ waitUntil: "networkidle2" });
-        currentPage = page;
-        cursor = cursor;
-        failureStartTime = start;
-        refreshCount++;
+      if (!isLoggedIn) {
+        console.log(
+          `🔐 Not logged in, retrying in ${NOT_LOGGED_SLEEP_TIME / 1000}s...`
+        );
+        await sleep(NOT_LOGGED_SLEEP_TIME);
+        continue;
       }
 
-      if (refreshCount >= MAX_REFRESH_RETRIES) {
-        console.log("⏹️ Too many refreshes. Pausing for cooldown.");
-        await sleep(4 * NORMAL_TIMEOUT_DURATION);
-        refreshCount = 0;
-      }
-
-      continue;
-    }
-
-    // Reset failure timer and refresh counter
-    failureStartTime = null;
-    refreshCount = 0;
-
-    console.log(
-      `🧐 Searching for next patients... at ${new Date().toLocaleTimeString()}`
-    );
-
-    let clicked = false;
-    let count = 0;
-
-    const shouldClickHeaderItem = collectConfimrdPatient;
-
-    try {
-      const result = await searchForItemCountAndClickItIfFound(
+      const { count } = await searchForItemCountAndClickItIfFound(
         page,
         targetText,
-        shouldClickHeaderItem
+        collectConfimrdPatient
       );
 
-      clicked = result.clicked;
-      count = result.count;
-    } catch (err) {
-      console.error(
-        "🔍 Error while searching for patient section:",
-        err.message
+      if (!count) {
+        console.log(`${noCountText}, refreshing in ${INTERVAL / 1000}s...`);
+        await sleep(INTERVAL);
+        await page.reload({ waitUntil: "documentloaded" });
+        continue;
+      }
+
+      console.log(
+        `🧐 ${count} patient(s) found. Checking at ${new Date().toLocaleTimeString()}`
       );
-      await sleep(NORMAL_TIMEOUT_DURATION);
-      await humanClick(page, cursor, dashboardLinkSelector);
-      currentPage = page;
-      cursor = cursor;
-      refreshCount++;
-      continue;
+
+      await processCollectingPatients({
+        browser,
+        patientsStore,
+        page,
+        targetText,
+        cursor,
+      });
+    } catch (error) {
+      console.error("🛑 Unexpected error during loop:", error.message);
     }
 
-    if (!count) {
-      console.log(`${noCountText}, refreshing...`);
-      await sleep(NORMAL_TIMEOUT_DURATION);
-      await humanClick(page, cursor, dashboardLinkSelector);
-      currentPage = page;
-      cursor = cursor;
-      refreshCount++;
-      continue;
-    }
-
-    await processCollectingPatients({
-      browser,
-      patientsStore,
-      page,
-      targetText,
-      cursor,
-    });
-
-    currentPage = page;
-    cursor = cursor;
+    console.log(`refreshing in ${INTERVAL / 1000}s...`);
+    await sleep(INTERVAL);
+    await page.reload({ waitUntil: "documentloaded" });
   }
 };
 

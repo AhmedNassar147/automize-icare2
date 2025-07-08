@@ -27,14 +27,13 @@ const processCollectingPatients = async ({
     let processedCount = 0;
 
     while (true) {
-      await sleep(500);
       // 🔁 Always re-fetch rows after page changes
       const rows = await collectHomePageTableRows(page);
 
       const isThereNotNewPatients = processedCount >= rows.length;
 
       if (isThereNotNewPatients) {
-        await sleep(21_000);
+        await sleep(2_000);
         break;
       }
 
@@ -135,6 +134,8 @@ const processCollectingPatients = async ({
           error.message
         );
       }
+
+      await sleep(10);
 
       await Promise.all([
         generateAcceptancePdfLetters(browser, [finalData], true),

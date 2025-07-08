@@ -27,6 +27,7 @@ const processSendCollectedPatientsToWhatsapp =
         referralCause,
         caseStartedAt,
         caseStartedAtMessage,
+        caseWillBeSubmitAt,
         icds,
         cpts,
       },
@@ -35,6 +36,7 @@ const processSendCollectedPatientsToWhatsapp =
       const message =
         `🚨 *New Case Alert!* 🚨\n` +
         `⏰ *Started At:* \`${caseStartedAt}\`\n` +
+        `⏰ *Applicable At:* \`${caseWillBeSubmitAt}\`\n` +
         `─────────────────────────────\n` +
         `👤 *Name:* ${patientName}\n` +
         `📱 *Mobile:* ${mobileNumber}\n` +

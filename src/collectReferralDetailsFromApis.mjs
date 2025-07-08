@@ -251,7 +251,7 @@ const apiTargetsMap = {
   details: "referrals/details",
   "patient-info": "referrals/patient-info",
   icds: "referrals/icds",
-  cpts: "referrals/cpts",
+  // cpts: "referrals/cpts",
   // attachments: "referrals/attachments",
 };
 
@@ -305,6 +305,7 @@ const collectReferralDetailsFromApis = async (page, referralId) => {
     requiredSpecialty,
     specialty,
     mobileNumber: mobileNumberFromDetails,
+    message,
     ...otherDetailsData
   } = getSafe("details") ?? {};
 
@@ -317,6 +318,8 @@ const collectReferralDetailsFromApis = async (page, referralId) => {
   const patientName = `${firstName} ${lastName}`.trim();
 
   const finalResult = {
+    recievedMessageDateTimeMS: Date.now(),
+    timeMessage: message,
     referralId,
     patientName,
     ...patientData,
@@ -339,18 +342,18 @@ const collectReferralDetailsFromApis = async (page, referralId) => {
     });
   }
 
-  const cptsData = getSafe("cpts");
-  if (cptsData?.data?.length) {
-    finalResult.cpts = cptsData.data
-      .map((cpt) => {
-        if (!cpt?.description || !cpt?.serviceCode) return null;
-        return [
-          getCleanText(cpt.description),
-          `serviceCode=(${cpt.serviceCode})`,
-        ].join(" AND ");
-      })
-      .filter(Boolean);
-  }
+  // const cptsData = getSafe("cpts");
+  // if (cptsData?.data?.length) {
+  //   finalResult.cpts = cptsData.data
+  //     .map((cpt) => {
+  //       if (!cpt?.description || !cpt?.serviceCode) return null;
+  //       return [
+  //         getCleanText(cpt.description),
+  //         `serviceCode=(${cpt.serviceCode})`,
+  //       ].join(" AND ");
+  //     })
+  //     .filter(Boolean);
+  // }
 
   return finalResult;
 };

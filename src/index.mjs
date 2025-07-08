@@ -18,10 +18,11 @@ import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatien
 import processClientActionOnPatient from "./processClientActionOnPatient.mjs";
 import {
   waitingPatientsFolderDirectory,
-  generatedPdfsPath,
   COLLECTD_PATIENTS_FULL_FILE_PATH,
   USER_ACTION_TYPES,
   htmlFilesPath,
+  generatedPdfsPathForAcceptance,
+  generatedPdfsPathForRejection,
 } from "./constants.mjs";
 
 const collectConfimrdPatient = false;
@@ -42,7 +43,8 @@ const collectConfimrdPatient = false;
   try {
     await Promise.all([
       generateFolderIfNotExisting(waitingPatientsFolderDirectory),
-      generateFolderIfNotExisting(generatedPdfsPath),
+      generateFolderIfNotExisting(generatedPdfsPathForAcceptance),
+      generateFolderIfNotExisting(generatedPdfsPathForRejection),
       generateFolderIfNotExisting(htmlFilesPath),
     ]);
 
@@ -586,48 +588,6 @@ const collectConfimrdPatient = false;
 //         "totalNumberOfPages": 1,
 //         "totalNumberOfRecords": 1,
 //         "hasNext": false,
-//         "tableHeaders": [
-//             {
-//                 "id": "referralDate",
-//                 "label": "Referral Date",
-//                 "sortingId": "Referraldate"
-//             },
-//             {
-//                 "id": "idReferral",
-//                 "label": "GMS Referral Id",
-//                 "sortingId": "Id"
-//             },
-//             {
-//                 "id": "ihalatyReference",
-//                 "label": "MOH Referral Nb",
-//                 "sortingId": "Idihalaty"
-//             },
-//             {
-//                 "id": "adherentName",
-//                 "label": "Patient Name",
-//                 "sortingId": "IdpatientNavigation.Firstname"
-//             },
-//             {
-//                 "id": "adherentNationalId",
-//                 "label": "National ID",
-//                 "sortingId": "IdpatientNavigation.Nationalid"
-//             },
-//             {
-//                 "id": "referralType",
-//                 "label": "Referral Type",
-//                 "sortingId": "IdreferraltypeNavigation.Description"
-//             },
-//             {
-//                 "id": "referralReason",
-//                 "label": "Referral Reason",
-//                 "sortingId": "IdreferralreasonNavigation.Description"
-//             },
-//             {
-//                 "id": "sourceZone",
-//                 "label": "Source Zone",
-//                 "sortingId": "SourceproviderNavigation.Providerzone"
-//             }
-//         ],
 //         "result": [
 //             {
 //                 "idReferral": 350844,
@@ -645,6 +605,59 @@ const collectConfimrdPatient = false;
 //                 "status": null
 //             }
 //         ]
+//     },
+//     "statusCode": "Success",
+//     "errorMessage": null
+// }
+
+// "message": "A waiting period of 15 minutes shall pass before an action can be performed. There is 12 minute(s) and 25 second(s) remaining.",
+// "canUpdate": false,
+
+// {
+//     "data": {
+//         "requestDate": "2025-07-08T20:56:14",
+//         "creationDate": "2025-07-08T18:00:15",
+//         "ihalatyReference": "31982357",
+//         "providerName": "TADAWI MEDICALhospital- khamis Mushayt",
+//         "longitude": null,
+//         "latitude": null,
+//         "providerCode": "H523742",
+//         "providerZoneCode": "15",
+//         "providerCityCode": null,
+//         "providerRegionCode": null,
+//         "providerZone": "Asir",
+//         "referralCause": "Bed Unavailable",
+//         "requestedBedType": "Neonatal Intensive Care Unit (NICU)",
+//         "claimType": null,
+//         "doctor": null,
+//         "estimationCost": 0,
+//         "category": "HP",
+//         "sourceProvider": "Maternity and Children Hospital Abha",
+//         "referralTypeCode": "2",
+//         "refType": "Emergency",
+//         "requiredSpecialtyCode": "630",
+//         "er": false,
+//         "specialtyCode": "630",
+//         "specialty": "Neonatology",
+//         "mobileNumber": null,
+//         "claimReference": null,
+//         "lengthOfStay": 0,
+//         "referralCauseDetails": {
+//             "id": 1237,
+//             "note": "NICU",
+//             "isPublic": true,
+//             "isActive": true,
+//             "owner": null,
+//             "canDelete": null
+//         },
+//         "referralAdditionalInformation": null,
+//         "status": "P",
+//         "canUpdate": false,
+//         "requiredSpecialty": "Neonatology",
+//         "message": "A waiting period of 15 minutes shall pass before an action can be performed. There is 12 minute(s) and 25 second(s) remaining.",
+//         "isPrivate": false,
+//         "canTakeAction": true,
+//         "quotaExceededMessage": ""
 //     },
 //     "statusCode": "Success",
 //     "errorMessage": null

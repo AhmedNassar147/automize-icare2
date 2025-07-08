@@ -5,6 +5,6 @@
  */
 import sleep from "./sleep.mjs";
 
-const randomIdleDelay = async () => await sleep(100 + Math.random() * 100);
+const randomIdleDelay = async () => await sleep(120 + Math.random() * 100);
 
 export default randomIdleDelay;
