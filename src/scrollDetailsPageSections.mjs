@@ -13,7 +13,7 @@ const scrollDetailsPageSections = async ({
   cursor,
   logString,
 }) => {
-  const viewportHeight = (await page.viewport()).height;
+  const viewportHeight = await page.evaluate(() => window.innerHeight);
 
   let _section = null;
 

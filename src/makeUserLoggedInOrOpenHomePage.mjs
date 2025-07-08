@@ -7,7 +7,6 @@ import { createCursor } from "ghost-cursor";
 import checkIfLoginPage from "./checkIfLoginPage.mjs";
 import humanType from "./humanType.mjs";
 import humanClick from "./humanClick.mjs";
-import moveFromCurrentToRandomPosition from "./moveFromCurrentToRandomPosition.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import sleep from "./sleep.mjs";
 import { APP_URL } from "./constants.mjs";
@@ -34,8 +33,13 @@ const makeUserLoggedInOrOpenHomePage = async (
   if (!pageLoaded) {
     try {
       await page.goto(APP_URL, {
-        waitUntil: "domcontentloaded",
+        waitUntil: "networkidle2",
         timeout: ONE_AND_HALF_MINUTE_DELAY_MS * 2,
+      });
+
+      await page.waitForNavigation({
+        waitUntil: ["load", "networkidle2"],
+        timeout: ONE_AND_HALF_MINUTE_DELAY_MS * 3,
       });
 
       await sleep(900);
@@ -66,7 +70,7 @@ const makeUserLoggedInOrOpenHomePage = async (
       await humanClick(page, cursor, loginButtonSelector);
 
       await page.waitForNavigation({
-        waitUntil: "domcontentloaded",
+        waitUntil: "networkidle2",
         timeout: ONE_AND_HALF_MINUTE_DELAY_MS * 2,
       });
     } catch (error) {
@@ -104,10 +108,6 @@ const makeUserLoggedInOrOpenHomePage = async (
       error.message
     );
     return [page, cursor, false];
-  } finally {
-    console.log("Finally called");
-    await moveFromCurrentToRandomPosition(cursor);
-    console.log("Finally called and finsihed");
   }
 };
 

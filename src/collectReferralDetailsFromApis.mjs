@@ -301,22 +301,31 @@ const collectReferralDetailsFromApis = async (page, referralId) => {
   };
 
   const patientData = getSafe("patient-info") ?? {};
-  const { requiredSpecialty, specialty, ...otherDetailsData } =
-    getSafe("details") ?? {};
+  const {
+    requiredSpecialty,
+    specialty,
+    mobileNumber: mobileNumberFromDetails,
+    ...otherDetailsData
+  } = getSafe("details") ?? {};
 
-  const { firstName = "", lastName = "" } = patientData;
+  const {
+    firstName = "",
+    lastName = "",
+    mobileNumber: mobileNumberFromPatient,
+  } = patientData;
+
   const patientName = `${firstName} ${lastName}`.trim();
 
   const finalResult = {
     referralId,
     patientName,
     ...patientData,
+    mobileNumber: mobileNumberFromPatient || mobileNumberFromDetails,
     specialty: requiredSpecialty,
     subSpecialty: specialty || requiredSpecialty,
     ...otherDetailsData,
     icds: [],
     cpts: [],
-    attachments: [],
   };
 
   const icdsData = getSafe("icds");

@@ -44,13 +44,7 @@ const collectPatientAttachments = async ({
 
   for (const btn of validDownloadButtons) {
     try {
-      // Scroll the button into view
-      const isButtonInvisible = await isElementInvisible(btn, viewportHeight);
-
-      if (isButtonInvisible) {
-        console.log("⚡ Attempting to scroll to download button...");
-        await scrollIntoView(page, cursor, btn);
-      }
+      await scrollIntoView(page, cursor, btn);
 
       console.log("⚡ Waiting for file response and clicking button...");
 

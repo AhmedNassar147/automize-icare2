@@ -45,7 +45,7 @@ const getCurrentAlertRemainingTime = async (page) => {
       console.warn("⚠️ Time format not recognized in message:", message);
     }
   } catch (err) {
-    console.warn("⚠️ No alert message found within timeout:", err.message);
+    console.warn(`⚠️ No alert message found within timeout: ${timeout}`);
   }
 
   const totalRemainingTimeMs = (minutes * 60 + seconds) * 1000;

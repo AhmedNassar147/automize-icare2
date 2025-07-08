@@ -35,7 +35,6 @@ const processSendCollectedPatientsToWhatsapp =
     const formatPatient = (
       {
         patientName,
-        referralDate,
         requestDate,
         mobileNumber,
         referralId,
@@ -50,6 +49,8 @@ const processSendCollectedPatientsToWhatsapp =
         referralCause,
         caseStartedAt,
         caseStartedAtMessage,
+        icds,
+        cpts,
       },
       i
     ) => {
@@ -67,8 +68,10 @@ const processSendCollectedPatientsToWhatsapp =
         `🩺 *sub-Specialty:* ${subSpecialty || ""}\n` +
         `🏥 *Provider:* ${sourceProvider || ""}\n` +
         `📍 *Zone:* ${providerZone}\n` +
-        `📅 *Requested At:* ${referralDate || requestDate}\n` +
+        `📅 *Requested At:* ${requestDate}\n` +
         `📅 *Reason:* ${referralCause}\n` +
+        `📅 *icds:* ${icds.join("\n")}\n` +
+        `📅 *cpts:* ${cpts.join("\n")}\n` +
         `─────────────────────────────\n` +
         `🚨 *‼️ ATTENTION ‼️*\n` +
         `*${caseStartedAtMessage}*\n` +

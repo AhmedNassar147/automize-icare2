@@ -87,7 +87,7 @@ const processCollectingPatients = async ({
 
       await makeKeyboardNoise(page, logString);
 
-      const targetIndexes = [1, 3, 5].sort(() => Math.random() - 0.5);
+      const targetIndexes = [1, 3, 5];
 
       const [viewportHeight] = await scrollDetailsPageSections({
         cursor,
@@ -131,14 +131,12 @@ const processCollectingPatients = async ({
         );
       }
 
-      try {
-        await Promise.all([
-          generateAcceptancePdfLetters(browser, [finalData], true),
-          generateAcceptancePdfLetters(browser, [finalData], false),
-        ]);
-      } catch (error) {
-        console.error(`🛑 Error generating PDFs`, error.message);
-      }
+      await Promise.all([
+        generateAcceptancePdfLetters(browser, [finalData], true),
+        generateAcceptancePdfLetters(browser, [finalData], false),
+      ]);
+
+      await sleep(40_000);
     }
 
     console.log(`✅ Collected ${processedCount} patients successfully.`);
