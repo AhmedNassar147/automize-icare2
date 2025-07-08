@@ -3,16 +3,12 @@
  * helper: `waitMinutesThenRun`.
  *
  */
-import { EFFECTIVE_REVIEW_DURATION_MS } from "./constants.mjs";
-
-const waitMinutesThenRun = (caseStartTime, asyncAction) => {
+const waitMinutesThenRun = (caseWillBeSubmitMSAt, asyncAction) => {
   // isoDate is already in ISO format, just parse it directly
-  const target = new Date(caseStartTime + EFFECTIVE_REVIEW_DURATION_MS);
-
   let timeoutId;
   let cancelled = false;
 
-  const delay = target.getTime() - Date.now();
+  const delay = caseWillBeSubmitMSAt - Date.now();
 
   const cancel = () => {
     cancelled = true;

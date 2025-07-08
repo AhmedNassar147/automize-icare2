@@ -50,6 +50,8 @@ const processClientActionOnPatient = async (options) => {
     cursor: cursorFromOptions,
   } = options;
 
+  console.time("process");
+
   let page = pageFromOptions;
   let cursor = cursorFromOptions;
 
@@ -80,6 +82,7 @@ const processClientActionOnPatient = async (options) => {
   const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
   try {
+    await sleep(600);
     const rows = await collectHomePageTableRows(page);
 
     if (!rows.length) {
@@ -238,6 +241,8 @@ const processClientActionOnPatient = async (options) => {
       error.message
     );
   }
+
+  console.timeEnd("process");
 };
 
 export default processClientActionOnPatient;

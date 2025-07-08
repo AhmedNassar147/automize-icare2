@@ -17,8 +17,7 @@ const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
 const makeUserLoggedInOrOpenHomePage = async (
   browser,
   _cursor,
-  currentPage,
-  reloaded
+  currentPage
 ) => {
   const userName = process.env.CLIENT_NAME;
   const password = process.env.CLIENT_PASSWORD;
@@ -90,12 +89,9 @@ const makeUserLoggedInOrOpenHomePage = async (
 
   try {
     await goToHomePage(page, cursor, true);
-
-    await sleep(100);
-
-    if (!reloaded) {
-      return await makeUserLoggedInOrOpenHomePage(browser, cursor, page, true);
-    }
+    await sleep(200);
+    await page.reload({ waitUntil: "networkidle2" });
+    await sleep(500);
 
     const message = isLoginPage
       ? `✅ User ${userName} logged in successfully and landed on home page.`

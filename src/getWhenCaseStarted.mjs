@@ -1,8 +1,3 @@
-/*
- *
- * Helper: `getWhenCaseStarted`.
- *
- */
 import { EFFECTIVE_REVIEW_DURATION_MS } from "./constants.mjs";
 import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
 
@@ -38,7 +33,7 @@ const pluralize = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
  *
  * @param {import('puppeteer').Page} page - Puppeteer Page instance.
  * @param {number} artificialDelayMs - Any delay that occurred before this function runs.
- * @returns Promise<{ caseStartTime: number, caseStartedAt: string, caseStartedAtMessage: string, reviewTimeMs: number, whenCaseWillBeSubmit: string, whenCaseWillBeSubmitMS: number }>
+ * @returns Promise<{ caseStartTime: number, caseStartedAt: string, caseStartedAtMessage: string, reviewTimeMs: number, caseWillBeSubmitMSAt: number, caseWillBeSubmitFormatted: string }>
  */
 const getWhenCaseStarted = async (page, artificialDelayMs = 0) => {
   const now = new Date();
@@ -48,13 +43,19 @@ const getWhenCaseStarted = async (page, artificialDelayMs = 0) => {
 
   const totalMs = hasMessageFound ? totalRemainingTimeMs : FALLBACK_BACKWARD_MS;
 
+  // Infer case start time
   const startDate = new Date(now.getTime() - totalMs - artificialDelayMs);
   const caseStartTime = startDate.getTime();
 
+  // Adjust review time
   const reviewTimeMs = hasMessageFound
-    ? Math.max(totalRemainingTimeMs - estimatedTimeBeforeProcessingAction, 0)
-    : Math.max(EFFECTIVE_REVIEW_DURATION_MS - artificialDelayMs, 0);
+    ? Math.max(totalMs - estimatedTimeBeforeProcessingAction, 0)
+    : Math.max(
+        EFFECTIVE_REVIEW_DURATION_MS - estimatedTimeBeforeProcessingAction,
+        0
+      );
 
+  // Format output
   const { minutes: reviewMinutes, seconds: reviewSeconds } =
     formatMsToMinutesSeconds(reviewTimeMs);
 
@@ -65,7 +66,7 @@ const getWhenCaseStarted = async (page, artificialDelayMs = 0) => {
     "minute"
   )} and ${pluralize(reviewSeconds, "second")} to review.`;
 
-  const caseWillBeSubmitMSAt = now.getTime() + reviewTimeMs;
+  const caseWillBeSubmitMSAt = caseStartTime + reviewTimeMs;
 
   const caseWillBeSubmitFormatted = formatDateToYMDHM(
     new Date(caseWillBeSubmitMSAt)
