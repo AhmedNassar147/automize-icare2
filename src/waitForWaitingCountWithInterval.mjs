@@ -51,7 +51,7 @@ const waitForWaitingCountWithInterval = async ({
       if (!count) {
         console.log(`${noCountText}, refreshing in ${INTERVAL / 1000}s...`);
         await sleep(INTERVAL);
-        await page.reload({ waitUntil: "documentloaded" });
+        await page.reload({ waitUntil: "domcontentloaded" });
         continue;
       }
 
@@ -72,7 +72,7 @@ const waitForWaitingCountWithInterval = async ({
 
     console.log(`refreshing in ${INTERVAL / 1000}s...`);
     await sleep(INTERVAL);
-    await page.reload({ waitUntil: "documentloaded" });
+    await page.reload({ waitUntil: "domcontentloaded" });
   }
 };
 

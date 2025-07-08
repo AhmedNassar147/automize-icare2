@@ -41,8 +41,8 @@ const getWhenCaseStarted = async (page, artificialDelayMs = 0) => {
     await getCurrentAlertRemainingTime(page);
 
   const backTime = hasMessageFound
-    ? baseBackwordTimeMS
-    : EFFECTIVE_REVIEW_DURATION_MS - totalRemainingTimeMs;
+    ? EFFECTIVE_REVIEW_DURATION_MS - totalRemainingTimeMs
+    : baseBackwordTimeMS;
 
   // Infer case start time
   const startDate = new Date(now.getTime() - backTime - artificialDelayMs);
