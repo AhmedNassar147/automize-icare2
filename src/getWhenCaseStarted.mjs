@@ -25,6 +25,8 @@ const formatMsToMinutesSeconds = (ms) => {
 
 const pluralize = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+const baseBackwordTimeMS = 30_000;
+
 /**
  * Infers when the case started based on the visible snackbar alert or fallback timing.
  *
@@ -38,19 +40,31 @@ const getWhenCaseStarted = async (page, artificialDelayMs = 0) => {
   const { hasMessageFound, totalRemainingTimeMs } =
     await getCurrentAlertRemainingTime(page);
 
-  const backTime = EFFECTIVE_REVIEW_DURATION_MS - totalRemainingTimeMs;
+  const backTime = hasMessageFound
+    ? baseBackwordTimeMS
+    : EFFECTIVE_REVIEW_DURATION_MS - totalRemainingTimeMs;
 
   // Infer case start time
   const startDate = new Date(now.getTime() - backTime - artificialDelayMs);
   const caseStartAtMs = startDate.getTime();
 
-  // Adjust review time
-  const reviewTimeMs = hasMessageFound
-    ? totalRemainingTimeMs < estimatedTimeBeforeProcessingAction
-      ? totalRemainingTimeMs
-      : totalRemainingTimeMs - estimatedTimeBeforeProcessingAction
-    : EFFECTIVE_REVIEW_DURATION_MS - estimatedTimeBeforeProcessingAction;
+  let reviewTimeMs = 0;
 
+  if (hasMessageFound) {
+    const diff = totalRemainingTimeMs - estimatedTimeBeforeProcessingAction;
+
+    reviewTimeMs =
+      totalRemainingTimeMs < estimatedTimeBeforeProcessingAction
+        ? totalRemainingTimeMs
+        : !diff
+        ? baseBackwordTimeMS
+        : diff;
+  } else {
+    reviewTimeMs =
+      EFFECTIVE_REVIEW_DURATION_MS -
+      baseBackwordTimeMS -
+      estimatedTimeBeforeProcessingAction;
+  }
   // Format output
   const { minutes: reviewMinutes, seconds: reviewSeconds } =
     formatMsToMinutesSeconds(reviewTimeMs);
