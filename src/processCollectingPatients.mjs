@@ -30,6 +30,8 @@ const processCollectingPatients = async ({
       // 🔁 Always re-fetch rows after page changes
       const rows = await collectHomePageTableRows(page);
 
+      console.log("rows", rows);
+
       const isThereNotNewPatients = processedCount >= rows.length;
 
       if (isThereNotNewPatients) {
