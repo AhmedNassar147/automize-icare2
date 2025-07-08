@@ -18,6 +18,8 @@ const goToHomePage = async (page, cursor, areadyInHome) => {
     waitForHomeLink(page, timeout),
     page.waitForSelector(homePageTableSelector, { timeout }),
   ]);
+
+  return true;
 };
 
 export default goToHomePage;

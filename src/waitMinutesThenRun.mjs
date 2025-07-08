@@ -5,10 +5,9 @@
  */
 import { EFFECTIVE_REVIEW_DURATION_MS } from "./constants.mjs";
 
-const waitMinutesThenRun = (isoDate, asyncAction) => {
+const waitMinutesThenRun = (caseStartTime, asyncAction) => {
   // isoDate is already in ISO format, just parse it directly
-  const start = new Date(isoDate);
-  const target = new Date(start.getTime() + EFFECTIVE_REVIEW_DURATION_MS);
+  const target = new Date(caseStartTime + EFFECTIVE_REVIEW_DURATION_MS);
 
   let timeoutId;
   let cancelled = false;

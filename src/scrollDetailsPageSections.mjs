@@ -3,9 +3,7 @@
  * Helper: `scrollDetailsPageSections`.
  *
  */
-import isElementInvisible from "./isElementInvisible.mjs";
 import moveFromCurrentToRandomPosition from "./moveFromCurrentToRandomPosition.mjs";
-import scrollIntoView from "./scrollIntoView.mjs";
 import sleep from "./sleep.mjs";
 
 const scrollDetailsPageSections = async ({
@@ -22,25 +20,22 @@ const scrollDetailsPageSections = async ({
     console.log(`✅ scrolling sections in ${logString}`);
 
     const sections = await page.$$("section.collapsible-container.MuiBox-root");
+    console.log("sections", sections.length);
 
     for (const index of sectionsIndices) {
       const section = sections[index];
       if (!section) continue;
 
-      const invisible = await isElementInvisible(section, viewportHeight);
+      // const invisible = await isElementInvisible(section, viewportHeight);
 
-      if (invisible) {
-        await scrollIntoView(page, cursor, section);
+      // await scrollIntoView(page, cursor, section);
+      console.log("section", index);
 
-        await sleep(200);
-      }
-
-      const stillInvisible = await isElementInvisible(section, viewportHeight);
-
-      if (stillInvisible) {
-        await scrollIntoView(page, cursor, section);
-        await sleep(200);
-      }
+      await page.evaluate(
+        (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
+        section
+      );
+      await sleep(600);
 
       _section = section;
     }

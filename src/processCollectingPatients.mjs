@@ -7,7 +7,6 @@ import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 import humanClick from "./humanClick.mjs";
 import collectReferralDetailsFromApis from "./collectReferralDetailsFromApis.mjs";
 import sleep from "./sleep.mjs";
-import moveFromCurrentToRandomPosition from "./moveFromCurrentToRandomPosition.mjs";
 import collectPatientAttachments from "./collectPatientAttachments.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import getWhenCaseStarted from "./getWhenCaseStarted.mjs";
@@ -31,7 +30,12 @@ const processCollectingPatients = async ({
       // 🔁 Always re-fetch rows after page changes
       const rows = await collectHomePageTableRows(page);
 
-      if (processedCount >= rows.length) break;
+      const isThereNotNewPatients = processedCount >= rows.length;
+
+      if (isThereNotNewPatients) {
+        await sleep(17_000);
+        break;
+      }
 
       const row = rows[processedCount];
       processedCount++;
@@ -82,12 +86,12 @@ const processCollectingPatients = async ({
 
       const caseStartedData = await getWhenCaseStarted(page, delayMs);
 
-      console.log(`✅ moving radnom cursor in ${logString}`);
-      await moveFromCurrentToRandomPosition(cursor);
+      // console.log(`✅ moving radnom cursor in ${logString}`);
+      // await moveFromCurrentToRandomPosition(cursor);
 
       await makeKeyboardNoise(page, logString);
 
-      const targetIndexes = [1, 3, 5];
+      const targetIndexes = [1, 2, 3];
 
       const [viewportHeight] = await scrollDetailsPageSections({
         cursor,
@@ -136,7 +140,7 @@ const processCollectingPatients = async ({
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
-      await sleep(40_000);
+      await sleep(50_000);
     }
 
     console.log(`✅ Collected ${processedCount} patients successfully.`);

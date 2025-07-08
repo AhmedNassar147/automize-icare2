@@ -17,6 +17,9 @@ import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
 import sleep from "./sleep.mjs";
 import { USER_ACTION_TYPES, generatedPdfsPath, APP_URL } from "./constants.mjs";
 
+// https://referralprogram.globemedsaudi.com/referrals/accept-referral
+// {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null}
+
 const checkIfButtonsFound = async (page) => {
   try {
     const section = await page.waitForSelector(
@@ -55,7 +58,7 @@ const processClientActionOnPatient = async (options) => {
     cursor = createCursor(page);
 
     await page.goto(APP_URL, {
-      waitUntil: "domcontentloaded",
+      waitUntil: "networkidle2",
       timeout: 120_000,
     });
   }
@@ -148,13 +151,13 @@ const processClientActionOnPatient = async (options) => {
     }
 
     console.log(`✅ moving radnom cursor in ${logString}`);
-    await moveFromCurrentToRandomPosition(cursor);
+    // await moveFromCurrentToRandomPosition(cursor);
 
     const [viewportHeight, sectionEl] = await scrollDetailsPageSections({
       page,
       cursor,
       logString,
-      sectionsIndices: [2],
+      sectionsIndices: [1, 2],
     });
 
     if (!sectionEl) {
@@ -209,9 +212,9 @@ const processClientActionOnPatient = async (options) => {
     );
 
     await cursor.move(fileInput, {
-      moveDelay: 35 + Math.random() * 30,
+      moveDelay: 20 + Math.random() * 30,
       randomizeMoveDelay: true,
-      maxTries: 5,
+      maxTries: 4,
       moveSpeed: 1.25,
     });
 

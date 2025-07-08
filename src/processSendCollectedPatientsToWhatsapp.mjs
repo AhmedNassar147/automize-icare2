@@ -5,28 +5,6 @@
  */
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
 
-const getReadableDate = (isoDate) => {
-  if (!isoDate) {
-    return "";
-  }
-
-  const date = new Date(isoDate);
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  const options = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-    timeZone, // explicitly use detected timezone
-    timeZoneName: "short",
-  };
-
-  return date.toLocaleString("en-US", options);
-};
-
 const processSendCollectedPatientsToWhatsapp =
   (sendWhatsappMessage) => async (addedPatients) => {
     console.log("addedPatients started, posting patients to WhatsApp...");
@@ -56,26 +34,26 @@ const processSendCollectedPatientsToWhatsapp =
     ) => {
       const message =
         `🚨 *New Case Alert!* 🚨\n` +
-        `⏰ *Arrived at:* \`${getReadableDate(caseStartedAt)}\`\n` +
+        `⏰ *Started At:* \`${caseStartedAt}\`\n` +
         `─────────────────────────────\n` +
         `👤 *Name:* ${patientName}\n` +
-        `📞 *Mobile:* ${mobileNumber}\n` +
-        `🌍 *Nationality:* ${nationality || ""}\n` +
+        `📱 *Mobile:* ${mobileNumber}\n` +
+        `🌐 *Nationality:* ${nationality || ""}\n` +
         `🆔 *National ID:* ${nationalId}\n` +
         `🔢 *Referral ID:* ${referralId}\n` +
         `🏷️ *Referral Type:* ${referralType}\n` +
         `🩺 *Specialty:* ${specialty || ""}\n` +
-        `🩺 *sub-Specialty:* ${subSpecialty || ""}\n` +
+        `🔬 *Sub-Specialty:* ${subSpecialty || ""}\n` +
         `🏥 *Provider:* ${sourceProvider || ""}\n` +
         `📍 *Zone:* ${providerZone}\n` +
-        `📅 *Requested At:* ${requestDate}\n` +
-        `📅 *Reason:* ${referralCause}\n` +
-        `📅 *icds:* ${icds.join("\n")}\n` +
-        `📅 *cpts:* ${cpts.join("\n")}\n` +
+        `🗓️ *Requested At:* ${requestDate}\n` +
+        `📝 *Reason:* ${referralCause}\n` +
+        `🧾 *ICDs:*\n${icds.join("\n") || ""}\n` +
+        `💉 *CPTs:*\n${cpts.join("\n") || ""}\n` +
         `─────────────────────────────\n` +
-        `🚨 *‼️ ATTENTION ‼️*\n` +
+        `⚠️ *‼️ ATTENTION ‼️*\n` +
         `*${caseStartedAtMessage}*\n` +
-        `*Please review And Reply on this message with:*\n` +
+        `📩 *Please review and reply to this message with:*\n` +
         `${createConfirmationMessage()}`;
 
       return {
