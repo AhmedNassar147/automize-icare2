@@ -27,16 +27,14 @@ const processCollectingPatients = async ({
     let processedCount = 0;
 
     while (true) {
-      await sleep(600);
+      await sleep(500);
       // 🔁 Always re-fetch rows after page changes
       const rows = await collectHomePageTableRows(page);
-
-      console.log("rows", rows.length);
 
       const isThereNotNewPatients = processedCount >= rows.length;
 
       if (isThereNotNewPatients) {
-        await sleep(17_000);
+        await sleep(21_000);
         break;
       }
 
