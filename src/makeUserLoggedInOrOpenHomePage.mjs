@@ -91,7 +91,7 @@ const makeUserLoggedInOrOpenHomePage = async (
     await goToHomePage(page, cursor, true);
     await sleep(200);
     await page.reload({ waitUntil: "networkidle2" });
-    await sleep(500);
+    await sleep(700);
 
     const message = isLoginPage
       ? `✅ User ${userName} logged in successfully and landed on home page.`
