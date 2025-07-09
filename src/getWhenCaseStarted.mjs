@@ -6,15 +6,7 @@
 import { EFFECTIVE_REVIEW_DURATION_MS } from "./constants.mjs";
 import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
 
-const estimatedTimeBeforeProcessingAction = 15_000;
-
-const formatDateToYMDHM = (date) =>
-  new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "long",
-    timeStyle: "medium",
-    timeZone: "Asia/Riyadh",
-    hourCycle: "h12",
-  }).format(date);
+const estimatedTimeBeforeProcessingAction = 5000;
 
 const formatMsToMinutesSeconds = (ms) => {
   const totalSeconds = Math.floor(ms / 1000);
@@ -25,7 +17,7 @@ const formatMsToMinutesSeconds = (ms) => {
 
 const pluralize = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-const baseBackwordTimeMS = 30_000;
+const baseBackwordTimeMS = 3_000;
 
 /**
  * Infers when the case started based on the visible snackbar alert or fallback timing.
@@ -47,24 +39,19 @@ const getWhenCaseStarted = async (page, artificialDelayMs = 0) => {
   // Infer case start time
   const startDate = new Date(now.getTime() - backTime - artificialDelayMs);
   const caseStartAtMs = startDate.getTime();
+  const caseStartedAt = startDate.toLocaleString();
 
-  let reviewTimeMs = 0;
+  const fallbackEffectiveTime =
+    EFFECTIVE_REVIEW_DURATION_MS - baseBackwordTimeMS;
 
-  if (hasMessageFound) {
-    const diff = totalRemainingTimeMs - estimatedTimeBeforeProcessingAction;
+  const diff = totalRemainingTimeMs - estimatedTimeBeforeProcessingAction;
 
-    reviewTimeMs =
-      totalRemainingTimeMs < estimatedTimeBeforeProcessingAction
-        ? totalRemainingTimeMs
-        : !diff
-        ? baseBackwordTimeMS
-        : diff;
-  } else {
-    reviewTimeMs =
-      EFFECTIVE_REVIEW_DURATION_MS -
-      baseBackwordTimeMS -
-      estimatedTimeBeforeProcessingAction;
-  }
+  const reviewTimeMs = hasMessageFound
+    ? totalRemainingTimeMs > estimatedTimeBeforeProcessingAction
+      ? diff || totalRemainingTimeMs
+      : totalRemainingTimeMs
+    : fallbackEffectiveTime - estimatedTimeBeforeProcessingAction;
+
   // Format output
   const { minutes: reviewMinutes, seconds: reviewSeconds } =
     formatMsToMinutesSeconds(reviewTimeMs);
@@ -74,16 +61,20 @@ const getWhenCaseStarted = async (page, artificialDelayMs = 0) => {
     "minute"
   )} and ${pluralize(reviewSeconds, "second")} to review.`;
 
-  const caseWillBeSubmittedAtMS = caseStartAtMs + reviewTimeMs;
+  const caseWillBeSubmittedAtMS =
+    caseStartAtMs +
+    (fallbackEffectiveTime - estimatedTimeBeforeProcessingAction);
+
+  const caseWillBeSubmitAt = new Date(caseWillBeSubmittedAtMS).toLocaleString();
 
   return {
     caseLeftOffTimeInMins: backTime / 1000 / 60,
     caseStartAtMs,
-    caseStartedAt: formatDateToYMDHM(startDate),
+    caseStartedAt,
     caseStartedAtMessage,
     reviewTimeMs,
     caseWillBeSubmittedAtMS,
-    caseWillBeSubmitAt: formatDateToYMDHM(caseWillBeSubmittedAtMS),
+    caseWillBeSubmitAt,
   };
 };
 
