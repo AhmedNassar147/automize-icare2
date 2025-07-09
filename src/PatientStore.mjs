@@ -253,9 +253,8 @@ class PatientStore extends EventEmitter {
     });
   }
 
-  getIds() {
-    const ids = [...this.patientsById.keys()];
-    return ids;
+  has(referralId) {
+    return this.patientsById.has(referralId);
   }
 
   cancelPatient(referralId) {

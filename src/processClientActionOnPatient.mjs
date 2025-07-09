@@ -122,10 +122,11 @@ const processClientActionOnPatient = async (options) => {
       );
     }
 
-    const detailsApiDataPromise = collectReferralDetailsDateFromAPI(
+    const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
       page,
-      referralId
-    );
+      referralId,
+      useOnlyDetailsApi: true,
+    });
 
     console.log(`✅ clicking patient button for referralId=(${referralId})`);
     await humanClick(page, cursor, button);

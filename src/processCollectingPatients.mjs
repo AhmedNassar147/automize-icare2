@@ -4,8 +4,8 @@
  *
  */
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
+import collectReferralDetailsDateFromAPI from "./collectReferralDetailsDateFromAPI.mjs";
 import humanClick from "./humanClick.mjs";
-import collectReferralInfoFromApis from "./collectReferralInfoFromApis.mjs";
 import sleep from "./sleep.mjs";
 import collectPatientAttachments from "./collectPatientAttachments.mjs";
 import goToHomePage from "./goToHomePage.mjs";
@@ -13,7 +13,6 @@ import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
-import collectReferralDetailsDateFromAPI from "./collectReferralDetailsDateFromAPI.mjs";
 
 const processCollectingPatients = async ({
   browser,
@@ -33,6 +32,7 @@ const processCollectingPatients = async ({
       const isThereNotNewPatients = processedCount >= rows.length;
 
       if (isThereNotNewPatients) {
+        console.log("⏳ No more new patients found, exiting...");
         await sleep(1_000);
         break;
       }
@@ -49,7 +49,7 @@ const processCollectingPatients = async ({
         continue;
       }
 
-      if ([...patientsStore.getIds()].includes(referralId)) {
+      if (patientsStore.has(referralId)) {
         console.log("⚠️ Patient already collected...");
         continue;
       }
@@ -66,17 +66,12 @@ const processCollectingPatients = async ({
       //   await scrollIntoView(page, cursor, button);
       // }
 
-      console.log("✅ start monitoring apis");
-      const detailsApiDataPromise = collectReferralDetailsDateFromAPI(
+      console.log(`📡 Monitoring referralId=(${referralId}) API responses...`);
+      const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
         page,
         referralId,
-        true
-      );
-
-      const patientInfoApisPromise = collectReferralInfoFromApis(
-        page,
-        referralId
-      );
+        useDefaultMessageIfNotFound: true,
+      });
 
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
       await humanClick(page, cursor, button);
@@ -100,21 +95,20 @@ const processCollectingPatients = async ({
         sectionsIndices: targetIndexes,
       });
 
-      const [detailsApiData, patientInfo] = await Promise.all([
-        detailsApiDataPromise,
-        patientInfoApisPromise,
-      ]);
+      const detailsApiData = await detailsApiDataPromise;
 
-      const {
-        timingData,
-        mobileNumberFromDetails,
-        specialty,
-        ...otherDetailsData
-      } = detailsApiData;
+      const { patientName, specialty, apisError } = detailsApiData;
 
-      const { patientName, mobileNumber, ...patientInfoData } = patientInfo;
+      if (apisError) {
+        await goToHomePage(page, cursor);
+        await sleep(1000);
 
-      console.log("patientInfo", patientInfo);
+        console.warn(
+          `❌ Skipping referralId=${referralId}, reason:`,
+          apisError
+        );
+        continue;
+      }
 
       const attachmentData = await collectPatientAttachments({
         page,
@@ -126,13 +120,8 @@ const processCollectingPatients = async ({
       });
 
       const finalData = {
-        ...(timingData || null),
         referralId,
-        patientName,
-        mobileNumber: mobileNumber || mobileNumberFromDetails,
-        specialty,
-        ...patientInfoData,
-        ...otherDetailsData,
+        ...detailsApiData,
         files: attachmentData,
       };
 
