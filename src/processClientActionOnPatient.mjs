@@ -2,7 +2,6 @@
  *
  * Helper: `processClientActionOnPatient`.
  *
- *
  */
 import fs from "fs";
 import path from "path";
@@ -13,8 +12,8 @@ import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
 import selectAttactmentDropdownOption from "./selectAttactmentDropdownOption.mjs";
-import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+import collectReferralDetailsDateFromAPI from "./collectReferralDetailsDateFromAPI.mjs";
 import sleep from "./sleep.mjs";
 import {
   USER_ACTION_TYPES,
@@ -37,6 +36,9 @@ const checkIfButtonsFound = async (page) => {
     return false;
   }
 };
+
+const MAX_RETRIES_FOR_SUBMISSION_BUTTONS = 4;
+const submissionButtonsRetry = 0;
 
 const processClientActionOnPatient = async (options) => {
   const {
@@ -81,16 +83,22 @@ const processClientActionOnPatient = async (options) => {
   });
 
   if (!isLoggedIn) {
+    await page.screenshot({
+      path: `screenshots/user-action-no-loggedin-for-${referralId}-${Date.now()}.png`,
+    });
     await sendErrorMessage("Login failed after 3 attempts.");
     return;
   }
 
   try {
-    await sleep(300);
+    await sleep(500);
 
     const rows = await collectHomePageTableRows(page);
 
     if (!rows.length) {
+      await page.screenshot({
+        path: `screenshots/no-patients-in-home-table-${referralId}-${Date.now()}.png`,
+      });
       return await sendErrorMessage("The Pending referrals list is empty.");
     }
 
@@ -106,15 +114,23 @@ const processClientActionOnPatient = async (options) => {
     }
 
     if (!button) {
+      await page.screenshot({
+        path: `screenshots/navigation-button-not-found-for-${referralId}-${Date.now()}.png`,
+      });
       return await sendErrorMessage(
         "The patient wasn't found in Pending referrals."
       );
     }
 
+    const detailsApiDataPromise = collectReferralDetailsDateFromAPI(
+      page,
+      referralId
+    );
+
     await Promise.all([
       page.waitForNavigation({
         waitUntil: "domcontentloaded",
-        timeout: 60_000,
+        timeout: 75_000,
       }),
       humanClick(page, cursor, button),
     ]);
@@ -123,25 +139,51 @@ const processClientActionOnPatient = async (options) => {
 
     await makeKeyboardNoise(page, logString);
 
-    const referralButtons = await checkIfButtonsFound(page);
+    const { timingData } = await detailsApiDataPromise;
+    const { caseActualLeftMs } = timingData || {};
 
-    if (!referralButtons) {
-      const { totalRemainingTimeMs, hasMessageFound } =
-        await getCurrentAlertRemainingTime(page);
+    const hasTimeingDataButStillHasLeftTime =
+      !!timingData && caseActualLeftMs > 0;
 
-      const delayTimeMS = hasMessageFound
-        ? totalRemainingTimeMs || 150 + Math.random() * 50
-        : 200 + Math.random() * 60;
-
+    if (hasTimeingDataButStillHasLeftTime) {
       await goToHomePage(page, cursor);
 
-      await sleep(delayTimeMS);
+      await sleep(
+        caseActualLeftMs > 500 ? caseActualLeftMs - 500 : caseActualLeftMs
+      );
 
       return await processClientActionOnPatient({
         ...options,
         page,
         cursor,
       }); // retry once
+    }
+
+    const referralButtons = await checkIfButtonsFound(page);
+
+    const hasReachedMaxRetriesForSubmission =
+      submissionButtonsRetry >= MAX_RETRIES_FOR_SUBMISSION_BUTTONS;
+
+    if (!referralButtons && !hasReachedMaxRetriesForSubmission) {
+      submissionButtonsRetry += 1;
+      await goToHomePage(page, cursor);
+
+      await sleep(1100);
+
+      return await processClientActionOnPatient({
+        ...options,
+        page,
+        cursor,
+      }); // retry once
+    }
+
+    if (!referralButtons && hasReachedMaxRetriesForSubmission) {
+      await page.screenshot({
+        path: `screenshots/submission-buttons-not-found-reachedMax-${hasReachedMaxRetriesForSubmission}-${Date.now()}.png`,
+      });
+      return await sendErrorMessage(
+        `We tried times(${submissionButtonsRetry}) to find The submission buttons, but they wern't found.`
+      );
     }
 
     console.log(`✅ Moving random cursor in ${logString}`);
@@ -153,6 +195,9 @@ const processClientActionOnPatient = async (options) => {
     });
 
     if (!sectionEl) {
+      await page.screenshot({
+        path: `screenshots/upload-section-not-found-${referralId}-${Date.now()}.png`,
+      });
       return await sendErrorMessage("The upload section was not found.");
     }
 
@@ -168,12 +213,18 @@ const processClientActionOnPatient = async (options) => {
     const inputContainer = await sectionEl.$('div[id="upload-single-file"]');
 
     if (!inputContainer) {
+      await page.screenshot({
+        path: `screenshots/inputContainer-not-found-${referralId}-${Date.now()}.png`,
+      });
       return await sendErrorMessage("The File upload container was not found.");
     }
 
     const fileInput = await inputContainer.$('input[type="file"]');
 
     if (!fileInput) {
+      await page.screenshot({
+        path: `screenshots/fileInput-not-found-${referralId}-${Date.now()}.png`,
+      });
       return await sendErrorMessage("The File upload input was not found.");
     }
 
@@ -212,6 +263,10 @@ const processClientActionOnPatient = async (options) => {
       `🛑 Error during ${actionName} of ${referralId}:`,
       error.message
     );
+
+    await page.screenshot({
+      path: `screenshots/catch-error-${actionName}-error-${referralId}-${Date.now()}.png`,
+    });
 
     await sendErrorMessage(`Error: in ${logString} \n ${error.message}`);
   }

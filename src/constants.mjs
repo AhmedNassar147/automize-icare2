@@ -5,6 +5,7 @@
  */
 export const cwd = process.cwd();
 
+export const screenshotsFolderDirectory = `${cwd}/screenshots`;
 export const waitingPatientsFolderDirectory = `${cwd}/results/waiting-patients`;
 export const generatedPdfsPathForAcceptance = `${cwd}/results/generated-acceptance-pdf`;
 export const generatedPdfsPathForRejection = `${cwd}/results/generated-rejection-pdf`;
@@ -34,10 +35,13 @@ export const USER_ACTION_TYPES = {
 // the user will review patient till the 13 minute of the counter
 // export const STOP_USER_ACTION_MINUTES = ALLOWED_MINUTES_TO_REVIEW_PATIENTS - 13;
 
+// 45 seconds for loading new pupteer page , js code execution, upload file and submit
+export const estimatedTimeForProcessingAction = 45_000;
+
 export const ALLOWED_MINUTES_TO_REVIEW_PATIENTS = 15;
 
 export const EFFECTIVE_REVIEW_DURATION_MS =
-  ALLOWED_MINUTES_TO_REVIEW_PATIENTS * 60_000;
+  ALLOWED_MINUTES_TO_REVIEW_PATIENTS * 60 * 1000;
 
 export const USER_MESSAGES = {
   alreadyScheduledAccept: "Patient is already scheduled for acceptance.",

@@ -23,6 +23,7 @@ import {
   htmlFilesPath,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
+  screenshotsFolderDirectory,
 } from "./constants.mjs";
 
 const collectConfimrdPatient = false;
@@ -42,6 +43,7 @@ const collectConfimrdPatient = false;
 (async () => {
   try {
     await Promise.all([
+      generateFolderIfNotExisting(screenshotsFolderDirectory),
       generateFolderIfNotExisting(waitingPatientsFolderDirectory),
       generateFolderIfNotExisting(generatedPdfsPathForAcceptance),
       generateFolderIfNotExisting(generatedPdfsPathForRejection),

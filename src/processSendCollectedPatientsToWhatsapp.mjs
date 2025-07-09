@@ -4,6 +4,9 @@
  *
  */
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
+import { caseEstimatedTimeForProcessingAction } from "./constants.mjs";
+
+const cutoffTime = caseEstimatedTimeForProcessingAction / 1000;
 
 const processSendCollectedPatientsToWhatsapp =
   (sendWhatsappMessage) => async (addedPatients) => {
@@ -26,17 +29,19 @@ const processSendCollectedPatientsToWhatsapp =
         files,
         referralCause,
         caseStartedAt,
-        caseStartedAtMessage,
-        caseWillBeSubmitAt,
+        caseActualWillBeSubmittedAt,
+        caseUserAlertMessage,
+        caseUserWillBeSubmittedAt,
         icds,
-        cpts,
       },
       i
     ) => {
       const message =
         `🚨 *New Case Alert!* 🚨\n` +
         `⏰ *Started At:* \`${caseStartedAt}\`\n` +
-        `⏰ *Applicable At:* \`${caseWillBeSubmitAt}\`\n` +
+        `⏰ *Min -Applicable At:* \`${caseUserWillBeSubmittedAt}\`\n` +
+        `⏰ *cutoff time:* \`${cutoffTime} seconds\`\n` +
+        `⏰ *Max Applicable At:* \`${caseActualWillBeSubmittedAt}\`\n` +
         `─────────────────────────────\n` +
         `👤 *Name:* ${patientName}\n` +
         `📱 *Mobile:* ${mobileNumber}\n` +
@@ -51,10 +56,9 @@ const processSendCollectedPatientsToWhatsapp =
         `🗓️ *Requested At:* ${requestDate}\n` +
         `📝 *Reason:* ${referralCause}\n` +
         `🧾 *ICDs:*\n${icds.join("\n") || ""}\n` +
-        `💉 *CPTs:*\n${cpts.join("\n") || ""}\n` +
         `─────────────────────────────\n` +
         `⚠️ *‼️ ATTENTION ‼️*\n` +
-        `*${caseStartedAtMessage}*\n` +
+        `*${caseUserAlertMessage}*\n` +
         `📩 *Please review and reply to this message with:*\n` +
         `${createConfirmationMessage()}`;
 

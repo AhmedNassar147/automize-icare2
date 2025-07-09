@@ -5,15 +5,15 @@
  */
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 import humanClick from "./humanClick.mjs";
-import collectReferralDetailsFromApis from "./collectReferralDetailsFromApis.mjs";
+import collectReferralDetailsFromApis from "./collectReferralInfoFromApis.mjs";
 import sleep from "./sleep.mjs";
 import collectPatientAttachments from "./collectPatientAttachments.mjs";
 import goToHomePage from "./goToHomePage.mjs";
-import getWhenCaseStarted from "./getWhenCaseStarted.mjs";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
+import collectReferralDetailsDateFromAPI from "./collectReferralDetailsDateFromAPI.mjs";
 
 const processCollectingPatients = async ({
   browser,
@@ -22,6 +22,8 @@ const processCollectingPatients = async ({
   cursor,
 }) => {
   try {
+    await sleep(500);
+
     const currentCollectdListId = [...(patientsStore.getIds() || [])];
 
     let processedCount = 0;
@@ -66,13 +68,23 @@ const processCollectingPatients = async ({
       // }
 
       console.log("✅ start monitoring apis");
-      const apiWaiter = collectReferralDetailsFromApis(page, referralId);
+      const detailsApiDataPromise = collectReferralDetailsDateFromAPI(
+        page,
+        referralId,
+        true
+      );
+
+      const patientInfoApisPromise = collectReferralDetailsFromApis(
+        page,
+        referralId
+      );
 
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
 
       await Promise.all([
         page.waitForNavigation({
           waitUntil: "domcontentloaded",
+          timeout: 75_000,
         }),
         humanClick(page, cursor, button),
       ]);
@@ -81,10 +93,7 @@ const processCollectingPatients = async ({
 
       console.log(`✅ waiting for ${logString}`);
 
-      const delayMs = 50 + Math.random() * 50;
-      await sleep(delayMs);
-
-      const caseStartedData = await getWhenCaseStarted(page, delayMs);
+      await sleep(50 + Math.random() * 50);
 
       // console.log(`✅ moving radnom cursor in ${logString}`);
       // await moveFromCurrentToRandomPosition(cursor);
@@ -100,13 +109,10 @@ const processCollectingPatients = async ({
         sectionsIndices: targetIndexes,
       });
 
-      const data = await apiWaiter;
-      const { patientName, specialty } = data || {};
-
-      if (!patientName && !specialty) {
-        console.log(`⚠️ Incomplete data in ${logString}. Skipping.`);
-        continue;
-      }
+      const { timingData, mobileNumberFromDetails, ...otherDetailsData } =
+        await detailsApiDataPromise;
+      const { patientName, mobileNumber, ...patientInfoData } =
+        await patientInfoApisPromise;
 
       const attachmentData = await collectPatientAttachments({
         page,
@@ -118,8 +124,12 @@ const processCollectingPatients = async ({
       });
 
       const finalData = {
-        ...caseStartedData,
-        ...data,
+        ...(timingData || null),
+        referralId,
+        patientName,
+        mobileNumber: mobileNumber || mobileNumberFromDetails,
+        ...patientInfoData,
+        ...otherDetailsData,
         files: attachmentData,
       };
 

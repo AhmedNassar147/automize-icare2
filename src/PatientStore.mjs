@@ -146,12 +146,12 @@ class PatientStore extends EventEmitter {
   }
 
   calculateCanStillProcessPatient(patient) {
-    const { caseWillBeSubmittedAtMS } = patient;
-    if (!caseWillBeSubmittedAtMS) return false;
+    const { caseActualWillBeSubmittedAtMS } = patient;
+    if (!caseActualWillBeSubmittedAtMS) return false;
 
     const now = Date.now();
 
-    return now <= caseWillBeSubmittedAtMS;
+    return now <= caseActualWillBeSubmittedAtMS;
   }
 
   canStillProcessPatient(referralId) {
@@ -174,12 +174,12 @@ class PatientStore extends EventEmitter {
     scheduledAt,
     skipResetingPatient,
   }) {
-    const { referralId, caseWillBeSubmittedAtMS } = patient;
+    const { referralId, caseActualWillBeSubmittedAtMS } = patient;
     const isAccepting = eventName === "patientAccepted";
 
-    if (typeof caseWillBeSubmittedAtMS !== "number") {
+    if (typeof caseActualWillBeSubmittedAtMS !== "number") {
       return {
-        message: `Invalid = caseWillBeSubmittedAtMS date: ${caseWillBeSubmittedAtMS}`,
+        message: `Invalid = caseActualWillBeSubmittedAtMS date: ${caseActualWillBeSubmittedAtMS}`,
         success: false,
       };
     }
@@ -193,7 +193,7 @@ class PatientStore extends EventEmitter {
       };
     }
 
-    const timer = waitMinutesThenRun(caseWillBeSubmittedAtMS, () => {
+    const timer = waitMinutesThenRun(caseActualWillBeSubmittedAtMS, () => {
       actionSet.delete(referralId);
       this.patientTimers.delete(referralId);
       this.emit(eventName, patient);

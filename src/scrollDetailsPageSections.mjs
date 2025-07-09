@@ -25,14 +25,11 @@ const scrollDetailsPageSections = async ({
       const section = sections[index];
       if (!section) continue;
 
-      // const invisible = await isElementInvisible(section, viewportHeight);
-
-      // await scrollIntoView(page, cursor, section);
       await page.evaluate(
         (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
         section
       );
-      await sleep(650);
+      await sleep(670);
 
       _section = section;
     }
