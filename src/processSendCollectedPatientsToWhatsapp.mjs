@@ -4,9 +4,9 @@
  *
  */
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
-import { caseEstimatedTimeForProcessingAction } from "./constants.mjs";
+import { estimatedTimeForProcessingAction } from "./constants.mjs";
 
-const cutoffTime = caseEstimatedTimeForProcessingAction / 1000;
+const cutoffTime = estimatedTimeForProcessingAction / 1000;
 
 const processSendCollectedPatientsToWhatsapp =
   (sendWhatsappMessage) => async (addedPatients) => {
