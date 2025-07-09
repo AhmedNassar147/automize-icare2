@@ -83,8 +83,8 @@ const processCollectingPatients = async ({
 
       const logString = `details page for referralId=(${referralId})`;
 
-      console.log(`✅ waiting 2s in ${logString} to collect patient data`);
-      await sleep(2_000);
+      console.log(`✅ waiting 3s in ${logString} to collect patient data`);
+      await sleep(3_000);
 
       // console.log(`✅ moving radnom cursor in ${logString}`);
       // await moveFromCurrentToRandomPosition(cursor);
