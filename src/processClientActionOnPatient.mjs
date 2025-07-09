@@ -127,13 +127,17 @@ const processClientActionOnPatient = async (options) => {
       referralId
     );
 
-    await Promise.all([
+    const oldUrl = page.url();
+
+    await Promise.allSettled([
       page.waitForNavigation({
         waitUntil: "domcontentloaded",
-        timeout: 75_000,
+        timeout: 6000,
       }),
       humanClick(page, cursor, button),
     ]);
+
+    await page.waitForFunction((old) => location.href !== old, {}, oldUrl);
 
     await sleep(50 + Math.random() * 50);
 

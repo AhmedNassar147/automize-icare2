@@ -16,7 +16,7 @@ const getCleanText = (raw = "") =>
     .replace(/\s+/g, " ") // collapse spaces
     .trim();
 
-const collectReferralInfoFromApis = async (page) => {
+const collectReferralInfoFromApis = async (page, referralId) => {
   const apiTargets = Object.entries(apiTargetsMap);
 
   let expectedResponses = [];
@@ -58,12 +58,42 @@ const collectReferralInfoFromApis = async (page) => {
 
   const patientInfo = getSafe("patient-info") ?? {};
 
-  const { firstName = "", lastName = "", ...otherPatientInfo } = patientInfo;
+  const {
+    firstName,
+    lastName,
+    mobileNumber,
+    alternativeMobileNumber,
+    ...otherPatientInfo
+  } = patientInfo;
 
-  const patientName = `${firstName} ${lastName}`.trim();
+  const patientName = [firstName, lastName].filter(Boolean).join(" ");
+
+  // https://referralprogram.globemedsaudi.com/referrals/patient-info
+  //   {
+  //     "data": {
+  //         "nationalId": "1015184151",
+  //         "firstName": "FALEH,SAFAR",
+  //         "lastName": "AL-SALEM",
+  //         "fatherName": "FALEH,SAFAR",
+  //         "weight": null,
+  //         "alternativeMobileNumber": null,
+  //         "mobileNumber": "0555555555",
+  //         "hijriDOB": "Jumada II 29, 1391 AH",
+  //         "nationality": "SAUDI",
+  //         "patientType": null,
+  //         "gender": "Male",
+  //         "dob": "1971-08-21T00:00:00",
+  //         "maritalStatus": "Single",
+  //         "passportNbr": null,
+  //         "email": null
+  //     },
+  //     "statusCode": "Success",
+  //     "errorMessage": null
+  // }
 
   const finalResult = {
     patientName,
+    mobileNumber: mobileNumber || alternativeMobileNumber,
     ...otherPatientInfo,
     icds: [],
   };

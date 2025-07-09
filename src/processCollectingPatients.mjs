@@ -5,7 +5,7 @@
  */
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 import humanClick from "./humanClick.mjs";
-import collectReferralDetailsFromApis from "./collectReferralInfoFromApis.mjs";
+import collectReferralInfoFromApis from "./collectReferralInfoFromApis.mjs";
 import sleep from "./sleep.mjs";
 import collectPatientAttachments from "./collectPatientAttachments.mjs";
 import goToHomePage from "./goToHomePage.mjs";
@@ -23,8 +23,6 @@ const processCollectingPatients = async ({
 }) => {
   try {
     await sleep(400);
-
-    const currentCollectdListId = [...(patientsStore.getIds() || [])];
 
     let processedCount = 0;
 
@@ -51,7 +49,8 @@ const processCollectingPatients = async ({
         continue;
       }
 
-      if (currentCollectdListId.includes(referralId)) {
+      if ([...patientsStore.getIds()].includes(referralId)) {
+        console.log("⚠️ Patient already collected...");
         continue;
       }
 
@@ -74,7 +73,7 @@ const processCollectingPatients = async ({
         true
       );
 
-      const patientInfoApisPromise = collectReferralDetailsFromApis(
+      const patientInfoApisPromise = collectReferralInfoFromApis(
         page,
         referralId
       );
@@ -113,9 +112,14 @@ const processCollectingPatients = async ({
         sectionsIndices: targetIndexes,
       });
 
-      const { timingData, mobileNumberFromDetails, ...otherDetailsData } =
-        await detailsApiDataPromise;
-      const { patientName, mobileNumber, specialty, ...patientInfoData } =
+      const {
+        timingData,
+        mobileNumberFromDetails,
+        specialty,
+        ...otherDetailsData
+      } = await detailsApiDataPromise;
+
+      const { patientName, mobileNumber, ...patientInfoData } =
         await patientInfoApisPromise;
 
       const attachmentData = await collectPatientAttachments({
@@ -139,7 +143,6 @@ const processCollectingPatients = async ({
       };
 
       await patientsStore.addPatients(finalData);
-      currentCollectdListId.push(referralId);
 
       try {
         await goToHomePage(page, cursor);
