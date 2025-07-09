@@ -100,15 +100,21 @@ const processCollectingPatients = async ({
         sectionsIndices: targetIndexes,
       });
 
+      const [detailsApiData, patientInfo] = await Promise.all([
+        detailsApiDataPromise,
+        patientInfoApisPromise,
+      ]);
+
       const {
         timingData,
         mobileNumberFromDetails,
         specialty,
         ...otherDetailsData
-      } = await detailsApiDataPromise;
+      } = detailsApiData;
 
-      const { patientName, mobileNumber, ...patientInfoData } =
-        await patientInfoApisPromise;
+      const { patientName, mobileNumber, ...patientInfoData } = patientInfo;
+
+      console.log("patientInfo", patientInfo);
 
       const attachmentData = await collectPatientAttachments({
         page,
@@ -141,9 +147,9 @@ const processCollectingPatients = async ({
         );
       }
 
-      await sleep(10);
+      await sleep(1000);
 
-      await Promise.all([
+      await Promise.allSettled([
         generateAcceptancePdfLetters(browser, [finalData], true),
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
