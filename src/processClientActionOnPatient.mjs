@@ -91,7 +91,7 @@ const processClientActionOnPatient = async (options) => {
   }
 
   try {
-    await sleep(500);
+    await sleep(400);
 
     const rows = await collectHomePageTableRows(page);
 
@@ -127,24 +127,21 @@ const processClientActionOnPatient = async (options) => {
       referralId
     );
 
-    const oldUrl = page.url();
+    console.log(`✅ clicking patient button for referralId=(${referralId})`);
+    await humanClick(page, cursor, button);
 
-    await Promise.allSettled([
-      page.waitForNavigation({
-        waitUntil: "domcontentloaded",
-        timeout: 6000,
-      }),
-      humanClick(page, cursor, button),
-    ]);
+    console.log(
+      `✅ waiting 2s in ${logString} to make user action ${actionName}`
+    );
 
-    await page.waitForFunction((old) => location.href !== old, {}, oldUrl);
-
-    await sleep(50 + Math.random() * 50);
+    await sleep(2_000);
 
     await makeKeyboardNoise(page, logString);
 
     const { timingData } = await detailsApiDataPromise;
     const { caseActualLeftMs } = timingData || {};
+
+    console.log("timingData", timingData);
 
     const hasTimeingDataButStillHasLeftTime =
       !!timingData && caseActualLeftMs > 0;

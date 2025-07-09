@@ -33,7 +33,7 @@ const processCollectingPatients = async ({
       const isThereNotNewPatients = processedCount >= rows.length;
 
       if (isThereNotNewPatients) {
-        await sleep(2_000);
+        await sleep(1_000);
         break;
       }
 
@@ -79,24 +79,12 @@ const processCollectingPatients = async ({
       );
 
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
-
-      const oldUrl = page.url();
-
-      await Promise.allSettled([
-        page.waitForNavigation({
-          waitUntil: "domcontentloaded",
-          timeout: 6000,
-        }),
-        humanClick(page, cursor, button),
-      ]);
-
-      await page.waitForFunction((old) => location.href !== old, {}, oldUrl);
+      await humanClick(page, cursor, button);
 
       const logString = `details page for referralId=(${referralId})`;
 
-      console.log(`✅ waiting for ${logString}`);
-
-      await sleep(50 + Math.random() * 50);
+      console.log(`✅ waiting 2s in ${logString} to collect patient data`);
+      await sleep(2_000);
 
       // console.log(`✅ moving radnom cursor in ${logString}`);
       // await moveFromCurrentToRandomPosition(cursor);

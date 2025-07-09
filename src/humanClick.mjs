@@ -36,7 +36,7 @@ const humanClick = async (page, cursor, selectorOrElementHandle) => {
       return;
     }
 
-    const moveDelay = 35 + Math.random() * 25;
+    const moveDelay = 35 + Math.random() * 30;
 
     // Move to and click submit
     await cursor.click(elementHandle, {
@@ -45,7 +45,7 @@ const humanClick = async (page, cursor, selectorOrElementHandle) => {
       randomizeMoveDelay: true,
       radius: 3,
       hesitate: 4 + Math.random() * 12,
-      waitForClick: 2 + Math.random() * 10,
+      waitForClick: 4 + Math.random() * 10,
     });
   } catch (error) {
     console.log(
