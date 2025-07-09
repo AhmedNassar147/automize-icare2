@@ -246,15 +246,48 @@ const processClientActionOnPatient = async (options) => {
 
     console.log(`📎 Uploading file ${fileName} in ${logString}`);
 
-    await cursor.move(fileInput, {
-      moveDelay: 15 + Math.random() * 25,
+    let browseButton = await inputContainer.$(
+      "button.MuiTypography-root.MuiLink-button"
+    );
+
+    if (!browseButton) {
+      const [_browseButton] = await inputContainer.$x(
+        './/button[contains(text(), "browse")]'
+      );
+
+      browseButton = _browseButton;
+    }
+
+    if (!browseButton) {
+      await page.screenshot({
+        path: `screenshots/browse-button-not-found-${referralId}-${Date.now()}.png`,
+      });
+
+      return await sendErrorMessage(`The "browse" button was not found.`);
+    }
+
+    await cursor.move(inputContainer, {
+      moveDelay: 10 + Math.random() * 25,
       randomizeMoveDelay: true,
-      maxTries: 4,
+      maxTries: 6,
       moveSpeed: 1.25,
     });
 
+    await sleep(250 + Math.random() * 200); // longer pause
+
+    console.log(`🖱️ Moving to "browse" button visually...`);
+
+    await cursor.move(browseButton, {
+      moveDelay: 15 + Math.random() * 20,
+      randomizeMoveDelay: true,
+      maxTries: 6,
+      moveSpeed: 1.2 + Math.random() * 0.3,
+    });
+
+    await sleep(150 + Math.random() * 300); // hover time
+
     await fileInput.uploadFile(filePath);
-    await sleep(800 + Math.random() * 800);
+    await sleep(700 + Math.random() * 700);
     console.log(`✅ File uploaded successfully in ${logString}`);
 
     const [acceptButton, rejectButton] = referralButtons;
