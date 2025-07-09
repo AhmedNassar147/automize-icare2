@@ -22,7 +22,7 @@ const processCollectingPatients = async ({
   cursor,
 }) => {
   try {
-    await sleep(500);
+    await sleep(400);
 
     const currentCollectdListId = [...(patientsStore.getIds() || [])];
 
@@ -81,13 +81,17 @@ const processCollectingPatients = async ({
 
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
 
-      await Promise.all([
+      const oldUrl = page.url();
+
+      await Promise.allSettled([
         page.waitForNavigation({
           waitUntil: "domcontentloaded",
-          timeout: 75_000,
+          timeout: 6000,
         }),
         humanClick(page, cursor, button),
       ]);
+
+      await page.waitForFunction((old) => location.href !== old, {}, oldUrl);
 
       const logString = `details page for referralId=(${referralId})`;
 
@@ -111,7 +115,7 @@ const processCollectingPatients = async ({
 
       const { timingData, mobileNumberFromDetails, ...otherDetailsData } =
         await detailsApiDataPromise;
-      const { patientName, mobileNumber, ...patientInfoData } =
+      const { patientName, mobileNumber, specialty, ...patientInfoData } =
         await patientInfoApisPromise;
 
       const attachmentData = await collectPatientAttachments({
@@ -128,6 +132,7 @@ const processCollectingPatients = async ({
         referralId,
         patientName,
         mobileNumber: mobileNumber || mobileNumberFromDetails,
+        specialty,
         ...patientInfoData,
         ...otherDetailsData,
         files: attachmentData,

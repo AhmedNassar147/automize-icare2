@@ -21,6 +21,8 @@ const scrollDetailsPageSections = async ({
 
     const sections = await page.$$("section.collapsible-container.MuiBox-root");
 
+    console.log("sections", sections?.length);
+
     for (const index of sectionsIndices) {
       const section = sections[index];
       if (!section) continue;
