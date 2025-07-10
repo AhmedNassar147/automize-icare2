@@ -11,6 +11,7 @@ const scrollDetailsPageSections = async ({
   sectionsIndices,
   cursor,
   logString,
+  noCursorMovemntIfFailed,
 }) => {
   const viewportHeight = await page.evaluate(() => window.innerHeight);
 
@@ -31,7 +32,7 @@ const scrollDetailsPageSections = async ({
         (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
         section
       );
-      await sleep(670);
+      await sleep(350);
 
       _section = section;
     }
@@ -40,7 +41,9 @@ const scrollDetailsPageSections = async ({
       `⚠️ Failed to scroll sections, moving cursor instead in ${logString}`,
       err.message
     );
-    await moveFromCurrentToRandomPosition(cursor);
+    if (!noCursorMovemntIfFailed) {
+      await moveFromCurrentToRandomPosition(cursor);
+    }
   }
 
   return [viewportHeight, _section];

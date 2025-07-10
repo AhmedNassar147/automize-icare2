@@ -24,6 +24,9 @@ import {
 // https://referralprogram.globemedsaudi.com/referrals/accept-referral
 // {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null}
 
+// https://referralprogram.globemedsaudi.com/referrals/reject-referral
+// {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null
+
 const checkIfButtonsFound = async (page) => {
   try {
     const section = await page.waitForSelector(
@@ -91,7 +94,7 @@ const processClientActionOnPatient = async (options) => {
   }
 
   try {
-    await sleep(400);
+    await sleep(200);
 
     const rows = await collectHomePageTableRows(page);
 
@@ -132,10 +135,10 @@ const processClientActionOnPatient = async (options) => {
     await humanClick(page, cursor, button);
 
     console.log(
-      `✅ waiting 2s in ${logString} to make user action ${actionName}`
+      `✅ waiting 1.4s in ${logString} to make user action ${actionName}`
     );
 
-    await sleep(2_000);
+    await sleep(1400);
 
     await makeKeyboardNoise(page, logString);
 
@@ -170,7 +173,7 @@ const processClientActionOnPatient = async (options) => {
       submissionButtonsRetry += 1;
       await goToHomePage(page, cursor);
 
-      await sleep(1100);
+      await sleep(50);
 
       return await processClientActionOnPatient({
         ...options,
@@ -194,6 +197,7 @@ const processClientActionOnPatient = async (options) => {
       cursor,
       logString,
       sectionsIndices: [1, 2],
+      noCursorMovemntIfFailed: true,
     });
 
     if (!sectionEl) {
@@ -246,53 +250,54 @@ const processClientActionOnPatient = async (options) => {
 
     console.log(`📎 Uploading file ${fileName} in ${logString}`);
 
-    let browseButton = await inputContainer.$(
-      "button.MuiTypography-root.MuiLink-button"
-    );
+    // let browseButton = await inputContainer.$(
+    //   "button.MuiTypography-root.MuiLink-button"
+    // );
 
-    if (!browseButton) {
-      const [_browseButton] = await inputContainer.$x(
-        './/button[contains(text(), "browse")]'
-      );
+    // if (!browseButton) {
+    //   const [_browseButton] = await inputContainer.$x(
+    //     './/button[contains(text(), "browse")]'
+    //   );
 
-      browseButton = _browseButton;
-    }
+    //   browseButton = _browseButton;
+    // }
 
-    if (!browseButton) {
-      await page.screenshot({
-        path: `screenshots/browse-button-not-found-${referralId}-${Date.now()}.png`,
-      });
+    // if (!browseButton) {
+    //   await page.screenshot({
+    //     path: `screenshots/browse-button-not-found-${referralId}-${Date.now()}.png`,
+    //   });
 
-      return await sendErrorMessage(`The "browse" button was not found.`);
-    }
+    //   return await sendErrorMessage(`The "browse" button was not found.`);
+    // }
 
-    await cursor.move(inputContainer, {
-      moveDelay: 10 + Math.random() * 25,
-      randomizeMoveDelay: true,
-      maxTries: 6,
-      moveSpeed: 1.25,
-    });
-
-    await sleep(250 + Math.random() * 200); // longer pause
+    await makeKeyboardNoise(page, logString);
 
     console.log(`🖱️ Moving to "browse" button visually...`);
 
-    await cursor.move(browseButton, {
-      moveDelay: 15 + Math.random() * 20,
-      randomizeMoveDelay: true,
-      maxTries: 6,
-      moveSpeed: 1.2 + Math.random() * 0.3,
-    });
-
-    await sleep(150 + Math.random() * 300); // hover time
+    // await cursor.move(browseButton, {
+    //   moveDelay: 10 + Math.random() * 12,
+    //   randomizeMoveDelay: true,
+    //   maxTries: 6,
+    //   moveSpeed: 1.4 + Math.random() * 0.3,
+    // });
 
     await fileInput.uploadFile(filePath);
-    await sleep(700 + Math.random() * 700);
+    await sleep(20);
+
     console.log(`✅ File uploaded successfully in ${logString}`);
 
     const [acceptButton, rejectButton] = referralButtons;
 
-    await humanClick(page, cursor, isAcceptance ? acceptButton : rejectButton);
+    const selectedButton = isAcceptance ? acceptButton : rejectButton;
+
+    await page.evaluate(
+      (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
+      selectedButton
+    );
+
+    await sleep(20);
+
+    await humanClick(page, cursor, selectedButton);
   } catch (error) {
     console.log(
       `🛑 Error during ${actionName} of ${referralId}:`,
