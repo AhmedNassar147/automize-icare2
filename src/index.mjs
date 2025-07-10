@@ -81,6 +81,8 @@ const collectConfimrdPatient = false;
     const patientsStore = new PatientStore(collectedPatients || []);
     await patientsStore.scheduleAllInitialPatients();
 
+    const sendWhatsappMessage = sendMessageUsingWhatsapp(patientsStore);
+
     (async () =>
       await waitForWaitingCountWithInterval({
         collectConfimrdPatient,
@@ -88,8 +90,6 @@ const collectConfimrdPatient = false;
         patientsStore,
         sendWhatsappMessage,
       }))();
-
-    const sendWhatsappMessage = sendMessageUsingWhatsapp(patientsStore);
 
     patientsStore.on(
       "patientsAdded",
