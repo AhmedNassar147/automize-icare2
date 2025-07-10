@@ -19,17 +19,16 @@ const getCleanText = (raw = "") =>
     .replace(/\s+/g, " ")
     .trim();
 
-const buildDetailsApiData = (
-  {
+const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
+  const {
     response,
     receivedAt,
     requestStartTime,
     networkStatus,
     apiCatchError,
     apiCatchMessage,
-  },
-  useDefaultMessageIfNotFound
-) => {
+  } = responseData || {};
+
   const { statusCode, data: apiData } = response || {};
 
   if (
@@ -87,10 +86,10 @@ const buildDetailsApiData = (
   };
 };
 
-const buildPatientInfo = (
-  { response, networkStatus, apiCatchError, apiCatchMessage },
-  mobileNumberFromDetails
-) => {
+const buildPatientInfo = (responseData, mobileNumberFromDetails) => {
+  const { response, networkStatus, apiCatchError, apiCatchMessage } =
+    responseData || {};
+
   const { statusCode, data: apiData } = response || {};
 
   if (
@@ -127,12 +126,10 @@ const buildPatientInfo = (
   };
 };
 
-const buildIcdData = ({
-  response,
-  networkStatus,
-  apiCatchError,
-  apiCatchMessage,
-}) => {
+const buildIcdData = (responseData) => {
+  const { response, networkStatus, apiCatchError, apiCatchMessage } =
+    responseData || {};
+
   const { statusCode, data: apiData } = response || {};
 
   if (
@@ -153,7 +150,7 @@ const buildIcdData = ({
   }
 
   const { data } = apiData || {};
-  const icdList = Array.isArray(data?.data) ? data.data : [];
+  const icdList = Array.isArray(data) ? data : [];
 
   if (!icdList.length) {
     return { icds: [] };

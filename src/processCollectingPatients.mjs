@@ -54,17 +54,22 @@ const processCollectingPatients = async ({
         continue;
       }
 
-      const button = await row.$("td:last-child button");
-      if (!button) {
+      const iconButton = await row.$("td:last-child button");
+      if (!iconButton) {
         console.log("⚠️ No button found in this row, skipping...");
         continue;
       }
 
-      // const isButtonInvisible = await isElementInvisible(button, viewportHeight);
-
-      // if (isButtonInvisible) {
-      //   await scrollIntoView(page, cursor, button);
-      // }
+      // Ensure the icon is in view (scrolling horizontally)
+      await page.evaluate(
+        (el) =>
+          el.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "end",
+          }),
+        iconButton
+      );
 
       console.log(`📡 Monitoring referralId=(${referralId}) API responses...`);
       const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
@@ -74,12 +79,13 @@ const processCollectingPatients = async ({
       });
 
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
-      await humanClick(page, cursor, button);
+      await sleep(30);
+      await humanClick(page, cursor, iconButton);
 
       const logString = `details page for referralId=(${referralId})`;
 
-      console.log(`✅ waiting 3s in ${logString} to collect patient data`);
-      await sleep(3_000);
+      console.log(`✅ waiting 2.3s in ${logString} to collect patient data`);
+      await sleep(2300);
 
       // console.log(`✅ moving radnom cursor in ${logString}`);
       // await moveFromCurrentToRandomPosition(cursor);
