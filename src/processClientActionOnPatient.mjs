@@ -41,7 +41,7 @@ const checkIfButtonsFound = async (page) => {
 };
 
 const MAX_RETRIES_FOR_SUBMISSION_BUTTONS = 4;
-const submissionButtonsRetry = 0;
+let submissionButtonsRetry = 0;
 
 const processClientActionOnPatient = async (options) => {
   const {
@@ -94,7 +94,7 @@ const processClientActionOnPatient = async (options) => {
   }
 
   try {
-    await sleep(200);
+    await sleep(150);
 
     const rows = await collectHomePageTableRows(page);
 
@@ -173,7 +173,7 @@ const processClientActionOnPatient = async (options) => {
       submissionButtonsRetry += 1;
       await goToHomePage(page, cursor);
 
-      await sleep(50);
+      await sleep(80);
 
       return await processClientActionOnPatient({
         ...options,
@@ -192,6 +192,7 @@ const processClientActionOnPatient = async (options) => {
     }
 
     console.log(`✅ Moving random cursor in ${logString}`);
+    submissionButtonsRetry = 0;
     const [viewportHeight, sectionEl] = await scrollDetailsPageSections({
       page,
       cursor,

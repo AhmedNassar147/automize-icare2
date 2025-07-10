@@ -50,7 +50,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
         await gotToLoginPage(page);
       }
 
-      await sleep(1000);
+      await sleep(900);
 
       const isLoginPage = await checkIfLoginPage(page);
 
@@ -78,7 +78,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
     }
 
     retries++;
-    await sleep(1000 + retries * 500);
+    await sleep(800 + retries * 400);
   }
 
   console.error("❌ Failed to login after max retries.");
