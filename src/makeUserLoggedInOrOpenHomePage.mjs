@@ -11,8 +11,8 @@ import randomIdleDelay from "./randomIdleDelay.mjs";
 import sleep from "./sleep.mjs";
 import waitForHomeLink from "./waitForHomeLink.mjs";
 import gotToLoginPage, { LOGIN_TIMEOUT } from "./gotToLoginPage.mjs";
+import shouldCloseAppWhenLogin from "./shouldCloseAppWhenLogin.mjs";
 import { homePageTableSelector } from "./constants.mjs";
-import getLoginErrors from "./getLoginErrors.mjs";
 
 const MAX_RETRIES = 3;
 const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
@@ -40,7 +40,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
 }) => {
   const userName = process.env.CLIENT_NAME;
   const password = process.env.CLIENT_PASSWORD;
-  const clientPhoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
   let page = currentPage || (await browser.newPage());
   let cursor = _cursor && currentPage ? _cursor : createCursor(page);
@@ -53,7 +52,20 @@ const makeUserLoggedInOrOpenHomePage = async ({
         await gotToLoginPage(page);
       }
 
-      await sleep(850);
+      const isLoginPage_BEFORE = await checkIfLoginPage(page);
+      console.log("isLoginPage_BEFORE", isLoginPage_BEFORE);
+
+      await sleep(350);
+      const isLoginPage_AFTER_350 = await checkIfLoginPage(page);
+      console.log("isLoginPage_AFTER_350", isLoginPage_AFTER_350);
+
+      await sleep(100);
+      const isLoginPage_AFTER_450 = await checkIfLoginPage(page);
+      console.log("isLoginPage_AFTER_450", isLoginPage_AFTER_450);
+
+      await sleep(100);
+      const isLoginPage_AFTER_550 = await checkIfLoginPage(page);
+      console.log("isLoginPage_AFTER_550", isLoginPage_AFTER_550);
 
       const isLoginPage = await checkIfLoginPage(page);
 
@@ -62,36 +74,24 @@ const makeUserLoggedInOrOpenHomePage = async ({
         await humanType(page, cursor, "#Input_Password", password);
         await humanClick(page, cursor, loginButtonSelector);
 
-        await page.waitForNavigation({
-          waitUntil: "networkidle2",
-          timeout: LOGIN_TIMEOUT * 3,
-        });
+        await sleep(3_000);
       }
 
       const currentPageUrl = page.url();
+
       const isStillInLoginPage = currentPageUrl
         .toLowerCase()
         .includes("/account/login");
 
       if (isStillInLoginPage) {
-        const errors = await getLoginErrors(page);
+        const shouldCloseApp = await shouldCloseAppWhenLogin(
+          page,
+          sendWhatsappMessage
+        );
 
-        if (errors.length > 0) {
-          console.error(
-            `❌ Login errors: ${errors.join(", ")} sending errors to client...`
-          );
-          await sendWhatsappMessage(clientPhoneNumber, [
-            {
-              message:
-                "⚠️ *‼️ ATTENTION ‼️*\n" +
-                "❌ *Login Errors Detected:*\n" +
-                "─────────────────────────────\n" +
-                errors.map((error, i) => `🔸 ${i + 1}. ${error}`).join("\n") +
-                "\n─────────────────────────────",
-            },
-          ]);
-          process.kill(process.pid);
+        if (shouldCloseApp) {
           await browser.close();
+          process.kill(process.pid);
           return;
         }
       }
@@ -109,7 +109,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
     }
 
     retries++;
-    await sleep(500 + retries * 400);
+    await sleep(400 + retries * 400);
   }
 
   console.error("❌ Failed to login after max retries.");

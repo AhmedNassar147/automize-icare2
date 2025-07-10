@@ -32,7 +32,7 @@ const scrollDetailsPageSections = async ({
         (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
         section
       );
-      await sleep(320);
+      await sleep(300);
 
       _section = section;
     }

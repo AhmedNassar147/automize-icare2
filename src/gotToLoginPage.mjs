@@ -15,7 +15,7 @@ const gotToLoginPage = async (page) => {
 
   await page.waitForNavigation({
     waitUntil: ["load", "networkidle2"],
-    timeout: LOGIN_TIMEOUT * 4,
+    timeout: LOGIN_TIMEOUT * 5,
   });
 };
 

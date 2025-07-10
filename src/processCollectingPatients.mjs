@@ -87,9 +87,6 @@ const processCollectingPatients = async ({
       console.log(`✅ waiting 2.3s in ${logString} to collect patient data`);
       await sleep(2300);
 
-      // console.log(`✅ moving radnom cursor in ${logString}`);
-      // await moveFromCurrentToRandomPosition(cursor);
-
       await makeKeyboardNoise(page, logString);
 
       const targetIndexes = [1, 2, 3];
