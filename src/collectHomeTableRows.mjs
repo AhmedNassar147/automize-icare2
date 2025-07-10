@@ -4,8 +4,11 @@
  *
  */
 import { homePageTableSelector } from "./constants.mjs";
+import sleep from "./sleep.mjs";
 
 const collectHomePageTableRows = async (page) => {
+  await sleep(50);
+
   const allRows = await page.$$(`${homePageTableSelector} tbody tr`);
   const rows = [];
 

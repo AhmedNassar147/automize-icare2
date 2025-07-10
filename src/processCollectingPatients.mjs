@@ -21,8 +21,6 @@ const processCollectingPatients = async ({
   cursor,
 }) => {
   try {
-    await sleep(400);
-
     let processedCount = 0;
 
     while (true) {
@@ -33,7 +31,7 @@ const processCollectingPatients = async ({
 
       if (isThereNotNewPatients) {
         console.log("⏳ No more new patients found, exiting...");
-        await sleep(1_000);
+        await sleep(2_000);
         break;
       }
 
@@ -84,14 +82,14 @@ const processCollectingPatients = async ({
 
       const logString = `details page for referralId=(${referralId})`;
 
-      console.log(`✅ waiting 2.3s in ${logString} to collect patient data`);
-      await sleep(2300);
+      console.log(`✅ waiting 2.2s in ${logString} to collect patient data`);
+      await sleep(2200);
 
       await makeKeyboardNoise(page, logString);
 
       const targetIndexes = [1, 2, 3];
 
-      const [viewportHeight] = await scrollDetailsPageSections({
+      await scrollDetailsPageSections({
         cursor,
         logString,
         page,
@@ -106,17 +104,13 @@ const processCollectingPatients = async ({
         await goToHomePage(page, cursor);
         await sleep(1000);
 
-        console.warn(
-          `❌ Skipping referralId=${referralId}, reason:`,
-          apisError
-        );
+        console.log(`❌ Skipping referralId=${referralId}, reason:`, apisError);
         continue;
       }
 
       const attachmentData = await collectPatientAttachments({
         page,
         cursor,
-        viewportHeight,
         patientName,
         specialty,
         referralId,
@@ -130,14 +124,7 @@ const processCollectingPatients = async ({
 
       await patientsStore.addPatients(finalData);
 
-      try {
-        await goToHomePage(page, cursor);
-      } catch (error) {
-        console.log(
-          `Error when get back to home in when collecting patient data`,
-          error.message
-        );
-      }
+      await goToHomePage(page, cursor);
 
       await sleep(1000);
 
@@ -146,7 +133,7 @@ const processCollectingPatients = async ({
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
-      await sleep(50_000);
+      await sleep(15_000);
     }
 
     console.log(`✅ Collected ${processedCount} patients successfully.`);

@@ -57,12 +57,15 @@ const collectPatientAttachments = async ({
         page.waitForResponse(
           (res) =>
             res.url().includes("/referrals/download-attachment/") &&
-            res.status() === 200 &&
+            res.status() >= 200 &&
+            res.status() < 300 &&
             res.request().method() === "GET",
           { timeout: 15_000 }
         ),
-        humanClick(page, cursor, btn),
-        sleep(500),
+        (async () => {
+          await sleep(180);
+          await humanClick(page, cursor, btn);
+        })(),
       ]);
 
       if (!response) {

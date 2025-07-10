@@ -8,14 +8,14 @@ import humanClick from "./humanClick.mjs";
 import { dashboardLinkSelector, homePageTableSelector } from "./constants.mjs";
 import randomIdleDelay from "./randomIdleDelay.mjs";
 
+const timeout = 7_000;
+
 const goToHomePage = async (page, cursor, areadyInHome) => {
   if (!areadyInHome) {
     await humanClick(page, cursor, dashboardLinkSelector);
   }
 
-  const timeout = 9_000;
-
-  await Promise.all([
+  await Promise.allSettled([
     waitForHomeLink(page, timeout),
     randomIdleDelay(),
     page.waitForSelector(homePageTableSelector, { timeout }),

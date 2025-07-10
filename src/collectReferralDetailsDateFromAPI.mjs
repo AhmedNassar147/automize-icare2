@@ -207,7 +207,8 @@ const collectReferralDetailsDateFromAPI = ({
         if (
           res.url().includes(endpoint) &&
           res.request().method() === "POST" &&
-          res.status() === 200 &&
+          res.status() >= 200 &&
+          res.status() < 300 &&
           !responses[key]
         ) {
           try {
@@ -298,7 +299,7 @@ const collectReferralDetailsDateFromAPI = ({
           (k) => !responses[k]
         ),
       });
-    }, 17_000);
+    }, 18_000);
   });
 };
 

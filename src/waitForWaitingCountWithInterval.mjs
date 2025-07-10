@@ -9,7 +9,7 @@ import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItI
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 
-const INTERVAL = 60_000 + Math.random() * 4000;
+const INTERVAL = 60_000 + Math.random() * 8000;
 const NOT_LOGGED_SLEEP_TIME = 20_000;
 
 const waitForWaitingCountWithInterval = async ({

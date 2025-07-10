@@ -45,7 +45,7 @@ const humanClick = async (page, cursor, selectorOrElementHandle) => {
       randomizeMoveDelay: true,
       radius: 3,
       hesitate: 3 + Math.random() * 12,
-      waitForClick: 4 + Math.random() * 10,
+      waitForClick: 5 + Math.random() * 10,
     });
   } catch (error) {
     console.log(
