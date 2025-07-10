@@ -23,8 +23,7 @@ const shouldCloseAppWhenLogin = async (page, sendWhatsappMessage) => {
           "────────────────────────\n" +
           errors.map((error, i) => `🔸 ${i + 1}. ${error}`).join("\n") +
           "\n\n" +
-          "────────────────────────\n" +
-          "⚠️ * CLOSING APP UNTILL FIXED *",
+          "⚠️ *CLOSING APP UNTILL FIXED*",
       },
     ]);
 

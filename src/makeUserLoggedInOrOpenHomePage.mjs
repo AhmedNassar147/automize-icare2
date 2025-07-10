@@ -19,9 +19,9 @@ const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
 
 const checkHomePageFullyLoaded = async (page) => {
   try {
-    await waitForHomeLink(page, 6_000);
+    await waitForHomeLink(page, 3_000);
     await page.waitForSelector(homePageTableSelector, {
-      timeout: 6_000,
+      timeout: 3_000,
     });
     return true;
   } catch (err) {
@@ -52,21 +52,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
         await gotToLoginPage(page);
       }
 
-      const isLoginPage_BEFORE = await checkIfLoginPage(page);
-      console.log("isLoginPage_BEFORE", isLoginPage_BEFORE);
-
-      await sleep(350);
-      const isLoginPage_AFTER_350 = await checkIfLoginPage(page);
-      console.log("isLoginPage_AFTER_350", isLoginPage_AFTER_350);
-
-      await sleep(100);
-      const isLoginPage_AFTER_450 = await checkIfLoginPage(page);
-      console.log("isLoginPage_AFTER_450", isLoginPage_AFTER_450);
-
-      await sleep(100);
-      const isLoginPage_AFTER_550 = await checkIfLoginPage(page);
-      console.log("isLoginPage_AFTER_550", isLoginPage_AFTER_550);
-
       const isLoginPage = await checkIfLoginPage(page);
 
       if (isLoginPage) {
@@ -74,7 +59,17 @@ const makeUserLoggedInOrOpenHomePage = async ({
         await humanType(page, cursor, "#Input_Password", password);
         await humanClick(page, cursor, loginButtonSelector);
 
-        await sleep(3_000);
+        try {
+          await page.waitForNavigation({
+            waitUntil: ["load", "networkidle2"],
+            timeout: LOGIN_TIMEOUT,
+          });
+
+          // await page.waitForNavigation({
+          //   waitUntil: ["load", "networkidle2"],
+          //   timeout: LOGIN_TIMEOUT,
+          // });
+        } catch (error) {}
       }
 
       const currentPageUrl = page.url();
@@ -99,8 +94,8 @@ const makeUserLoggedInOrOpenHomePage = async ({
       const isHomeLoaded = await checkHomePageFullyLoaded(page);
 
       if (isHomeLoaded) {
-        console.log(`✅ User ${userName} is on home page.`);
-        await randomIdleDelay();
+        console.log(`✅ User ${userName} is in home page.`);
+        // await randomIdleDelay();
 
         return [page, cursor, true];
       }
@@ -109,7 +104,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
     }
 
     retries++;
-    await sleep(400 + retries * 400);
+    await sleep(250 + retries * 250);
   }
 
   console.error("❌ Failed to login after max retries.");
