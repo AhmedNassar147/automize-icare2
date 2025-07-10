@@ -12,6 +12,7 @@ import sleep from "./sleep.mjs";
 import waitForHomeLink from "./waitForHomeLink.mjs";
 import gotToLoginPage, { LOGIN_TIMEOUT } from "./gotToLoginPage.mjs";
 import { homePageTableSelector } from "./constants.mjs";
+import getLoginErrors from "./getLoginErrors.mjs";
 
 const MAX_RETRIES = 3;
 const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
@@ -35,9 +36,11 @@ const makeUserLoggedInOrOpenHomePage = async ({
   browser,
   cursor: _cursor,
   currentPage,
+  sendWhatsappMessage,
 }) => {
   const userName = process.env.CLIENT_NAME;
   const password = process.env.CLIENT_PASSWORD;
+  const clientPhoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
   let page = currentPage || (await browser.newPage());
   let cursor = _cursor && currentPage ? _cursor : createCursor(page);
@@ -50,7 +53,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
         await gotToLoginPage(page);
       }
 
-      await sleep(900);
+      await sleep(850);
 
       const isLoginPage = await checkIfLoginPage(page);
 
@@ -63,6 +66,34 @@ const makeUserLoggedInOrOpenHomePage = async ({
           waitUntil: "networkidle2",
           timeout: LOGIN_TIMEOUT * 3,
         });
+      }
+
+      const currentPageUrl = page.url();
+      const isStillInLoginPage = currentPageUrl
+        .toLowerCase()
+        .includes("/account/login");
+
+      if (isStillInLoginPage) {
+        const errors = await getLoginErrors(page);
+
+        if (errors.length > 0) {
+          console.error(
+            `❌ Login errors: ${errors.join(", ")} sending errors to client...`
+          );
+          await sendWhatsappMessage(clientPhoneNumber, [
+            {
+              message:
+                "⚠️ *‼️ ATTENTION ‼️*\n" +
+                "❌ *Login Errors Detected:*\n" +
+                "─────────────────────────────\n" +
+                errors.map((error, i) => `🔸 ${i + 1}. ${error}`).join("\n") +
+                "\n─────────────────────────────",
+            },
+          ]);
+          process.kill(process.pid);
+          await browser.close();
+          return;
+        }
       }
 
       const isHomeLoaded = await checkHomePageFullyLoaded(page);
@@ -78,7 +109,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
     }
 
     retries++;
-    await sleep(800 + retries * 400);
+    await sleep(500 + retries * 400);
   }
 
   console.error("❌ Failed to login after max retries.");

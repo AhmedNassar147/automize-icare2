@@ -16,6 +16,7 @@ const waitForWaitingCountWithInterval = async ({
   collectConfimrdPatient = false,
   patientsStore,
   browser,
+  sendWhatsappMessage,
 }) => {
   const { targetText, noCountText } =
     PATIENT_SECTIONS_STATUS[collectConfimrdPatient ? "CONFIRMED" : "WAITING"];
@@ -29,6 +30,7 @@ const waitForWaitingCountWithInterval = async ({
           browser,
           cursor,
           currentPage: page,
+          sendWhatsappMessage,
         });
 
       page = newPage;

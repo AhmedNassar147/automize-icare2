@@ -86,6 +86,7 @@ const collectConfimrdPatient = false;
         collectConfimrdPatient,
         browser,
         patientsStore,
+        sendWhatsappMessage,
       }))();
 
     const sendWhatsappMessage = sendMessageUsingWhatsapp(patientsStore);
