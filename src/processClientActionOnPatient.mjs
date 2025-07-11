@@ -26,10 +26,6 @@ import {
 const WHATS_APP_LOADING_TIME = 40_000;
 const PAGE_LOAD_TIME = 1500;
 
-const endpoint = isAcceptance
-  ? "referrals/accept-referral"
-  : "referrals/reject-referral";
-
 const getSubmissionButtonsIfFound = async (page) => {
   try {
     const section = await page.waitForSelector(
@@ -102,6 +98,10 @@ const processClientActionOnPatient = async (options) => {
   const actionName = isAcceptance ? "Acceptance" : "Rejection";
 
   const logString = `details page referralId=(${referralId})`;
+
+  const endpoint = isAcceptance
+    ? "referrals/accept-referral"
+    : "referrals/reject-referral";
 
   const baseMessage = `🚨 *\`${actionName.toUpperCase()}\`* Case Alert! 🚨
 🆔 Referral: *${referralId}*
