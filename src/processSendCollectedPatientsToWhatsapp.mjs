@@ -36,10 +36,10 @@ const processSendCollectedPatientsToWhatsapp =
       const message =
         `🚨 *New Case Alert!* 🚨\n\n` +
         `📥 *Received At:* 🟦 \`${caseReceivedAt}\`\n` +
-        `🕐 *Min Applicable At:* 🟨 \`${caseUserWillBeSubmittedAt}\`\n` +
+        `📤 *Manual action:* 🟥 \`${caseActualWillBeSubmittedAt}\`\n` +
         `⏳ *Cutoff Time:* 🟧 \`${cutoffTime} seconds\`\n` +
-        `📤 *Max Applicable At:* 🟥 \`${caseActualWillBeSubmittedAt}\`\n\n` +
-        `────────────────────────\n` +
+        `🕐 *actionable At:* 🟨 \`${caseUserWillBeSubmittedAt}\`\n\n` +
+        `────────────────────────\n\n` +
         `👤 *Name:* \`${patientName}\`\n` +
         `📱 *Mobile:* \`${mobileNumber || ""}\`\n` +
         `🌐 *Nationality:* \`${nationality || ""}\`\n` +
@@ -52,15 +52,12 @@ const processSendCollectedPatientsToWhatsapp =
         `📍 *Zone:* \`${providerZone}\`\n` +
         `🗓️ *Requested At:* \`${requestDate}\`\n` +
         `📝 *Reason:* \`${referralCause}\`\n` +
-        `🧾 *ICDs:*\n\`${(icds || []).join("\n") || ""}\`\n\n` +
+        `🧾 *ICDs:*\`${(icds || []).join("\n") || ""}\`\n\n` +
+        `⚠️ *‼️ ATTENTION ‼️*\n\n` +
         `────────────────────────\n` +
-        `⚠️ *‼️ ATTENTION ‼️*\n` +
-        `────────────────────────\n` +
-        `🧾 *Original Alert:* _${caseAlertMessage || ""}_\n` +
-        `💬 *User Alert:* _${caseUserAlertMessage}_\n` +
-        `────────────────────────\n` +
-        `📩 *Please review and reply to this message with:*\n` +
-        `────────────────────────\n` +
+        `🧾 *Original Alert:* _${caseAlertMessage || ""}_\n\n` +
+        `💬 *User Alert:* _${caseUserAlertMessage}_\n\n` +
+        `📩 *Please review and reply to this message with:*\n\n` +
         `${createConfirmationMessage()}`;
 
       return {

@@ -149,12 +149,16 @@ class PatientStore extends EventEmitter {
   }
 
   calculateCanStillProcessPatient(patient) {
-    const { caseActualWillBeSubmittedAtMS } = patient;
-    if (!caseActualWillBeSubmittedAtMS) return false;
+    const { caseUserWillBeSubmittedAtMS, caseActualWillBeSubmittedAtMS } =
+      patient;
+    const timeout =
+      caseUserWillBeSubmittedAtMS || caseActualWillBeSubmittedAtMS;
+
+    if (!timeout) return false;
 
     const now = Date.now();
 
-    return now <= caseActualWillBeSubmittedAtMS;
+    return now <= timeout;
   }
 
   canStillProcessPatient(referralId) {
