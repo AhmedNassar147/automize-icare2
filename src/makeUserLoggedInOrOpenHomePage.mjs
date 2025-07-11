@@ -36,6 +36,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
   cursor: _cursor,
   currentPage,
   sendWhatsappMessage,
+  startingPageUrl,
 }) => {
   const userName = process.env.CLIENT_NAME;
   const password = process.env.CLIENT_PASSWORD;
@@ -47,8 +48,15 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
   while (retries <= MAX_RETRIES) {
     try {
-      if (!currentPage || retries > 0) {
+      if ((!currentPage && !startingPageUrl) || retries > 0) {
         await gotToLoginPage(page);
+      }
+
+      if (startingPageUrl && retries === 0) {
+        await page.goto(startingPageUrl, {
+          waitUntil: ["networkidle2", "load"],
+          timeout: 28_000,
+        });
       }
 
       const isLoginPage = await checkIfLoginPage(page);

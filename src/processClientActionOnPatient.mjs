@@ -22,6 +22,8 @@ import {
 } from "./constants.mjs";
 
 const WHATS_APP_LOADING_TIME = 40_000;
+const startingPageUrl =
+  "https://referralprogram.globemedsaudi.com/Dashboard/Referral";
 
 const getSubmissionButtonsIfFound = async (page) => {
   try {
@@ -104,13 +106,12 @@ const processClientActionOnPatient = async (options) => {
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
 
-  // https://referralprogram.globemedsaudi.com/Dashboard/Referral
-
   const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     currentPage: pageFromOptions,
     cursor: cursorFromOptions,
     sendWhatsappMessage,
+    startingPageUrl,
   });
 
   if (!isLoggedIn) {
