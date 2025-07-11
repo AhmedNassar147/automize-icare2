@@ -12,6 +12,24 @@ import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 const INTERVAL = 60_000;
 const NOT_LOGGED_SLEEP_TIME = 20_000;
 
+const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
+  try {
+    const intervalTime = INTERVAL + Math.random() * 9000;
+
+    console.log(`${logString}refreshing in ${intervalTime / 1000}s...`);
+    await sleep(intervalTime);
+    await page.reload({ waitUntil: "domcontentloaded" });
+  } catch (err) {
+    console.error("🔁 Failed to reload page:", err.message);
+
+    const intervalTime = INTERVAL + Math.random() * 9000;
+    console.log(`${logString}refreshing in ${intervalTime / 1000}s...`);
+    await sleep(intervalTime);
+
+    return true;
+  }
+};
+
 const waitForWaitingCountWithInterval = async ({
   collectConfimrdPatient = false,
   patientsStore,
@@ -51,11 +69,14 @@ const waitForWaitingCountWithInterval = async ({
       );
 
       if (!count) {
-        const intervalTime = INTERVAL + Math.random() * 9000;
+        const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(
+          page,
+          `${noCountText}, `
+        );
 
-        console.log(`${noCountText}, refreshing in ${intervalTime / 1000}s...`);
-        await sleep(intervalTime);
-        await page.reload({ waitUntil: "domcontentloaded" });
+        if (shouldCreateNewpage) {
+          page = null;
+        }
         continue;
       }
 
@@ -74,11 +95,11 @@ const waitForWaitingCountWithInterval = async ({
       console.error("🛑 Unexpected error during loop:", error.message);
     }
 
-    const intervalTime = INTERVAL + Math.random() * 9000;
+    const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(page);
 
-    console.log(`refreshing in ${intervalTime / 1000}s...`);
-    await sleep(intervalTime);
-    await page.reload({ waitUntil: "domcontentloaded" });
+    if (shouldCreateNewpage) {
+      page = null;
+    }
   }
 };
 
