@@ -11,46 +11,43 @@ const scrollDetailsPageSections = async ({
   sectionsIndices,
   cursor,
   logString,
-  noCursorMovemntIfFailed,
-  scrollDelay,
+  noCursorMovemntIfFailed = false,
+  scrollDelay = 130,
 }) => {
-  const viewportHeight = await page.evaluate(() => window.innerHeight);
-
-  let _section = null;
-
   try {
-    console.log(`✅ scrolling sections in ${logString}`);
+    console.log(`✅ Scrolling sections in ${logString}`);
 
     const sections = await page.$$("section.collapsible-container.MuiBox-root");
+    console.log("Found sections:", sections?.length);
 
-    console.log("sections", sections?.length);
+    const viewportHeight = await page.evaluate(() => window.innerHeight);
 
     for (const index of sectionsIndices) {
       const section = sections[index];
       if (!section) continue;
 
-      await page.evaluate(
-        (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
-        section
-      );
-
-      const actualDelay = (scrollDelay || 250) + Math.random() * 100;
-
-      await sleep(actualDelay);
-
-      _section = section;
+      // Only scroll if not already fully visible
+      try {
+        await section.scrollIntoViewIfNeeded({ timeout: 2000 });
+        await sleep(scrollDelay + Math.random() * 60);
+      } catch (error) {
+        console.log("🔁 Failed to scroll to section:", index);
+      }
     }
+
+    return [viewportHeight, sections[sectionsIndices.at(-1)] || null];
   } catch (err) {
-    console.log(
-      `⚠️ Failed to scroll sections, moving cursor instead in ${logString}`,
+    console.warn(
+      `⚠️ Failed to scroll, using cursor in ${logString}:`,
       err.message
     );
+
     if (!noCursorMovemntIfFailed) {
       await moveFromCurrentToRandomPosition(cursor);
     }
-  }
 
-  return [viewportHeight, _section];
+    return [null, null];
+  }
 };
 
 export default scrollDetailsPageSections;

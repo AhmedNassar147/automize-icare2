@@ -14,7 +14,7 @@ import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
 
-const COOLDOWN_AFTER_BATCH = 50_000;
+const COOLDOWN_AFTER_BATCH = 55_000;
 
 const processCollectingPatients = async ({
   browser,
@@ -62,16 +62,9 @@ const processCollectingPatients = async ({
         continue;
       }
 
-      // Ensure the icon is in view (scrolling horizontally)
-      await page.evaluate(
-        (el) =>
-          el.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-            inline: "end",
-          }),
-        iconButton
-      );
+      console.time("🕒 scroll_eye_button");
+      await iconButton.scrollIntoViewIfNeeded({ timeout: 3000 });
+      console.time("🕒 scroll_eye_button");
 
       console.log(`📡 Monitoring referralId=(${referralId}) API responses...`);
       const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
@@ -83,31 +76,53 @@ const processCollectingPatients = async ({
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
       await humanClick(page, cursor, iconButton);
 
-      const statusElement = await page
-        .waitForSelector(".statusContainer", {
-          timeout: 4000,
-        })
-        .catch(() => null);
-
-      console.log(
-        "statusElement when collecting exists",
-        statusElement !== null
-      );
-
       const logString = `details page for referralId=(${referralId})`;
 
-      // console.log(`✅ waiting 1.7s in ${logString} to collect patient data`);
-      // await sleep(1600 + Math.random() * 1000);
+      // console.log(`✅ waiting 1.9s in ${logString} to collect patient data`);
+      // await sleep(1850 + Math.random() * 1000);
+
+      let areWeInDetailsPage = false;
+
+      console.time("🕒 areWeInDetailsPage");
+
+      try {
+        const oldUrl = page.url().toLowerCase();
+
+        await page.waitForFunction(
+          (previous) => location.href.toLowerCase() !== previous,
+          { timeout: 5000 },
+          oldUrl
+        );
+
+        await page.waitForSelector(".statusContainer", {
+          timeout: 4000,
+          visible: true,
+        });
+        areWeInDetailsPage = true;
+      } catch (err) {
+        areWeInDetailsPage = false;
+      }
+
+      console.timeEnd("🕒 areWeInDetailsPage");
+      await page.screenshot({
+        path: `screenshots/areWeInDetailsPage-${Date.now()}.png`,
+      });
+
+      console.log(`in home page:${areWeInDetailsPage}`);
+
+      if (!areWeInDetailsPage) {
+        await sleep(1000);
+        console.log("we are not in details page");
+        continue;
+      }
 
       await makeKeyboardNoise(page, logString);
-
-      const targetIndexes = [1, 2, 3];
 
       await scrollDetailsPageSections({
         cursor,
         logString,
         page,
-        sectionsIndices: targetIndexes,
+        sectionsIndices: [1, 2, 3],
         scrollDelay: 450,
       });
 

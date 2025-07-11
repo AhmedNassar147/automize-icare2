@@ -26,7 +26,7 @@ import {
   screenshotsFolderDirectory,
 } from "./constants.mjs";
 
-const collectConfirmedPatient = false;
+const collectConfirmedPatient = true;
 // puppeteer.use(StealthPlugin());
 
 // "--no-sandbox", // avoid sandbox restrictions (detectable, but sometimes needed)

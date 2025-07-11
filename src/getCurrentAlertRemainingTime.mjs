@@ -24,6 +24,19 @@
 // </div>
 // </div>
 
+/**
+ * @description
+ * Waits for a MUI snackbar with a message indicating the remaining time until
+ * an action can be performed. The message is expected to be in the format of
+ * "A waiting period of X minutes shall pass before an action can be performed.
+ * There is Y minute(s) and Z second(s) remaining.".
+ * @param {puppeteer.Page} page
+ * @returns {Promise<Object>}
+ * @property {boolean} hasMessageFound - Whether a message was found.
+ * @property {number} minutes - Remaining minutes.
+ * @property {number} seconds - Remaining seconds.
+ * @property {number} totalRemainingTimeMs - Total remaining time in milliseconds.
+ */
 const getCurrentAlertRemainingTime = async (page) => {
   const timeout = 2000;
   let minutes = 0;
@@ -35,7 +48,9 @@ const getCurrentAlertRemainingTime = async (page) => {
       .waitForSelector(".MuiSnackbar-root .MuiAlert-message", { timeout })
       .then((el) => el.evaluate((el) => el.textContent?.trim() || ""));
 
-    const match = message.match(/(\d+)\s+minute\(s\)?.*?(\d+)\s+second\(s\)?/i);
+    const match = message.match(
+      /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/
+    );
 
     if (match) {
       minutes = parseInt(match[1], 10) || 0;

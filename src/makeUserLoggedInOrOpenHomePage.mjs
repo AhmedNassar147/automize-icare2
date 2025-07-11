@@ -52,52 +52,71 @@ const makeUserLoggedInOrOpenHomePage = async ({
         await gotToLoginPage(page);
       }
 
+      let hasEnteredStartingPage = false;
+
       if (startingPageUrl && retries === 0) {
+        console.time("startingPageUrl_TIME");
         await page.goto(startingPageUrl, {
-          waitUntil: ["networkidle2", "load"],
-          timeout: 28_000,
+          waitUntil: "networkidle2",
+          timeout: 10_000,
         });
-      }
 
-      const isLoginPage = await checkIfLoginPage(page);
+        const pageUrl = page.url();
 
-      console.log("isLoginPage", isLoginPage);
-
-      if (isLoginPage) {
-        await humanType(page, cursor, "#Input_Username", userName);
-        await humanType(page, cursor, "#Input_Password", password);
-        await humanClick(page, cursor, loginButtonSelector);
-
-        try {
-          await page.waitForNavigation({
-            waitUntil: ["load", "networkidle2"],
-            timeout: 8_000,
+        if (pageUrl.toLowerCase().includes(startingPageUrl.toLowerCase())) {
+          await page.waitForSelector(homePageTableSelector, {
+            timeout: 6000,
           });
-        } catch (error) {
-          console.log("AFTER SUBMITTING LOGIN", error.message);
+
+          hasEnteredStartingPage = true;
+        }
+        console.timeEnd("startingPageUrl_TIME");
+      }
+
+      if (!hasEnteredStartingPage) {
+        const isLoginPage = await checkIfLoginPage(page);
+
+        console.log("isLoginPage", isLoginPage);
+
+        if (isLoginPage) {
+          await humanType(page, cursor, "#Input_Username", userName);
+          await humanType(page, cursor, "#Input_Password", password);
+          await humanClick(page, cursor, loginButtonSelector);
+
+          try {
+            await page.waitForNavigation({
+              waitUntil: ["load", "networkidle2"],
+              timeout: 8_000,
+            });
+          } catch (error) {
+            console.log("AFTER SUBMITTING LOGIN", error.message);
+          }
+        }
+
+        const currentPageUrl = page.url();
+
+        const isStillInLoginPage = currentPageUrl
+          .toLowerCase()
+          .includes("/account/login");
+
+        if (isStillInLoginPage) {
+          const shouldCloseApp = await shouldCloseAppWhenLogin(
+            page,
+            sendWhatsappMessage
+          );
+
+          if (shouldCloseApp) {
+            await browser.close();
+            process.kill(process.pid);
+            return;
+          }
         }
       }
 
-      const currentPageUrl = page.url();
+      const isHomeLoaded =
+        hasEnteredStartingPage || (await checkHomePageFullyLoaded(page));
 
-      const isStillInLoginPage = currentPageUrl
-        .toLowerCase()
-        .includes("/account/login");
-
-      if (isStillInLoginPage) {
-        const shouldCloseApp = await shouldCloseAppWhenLogin(
-          page,
-          sendWhatsappMessage
-        );
-
-        if (shouldCloseApp) {
-          await browser.close();
-          process.kill(process.pid);
-          return;
-        }
-      }
-
-      const isHomeLoaded = await checkHomePageFullyLoaded(page);
+      console.log("isHomeLoaded", isHomeLoaded);
 
       if (isHomeLoaded) {
         console.log(`✅ User ${userName} is in home page.`);

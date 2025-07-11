@@ -8,6 +8,7 @@ const collectHomePageTableRows = async (page, referralId = null) => {
   await page
     .waitForSelector(tableRowsSelector, {
       timeout: 2000,
+      visible: true,
     })
     .catch(() => {}); // Ignore timeout
 
@@ -20,7 +21,8 @@ const collectHomePageTableRows = async (page, referralId = null) => {
   if (referralId) {
     for (const row of allRows) {
       // Skip rows with no <td>
-      const tdCount = await row.$$eval("td", (tds) => tds.length);
+      const tdCount = await row.$$eval("td", (tds) => tds?.length ?? 0);
+
       if (!tdCount) continue;
 
       const currentReferralId = await getReferralIdBasedTableRow(row);
@@ -36,7 +38,7 @@ const collectHomePageTableRows = async (page, referralId = null) => {
   // For collecting all valid rows
   const validRows = await Promise.all(
     allRows.map(async (row) => {
-      const tdCount = (await row.$$eval("td", (tds) => tds?.length)) ?? 0;
+      const tdCount = await row.$$eval("td", (tds) => tds?.length ?? 0);
       return tdCount > 0 ? row : null;
     })
   );

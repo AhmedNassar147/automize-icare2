@@ -13,15 +13,16 @@ import goToHomePage from "./goToHomePage.mjs";
 import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-import collectReferralDetailsDateFromAPI from "./collectReferralDetailsDateFromAPI.mjs";
 import sleep from "./sleep.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
 } from "./constants.mjs";
+import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
 
-const WHATS_APP_LOADING_TIME = 40_000;
+const WHATS_APP_LOADING_TIME = 42_000;
+
 const startingPageUrl =
   "https://referralprogram.globemedsaudi.com/Dashboard/Referral";
 
@@ -120,6 +121,7 @@ const processClientActionOnPatient = async (options) => {
       "user-action-no-loggedin",
       buildDurationText(startTime, Date.now())
     );
+
     return;
   }
 
@@ -175,90 +177,86 @@ const processClientActionOnPatient = async (options) => {
 
   while (true) {
     try {
+      console.time("🕒 action_page_referral_button_collection");
       const referralIdRecordResult = await collectHomePageTableRows(
         page,
         referralId
       );
 
-      if (!referralIdRecordResult) {
+      const { iconButton } = referralIdRecordResult || {};
+
+      if (!iconButton) {
         await sendErrorMessage(
-          "The Pending referrals list is empty.",
+          "The Pending referrals list is empty or eye button not found.",
           "no-patients-in-home-table",
           buildDurationText(startTime, Date.now())
         );
 
         break;
       }
+      console.timeEnd("🕒 action_page_referral_button_collection");
 
-      const { iconButton } = referralIdRecordResult;
+      // console.time("🕒 scroll_eye_button");
+      // await iconButton.scrollIntoViewIfNeeded({ timeout: 3000 });
+      // console.time("actionPageVisitTime");
+      // await humanClick(page, cursor, iconButton);
+      // console.timeEnd("actionPageVisitTime");
+      // console.time("🕒 scroll_eye_button");
 
-      if (!iconButton) {
-        await sendErrorMessage(
-          "The patient wasn't found in Pending referrals.",
-          "navigation-button-not-found",
-          buildDurationText(startTime, Date.now())
+      await iconButton.click();
+
+      let areWeInDetailsPage = false;
+
+      try {
+        const oldUrl = page.url().toLowerCase();
+
+        await page.waitForFunction(
+          (previous) => location.href.toLowerCase() !== previous,
+          { timeout: 5000 },
+          oldUrl
         );
-        break;
+
+        await page.waitForSelector(".statusContainer", {
+          timeout: 3000,
+          visible: true,
+        });
+        areWeInDetailsPage = true;
+      } catch (err) {
+        areWeInDetailsPage = false;
       }
 
-      // Ensure the icon is in view (scrolling horizontally)
-      await page.evaluate(
-        (el) =>
-          el.scrollIntoView({
-            behavior: "atuo",
-            block: "center",
-            inline: "end",
-          }),
-        iconButton
+      if (!areWeInDetailsPage) {
+        await sleep(1000);
+        console.log("we are not in details page");
+        continue;
+      }
+
+      console.time("🕒 keyboard_noise");
+      await makeKeyboardNoise(page, logString);
+      console.timeEnd("🕒 keyboard_noise");
+
+      const { totalRemainingTimeMs, ...otherSnakBardData } =
+        await getCurrentAlertRemainingTime(page);
+
+      console.log(
+        "detailsApiData",
+        JSON.stringify({ totalRemainingTimeMs, ...otherSnakBardData }, null, 2)
       );
 
-      const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
-        page,
-        referralId,
-        useOnlyDetailsApi: true,
-        useDefaultMessageIfNotFound: false,
-      });
-
-      console.log(`✅ clicking patient button for referralId=(${referralId})`);
-      console.time("actionPageVisitTime");
-      await humanClick(page, cursor, iconButton);
-
-      const statusElement = await page
-        .waitForSelector(".statusContainer", {
-          timeout: 4000,
-        })
-        .catch(() => null);
-
-      console.log("statusElement exists", statusElement !== null);
-
-      await makeKeyboardNoise(page, logString);
-
-      const [detailsApiData, referralButtons] = await Promise.all([
-        detailsApiDataPromise,
-        getSubmissionButtonsIfFound(page),
-      ]);
-
-      console.timeEnd("actionPageVisitTime");
-
-      const { caseActualLeftMs } = detailsApiData;
-
-      const isLeftMsNumber = typeof caseActualLeftMs === "number";
-
-      console.log("detailsApiData", JSON.stringify(detailsApiData, null, 2));
-
-      const hasTimeingDataButStillHasLeftTime =
-        isLeftMsNumber && caseActualLeftMs > 0;
+      const hasTimeingDataButStillHasLeftTime = totalRemainingTimeMs > 0;
 
       if (hasTimeingDataButStillHasLeftTime) {
         await goToHomePage(page, cursor);
 
         const sleepTime =
-          caseActualLeftMs >= 4000 ? caseActualLeftMs - 2000 : 0;
+          totalRemainingTimeMs >= 4000 ? totalRemainingTimeMs - 2000 : 0;
 
         await sleep(sleepTime);
 
         continue;
       }
+
+      const referralButtons = await getSubmissionButtonsIfFound(page);
 
       const hasReachedMaxRetriesForSubmission =
         submissionButtonsRetry >= MAX_RETRIES_FOR_SUBMISSION_BUTTONS;
@@ -275,9 +273,8 @@ const processClientActionOnPatient = async (options) => {
 
       if (!referralButtons) {
         await goToHomePage(page, cursor);
-        await sleep(30);
+        await sleep(20);
         submissionButtonsRetry += 1;
-
         continue;
       }
 
@@ -317,7 +314,6 @@ const processClientActionOnPatient = async (options) => {
         console.time("file-upload-time");
         await fileInput.uploadFile(resolve(filePath));
         console.timeEnd("file-upload-time");
-        await sleep(20);
       } catch (error) {
         await sendErrorMessage(
           `Error happens when uploading file \`${filePath}\`\n*catchError:*: ${error.message}`,
@@ -334,10 +330,7 @@ const processClientActionOnPatient = async (options) => {
 
       const selectedButton = isAcceptance ? acceptButton : rejectButton;
 
-      await page.evaluate(
-        (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
-        selectedButton
-      );
+      await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
 
       const responsePromise = page.waitForResponse(
         (res) =>
@@ -369,14 +362,12 @@ const processClientActionOnPatient = async (options) => {
           const json = await response.json();
           statusCode = json?.statusCode ?? "Unknown";
           errorMessage = json?.errorMessage ?? "No errorMessage";
-          console.log("IS JSON RESPONSE", json);
         } else {
           const text = await response.text();
           try {
             const parsedText = JSON.parse(text);
             statusCode = parsedText?.statusCode ?? "Unknown";
             errorMessage = parsedText?.errorMessage ?? "No errorMessage";
-            console.log("IS TEXT RESPONSE", parsedText);
           } catch (error) {
             errorMessage = `Non-JSON response: ${text}`;
             apiCatchError = `Tried to parse non-JSON response: ${error.message}`;
@@ -421,6 +412,7 @@ const processClientActionOnPatient = async (options) => {
       console.log(deletionResponse?.message);
       await sleep(WHATS_APP_LOADING_TIME);
       await page.close();
+      break;
     } catch (error) {
       const err = error.message;
 
