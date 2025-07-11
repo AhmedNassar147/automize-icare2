@@ -134,11 +134,11 @@ export default getWhenCaseStarted;
 
 // // const wastedTimeInMins = parseFloat((elapsedMs / 1000 / 60).toFixed(1));
 
-console.log(
-  getWhenCaseStarted(
-    Date.now(),
-    "A waiting period of 15 minutes shall pass before an action can be performed. There is 12 minute(s) and 42 second(s) remaining."
-  )
-);
+// console.log(
+//   getWhenCaseStarted(
+//     Date.now(),
+//     "A waiting period of 15 minutes shall pass before an action can be performed. There is 12 minute(s) and 42 second(s) remaining."
+//   )
+// );
 
 // // console.log(getWhenCaseStarted(Date.now(), "", true));
