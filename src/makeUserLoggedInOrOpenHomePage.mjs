@@ -9,7 +9,7 @@ import humanType from "./humanType.mjs";
 import humanClick from "./humanClick.mjs";
 import sleep from "./sleep.mjs";
 import waitForHomeLink from "./waitForHomeLink.mjs";
-import gotToLoginPage, { LOGIN_TIMEOUT } from "./gotToLoginPage.mjs";
+import gotToLoginPage from "./gotToLoginPage.mjs";
 import shouldCloseAppWhenLogin from "./shouldCloseAppWhenLogin.mjs";
 import { homePageTableSelector } from "./constants.mjs";
 
