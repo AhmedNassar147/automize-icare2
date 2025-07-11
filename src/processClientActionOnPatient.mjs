@@ -139,6 +139,7 @@ const processClientActionOnPatient = async (options) => {
     browser,
     currentPage: pageFromOptions,
     cursor: cursorFromOptions,
+    sendWhatsappMessage,
   });
 
   if (!isLoggedIn) {

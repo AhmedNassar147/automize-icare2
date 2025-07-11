@@ -53,6 +53,8 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
       const isLoginPage = await checkIfLoginPage(page);
 
+      console.log("isLoginPage", isLoginPage);
+
       if (isLoginPage) {
         await humanType(page, cursor, "#Input_Username", userName);
         await humanType(page, cursor, "#Input_Password", password);
@@ -61,7 +63,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
         try {
           await page.waitForNavigation({
             waitUntil: ["load", "networkidle2"],
-            timeout: LOGIN_TIMEOUT,
+            timeout: 8_000,
           });
         } catch (error) {
           console.log("AFTER SUBMITTING LOGIN", error.message);
@@ -91,6 +93,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
       if (isHomeLoaded) {
         console.log(`✅ User ${userName} is in home page.`);
+        await sleep(35 + Math.random() * 40);
 
         return [page, cursor, true];
       }

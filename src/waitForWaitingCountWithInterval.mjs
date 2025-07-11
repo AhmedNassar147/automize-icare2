@@ -9,8 +9,8 @@ import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItI
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 
-const INTERVAL = 60_000;
-const NOT_LOGGED_SLEEP_TIME = 20_000;
+const INTERVAL = 62_000;
+const NOT_LOGGED_SLEEP_TIME = 22_000;
 
 const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
   try {
@@ -22,7 +22,7 @@ const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
   } catch (err) {
     console.error("🔁 Failed to reload page:", err.message);
 
-    const intervalTime = INTERVAL + Math.random() * 9000;
+    const intervalTime = INTERVAL + Math.random() * 11_000;
 
     console.log(
       `Will recreate page on next loop iteration, refreshing in ${
