@@ -368,12 +368,14 @@ const processClientActionOnPatient = async (options) => {
           const json = await response.json();
           statusCode = json?.statusCode ?? "Unknown";
           errorMessage = json?.errorMessage ?? "No errorMessage";
+          console.log("IS JSON RESPONSE", json);
         } else {
           const text = await response.text();
           try {
             const parsedText = JSON.parse(text);
             statusCode = parsedText?.statusCode ?? "Unknown";
             errorMessage = parsedText?.errorMessage ?? "No errorMessage";
+            console.log("IS TEXT RESPONSE", parsedText);
           } catch (error) {
             errorMessage = `Non-JSON response: ${text}`;
             apiCatchError = `Tried to parse non-JSON response: ${error.message}`;
