@@ -55,7 +55,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
       let hasEnteredStartingPage = false;
 
       if (startingPageUrl && retries === 0) {
-        console.time("startingPageUrl_TIME");
         await page.goto(startingPageUrl, {
           waitUntil: "networkidle2",
           timeout: 10_000,
@@ -70,7 +69,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
           hasEnteredStartingPage = true;
         }
-        console.timeEnd("startingPageUrl_TIME");
       }
 
       if (!hasEnteredStartingPage) {

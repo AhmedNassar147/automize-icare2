@@ -87,16 +87,15 @@ const processCollectingPatients = async ({
 
       await makeKeyboardNoise(page, logString);
 
-      console.time("🕒 scrollDetailsPageSections");
       await scrollDetailsPageSections({
         cursor,
         logString,
         page,
         sectionsIndices: [1, 2, 3],
-        scrollDelay: 300,
+        scrollDelay: 280,
       });
-      console.timeEnd("🕒 scrollDetailsPageSections");
 
+      console.log("_areWeInDetailsPage_when fetch details");
       let detailsApiData;
 
       try {

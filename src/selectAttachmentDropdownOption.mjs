@@ -4,8 +4,8 @@
  *
  */
 import humanClick from "./humanClick.mjs";
-import scrollIntoView from "./scrollIntoView.mjs";
-import isElementInvisible from "./isElementInvisible.mjs";
+// import scrollIntoView from "./scrollIntoView.mjs";
+// import isElementInvisible from "./isElementInvisible.mjs";
 
 /**
  * Selects an option from a Material UI dropdown ("Acceptance" or "Rejection").
@@ -23,7 +23,7 @@ const selectAttachmentDropdownOption = async ({
   page,
   cursor,
   option,
-  viewportHeight,
+  // viewportHeight,
   sectionEl,
   logString,
 }) => {
@@ -36,27 +36,24 @@ const selectAttachmentDropdownOption = async ({
     return;
   }
 
-  // Ensure visible and scroll if necessary
-  const hidden = await isElementInvisible(dropdownTrigger, viewportHeight);
+  // // Ensure visible and scroll if necessary
+  // const hidden = await isElementInvisible(dropdownTrigger, viewportHeight);
 
-  if (hidden) {
-    console.log(
-      `👀 Dropdown trigger is out of view. Scrolling in ${logString}`
-    );
-    await scrollIntoView(page, cursor, dropdownTrigger);
-  }
+  // if (hidden) {
+  //   console.log(
+  //     `👀 Dropdown trigger is out of view. Scrolling in ${logString}`
+  //   );
+  //   await scrollIntoView(page, cursor, dropdownTrigger);
+  // }
 
   // Open the dropdown
   console.log("🖱️ Clicking dropdown...");
   await humanClick(page, cursor, dropdownTrigger);
 
   // Wait for the dropdown menu to render
-  await page.waitForFunction(
-    () =>
-      document.querySelectorAll('ul[role="listbox"] li[role="option"]').length >
-      0,
-    { timeout: 6000 }
-  );
+  await page.waitForSelector('ul[role="listbox"] li[role="option"]', {
+    timeout: 3000,
+  });
 
   const options = await page.$$('ul[role="listbox"] li[role="option"]');
 
@@ -65,8 +62,6 @@ const selectAttachmentDropdownOption = async ({
     const text = await opt.evaluate((el) =>
       el.textContent.trim().toLowerCase()
     );
-
-    console.log(`🔍 Found dropdown option in ${logString}`, text);
 
     if (text.includes(normalized)) {
       console.log(`✅ Selecting option: ${option}`);

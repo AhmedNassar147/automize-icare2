@@ -13,14 +13,13 @@ import goToHomePage from "./goToHomePage.mjs";
 import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 import sleep from "./sleep.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
 } from "./constants.mjs";
-import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
-import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 
 const WHATS_APP_LOADING_TIME = 42_000;
 
@@ -76,7 +75,7 @@ const buildDurationText = (startTime, endTime) => {
   return durationText;
 };
 
-const MAX_RETRIES_FOR_SUBMISSION_BUTTONS = 4;
+const MAX_RETRIES_FOR_SUBMISSION_BUTTONS = 5;
 
 const processClientActionOnPatient = async (options) => {
   const startTime = Date.now();
@@ -108,6 +107,7 @@ const processClientActionOnPatient = async (options) => {
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
 
+  console.time("🕒 initiate-action-home");
   const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     currentPage: pageFromOptions,
@@ -115,16 +115,6 @@ const processClientActionOnPatient = async (options) => {
     sendWhatsappMessage,
     startingPageUrl,
   });
-
-  if (!isLoggedIn) {
-    await sendErrorMessage(
-      "Login failed after 3 attempts.",
-      "user-action-no-loggedin",
-      buildDurationText(startTime, Date.now())
-    );
-
-    return;
-  }
 
   const sendSuccessMessage = async (durationText) => {
     try {
@@ -161,6 +151,18 @@ const processClientActionOnPatient = async (options) => {
       console.log("Error when sending whatsapp error data");
     }
   };
+
+  if (!isLoggedIn) {
+    await sendErrorMessage(
+      "Login failed after 3 attempts.",
+      "user-action-no-loggedin",
+      buildDurationText(startTime, Date.now())
+    );
+
+    return;
+  }
+
+  console.timeEnd("🕒 initiate-action-home");
 
   const acceptanceFilePath = join(
     generatedPdfsPathForAcceptance,
@@ -214,32 +216,13 @@ const processClientActionOnPatient = async (options) => {
         continue;
       }
 
-      console.time("🕒 keyboard_noise");
+      console.time("🕒 keyboard_noise_action");
       await makeKeyboardNoise(page, logString);
-      console.timeEnd("🕒 keyboard_noise");
+      console.timeEnd("🕒 keyboard_noise_action");
 
-      const { totalRemainingTimeMs, ...otherSnakBardData } =
-        await getCurrentAlertRemainingTime(page);
-
-      console.log(
-        "detailsApiData",
-        JSON.stringify({ totalRemainingTimeMs, ...otherSnakBardData }, null, 2)
-      );
-
-      const hasTimeingDataButStillHasLeftTime = totalRemainingTimeMs > 0;
-
-      if (hasTimeingDataButStillHasLeftTime) {
-        await goToHomePage(page, cursor);
-
-        const sleepTime =
-          totalRemainingTimeMs >= 4000 ? totalRemainingTimeMs - 2000 : 0;
-
-        await sleep(sleepTime);
-
-        continue;
-      }
-
+      console.time("🕒 buttons_collect_action");
       const referralButtons = await getSubmissionButtonsIfFound(page);
+      console.timeEnd("🕒 buttons_collect_action");
 
       const hasReachedMaxRetriesForSubmission =
         submissionButtonsRetry >= MAX_RETRIES_FOR_SUBMISSION_BUTTONS;
@@ -256,11 +239,12 @@ const processClientActionOnPatient = async (options) => {
 
       if (!referralButtons) {
         await goToHomePage(page, cursor);
-        await sleep(20);
+        await sleep(90 + Math.random() * 20);
         submissionButtonsRetry += 1;
         continue;
       }
 
+      console.time("🕒 scrollDetailsPageSections");
       const [viewportHeight, sectionEl] = await scrollDetailsPageSections({
         page,
         cursor,
@@ -268,6 +252,7 @@ const processClientActionOnPatient = async (options) => {
         sectionsIndices: [1, 2],
         noCursorMovemntIfFailed: true,
       });
+      console.timeEnd("🕒 scrollDetailsPageSections");
 
       if (!sectionEl) {
         await sendErrorMessage(
@@ -278,6 +263,7 @@ const processClientActionOnPatient = async (options) => {
         break;
       }
 
+      console.time("🕒 select action option");
       await selectAttachmentDropdownOption({
         page,
         cursor,
@@ -286,28 +272,26 @@ const processClientActionOnPatient = async (options) => {
         sectionEl,
         logString,
       });
+      console.timeEnd("🕒 select action option");
 
       const fileInput = await page.$('#upload-single-file input[type="file"]');
-
-      console.log(`📎 Uploading file ${filePath} in ${logString}`);
 
       await makeKeyboardNoise(page, logString);
 
       try {
-        console.time("file-upload-time");
+        console.time("🕒 file-upload-time");
         await fileInput.uploadFile(resolve(filePath));
-        console.timeEnd("file-upload-time");
+        console.timeEnd("🕒 file-upload-time");
       } catch (error) {
+        const err = error?.message || String(error);
         await sendErrorMessage(
-          `Error happens when uploading file \`${filePath}\`\n*catchError:*: ${error.message}`,
+          `Error happens when uploading file \`${filePath}\`\n*catchError:*: ${err}`,
           "file-upload-error",
           buildDurationText(startTime, Date.now())
         );
 
         break;
       }
-
-      console.log(`✅ File uploaded successfully in ${logString}`);
 
       const [acceptButton, rejectButton] = referralButtons;
 
@@ -352,15 +336,19 @@ const processClientActionOnPatient = async (options) => {
             statusCode = parsedText?.statusCode ?? "Unknown";
             errorMessage = parsedText?.errorMessage ?? "No errorMessage";
           } catch (error) {
+            const err = error?.message || String(error);
+
             errorMessage = `Non-JSON response: ${text}`;
-            apiCatchError = `Tried to parse non-JSON response: ${error.message}`;
+            apiCatchError = `Tried to parse non-JSON response: ${err}`;
           }
         }
       } catch (err) {
-        apiCatchError = err.message;
+        const _err = err?.message || String(err);
+
+        apiCatchError = _err;
         console.log(
           `🛑 Error during submission API call ${actionName} of ${referralId}:`,
-          apiCatchError
+          _err
         );
       }
 
@@ -397,11 +385,11 @@ const processClientActionOnPatient = async (options) => {
       await page.close();
       break;
     } catch (error) {
-      const err = error.message;
+      const _err = error?.message || String(error);
 
-      console.log(`🛑 Error during ${actionName} of ${referralId}:`, err);
+      console.log(`🛑 Error during ${actionName} of ${referralId}:`, _err);
       await sendErrorMessage(
-        `Error: ${err}`,
+        `Error: ${_err}`,
         `catch-error-${actionName}-error`,
         buildDurationText(startTime, Date.now())
       );
@@ -411,6 +399,27 @@ const processClientActionOnPatient = async (options) => {
 };
 
 export default processClientActionOnPatient;
+
+// const { totalRemainingTimeMs, ...otherSnakBardData } =
+//   await getCurrentAlertRemainingTime(page);
+
+// console.log(
+//   "detailsApiData",
+//   JSON.stringify({ totalRemainingTimeMs, ...otherSnakBardData }, null, 2)
+// );
+
+// const hasTimeingDataButStillHasLeftTime = totalRemainingTimeMs > 0;
+
+// if (hasTimeingDataButStillHasLeftTime) {
+//   await goToHomePage(page, cursor);
+
+//   const sleepTime =
+//     totalRemainingTimeMs >= 4000 ? totalRemainingTimeMs - 2000 : 0;
+
+//   await sleep(sleepTime);
+
+//   continue;
+// }
 
 // const inputContainer = await sectionEl.$('div[id="upload-single-file"]');
 

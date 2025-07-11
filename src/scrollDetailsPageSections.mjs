@@ -36,12 +36,11 @@ const scrollDetailsPageSections = async ({
 
     return [viewportHeight, sections[sectionsIndices.at(-1)] || null];
   } catch (err) {
-    console.warn(
-      `⚠️ Failed to scroll, using cursor in ${logString}:`,
-      err.message
-    );
-
     if (!noCursorMovemntIfFailed) {
+      console.log(
+        `⚠️ Failed to scroll, using cursor in ${logString}:`,
+        err.message
+      );
       await moveFromCurrentToRandomPosition(cursor);
     }
 
