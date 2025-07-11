@@ -81,8 +81,8 @@ const processCollectingPatients = async ({
 
       const logString = `details page for referralId=(${referralId})`;
 
-      console.log(`✅ waiting 2.2s in ${logString} to collect patient data`);
-      await sleep(2200);
+      console.log(`✅ waiting 1.8s in ${logString} to collect patient data`);
+      await sleep(1700 + Math.random() * 900);
 
       await makeKeyboardNoise(page, logString);
 
@@ -93,6 +93,7 @@ const processCollectingPatients = async ({
         logString,
         page,
         sectionsIndices: targetIndexes,
+        scrollDelay: 450,
       });
 
       const detailsApiData = await detailsApiDataPromise;

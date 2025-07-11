@@ -12,6 +12,7 @@ const scrollDetailsPageSections = async ({
   cursor,
   logString,
   noCursorMovemntIfFailed,
+  scrollDelay,
 }) => {
   const viewportHeight = await page.evaluate(() => window.innerHeight);
 
@@ -32,7 +33,10 @@ const scrollDetailsPageSections = async ({
         (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
         section
       );
-      await sleep(300);
+
+      const actualDelay = (scrollDelay || 250) + Math.random() * 100;
+
+      await sleep(actualDelay);
 
       _section = section;
     }
