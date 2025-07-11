@@ -4,7 +4,7 @@
  *
  */
 import {
-  EFFECTIVE_REVIEW_DURATION_MS,
+  // EFFECTIVE_REVIEW_DURATION_MS,
   estimatedTimeForProcessingAction,
 } from "./constants.mjs";
 
@@ -59,8 +59,10 @@ const getWhenCaseStarted = (
   // );
 
   const match = message.match(
-    /(\d+)\s*(?:minute(?:s)?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:s)?|secs?|sec)/
+    /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/
   );
+
+  console.log("match", match);
 
   const minsLeft = parseInt(match?.[1], 10) ?? 0;
   const secsLeft = parseInt(match?.[2], 10) ?? 0;
@@ -132,11 +134,11 @@ export default getWhenCaseStarted;
 
 // // const wastedTimeInMins = parseFloat((elapsedMs / 1000 / 60).toFixed(1));
 
-// console.log(
-//   getWhenCaseStarted(
-//     Date.now(),
-//     "A waiting period of 15 minutes shall pass before an action can be performed. There is 12 minute(s) and 42 second(s) remaining."
-//   )
-// );
+console.log(
+  getWhenCaseStarted(
+    Date.now(),
+    "A waiting period of 15 minutes shall pass before an action can be performed. There is 12 minute(s) and 42 second(s) remaining."
+  )
+);
 
 // // console.log(getWhenCaseStarted(Date.now(), "", true));

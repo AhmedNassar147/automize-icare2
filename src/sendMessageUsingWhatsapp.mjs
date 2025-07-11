@@ -192,7 +192,7 @@ const initializeClient = async (
             `❌ [${number}] No referral ID in quoted message:\n${quotedMsg.body}`
           );
           await quotedMsg.reply(
-            `❌ Invalid patient message — no Referral ID found.`
+            `❌ Invalid patient message — No *Referral ID* in quoted message.`
           );
           return;
         }
