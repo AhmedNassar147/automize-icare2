@@ -1,6 +1,6 @@
 /*
  *
- * Helper: `selectAttactmentDropdownOption`.
+ * Helper: `selectAttachmentDropdownOption`.
  *
  */
 import humanClick from "./humanClick.mjs";
@@ -19,7 +19,7 @@ import isElementInvisible from "./isElementInvisible.mjs";
  * @param {import("puppeteer").ElementHandle<Element>} opts.sectionEl - The section element containing the dropdown (used for scoping).
  */
 
-const selectAttactmentDropdownOption = async ({
+const selectAttachmentDropdownOption = async ({
   page,
   cursor,
   option,
@@ -76,4 +76,4 @@ const selectAttactmentDropdownOption = async ({
   }
 };
 
-export default selectAttactmentDropdownOption;
+export default selectAttachmentDropdownOption;

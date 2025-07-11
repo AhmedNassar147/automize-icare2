@@ -77,7 +77,6 @@ const processCollectingPatients = async ({
       });
 
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
-      await sleep(30);
       await humanClick(page, cursor, iconButton);
 
       const logString = `details page for referralId=(${referralId})`;
@@ -133,7 +132,7 @@ const processCollectingPatients = async ({
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
-      await sleep(15_000);
+      await sleep(45_000);
     }
 
     console.log(`✅ Collected ${processedCount} patients successfully.`);
