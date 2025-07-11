@@ -17,7 +17,7 @@ export const PATIENT_SECTIONS_STATUS = {
   WAITING: {
     targetText: "Pending Referrals",
     foundCountText: "waiting confirmation referrals",
-    noCountText: "No waiting waiting referrals found",
+    noCountText: "No waiting referrals found",
   },
   CONFIRMED: {
     targetText: "Confirmed Referrals",

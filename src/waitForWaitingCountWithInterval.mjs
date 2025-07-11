@@ -9,7 +9,7 @@ import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItI
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 
-const INTERVAL = 60_000 + Math.random() * 8000;
+const INTERVAL = 60_000;
 const NOT_LOGGED_SLEEP_TIME = 20_000;
 
 const waitForWaitingCountWithInterval = async ({
@@ -51,8 +51,10 @@ const waitForWaitingCountWithInterval = async ({
       );
 
       if (!count) {
-        console.log(`${noCountText}, refreshing in ${INTERVAL / 1000}s...`);
-        await sleep(INTERVAL);
+        const intervalTime = INTERVAL + Math.random() * 9000;
+
+        console.log(`${noCountText}, refreshing in ${intervalTime / 1000}s...`);
+        await sleep(intervalTime);
         await page.reload({ waitUntil: "domcontentloaded" });
         continue;
       }
@@ -72,8 +74,10 @@ const waitForWaitingCountWithInterval = async ({
       console.error("🛑 Unexpected error during loop:", error.message);
     }
 
-    console.log(`refreshing in ${INTERVAL / 1000}s...`);
-    await sleep(INTERVAL);
+    const intervalTime = INTERVAL + Math.random() * 9000;
+
+    console.log(`refreshing in ${intervalTime / 1000}s...`);
+    await sleep(intervalTime);
     await page.reload({ waitUntil: "domcontentloaded" });
   }
 };
