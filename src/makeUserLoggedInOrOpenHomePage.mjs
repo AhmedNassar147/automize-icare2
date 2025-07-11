@@ -7,7 +7,6 @@ import { createCursor } from "ghost-cursor";
 import checkIfLoginPage from "./checkIfLoginPage.mjs";
 import humanType from "./humanType.mjs";
 import humanClick from "./humanClick.mjs";
-import randomIdleDelay from "./randomIdleDelay.mjs";
 import sleep from "./sleep.mjs";
 import waitForHomeLink from "./waitForHomeLink.mjs";
 import gotToLoginPage, { LOGIN_TIMEOUT } from "./gotToLoginPage.mjs";
@@ -95,7 +94,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
       if (isHomeLoaded) {
         console.log(`✅ User ${userName} is in home page.`);
-        // await randomIdleDelay();
 
         return [page, cursor, true];
       }
@@ -104,7 +102,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
     }
 
     retries++;
-    await sleep(250 + retries * 250);
+    await sleep(320 + retries * 200);
   }
 
   console.error("❌ Failed to login after max retries.");
