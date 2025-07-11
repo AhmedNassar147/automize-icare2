@@ -4,14 +4,16 @@
  *
  *
  */
-const getReferralIdBasedTableRow = async (page, row) => {
-  const referralId = await page.evaluate(
-    (row) =>
-      row.querySelector("td:nth-child(2) span")?.textContent?.trim() || "",
-    row
-  );
-
-  return (referralId || "").replace(/\s|\n|\t|\\/g, "").trim();
+const getReferralIdBasedTableRow = async (row) => {
+  try {
+    const referralId = await row.$eval(
+      "td:nth-child(2) span",
+      (el) => el.textContent?.trim().replace(/\s|\n|\t|\\/g, "") || ""
+    );
+    return referralId;
+  } catch (e) {
+    return "";
+  }
 };
 
 export default getReferralIdBasedTableRow;

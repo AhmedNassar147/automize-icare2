@@ -1,41 +1,47 @@
-/*
- *
- * Helper: `collectHomePageTableRows`.
- *
- */
 import { homePageTableSelector } from "./constants.mjs";
-import sleep from "./sleep.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 
+const tableRowsSelector = `${homePageTableSelector} tbody tr`;
+
 const collectHomePageTableRows = async (page, referralId = null) => {
-  await sleep(70 + Math.random() * 85);
+  // // Wait only if needed
+  await page
+    .waitForSelector(tableRowsSelector, {
+      timeout: 2000,
+    })
+    .catch(() => {}); // Ignore timeout
 
-  const allRows = await page.$$(`${homePageTableSelector} tbody tr`);
+  const allRows = await page.$$(tableRowsSelector);
 
-  const rows = [];
+  if (!allRows?.length) {
+    return referralId ? null : [];
+  }
 
-  if (!allRows.length) return referralId ? null : [];
+  if (referralId) {
+    for (const row of allRows) {
+      // Skip rows with no <td>
+      const tdCount = await row.$$eval("td", (tds) => tds.length);
+      if (!tdCount) continue;
 
-  for (const row of allRows) {
-    const hasTd = await row.evaluate(
-      (tr) => tr.querySelectorAll("td").length > 0
-    );
-
-    if (!hasTd) continue;
-
-    if (referralId) {
-      const currentReferralId = await getReferralIdBasedTableRow(page, row);
+      const currentReferralId = await getReferralIdBasedTableRow(row);
 
       if (currentReferralId === referralId) {
         const iconButton = await row.$("td:last-child button");
-        return { row, iconButton }; // ✅ Return single match
+        return { row, iconButton };
       }
-    } else {
-      rows.push(row); // ✅ Collect all rows if no referralId passed
     }
+    return null;
   }
 
-  return referralId ? null : rows; // ✅ Return null if not found when referralId is passed
+  // For collecting all valid rows
+  const validRows = await Promise.all(
+    allRows.map(async (row) => {
+      const tdCount = (await row.$$eval("td", (tds) => tds?.length)) ?? 0;
+      return tdCount > 0 ? row : null;
+    })
+  );
+
+  return validRows.filter(Boolean);
 };
 
 export default collectHomePageTableRows;

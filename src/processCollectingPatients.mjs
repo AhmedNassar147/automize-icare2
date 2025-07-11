@@ -44,7 +44,7 @@ const processCollectingPatients = async ({
 
       console.log(`\n👉 Processing row ${processedCount} of ${rowsLength}`);
 
-      const referralId = await getReferralIdBasedTableRow(page, row);
+      const referralId = await getReferralIdBasedTableRow(row);
 
       if (!referralId) {
         console.log(`⏩ Skipping not found referralId: ${referralId}`);
@@ -83,10 +83,21 @@ const processCollectingPatients = async ({
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
       await humanClick(page, cursor, iconButton);
 
+      const statusElement = await page
+        .waitForSelector(".statusContainer", {
+          timeout: 4000,
+        })
+        .catch(() => null);
+
+      console.log(
+        "statusElement when collecting exists",
+        statusElement !== null
+      );
+
       const logString = `details page for referralId=(${referralId})`;
 
-      console.log(`✅ waiting 1.7s in ${logString} to collect patient data`);
-      await sleep(1600 + Math.random() * 1000);
+      // console.log(`✅ waiting 1.7s in ${logString} to collect patient data`);
+      // await sleep(1600 + Math.random() * 1000);
 
       await makeKeyboardNoise(page, logString);
 

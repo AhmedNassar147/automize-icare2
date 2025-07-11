@@ -7,7 +7,6 @@ import { unlink } from "fs/promises";
 import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
-import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import humanClick from "./humanClick.mjs";
 import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import goToHomePage from "./goToHomePage.mjs";
@@ -20,11 +19,9 @@ import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
-  estimatedTimeForProcessingAction,
 } from "./constants.mjs";
 
 const WHATS_APP_LOADING_TIME = 40_000;
-const PAGE_LOAD_TIME = 1500;
 
 const getSubmissionButtonsIfFound = async (page) => {
   try {
@@ -170,15 +167,6 @@ const processClientActionOnPatient = async (options) => {
   );
 
   const filePath = isAcceptance ? acceptanceFilePath : rejectionFilePath;
-  const ifLettersGenerated = await checkPathExists(filePath);
-
-  if (!ifLettersGenerated) {
-    return await sendErrorMessage(
-      `The *${actionName}* file doesn't exist: \`${filePath}\``,
-      undefined,
-      buildDurationText(startTime, Date.now())
-    );
-  }
 
   let submissionButtonsRetry = 0;
 
@@ -214,7 +202,7 @@ const processClientActionOnPatient = async (options) => {
       await page.evaluate(
         (el) =>
           el.scrollIntoView({
-            behavior: "smooth",
+            behavior: "atuo",
             block: "center",
             inline: "end",
           }),
@@ -229,17 +217,27 @@ const processClientActionOnPatient = async (options) => {
       });
 
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
+      console.time("actionPageVisitTime");
       await humanClick(page, cursor, iconButton);
 
-      console.log(
-        `✅ waiting 1.5s in ${logString} to make user action ${actionName}`
-      );
+      await page.waitForSelector(".statusContainer", { timeout: 4000 });
 
-      await sleep(PAGE_LOAD_TIME);
+      const statusElement = await page
+        .waitForSelector(".statusContainer", {
+          timeout: 4000,
+        })
+        .catch(() => null);
+
+      console.log("statusElement exists", statusElement !== null);
 
       await makeKeyboardNoise(page, logString);
 
-      const detailsApiData = await detailsApiDataPromise;
+      const [detailsApiData, referralButtons] = await Promise.all([
+        detailsApiDataPromise,
+        getSubmissionButtonsIfFound(page),
+      ]);
+
+      console.timeEnd("actionPageVisitTime");
 
       const { caseActualLeftMs } = detailsApiData;
 
@@ -261,8 +259,6 @@ const processClientActionOnPatient = async (options) => {
         continue;
       }
 
-      const referralButtons = await getSubmissionButtonsIfFound(page);
-
       const hasReachedMaxRetriesForSubmission =
         submissionButtonsRetry >= MAX_RETRIES_FOR_SUBMISSION_BUTTONS;
 
@@ -278,6 +274,7 @@ const processClientActionOnPatient = async (options) => {
 
       if (!referralButtons) {
         await goToHomePage(page, cursor);
+        await sleep(30);
         submissionButtonsRetry += 1;
 
         continue;
@@ -309,34 +306,26 @@ const processClientActionOnPatient = async (options) => {
         logString,
       });
 
-      const inputContainer = await sectionEl.$('div[id="upload-single-file"]');
-
-      if (!inputContainer) {
-        await sendErrorMessage(
-          "The File upload container was not found.",
-          "inputContainer-not-found",
-          buildDurationText(startTime, Date.now())
-        );
-        break;
-      }
-
-      const fileInput = await inputContainer.$('input[type="file"]');
-
-      if (!fileInput) {
-        await sendErrorMessage(
-          "The File upload input was not found.",
-          "fileInput-not-found",
-          buildDurationText(startTime, Date.now())
-        );
-        break;
-      }
+      const fileInput = await page.$('#upload-single-file input[type="file"]');
 
       console.log(`📎 Uploading file ${filePath} in ${logString}`);
 
       await makeKeyboardNoise(page, logString);
 
-      await fileInput.uploadFile(resolve(filePath));
-      await sleep(20);
+      try {
+        console.time("file-upload-time");
+        await fileInput.uploadFile(resolve(filePath));
+        console.timeEnd("file-upload-time");
+        await sleep(20);
+      } catch (error) {
+        await sendErrorMessage(
+          `Error happens when uploading file \`${filePath}\`\n*catchError:*: ${error.message}`,
+          "file-upload-error",
+          buildDurationText(startTime, Date.now())
+        );
+
+        break;
+      }
 
       console.log(`✅ File uploaded successfully in ${logString}`);
 
@@ -444,6 +433,26 @@ const processClientActionOnPatient = async (options) => {
 };
 
 export default processClientActionOnPatient;
+
+// const inputContainer = await sectionEl.$('div[id="upload-single-file"]');
+
+// if (!inputContainer) {
+//   await sendErrorMessage(
+//     "The File upload container was not found.",
+//     "inputContainer-not-found",
+//     buildDurationText(startTime, Date.now())
+//   );
+//   break;
+// }
+
+// if (!fileInput) {
+//   await sendErrorMessage(
+//     "The File upload input was not found.",
+//     "fileInput-not-found",
+//     buildDurationText(startTime, Date.now())
+//   );
+//   break;
+// }
 
 // let browseButton = await inputContainer.$(
 //   "button.MuiTypography-root.MuiLink-button"

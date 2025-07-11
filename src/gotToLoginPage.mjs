@@ -20,9 +20,12 @@ const gotToLoginPage = async (page) => {
 
   const currentUrl = page.url().toLowerCase();
 
-  console.log("currentUrl", currentUrl);
+  const hasAnotherNavigation =
+    currentUrl.includes("account/login") || currentUrl.includes("signin");
 
-  if (currentUrl.includes("account/login") || currentUrl.includes("signin")) {
+  console.log("currentUrl when gotToLoginPage", currentUrl);
+
+  if (hasAnotherNavigation) {
     try {
       await page.waitForNavigation({
         waitUntil: ["load", "networkidle2"],
