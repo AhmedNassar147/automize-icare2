@@ -11,7 +11,7 @@ const getReferralIdBasedTableRow = async (page, row) => {
     row
   );
 
-  return (referralId || "").replace(/\s|\n|\t|\\/g, "");
+  return (referralId || "").replace(/\s|\n|\t|\\/g, "").trim();
 };
 
 export default getReferralIdBasedTableRow;

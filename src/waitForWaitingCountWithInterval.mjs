@@ -76,6 +76,7 @@ const waitForWaitingCountWithInterval = async ({
       if (!page) {
         console.log("Page is not initialized. Skipping reload...");
         await sleep(NOT_LOGGED_SLEEP_TIME);
+        cursor = null;
         continue;
       }
 

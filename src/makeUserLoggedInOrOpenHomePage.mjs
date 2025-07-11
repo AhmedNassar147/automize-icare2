@@ -63,13 +63,8 @@ const makeUserLoggedInOrOpenHomePage = async ({
             waitUntil: ["load", "networkidle2"],
             timeout: LOGIN_TIMEOUT,
           });
-
-          // await page.waitForNavigation({
-          //   waitUntil: ["load", "networkidle2"],
-          //   timeout: LOGIN_TIMEOUT,
-          // });
         } catch (error) {
-          console.log("HelLEOOOOOOOO", err.message);
+          console.log("AFTER SUBMITTING LOGIN", error.message);
         }
       }
 
@@ -104,7 +99,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
     }
 
     retries++;
-    await sleep(320 + retries * 200);
+    await sleep(400 + retries * 220);
   }
 
   console.error("❌ Failed to login after max retries.");

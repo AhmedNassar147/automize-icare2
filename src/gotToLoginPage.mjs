@@ -18,10 +18,14 @@ const gotToLoginPage = async (page) => {
     timeout: LOGIN_TIMEOUT,
   });
 
-  await page.waitForNavigation({
-    waitUntil: ["load", "networkidle2"],
-    timeout: LOGIN_TIMEOUT,
-  });
+  try {
+    await page.waitForNavigation({
+      waitUntil: ["load", "networkidle2"],
+      timeout: 6000,
+    });
+  } catch (error) {
+    console.log("LOGIN_SECOND waitForNavigation", error.message);
+  }
 };
 
 export default gotToLoginPage;

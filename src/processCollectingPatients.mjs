@@ -14,6 +14,8 @@ import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
 
+const COOLDOWN_AFTER_BATCH = 50_000;
+
 const processCollectingPatients = async ({
   browser,
   patientsStore,
@@ -27,7 +29,9 @@ const processCollectingPatients = async ({
       // 🔁 Always re-fetch rows after page changes
       const rows = await collectHomePageTableRows(page);
 
-      const isThereNotNewPatients = processedCount >= rows.length;
+      const rowsLength = rows.length;
+
+      const isThereNotNewPatients = processedCount >= rowsLength;
 
       if (isThereNotNewPatients) {
         console.log("⏳ No more new patients found, exiting...");
@@ -38,7 +42,7 @@ const processCollectingPatients = async ({
       const row = rows[processedCount];
       processedCount++;
 
-      console.log(`\n👉 Processing row ${processedCount} of ${rows.length}`);
+      console.log(`\n👉 Processing row ${processedCount} of ${rowsLength}`);
 
       const referralId = await getReferralIdBasedTableRow(page, row);
 
@@ -81,8 +85,8 @@ const processCollectingPatients = async ({
 
       const logString = `details page for referralId=(${referralId})`;
 
-      console.log(`✅ waiting 1.8s in ${logString} to collect patient data`);
-      await sleep(1700 + Math.random() * 900);
+      console.log(`✅ waiting 1.7s in ${logString} to collect patient data`);
+      await sleep(1600 + Math.random() * 1000);
 
       await makeKeyboardNoise(page, logString);
 
@@ -96,13 +100,25 @@ const processCollectingPatients = async ({
         scrollDelay: 450,
       });
 
-      const detailsApiData = await detailsApiDataPromise;
+      let detailsApiData;
+
+      try {
+        detailsApiData = await detailsApiDataPromise;
+      } catch (err) {
+        console.error(
+          `❌ Failed collecting API data for referralId=${referralId}:`,
+          err.message
+        );
+        await goToHomePage(page, cursor);
+        await sleep(1000);
+        continue;
+      }
 
       const { patientName, specialty, apisError } = detailsApiData;
 
       if (apisError) {
         await goToHomePage(page, cursor);
-        await sleep(1000);
+        await sleep(2000);
 
         console.log(`❌ Skipping referralId=${referralId}, reason:`, apisError);
         continue;
@@ -133,7 +149,12 @@ const processCollectingPatients = async ({
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
-      await sleep(45_000);
+      if (processedCount === rowsLength) {
+        console.log(
+          `😴 Sleeping ${COOLDOWN_AFTER_BATCH / 1000}s after final patient...`
+        );
+        await sleep(COOLDOWN_AFTER_BATCH);
+      }
     }
 
     console.log(`✅ Collected ${processedCount} patients successfully.`);
