@@ -12,7 +12,7 @@ const scrollDetailsPageSections = async ({
   cursor,
   logString,
   noCursorMovemntIfFailed = false,
-  scrollDelay = 130,
+  scrollDelay = 125,
 }) => {
   try {
     console.log(`✅ Scrolling sections in ${logString}`);
@@ -26,13 +26,12 @@ const scrollDetailsPageSections = async ({
       const section = sections[index];
       if (!section) continue;
 
-      // Only scroll if not already fully visible
-      try {
-        await section.scrollIntoViewIfNeeded({ timeout: 2000 });
-        await sleep(scrollDelay + Math.random() * 60);
-      } catch (error) {
-        console.log("🔁 Failed to scroll to section:", index);
-      }
+      await page.evaluate(
+        (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
+        section
+      );
+
+      await sleep(scrollDelay + Math.random() * 60);
     }
 
     return [viewportHeight, sections[sectionsIndices.at(-1)] || null];

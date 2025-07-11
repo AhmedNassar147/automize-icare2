@@ -5,7 +5,6 @@
  */
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 import collectReferralDetailsDateFromAPI from "./collectReferralDetailsDateFromAPI.mjs";
-import humanClick from "./humanClick.mjs";
 import sleep from "./sleep.mjs";
 import collectPatientAttachments from "./collectPatientAttachments.mjs";
 import goToHomePage from "./goToHomePage.mjs";
@@ -13,6 +12,7 @@ import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
+import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 
 const COOLDOWN_AFTER_BATCH = 55_000;
 
@@ -44,7 +44,9 @@ const processCollectingPatients = async ({
 
       console.log(`\n👉 Processing row ${processedCount} of ${rowsLength}`);
 
+      console.time("🕒 collect-row-referral");
       const referralId = await getReferralIdBasedTableRow(row);
+      console.timeEnd("🕒 collect-row-referral");
 
       if (!referralId) {
         console.log(`⏩ Skipping not found referralId: ${referralId}`);
@@ -62,10 +64,6 @@ const processCollectingPatients = async ({
         continue;
       }
 
-      console.time("🕒 scroll_eye_button");
-      await iconButton.scrollIntoViewIfNeeded({ timeout: 3000 });
-      console.time("🕒 scroll_eye_button");
-
       console.log(`📡 Monitoring referralId=(${referralId}) API responses...`);
       const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
         page,
@@ -74,57 +72,30 @@ const processCollectingPatients = async ({
       });
 
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
-      await humanClick(page, cursor, iconButton);
+      await sleep(30 + Math.random() * 50);
+      await iconButton.click();
 
       const logString = `details page for referralId=(${referralId})`;
 
-      // console.log(`✅ waiting 1.9s in ${logString} to collect patient data`);
-      // await sleep(1850 + Math.random() * 1000);
-
-      let areWeInDetailsPage = false;
-
-      console.time("🕒 areWeInDetailsPage");
-
-      try {
-        const oldUrl = page.url().toLowerCase();
-
-        await page.waitForFunction(
-          (previous) => location.href.toLowerCase() !== previous,
-          { timeout: 5000 },
-          oldUrl
-        );
-
-        await page.waitForSelector(".statusContainer", {
-          timeout: 4000,
-          visible: true,
-        });
-        areWeInDetailsPage = true;
-      } catch (err) {
-        areWeInDetailsPage = false;
-      }
-
-      console.timeEnd("🕒 areWeInDetailsPage");
-      await page.screenshot({
-        path: `screenshots/areWeInDetailsPage-${Date.now()}.png`,
-      });
-
-      console.log(`in home page:${areWeInDetailsPage}`);
+      const areWeInDetailsPage = await checkIfWeInDetailsPage(page, true);
 
       if (!areWeInDetailsPage) {
-        await sleep(1000);
+        await sleep(2000);
         console.log("we are not in details page");
         continue;
       }
 
       await makeKeyboardNoise(page, logString);
 
+      console.time("🕒 scrollDetailsPageSections");
       await scrollDetailsPageSections({
         cursor,
         logString,
         page,
         sectionsIndices: [1, 2, 3],
-        scrollDelay: 450,
+        scrollDelay: 300,
       });
+      console.timeEnd("🕒 scrollDetailsPageSections");
 
       let detailsApiData;
 

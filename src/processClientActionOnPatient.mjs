@@ -20,6 +20,7 @@ import {
   generatedPdfsPathForRejection,
 } from "./constants.mjs";
 import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
+import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 
 const WHATS_APP_LOADING_TIME = 42_000;
 
@@ -203,27 +204,9 @@ const processClientActionOnPatient = async (options) => {
       // console.timeEnd("actionPageVisitTime");
       // console.time("🕒 scroll_eye_button");
 
+      await sleep(30 + Math.random() * 50);
       await iconButton.click();
-
-      let areWeInDetailsPage = false;
-
-      try {
-        const oldUrl = page.url().toLowerCase();
-
-        await page.waitForFunction(
-          (previous) => location.href.toLowerCase() !== previous,
-          { timeout: 5000 },
-          oldUrl
-        );
-
-        await page.waitForSelector(".statusContainer", {
-          timeout: 3000,
-          visible: true,
-        });
-        areWeInDetailsPage = true;
-      } catch (err) {
-        areWeInDetailsPage = false;
-      }
+      const areWeInDetailsPage = await checkIfWeInDetailsPage(page);
 
       if (!areWeInDetailsPage) {
         await sleep(1000);
