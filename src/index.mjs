@@ -26,7 +26,7 @@ import {
   screenshotsFolderDirectory,
 } from "./constants.mjs";
 
-const collectConfimrdPatient = false;
+const collectConfirmedPatient = false;
 // puppeteer.use(StealthPlugin());
 
 // "--no-sandbox", // avoid sandbox restrictions (detectable, but sometimes needed)
@@ -85,7 +85,7 @@ const collectConfimrdPatient = false;
 
     (async () =>
       await waitForWaitingCountWithInterval({
-        collectConfimrdPatient,
+        collectConfirmedPatient,
         browser,
         patientsStore,
         sendWhatsappMessage,

@@ -23,7 +23,12 @@ const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
     console.error("🔁 Failed to reload page:", err.message);
 
     const intervalTime = INTERVAL + Math.random() * 9000;
-    console.log(`${logString}refreshing in ${intervalTime / 1000}s...`);
+
+    console.log(
+      `Will recreate page on next loop iteration, refreshing in ${
+        intervalTime / 1000
+      }s...`
+    );
     await sleep(intervalTime);
 
     return true;
@@ -31,15 +36,21 @@ const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
 };
 
 const waitForWaitingCountWithInterval = async ({
-  collectConfimrdPatient = false,
+  collectConfirmedPatient = false,
   patientsStore,
   browser,
   sendWhatsappMessage,
 }) => {
   const { targetText, noCountText } =
-    PATIENT_SECTIONS_STATUS[collectConfimrdPatient ? "CONFIRMED" : "WAITING"];
+    PATIENT_SECTIONS_STATUS[collectConfirmedPatient ? "CONFIRMED" : "WAITING"];
 
   let page, cursor;
+
+  console.log(
+    `🌀 Loop running for ${
+      collectConfirmedPatient ? "CONFIRMED" : "WAITING"
+    } patients...`
+  );
 
   while (true) {
     try {
@@ -62,10 +73,17 @@ const waitForWaitingCountWithInterval = async ({
         continue;
       }
 
+      if (!page) {
+        console.log("Page is not initialized. Skipping reload...");
+        await sleep(NOT_LOGGED_SLEEP_TIME);
+        continue;
+      }
+
+      console.log("checking for item count...");
       const { count } = await searchForItemCountAndClickItIfFound(
         page,
         targetText,
-        collectConfimrdPatient
+        collectConfirmedPatient
       );
 
       if (!count) {
@@ -76,6 +94,7 @@ const waitForWaitingCountWithInterval = async ({
 
         if (shouldCreateNewpage) {
           page = null;
+          cursor = null;
         }
         continue;
       }
@@ -99,6 +118,7 @@ const waitForWaitingCountWithInterval = async ({
 
     if (shouldCreateNewpage) {
       page = null;
+      cursor = null;
     }
   }
 };
