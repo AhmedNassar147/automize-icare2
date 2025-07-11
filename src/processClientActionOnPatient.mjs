@@ -4,7 +4,7 @@
  *
  */
 import { unlink } from "fs/promises";
-import path from "path";
+import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
@@ -20,7 +20,15 @@ import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
+  estimatedTimeForProcessingAction,
 } from "./constants.mjs";
+
+const WHATS_APP_LOADING_TIME = 40_000;
+const PAGE_LOAD_TIME = 1500;
+
+const endpoint = isAcceptance
+  ? "referrals/accept-referral"
+  : "referrals/reject-referral";
 
 const getSubmissionButtonsIfFound = async (page) => {
   try {
@@ -62,8 +70,9 @@ const getSubmissionButtonsIfFound = async (page) => {
 };
 
 const buildDurationText = (startTime, endTime) => {
-  const durationMs = endTime - startTime;
-  const durationText = `🕒 *Took*: \`${(durationMs / 1000).toFixed(
+  const executionDurationMs = endTime - startTime;
+
+  const durationText = `🕒 *Took*: \`${(executionDurationMs / 1000).toFixed(
     1
   )} seconds\``;
 
@@ -82,7 +91,6 @@ const processClientActionOnPatient = async (options) => {
     sendWhatsappMessage,
     page: pageFromOptions,
     cursor: cursorFromOptions,
-    submissionButtonsRetry = 0,
   } = options;
 
   const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
@@ -98,6 +106,22 @@ const processClientActionOnPatient = async (options) => {
   const baseMessage = `🚨 *\`${actionName.toUpperCase()}\`* Case Alert! 🚨
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
+
+  const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+    browser,
+    currentPage: pageFromOptions,
+    cursor: cursorFromOptions,
+    sendWhatsappMessage,
+  });
+
+  if (!isLoggedIn) {
+    await sendErrorMessage(
+      "Login failed after 3 attempts.",
+      "user-action-no-loggedin",
+      buildDurationText(startTime, Date.now())
+    );
+    return;
+  }
 
   const sendSuccessMessage = async (durationText) => {
     try {
@@ -135,28 +159,12 @@ const processClientActionOnPatient = async (options) => {
     }
   };
 
-  const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
-    browser,
-    currentPage: pageFromOptions,
-    cursor: cursorFromOptions,
-    sendWhatsappMessage,
-  });
-
-  if (!isLoggedIn) {
-    await sendErrorMessage(
-      "Login failed after 3 attempts.",
-      "user-action-no-loggedin",
-      buildDurationText(startTime, Date.now())
-    );
-    return;
-  }
-
-  const acceptanceFilePath = path.join(
+  const acceptanceFilePath = join(
     generatedPdfsPathForAcceptance,
     `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
   );
 
-  const rejectionFilePath = path.join(
+  const rejectionFilePath = join(
     generatedPdfsPathForRejection,
     `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`
   );
@@ -172,276 +180,266 @@ const processClientActionOnPatient = async (options) => {
     );
   }
 
-  try {
-    const rows = await collectHomePageTableRows(page);
+  let submissionButtonsRetry = 0;
 
-    if (!rows.length) {
-      return await sendErrorMessage(
-        "The Pending referrals list is empty.",
-        "no-patients-in-home-table",
-        buildDurationText(startTime, Date.now())
+  while (true) {
+    try {
+      const referralIdRecordResult = await collectHomePageTableRows(
+        page,
+        referralId
       );
-    }
 
-    let iconButton = null;
+      if (!referralIdRecordResult) {
+        await sendErrorMessage(
+          "The Pending referrals list is empty.",
+          "no-patients-in-home-table",
+          buildDurationText(startTime, Date.now())
+        );
 
-    for (const row of rows) {
-      const currentReferralId = await getReferralIdBasedTableRow(page, row);
-
-      if (currentReferralId === referralId) {
-        iconButton = await row.$("td:last-child button");
         break;
       }
-    }
 
-    if (!iconButton) {
-      return await sendErrorMessage(
-        "The patient wasn't found in Pending referrals.",
-        "navigation-button-not-found",
-        buildDurationText(startTime, Date.now())
+      const { iconButton } = referralIdRecordResult;
+
+      if (!iconButton) {
+        await sendErrorMessage(
+          "The patient wasn't found in Pending referrals.",
+          "navigation-button-not-found",
+          buildDurationText(startTime, Date.now())
+        );
+        break;
+      }
+
+      // Ensure the icon is in view (scrolling horizontally)
+      await page.evaluate(
+        (el) =>
+          el.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "end",
+          }),
+        iconButton
       );
-    }
 
-    const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
-      page,
-      referralId,
-      useOnlyDetailsApi: true,
-      useDefaultMessageIfNotFound: false,
-    });
+      const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
+        page,
+        referralId,
+        useOnlyDetailsApi: true,
+        useDefaultMessageIfNotFound: false,
+      });
 
-    // Ensure the icon is in view (scrolling horizontally)
-    await page.evaluate(
-      (el) =>
-        el.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "end",
-        }),
-      iconButton
-    );
+      console.log(`✅ clicking patient button for referralId=(${referralId})`);
+      await humanClick(page, cursor, iconButton);
 
-    console.log(`✅ clicking patient button for referralId=(${referralId})`);
-    await humanClick(page, cursor, iconButton);
+      console.log(
+        `✅ waiting 1.5s in ${logString} to make user action ${actionName}`
+      );
 
-    console.log(
-      `✅ waiting 1.6s in ${logString} to make user action ${actionName}`
-    );
+      await sleep(PAGE_LOAD_TIME);
 
-    await sleep(1600);
+      await makeKeyboardNoise(page, logString);
 
-    await makeKeyboardNoise(page, logString);
+      const detailsApiData = await detailsApiDataPromise;
 
-    const { caseActualLeftMs } = await detailsApiDataPromise;
+      const { caseActualLeftMs } = detailsApiData;
 
-    const isLeftMsNumber = typeof caseActualLeftMs === "number";
+      const isLeftMsNumber = typeof caseActualLeftMs === "number";
 
-    console.log(
-      "caseActualLeftMs => isLeftMsNumber",
-      caseActualLeftMs,
-      isLeftMsNumber
-    );
+      console.log("detailsApiData", JSON.stringify(detailsApiData, null, 2));
 
-    const hasTimeingDataButStillHasLeftTime =
-      isLeftMsNumber && caseActualLeftMs > 0;
+      const hasTimeingDataButStillHasLeftTime =
+        isLeftMsNumber && caseActualLeftMs > 0;
 
-    if (hasTimeingDataButStillHasLeftTime) {
-      await goToHomePage(page, cursor);
+      if (hasTimeingDataButStillHasLeftTime) {
+        await goToHomePage(page, cursor);
 
-      const sleepTime = caseActualLeftMs >= 5000 ? caseActualLeftMs - 3000 : 0;
+        const sleepTime =
+          caseActualLeftMs >= 4000 ? caseActualLeftMs - 2000 : 0;
 
-      await sleep(sleepTime);
+        await sleep(sleepTime);
 
-      return await processClientActionOnPatient({
-        ...options,
+        continue;
+      }
+
+      const referralButtons = await getSubmissionButtonsIfFound(page);
+
+      const hasReachedMaxRetriesForSubmission =
+        submissionButtonsRetry >= MAX_RETRIES_FOR_SUBMISSION_BUTTONS;
+
+      if (!referralButtons && hasReachedMaxRetriesForSubmission) {
+        await sendErrorMessage(
+          `We tried times(${submissionButtonsRetry}) to find The submission buttons, but they wern't found.`,
+          "submission-buttons-not-found-reachedMax",
+          buildDurationText(startTime, Date.now())
+        );
+
+        break;
+      }
+
+      if (!referralButtons) {
+        await goToHomePage(page, cursor);
+        submissionButtonsRetry += 1;
+
+        continue;
+      }
+
+      const [viewportHeight, sectionEl] = await scrollDetailsPageSections({
         page,
         cursor,
+        logString,
+        sectionsIndices: [1, 2],
+        noCursorMovemntIfFailed: true,
       });
-    }
 
-    const referralButtons = await getSubmissionButtonsIfFound(page);
+      if (!sectionEl) {
+        await sendErrorMessage(
+          "The upload section was not found.",
+          "upload-section-not-found",
+          buildDurationText(startTime, Date.now())
+        );
+        break;
+      }
 
-    const hasReachedMaxRetriesForSubmission =
-      submissionButtonsRetry >= MAX_RETRIES_FOR_SUBMISSION_BUTTONS;
-
-    if (!referralButtons && hasReachedMaxRetriesForSubmission) {
-      return await sendErrorMessage(
-        `We tried times(${submissionButtonsRetry}) to find The submission buttons, but they wern't found.`,
-        "submission-buttons-not-found-reachedMax",
-        buildDurationText(startTime, Date.now())
-      );
-    }
-
-    if (!referralButtons) {
-      await goToHomePage(page, cursor);
-
-      await sleep(100 + Math.random());
-
-      return await processClientActionOnPatient({
-        ...options,
+      await selectAttachmentDropdownOption({
         page,
         cursor,
-        submissionButtonsRetry: (submissionButtonsRetry || 0) + 1,
+        option: actionName,
+        viewportHeight,
+        sectionEl,
+        logString,
       });
-    }
 
-    console.log(`✅ Moving random cursor in ${logString}`);
-    const [viewportHeight, sectionEl] = await scrollDetailsPageSections({
-      page,
-      cursor,
-      logString,
-      sectionsIndices: [1, 2],
-      noCursorMovemntIfFailed: true,
-    });
+      const inputContainer = await sectionEl.$('div[id="upload-single-file"]');
 
-    if (!sectionEl) {
-      return await sendErrorMessage(
-        "The upload section was not found.",
-        "upload-section-not-found",
-        buildDurationText(startTime, Date.now())
+      if (!inputContainer) {
+        await sendErrorMessage(
+          "The File upload container was not found.",
+          "inputContainer-not-found",
+          buildDurationText(startTime, Date.now())
+        );
+        break;
+      }
+
+      const fileInput = await inputContainer.$('input[type="file"]');
+
+      if (!fileInput) {
+        await sendErrorMessage(
+          "The File upload input was not found.",
+          "fileInput-not-found",
+          buildDurationText(startTime, Date.now())
+        );
+        break;
+      }
+
+      console.log(`📎 Uploading file ${filePath} in ${logString}`);
+
+      await makeKeyboardNoise(page, logString);
+
+      await fileInput.uploadFile(resolve(filePath));
+      await sleep(20);
+
+      console.log(`✅ File uploaded successfully in ${logString}`);
+
+      const [acceptButton, rejectButton] = referralButtons;
+
+      const selectedButton = isAcceptance ? acceptButton : rejectButton;
+
+      await page.evaluate(
+        (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
+        selectedButton
       );
-    }
-
-    await selectAttachmentDropdownOption({
-      page,
-      cursor,
-      option: actionName,
-      viewportHeight,
-      sectionEl,
-      logString,
-    });
-
-    const inputContainer = await sectionEl.$('div[id="upload-single-file"]');
-
-    if (!inputContainer) {
-      return await sendErrorMessage(
-        "The File upload container was not found.",
-        "inputContainer-not-found",
-        buildDurationText(startTime, Date.now())
-      );
-    }
-
-    const fileInput = await inputContainer.$('input[type="file"]');
-
-    if (!fileInput) {
-      return await sendErrorMessage(
-        "The File upload input was not found.",
-        "fileInput-not-found",
-        buildDurationText(startTime, Date.now())
-      );
-    }
-
-    console.log(`📎 Uploading file ${filePath} in ${logString}`);
-
-    await makeKeyboardNoise(page, logString);
-
-    await fileInput.uploadFile(path.resolve(filePath));
-    // await sleep(20);
-
-    console.log(`✅ File uploaded successfully in ${logString}`);
-
-    const [acceptButton, rejectButton] = referralButtons;
-
-    const selectedButton = isAcceptance ? acceptButton : rejectButton;
-
-    await page.evaluate(
-      (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
-      selectedButton
-    );
-
-    let success = false;
-    let durationText = "";
-
-    try {
-      const endpoint = isAcceptance
-        ? "referrals/accept-referral"
-        : "referrals/reject-referral";
 
       const responsePromise = page.waitForResponse(
         (res) =>
           res.url().toLowerCase().includes(endpoint) &&
-          res.request().method() === "POST",
-        { timeout: 25_000 }
+          res.request().method() === "POST" &&
+          res.status() >= 200 &&
+          res.status() < 300,
+        { timeout: 45_000 }
       );
 
       await humanClick(page, cursor, selectedButton);
-      durationText = buildDurationText(startTime, Date.now());
+      const durationText = buildDurationText(startTime, Date.now());
 
-      let statusCode = "Unknown";
       let errorMessage = "No response";
       let apiCatchError = "";
+      let statusCode = "Unknown";
 
       try {
-        const response = await responsePromise.json();
-        statusCode = response?.statusCode ?? "Unknown";
-        errorMessage = response?.errorMessage ?? "No errorMessage";
+        const response = await responsePromise;
+        const headersRaw = response.headers();
+
+        const headers = Object.fromEntries(
+          Object.entries(headersRaw).map(([k, v]) => [k.toLowerCase(), v])
+        );
+
+        const contentType = headers["content-type"] || "";
+
+        if (contentType.includes("json")) {
+          const json = await response.json();
+          statusCode = json?.statusCode ?? "Unknown";
+          errorMessage = json?.errorMessage ?? "No errorMessage";
+        } else {
+          const text = await response.text();
+          try {
+            const parsedText = JSON.parse(text);
+            statusCode = parsedText?.statusCode ?? "Unknown";
+            errorMessage = parsedText?.errorMessage ?? "No errorMessage";
+          } catch (error) {
+            errorMessage = `Non-JSON response: ${text}`;
+            apiCatchError = `Tried to parse non-JSON response: ${error.message}`;
+          }
+        }
       } catch (err) {
         apiCatchError = err.message;
         console.log(
-          `⚠️ Failed to parse JSON response when submitting for action=${actionName} referralId=${referralId}:`,
+          `🛑 Error during submission API call ${actionName} of ${referralId}:`,
           apiCatchError
         );
       }
 
-      success = statusCode === "Success";
+      const success = statusCode === "Success";
 
-      if (success) {
-        await sendSuccessMessage(durationText);
-      } else {
+      if (!success) {
         await sendErrorMessage(
-          `globMedServerError: ${errorMessage}\nSubmissionApiCatchError=${apiCatchError}`,
+          `\n*globMedServerError:* ${errorMessage}\n*submissionApiCatchError:* ${apiCatchError}\n*statusCode:* ${statusCode}`,
           `globMedServerError-api-error-${actionName}`,
           durationText
         );
+
+        await sleep(WHATS_APP_LOADING_TIME);
+        break;
       }
-    } catch (error) {
-      const err = error.message;
-      console.log(
-        `🛑 Error during submission API call ${actionName} of ${referralId}:`,
-        err
+
+      await sendSuccessMessage(durationText);
+
+      const deletionResponse = await patientsStore.removePatientByReferralId(
+        referralId
       );
 
+      await Promise.allSettled([
+        checkPathExists(acceptanceFilePath).then(
+          (exists) => exists && unlink(acceptanceFilePath)
+        ),
+        checkPathExists(rejectionFilePath).then(
+          (exists) => exists && unlink(rejectionFilePath)
+        ),
+      ]);
+
+      console.log(deletionResponse?.message);
+      await sleep(WHATS_APP_LOADING_TIME);
+      await page.close();
+    } catch (error) {
+      const err = error.message;
+
+      console.log(`🛑 Error during ${actionName} of ${referralId}:`, err);
       await sendErrorMessage(
-        `Error: ${err} submission API call`,
-        `submission-api-timeout-${actionType}`,
-        durationText
+        `Error: ${err}`,
+        `catch-error-${actionName}-error`,
+        buildDurationText(startTime, Date.now())
       );
+      break;
     }
-
-    try {
-      if (success) {
-        if (await checkPathExists(acceptanceFilePath)) {
-          await unlink(acceptanceFilePath);
-        }
-
-        if (await checkPathExists(rejectionFilePath)) {
-          await unlink(rejectionFilePath);
-        }
-
-        const deletionResponse = await patientsStore.removePatientByReferralId(
-          referralId
-        );
-
-        console.log(deletionResponse.message);
-
-        await sleep(30_000);
-        await page.close();
-      }
-    } catch (error) {
-      const err = error.message;
-      console.log(
-        `🛑 Error during ${actionName} of ${referralId} when closing and removing patient:`,
-        err
-      );
-    }
-  } catch (error) {
-    const err = error.message;
-
-    console.log(`🛑 Error during ${actionName} of ${referralId}:`, err);
-    await sendErrorMessage(
-      `Error: ${err}`,
-      `catch-error-${actionName}-error`,
-      buildDurationText(startTime, Date.now())
-    );
   }
 };
 

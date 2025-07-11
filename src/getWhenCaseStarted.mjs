@@ -88,10 +88,7 @@ const getWhenCaseStarted = (
       caseActualWillBeSubmittedAtMS,
       caseReceivedAt,
       caseReceivedAtMS,
-    } = getTimingData(
-      baseTimeMS + estimatedTimeForProcessingAction,
-      caseUserLeftMs
-    );
+    } = getTimingData(baseTimeMS, caseUserLeftMs);
 
     caseUserReceivedAtMS = caseReceivedAtMS;
     caseUserReceivedAt = caseReceivedAt;

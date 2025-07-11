@@ -15,7 +15,10 @@ import {
 async function safeWritePatientData(data, retries = 3, delay = 200) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      await writePatientData(data, COLLECTD_PATIENTS_FILE_NAME);
+      await writePatientData(
+        (data || []).reverse(),
+        COLLECTD_PATIENTS_FILE_NAME
+      );
       return;
     } catch (err) {
       if (attempt === retries) {
@@ -174,12 +177,19 @@ class PatientStore extends EventEmitter {
     scheduledAt,
     skipResetingPatient,
   }) {
-    const { referralId, caseActualWillBeSubmittedAtMS } = patient;
+    const {
+      referralId,
+      caseUserWillBeSubmittedAtMS,
+      caseActualWillBeSubmittedAtMS,
+    } = patient;
     const isAccepting = eventName === "patientAccepted";
 
-    if (typeof caseActualWillBeSubmittedAtMS !== "number") {
+    const timeToInteractMS =
+      caseUserWillBeSubmittedAtMS || caseActualWillBeSubmittedAtMS;
+
+    if (typeof timeToInteractMS !== "number") {
       return {
-        message: `Invalid = caseActualWillBeSubmittedAtMS date: ${caseActualWillBeSubmittedAtMS}`,
+        message: `Invalid = timeToInteractMS date: ${timeToInteractMS}`,
         success: false,
       };
     }
@@ -193,7 +203,7 @@ class PatientStore extends EventEmitter {
       };
     }
 
-    const timer = waitMinutesThenRun(caseActualWillBeSubmittedAtMS, () => {
+    const timer = waitMinutesThenRun(timeToInteractMS, () => {
       actionSet.delete(referralId);
       this.patientTimers.delete(referralId);
       this.emit(eventName, patient);
