@@ -79,7 +79,6 @@ const waitForWaitingCountWithInterval = async ({
         continue;
       }
 
-      console.log("checking for item count...");
       const { count } = await searchForItemCountAndClickItIfFound(
         page,
         targetText,

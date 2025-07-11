@@ -18,9 +18,9 @@ const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
 
 const checkHomePageFullyLoaded = async (page) => {
   try {
-    await waitForHomeLink(page, 3_000);
+    await waitForHomeLink(page, 5_000);
     await page.waitForSelector(homePageTableSelector, {
-      timeout: 3_000,
+      timeout: 5_000,
     });
     return true;
   } catch (err) {
@@ -68,7 +68,9 @@ const makeUserLoggedInOrOpenHomePage = async ({
           //   waitUntil: ["load", "networkidle2"],
           //   timeout: LOGIN_TIMEOUT,
           // });
-        } catch (error) {}
+        } catch (error) {
+          console.log("HelLEOOOOOOOO", err.message);
+        }
       }
 
       const currentPageUrl = page.url();
