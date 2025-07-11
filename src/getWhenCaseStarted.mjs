@@ -62,8 +62,6 @@ const getWhenCaseStarted = (
     /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/
   );
 
-  console.log("match", match);
-
   const minsLeft = parseInt(match?.[1], 10) ?? 0;
   const secsLeft = parseInt(match?.[2], 10) ?? 0;
 

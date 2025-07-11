@@ -15,13 +15,13 @@ const gotToLoginPage = async (page) => {
 
   await page.waitForNavigation({
     waitUntil: ["load", "networkidle2"],
-    timeout: 6000,
+    timeout: 30_000,
   });
 
   try {
     await page.waitForNavigation({
       waitUntil: ["load", "networkidle2"],
-      timeout: 6000,
+      timeout: 8_000,
     });
   } catch (error) {
     console.log("LOGIN_SECOND waitForNavigation", error.message);

@@ -9,7 +9,7 @@ import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItI
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 
-const INTERVAL = 62_000;
+const INTERVAL = 65_000;
 const NOT_LOGGED_SLEEP_TIME = 22_000;
 
 const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
