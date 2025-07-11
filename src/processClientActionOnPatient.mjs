@@ -104,6 +104,8 @@ const processClientActionOnPatient = async (options) => {
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
 
+  // https://referralprogram.globemedsaudi.com/Dashboard/Referral
+
   const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     currentPage: pageFromOptions,
@@ -219,8 +221,6 @@ const processClientActionOnPatient = async (options) => {
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
       console.time("actionPageVisitTime");
       await humanClick(page, cursor, iconButton);
-
-      await page.waitForSelector(".statusContainer", { timeout: 4000 });
 
       const statusElement = await page
         .waitForSelector(".statusContainer", {
