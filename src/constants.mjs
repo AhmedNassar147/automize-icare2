@@ -35,8 +35,8 @@ export const USER_ACTION_TYPES = {
 // the user will review patient till the 13 minute of the counter
 // export const STOP_USER_ACTION_MINUTES = ALLOWED_MINUTES_TO_REVIEW_PATIENTS - 13;
 
-// 4 seconds for loading new pupteer page , js code execution, upload file and submit
-export const estimatedTimeForProcessingAction = 4_000;
+// 6 seconds for loading new pupteer page , js code execution, upload file and submit
+export const estimatedTimeForProcessingAction = 5_000;
 
 export const ALLOWED_MINUTES_TO_REVIEW_PATIENTS = 15;
 
