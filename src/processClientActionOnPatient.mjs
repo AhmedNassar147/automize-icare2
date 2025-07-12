@@ -349,7 +349,6 @@ const processClientActionOnPatient = async (options) => {
 
       console.log(deletionResponse?.message);
       await sleep(WHATS_APP_LOADING_TIME);
-      await closePageSafely(page);
       break;
     } catch (error) {
       const _err = error?.message || String(error);
@@ -360,8 +359,9 @@ const processClientActionOnPatient = async (options) => {
         `catch-error-${actionName}-error`,
         buildDurationText(startTime, Date.now())
       );
-      await closePageSafely(page);
       break;
+    } finally {
+      await closePageSafely(page);
     }
   }
 };
