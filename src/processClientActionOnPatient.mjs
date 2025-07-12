@@ -208,6 +208,7 @@ const processClientActionOnPatient = async (options) => {
 
       await sleep(20 + Math.random() * 50);
       await iconButton.click();
+
       const areWeInDetailsPage = await checkIfWeInDetailsPage(page);
 
       if (!areWeInDetailsPage) {

@@ -3,6 +3,8 @@
  * Helper: `checkIfWeInDetailsPage`.
  *
  */
+import sleep from "./sleep.mjs";
+
 const checkIfWeInDetailsPage = async (page, isCollectAction) => {
   let areWeInDetailsPage = false;
 
@@ -15,6 +17,9 @@ const checkIfWeInDetailsPage = async (page, isCollectAction) => {
       timeout: 8000,
       visible: true,
     });
+
+    await sleep(20);
+
     areWeInDetailsPage = true;
   } catch (err) {
     areWeInDetailsPage = false;
