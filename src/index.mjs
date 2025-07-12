@@ -56,6 +56,7 @@ const collectConfirmedPatient = false;
       executablePath: process.env.CHROME_EXECUTABLE_PATH,
       userDataDir: process.env.USER_PROFILE_PATH,
       ignoreDefaultArgs: ["--enable-automation"],
+      protocolTimeout: 120000,
       args: [
         "--start-maximized", // Open full screen like real users
         "--disable-blink-features=AutomationControlled", // Prevent `navigator.webdriver = true`

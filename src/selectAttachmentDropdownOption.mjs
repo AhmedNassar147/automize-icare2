@@ -37,20 +37,29 @@ const selectAttachmentDropdownOption = async ({
   }
 
   // // Ensure visible and scroll if necessary
-  const hidden = await isElementInvisible(dropdownTrigger, viewportHeight);
+  await dropdownTrigger.scrollIntoViewIfNeeded({ timeout: 3000 });
 
-  if (hidden) {
-    await scrollIntoView(page, cursor, dropdownTrigger);
-  }
+  // const hidden = await isElementInvisible(dropdownTrigger, viewportHeight);
+
+  // if (hidden) {
+  //   await scrollIntoView(page, cursor, dropdownTrigger);
+  // }
 
   // Open the dropdown
   console.log("🖱️ Clicking dropdown...");
   await humanClick(page, cursor, dropdownTrigger);
 
   // Wait for the dropdown menu to render
-  await page.waitForSelector('ul[role="listbox"] li[role="option"]', {
-    timeout: 3500,
-  });
+  try {
+    await page.waitForSelector('ul[role="listbox"] li[role="option"]', {
+      timeout: 4500,
+    });
+  } catch (error) {
+    console.log(
+      "Error when waiting for dropdown options to render",
+      error.message
+    );
+  }
 
   const options = await page.$$('ul[role="listbox"] li[role="option"]');
 
