@@ -6,35 +6,34 @@
 import moveFromCurrentToRandomPosition from "./moveFromCurrentToRandomPosition.mjs";
 import sleep from "./sleep.mjs";
 
+// const viewportHeight = await page.evaluate(() => window.innerHeight);
+
 const scrollDetailsPageSections = async ({
   page,
   sectionsIndices,
   cursor,
   logString,
   noCursorMovemntIfFailed = false,
-  scrollDelay = 100,
+  scrollDelay = 80,
 }) => {
   try {
-    console.log(`✅ Scrolling sections in ${logString}`);
-
     const sections = await page.$$("section.collapsible-container.MuiBox-root");
     console.log("Found sections:", sections?.length);
-
-    const viewportHeight = await page.evaluate(() => window.innerHeight);
 
     for (const index of sectionsIndices) {
       const section = sections[index];
       if (!section) continue;
 
-      await page.evaluate(
-        (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
-        section
-      );
+      // await page.evaluate(
+      //   (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
+      //   section
+      // );
 
+      await section.scrollIntoViewIfNeeded({ timeout: 3000 });
       await sleep(scrollDelay + Math.random() * 90);
     }
 
-    return [viewportHeight, sections[sectionsIndices.at(-1)] || null];
+    return sections[sectionsIndices.at(-1)] || null;
   } catch (err) {
     if (!noCursorMovemntIfFailed) {
       console.log(
@@ -44,7 +43,7 @@ const scrollDetailsPageSections = async ({
       await moveFromCurrentToRandomPosition(cursor);
     }
 
-    return [null, null];
+    return null;
   }
 };
 

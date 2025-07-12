@@ -4,77 +4,100 @@
  *
  */
 import humanClick from "./humanClick.mjs";
-import scrollIntoView from "./scrollIntoView.mjs";
-import isElementInvisible from "./isElementInvisible.mjs";
+// import scrollIntoView from "./scrollIntoView.mjs";
+// import isElementInvisible from "./isElementInvisible.mjs";
+// import sleep from "./sleep.mjs";
 
 /**
  * Selects an option from a Material UI dropdown ("Acceptance" or "Rejection").
  *
  * @param {object} opts - Options object.
  * @param {import("puppeteer").Page} opts.page - Puppeteer page instance.
- * @param {import("ghost-cursor").GhostCursor} opts.cursor - Ghost cursor instance for human-like interaction.
- * @param {number} opts.viewportHeight - Viewport height for scroll visibility checks.
- * @param {"Acceptance" | "Rejection"} opts.option - The dropdown option to select.
- * @param {string} opts.logString - The subsection of the test being executed.
- * @param {import("puppeteer").ElementHandle<Element>} opts.sectionEl - The section element containing the dropdown (used for scoping).
+ * @param {import("ghost-cursor").GhostCursor} opts.cursor - Ghost cursor instance.
+ * @param {"Acceptance" | "Rejection"} opts.option - Option to select.
+ * @param {string} opts.logString - Label for logging.
+ * @param {import("puppeteer").ElementHandle<Element>} opts.sectionEl - Scope element containing the dropdown.
  */
-
 const selectAttachmentDropdownOption = async ({
   page,
   cursor,
   option,
-  viewportHeight,
   sectionEl,
   logString,
 }) => {
-  const normalized = option?.trim().toLowerCase();
+  const normalized = option.trim().toLowerCase();
 
-  const dropdownTrigger = await sectionEl.$('div[role="combobox"]');
+  // Step 1: Find the dropdown trigger inside section
+  let dropdownTrigger = await sectionEl.$('div[role="combobox"]');
 
   if (!dropdownTrigger) {
-    console.log(`❌ Dropdown trigger not found in ${logString}`);
-    return;
+    console.log(
+      `❌ Dropdown trigger not found in "${logString}", trying fallback...`
+    );
+    dropdownTrigger = await sectionEl.$(".MuiSelect-select[role='combobox']");
+    if (!dropdownTrigger) {
+      console.log(`❌ Still no dropdown trigger found.`);
+      return false;
+    }
   }
 
-  // // Ensure visible and scroll if necessary
-  await dropdownTrigger.scrollIntoViewIfNeeded({ timeout: 3000 });
-
-  // const hidden = await isElementInvisible(dropdownTrigger, viewportHeight);
-
-  // if (hidden) {
-  //   await scrollIntoView(page, cursor, dropdownTrigger);
-  // }
-
-  // Open the dropdown
-  console.log("🖱️ Clicking dropdown...");
-  await humanClick(page, cursor, dropdownTrigger);
-
-  // Wait for the dropdown menu to render
+  // Step 2: Try to click (fast), fallback to humanClick if needed
   try {
-    await page.waitForSelector('ul[role="listbox"] li[role="option"]', {
-      timeout: 4500,
-    });
+    await dropdownTrigger.click();
+    await sleep(20 + Math.random() * 50);
+  } catch (err) {
+    console.log("⚠️ Default click failed, falling back to humanClick.");
+    await dropdownTrigger.scrollIntoViewIfNeeded().catch(() => {});
+    await humanClick(page, cursor, dropdownTrigger);
+  }
+
+  // Step 3: Try to find and click the matching dropdown option
+  try {
+    const found = await page.$$eval(
+      'ul[role="listbox"] li[role="option"]',
+      (items, normalized) => {
+        const match = items.find((el) =>
+          (el.textContent || "").toLowerCase().includes(normalized)
+        );
+        if (match) match.click();
+        return !!match;
+      },
+      normalized
+    );
+
+    if (!found) {
+      console.log(`❌ Option "${option}" not found in dropdown.`);
+    }
+
+    return found;
   } catch (error) {
     console.log(
-      "Error when waiting for dropdown options to render",
+      `⚠️ Error selecting dropdown option "${option}":`,
       error.message
     );
-  }
-
-  const options = await page.$$('ul[role="listbox"] li[role="option"]');
-
-  // Look for the matching option
-  for (const opt of options) {
-    const text = await opt.evaluate((el) =>
-      el.textContent.trim().toLowerCase()
-    );
-
-    if (text.includes(normalized)) {
-      console.log(`✅ Selecting option: ${option}`);
-      await humanClick(page, cursor, opt);
-      return;
-    }
+    return false;
   }
 };
 
 export default selectAttachmentDropdownOption;
+
+// const matchingOptionHandle = await page.waitForFunction(
+//   (targetText) => {
+//     const items = Array.from(
+//       document.querySelectorAll('ul[role="listbox"] li[role="option"]')
+//     );
+//     return items.find((el) =>
+//       el.textContent?.trim().toLowerCase().includes(targetText)
+//     );
+//   },
+//   { timeout: 4000 },
+//   normalized
+// );
+
+// const elementHandle = matchingOptionHandle?.asElement();
+
+// if (elementHandle) {
+//   await humanClick(page, cursor, elementHandle);
+// } else {
+//   console.log(`❌ Option "${option}" not found.`);
+// }

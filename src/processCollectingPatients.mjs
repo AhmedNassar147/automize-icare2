@@ -15,15 +15,20 @@ import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
 import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 
 const COOLDOWN_AFTER_BATCH = 55_000;
+const MAX_RETRIES = 6;
 
 const processCollectingPatients = async ({
   browser,
   patientsStore,
   page,
   cursor,
+  sendWhatsappMessage,
 }) => {
+  const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
+
   try {
     let processedCount = 0;
+    let checkDetailsPageRetry = 0;
 
     while (true) {
       // 🔁 Always re-fetch rows after page changes
@@ -40,9 +45,6 @@ const processCollectingPatients = async ({
       }
 
       const row = rows[processedCount];
-      processedCount++;
-
-      console.log(`\n👉 Processing row ${processedCount} of ${rowsLength}`);
 
       console.time("🕒 collect-row-referral");
       const referralId = await getReferralIdBasedTableRow(row);
@@ -64,6 +66,9 @@ const processCollectingPatients = async ({
         continue;
       }
 
+      processedCount++;
+      console.log(`\n👉 Processing row ${processedCount} of ${rowsLength}`);
+
       console.log(`📡 Monitoring referralId=(${referralId}) API responses...`);
       const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
         page,
@@ -72,7 +77,7 @@ const processCollectingPatients = async ({
       });
 
       console.log(`✅ clicking patient button for referralId=(${referralId})`);
-      await sleep(30 + Math.random() * 50);
+      await sleep(50 + Math.random() * 50);
       await iconButton.click();
 
       const logString = `details page for referralId=(${referralId})`;
@@ -80,9 +85,26 @@ const processCollectingPatients = async ({
       const areWeInDetailsPage = await checkIfWeInDetailsPage(page, true);
 
       if (!areWeInDetailsPage) {
-        await sleep(2000);
-        console.log("we are not in details page");
+        const hasReachedMaxRetriesForDetailsPage =
+          checkDetailsPageRetry >= MAX_RETRIES;
+
+        if (hasReachedMaxRetriesForDetailsPage) {
+          await sendWhatsappMessage(phoneNumber, {
+            message: `❌ Tried ${checkDetailsPageRetry} times to to enter the details page for referralId=(${referralId}) collection, but there is something wrong.`,
+          });
+          await goToHomePage(page, cursor);
+          await sleep(COOLDOWN_AFTER_BATCH);
+
+          checkDetailsPageRetry = 0;
+          break;
+        }
+
+        await goToHomePage(page, cursor);
+        checkDetailsPageRetry += 1;
+        await sleep(400 + Math.random() * 20);
         continue;
+      } else {
+        checkDetailsPageRetry = 0;
       }
 
       await makeKeyboardNoise(page, logString);
@@ -92,7 +114,7 @@ const processCollectingPatients = async ({
         logString,
         page,
         sectionsIndices: [1, 2, 3],
-        scrollDelay: 280,
+        scrollDelay: 250,
       });
 
       console.log("_areWeInDetailsPage_when fetch details");

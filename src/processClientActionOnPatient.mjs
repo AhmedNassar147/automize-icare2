@@ -15,19 +15,12 @@ import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 import sleep from "./sleep.mjs";
+import closePageSafely from "./closePageSafely.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
 } from "./constants.mjs";
-
-// console.time("🕒 click-upper-item");
-// await searchForItemCountAndClickItIfFound(
-//   page,
-//   "Confirmed Referrals",
-//   true
-// );
-// console.timeEnd("🕒 click-upper-item");
 
 const WHATS_APP_LOADING_TIME = 45_000;
 
@@ -68,7 +61,8 @@ const getSubmissionButtonsIfFound = async (page) => {
     }
 
     return false;
-  } catch {
+  } catch (err) {
+    console.log("❌ Failed to get submission buttons:", err.message);
     return false;
   }
 };
@@ -83,19 +77,11 @@ const buildDurationText = (startTime, endTime) => {
   return durationText;
 };
 
-const MAX_RETRIES_FOR_SUBMISSION_BUTTONS = 6;
+const MAX_RETRIES = 6;
 
 const processClientActionOnPatient = async (options) => {
-  const startTime = Date.now();
-  const {
-    browser,
-    actionType,
-    patient,
-    patientsStore,
-    sendWhatsappMessage,
-    page: pageFromOptions,
-    cursor: cursorFromOptions,
-  } = options;
+  const { browser, actionType, patient, patientsStore, sendWhatsappMessage } =
+    options;
 
   const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
@@ -107,19 +93,18 @@ const processClientActionOnPatient = async (options) => {
 
   const logString = `details page referralId=(${referralId})`;
 
-  const endpoint = isAcceptance
-    ? "referrals/accept-referral"
-    : "referrals/reject-referral";
+  // const endpoint = isAcceptance
+  //   ? "referrals/accept-referral"
+  //   : "referrals/reject-referral";
 
   const baseMessage = `🚨 *\`${actionName.toUpperCase()}\`* Case Alert! 🚨
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
 
-  console.time("🕒 initiate-action-home");
+  let navigationStartTime = Date.now();
+  console.time("🕒 navigation-for-user-action");
   const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
-    currentPage: pageFromOptions,
-    cursor: cursorFromOptions,
     sendWhatsappMessage,
     startingPageUrl,
   });
@@ -164,13 +149,15 @@ const processClientActionOnPatient = async (options) => {
     await sendErrorMessage(
       "Login failed after 3 attempts.",
       "user-action-no-loggedin",
-      buildDurationText(startTime, Date.now())
+      buildDurationText(navigationStartTime, Date.now())
     );
 
     return;
   }
 
-  console.timeEnd("🕒 initiate-action-home");
+  console.timeEnd("🕒 navigation-for-user-action");
+
+  const startTime = Date.now();
 
   const acceptanceFilePath = join(
     generatedPdfsPathForAcceptance,
@@ -185,6 +172,7 @@ const processClientActionOnPatient = async (options) => {
   const filePath = isAcceptance ? acceptanceFilePath : rejectionFilePath;
 
   let submissionButtonsRetry = 0;
+  let checkDetailsPageRetry = 0;
 
   while (true) {
     try {
@@ -197,6 +185,7 @@ const processClientActionOnPatient = async (options) => {
       const { iconButton } = referralIdRecordResult || {};
 
       if (!iconButton) {
+        console.log("referralIdRecordResult: ", referralIdRecordResult);
         await sendErrorMessage(
           "The Pending referrals list is empty or eye button not found.",
           "no-patients-in-home-table",
@@ -206,47 +195,55 @@ const processClientActionOnPatient = async (options) => {
       }
       console.timeEnd("🕒 action_page_referral_button_collection");
 
-      await sleep(20 + Math.random() * 50);
       await iconButton.click();
 
       const areWeInDetailsPage = await checkIfWeInDetailsPage(page);
 
       if (!areWeInDetailsPage) {
-        await sleep(3000);
-        console.log("we are not in details page");
+        const hasReachedMaxRetriesForDetailsPage =
+          checkDetailsPageRetry >= MAX_RETRIES;
+
+        if (hasReachedMaxRetriesForDetailsPage) {
+          await sendErrorMessage(
+            `Tried ${checkDetailsPageRetry} times to to enter the details page, but there is something wrong.`,
+            "enter-details-page-failed-reachedMax",
+            buildDurationText(startTime, Date.now())
+          );
+
+          break;
+        }
+
+        await goToHomePage(page, cursor);
+        checkDetailsPageRetry += 1;
+        await sleep(80 + Math.random() * 20);
         continue;
       }
-
-      console.time("🕒 keyboard_noise_action");
-      await makeKeyboardNoise(page, logString);
-      console.timeEnd("🕒 keyboard_noise_action");
 
       console.time("🕒 buttons_collect_action");
       const referralButtons = await getSubmissionButtonsIfFound(page);
       console.timeEnd("🕒 buttons_collect_action");
 
-      const hasReachedMaxRetriesForSubmission =
-        submissionButtonsRetry >= MAX_RETRIES_FOR_SUBMISSION_BUTTONS;
-
-      if (!referralButtons && hasReachedMaxRetriesForSubmission) {
-        await sendErrorMessage(
-          `We tried times(${submissionButtonsRetry}) to find The submission buttons, but they wern't found.`,
-          "submission-buttons-not-found-reachedMax",
-          buildDurationText(startTime, Date.now())
-        );
-
-        break;
-      }
-
       if (!referralButtons) {
+        const hasReachedMaxRetriesForSubmission =
+          submissionButtonsRetry >= MAX_RETRIES;
+
+        if (hasReachedMaxRetriesForSubmission) {
+          await sendErrorMessage(
+            `Tried ${submissionButtonsRetry} times to find the submission buttons, but none were found.`,
+            "submission-buttons-not-found-reachedMax",
+            buildDurationText(startTime, Date.now())
+          );
+
+          break;
+        }
+
         await goToHomePage(page, cursor);
-        await sleep(80 + Math.random() * 20);
         submissionButtonsRetry += 1;
         continue;
       }
 
       console.time("🕒 scrollDetailsPageSections");
-      const [viewportHeight, sectionEl] = await scrollDetailsPageSections({
+      const sectionEl = await scrollDetailsPageSections({
         page,
         cursor,
         logString,
@@ -265,19 +262,30 @@ const processClientActionOnPatient = async (options) => {
       }
 
       console.time("🕒 select_action_option");
-      await selectAttachmentDropdownOption({
+      const hasOptionSelected = await selectAttachmentDropdownOption({
         page,
         cursor,
         option: actionName,
-        viewportHeight,
+        // viewportHeight,
         sectionEl,
         logString,
       });
       console.timeEnd("🕒 select_action_option");
 
+      if (!hasOptionSelected) {
+        await sendErrorMessage(
+          `We tried times to select ${actionName}, but couldn't.`,
+          "list-item-not-found",
+          buildDurationText(startTime, Date.now())
+        );
+        break;
+      }
+
       const fileInput = await page.$('#upload-single-file input[type="file"]');
 
+      console.time("🕒 keyboard_noise_action");
       await makeKeyboardNoise(page, logString);
+      console.timeEnd("🕒 keyboard_noise_action");
 
       console.time("🕒 file-upload-time");
       try {
@@ -299,68 +307,24 @@ const processClientActionOnPatient = async (options) => {
       const selectedButton = isAcceptance ? acceptButton : rejectButton;
 
       console.time("🕒 submission-button-scroll-to-click");
-      await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
-
-      const responsePromise = page.waitForResponse(
-        (res) =>
-          res.url().toLowerCase().includes(endpoint) &&
-          res.request().method() === "POST" &&
-          res.status() >= 200 &&
-          res.status() < 300,
-        { timeout: 40_000 }
-      );
+      await selectedButton.scrollIntoViewIfNeeded({ timeout: 4000 });
 
       await humanClick(page, cursor, selectedButton);
       const durationText = buildDurationText(startTime, Date.now());
       console.timeEnd("🕒 submission-button-scroll-to-click");
 
-      let errorMessage = "No response";
-      let apiCatchError = "";
-      let statusCode = "Unknown";
+      await sleep(8000);
 
-      try {
-        const response = await responsePromise;
-        const headersRaw = response.headers();
+      const currentPageUrl = page.url();
 
-        const headers = Object.fromEntries(
-          Object.entries(headersRaw).map(([k, v]) => [k.toLowerCase(), v])
-        );
+      const isRequestDone = currentPageUrl
+        .toLowerCase()
+        .endsWith("dashboard/referral");
 
-        const contentType = headers["content-type"] || "";
-
-        if (contentType.includes("json")) {
-          const json = await response.json();
-          statusCode = json?.statusCode ?? "Unknown";
-          errorMessage = json?.errorMessage ?? "No errorMessage";
-        } else {
-          const text = await response.text();
-          try {
-            const parsedText = JSON.parse(text);
-            statusCode = parsedText?.statusCode ?? "Unknown";
-            errorMessage = parsedText?.errorMessage ?? "No errorMessage";
-          } catch (error) {
-            const err = error?.message || String(error);
-
-            errorMessage = `Non-JSON response: ${text}`;
-            apiCatchError = `Tried to parse non-JSON response: ${err}`;
-          }
-        }
-      } catch (err) {
-        const _err = err?.message || String(err);
-
-        apiCatchError = _err;
-        console.log(
-          `🛑 Error during submission API call ${actionName} of ${referralId}:`,
-          _err
-        );
-      }
-
-      const success = statusCode === "Success";
-
-      if (!success) {
+      if (!isRequestDone) {
         await sendErrorMessage(
-          `\n*globMedServerError:* ${errorMessage}\n*submissionApiCatchError:* ${apiCatchError}\n*statusCode:* ${statusCode}`,
-          `globMedServerError-api-error-${actionName}`,
+          "app didn't redirect to home after submission",
+          `no-home-redirect-action-${actionName}`,
           durationText
         );
 
@@ -385,7 +349,7 @@ const processClientActionOnPatient = async (options) => {
 
       console.log(deletionResponse?.message);
       await sleep(WHATS_APP_LOADING_TIME);
-      await page.close();
+      await closePageSafely(page);
       break;
     } catch (error) {
       const _err = error?.message || String(error);
@@ -396,12 +360,75 @@ const processClientActionOnPatient = async (options) => {
         `catch-error-${actionName}-error`,
         buildDurationText(startTime, Date.now())
       );
+      await closePageSafely(page);
       break;
     }
   }
 };
 
 export default processClientActionOnPatient;
+
+// console.time("🕒 click-upper-item");
+// await searchForItemCountAndClickItIfFound(
+//   page,
+//   "Confirmed Referrals",
+//   true
+// );
+// console.timeEnd("🕒 click-upper-item");
+
+// const responsePromise = page.waitForResponse(
+//         (res) =>
+//           res.url().toLowerCase().includes(endpoint) &&
+//           res.request().method() === "POST" &&
+//           res.status() >= 200 &&
+//           res.status() < 300,
+//         { timeout: 40_000 }
+//       );
+
+// let errorMessage = "No response";
+// let apiCatchError = "";
+// let statusCode = "Unknown";
+
+// try {
+//   const response = await responsePromise;
+//   const headersRaw = response.headers();
+
+//   const headers = Object.fromEntries(
+//     Object.entries(headersRaw).map(([k, v]) => [k.toLowerCase(), v])
+//   );
+
+//   const contentType = headers["content-type"] || "";
+
+//   if (contentType.includes("json")) {
+//     const json = await response.json();
+//     statusCode = json?.statusCode ?? "Unknown";
+//     errorMessage = json?.errorMessage ?? "No errorMessage";
+//   } else {
+//     const text = await response.text();
+//     try {
+//       const parsedText = JSON.parse(text);
+//       statusCode = parsedText?.statusCode ?? "Unknown";
+//       errorMessage = parsedText?.errorMessage ?? "No errorMessage";
+//     } catch (error) {
+//       const err = error?.message || String(error);
+
+//       errorMessage = `Non-JSON response: ${text}`;
+//       apiCatchError = `Tried to parse non-JSON response: ${err}`;
+//     }
+//   }
+// } catch (err) {
+//   const _err = err?.message || String(err);
+
+//   apiCatchError = _err;
+//   console.log(
+//     `🛑 Error during submission API call ${actionName} of ${referralId}:`,
+//     _err
+//   );
+// }
+
+// console.time("🕒 keyboard_noise_action");
+// await makeKeyboardNoise(page, logString);
+// console.timeEnd("🕒 keyboard_noise_action");
 
 // console.time("🕒 scroll_eye_button");
 // await iconButton.scrollIntoViewIfNeeded({ timeout: 3000 });

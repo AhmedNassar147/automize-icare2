@@ -109,6 +109,7 @@ const waitForWaitingCountWithInterval = async ({
         page,
         targetText,
         cursor,
+        sendWhatsappMessage,
       });
     } catch (error) {
       console.error("🛑 Unexpected error during loop:", error.message);
