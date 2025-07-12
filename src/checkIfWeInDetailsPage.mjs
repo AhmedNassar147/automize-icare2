@@ -3,8 +3,6 @@
  * Helper: `checkIfWeInDetailsPage`.
  *
  */
-import sleep from "./sleep.mjs";
-
 const checkIfWeInDetailsPage = async (page, isCollectAction) => {
   let areWeInDetailsPage = false;
 
@@ -14,22 +12,19 @@ const checkIfWeInDetailsPage = async (page, isCollectAction) => {
 
   try {
     await page.waitForSelector(".statusContainer", {
-      timeout: 8000,
+      timeout: 9000,
       visible: true,
     });
-
-    await sleep(20);
 
     areWeInDetailsPage = true;
   } catch (err) {
     areWeInDetailsPage = false;
+    // await page.screenshot({
+    //   path: `screenshots/areWeInDetailsPage-${Date.now()}.png`,
+    // });
   }
 
   console.timeEnd(label);
-  await page.screenshot({
-    path: `screenshots/areWeInDetailsPage-${Date.now()}.png`,
-  });
-
   console.log(`Are we in home page ?:${areWeInDetailsPage}`);
 
   return areWeInDetailsPage;

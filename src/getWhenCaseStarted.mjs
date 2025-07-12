@@ -80,7 +80,9 @@ const getWhenCaseStarted = (
   let caseUserWillBeSubmittedAtMS = caseActualWillBeSubmittedAtMS;
   let caseUserWillBeSubmittedAt = caseActualWillBeSubmittedAt;
 
-  if (caseActualLeftMs > estimatedTimeForProcessingAction) {
+  const timeWithUserReaction = estimatedTimeForProcessingAction + 3000;
+
+  if (caseActualLeftMs > timeWithUserReaction) {
     caseUserLeftMs = caseActualLeftMs - estimatedTimeForProcessingAction;
 
     const {

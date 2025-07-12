@@ -22,7 +22,12 @@ import {
   generatedPdfsPathForRejection,
 } from "./constants.mjs";
 
+// const endpoint = isAcceptance
+//   ? "referrals/accept-referral"
+//   : "referrals/reject-referral";
+
 const WHATS_APP_LOADING_TIME = 45_000;
+const MAX_RETRIES = 6;
 
 const startingPageUrl =
   "https://referralprogram.globemedsaudi.com/Dashboard/Referral";
@@ -77,15 +82,19 @@ const buildDurationText = (startTime, endTime) => {
   return durationText;
 };
 
-const MAX_RETRIES = 6;
+const processClientActionOnPatient = async ({
+  browser,
+  actionType,
+  patient,
+  patientsStore,
+  sendWhatsappMessage,
+}) => {
+  let preparingStartTime = Date.now();
 
-const processClientActionOnPatient = async (options) => {
-  const { browser, actionType, patient, patientsStore, sendWhatsappMessage } =
-    options;
-
+  console.time("🕒 prepare_user_action_start_time");
   const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
-  const { referralId, patientName } = patient;
+  const { referralId, patientName, caseActualWillBeSubmittedAtMS } = patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
 
@@ -93,16 +102,22 @@ const processClientActionOnPatient = async (options) => {
 
   const logString = `details page referralId=(${referralId})`;
 
-  // const endpoint = isAcceptance
-  //   ? "referrals/accept-referral"
-  //   : "referrals/reject-referral";
+  const acceptanceFilePath = join(
+    generatedPdfsPathForAcceptance,
+    `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
+  );
+
+  const rejectionFilePath = join(
+    generatedPdfsPathForRejection,
+    `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`
+  );
+
+  const filePath = isAcceptance ? acceptanceFilePath : rejectionFilePath;
 
   const baseMessage = `🚨 *\`${actionName.toUpperCase()}\`* Case Alert! 🚨
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
 
-  let navigationStartTime = Date.now();
-  console.time("🕒 navigation-for-user-action_time");
   const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,
@@ -145,55 +160,71 @@ const processClientActionOnPatient = async (options) => {
     }
   };
 
+  const closeCurrentPage = async (navigateToHomePage) => {
+    if (navigateToHomePage) {
+      await goToHomePage(page, cursor);
+    }
+    await sleep(WHATS_APP_LOADING_TIME);
+    await closePageSafely(page);
+  };
+
   if (!isLoggedIn) {
     await sendErrorMessage(
       "Login failed after 3 attempts.",
       "user-action-no-loggedin",
-      buildDurationText(navigationStartTime, Date.now())
+      buildDurationText(preparingStartTime, Date.now())
     );
-
+    await closeCurrentPage(false);
     return;
   }
 
-  console.timeEnd("🕒 navigation-for-user-action_time");
+  await sleep(20);
+  const referralIdRecordResult = await collectHomePageTableRows(
+    page,
+    referralId
+  );
+
+  let { iconButton } = referralIdRecordResult || {};
+
+  if (!iconButton) {
+    console.log("referralIdRecordResult: ", referralIdRecordResult);
+    await sendErrorMessage(
+      "The Pending referrals list is empty or eye button not found.",
+      "no-patients-in-home-table",
+      buildDurationText(preparingStartTime, Date.now())
+    );
+
+    await closeCurrentPage(false);
+    return;
+  }
+
+  console.timeEnd("🕒 prepare_user_action_start_time");
+
+  const diff = caseActualWillBeSubmittedAtMS - 150 - Date.now();
+
+  console.log("diff to execute action: ", diff);
+
+  if (diff > 0) {
+    await sleep(diff);
+  }
 
   const startTime = Date.now();
-
-  const acceptanceFilePath = join(
-    generatedPdfsPathForAcceptance,
-    `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
-  );
-
-  const rejectionFilePath = join(
-    generatedPdfsPathForRejection,
-    `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`
-  );
-
-  const filePath = isAcceptance ? acceptanceFilePath : rejectionFilePath;
 
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
 
   while (true) {
     try {
-      console.time("🕒 referral_button_collection_time");
-      const referralIdRecordResult = await collectHomePageTableRows(
-        page,
-        referralId
-      );
-
-      const { iconButton } = referralIdRecordResult || {};
-
-      if (!iconButton) {
-        console.log("referralIdRecordResult: ", referralIdRecordResult);
-        await sendErrorMessage(
-          "The Pending referrals list is empty or eye button not found.",
-          "no-patients-in-home-table",
-          buildDurationText(startTime, Date.now())
+      if (submissionButtonsRetry || checkDetailsPageRetry) {
+        const referralIdRecordResultData = await collectHomePageTableRows(
+          page,
+          referralId
         );
-        break;
+
+        if (referralIdRecordResultData?.iconButton) {
+          iconButton = referralIdRecordResultData?.iconButton;
+        }
       }
-      console.timeEnd("🕒 referral_button_collection_time");
 
       await iconButton.click();
 
@@ -210,18 +241,16 @@ const processClientActionOnPatient = async (options) => {
             buildDurationText(startTime, Date.now())
           );
 
+          await closeCurrentPage(false);
           break;
         }
 
         await goToHomePage(page, cursor);
         checkDetailsPageRetry += 1;
-        await sleep(80 + Math.random() * 20);
         continue;
       }
 
-      console.time("🕒 submission_buttons_time");
       const referralButtons = await getSubmissionButtonsIfFound(page);
-      console.timeEnd("🕒 submission_buttons_time");
 
       if (!referralButtons) {
         const hasReachedMaxRetriesForSubmission =
@@ -234,6 +263,7 @@ const processClientActionOnPatient = async (options) => {
             buildDurationText(startTime, Date.now())
           );
 
+          await closeCurrentPage(true);
           break;
         }
 
@@ -242,7 +272,8 @@ const processClientActionOnPatient = async (options) => {
         continue;
       }
 
-      console.time("🕒 scoll_sections_time");
+      // console.time("🕒 scoll_sections_time");
+      // console.timeEnd("🕒 scoll_sections_time");
       const sectionEl = await scrollDetailsPageSections({
         page,
         cursor,
@@ -250,7 +281,6 @@ const processClientActionOnPatient = async (options) => {
         sectionsIndices: [1, 2],
         noCursorMovemntIfFailed: true,
       });
-      console.timeEnd("🕒 scoll_sections_time");
 
       if (!sectionEl) {
         await sendErrorMessage(
@@ -258,10 +288,13 @@ const processClientActionOnPatient = async (options) => {
           "upload-section-not-found",
           buildDurationText(startTime, Date.now())
         );
+
+        await closeCurrentPage(true);
         break;
       }
 
-      console.time("🕒 select_action_option_time");
+      // console.time("🕒 select_action_option_time");
+      // console.timeEnd("🕒 select_action_option_time");
       const hasOptionSelected = await selectAttachmentDropdownOption({
         page,
         cursor,
@@ -270,7 +303,6 @@ const processClientActionOnPatient = async (options) => {
         sectionEl,
         logString,
       });
-      console.timeEnd("🕒 select_action_option_time");
 
       if (!hasOptionSelected) {
         await sendErrorMessage(
@@ -278,14 +310,12 @@ const processClientActionOnPatient = async (options) => {
           "list-item-not-found",
           buildDurationText(startTime, Date.now())
         );
+        await closeCurrentPage(true);
         break;
       }
 
-      console.time("🕒 keyboard_noise_action_time");
       await makeKeyboardNoise(page, logString);
-      console.timeEnd("🕒 keyboard_noise_action_time");
 
-      console.time("🕒 file-upload-time");
       try {
         const fileInput = await page.$(
           '#upload-single-file input[type="file"]'
@@ -300,21 +330,17 @@ const processClientActionOnPatient = async (options) => {
           buildDurationText(startTime, Date.now())
         );
 
+        await closeCurrentPage(true);
         break;
       }
-      console.timeEnd("🕒 file-upload-time");
 
       const [acceptButton, rejectButton] = referralButtons;
 
       const selectedButton = isAcceptance ? acceptButton : rejectButton;
 
-      console.time("🕒 submission-button-scroll");
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 4000 });
-      console.timeEnd("🕒 submission-button-scroll");
 
-      console.time("🕒 submission-button-click");
       await humanClick(page, cursor, selectedButton);
-      console.timeEnd("🕒 submission-button-click");
 
       const durationText = buildDurationText(startTime, Date.now());
       await sleep(6000);
@@ -332,7 +358,7 @@ const processClientActionOnPatient = async (options) => {
           durationText
         );
 
-        await sleep(WHATS_APP_LOADING_TIME);
+        await closeCurrentPage(false);
         break;
       }
 
@@ -352,7 +378,7 @@ const processClientActionOnPatient = async (options) => {
       ]);
 
       console.log(deletionResponse?.message);
-      await sleep(WHATS_APP_LOADING_TIME);
+      await closeCurrentPage(false);
       break;
     } catch (error) {
       const _err = error?.message || String(error);
@@ -363,9 +389,8 @@ const processClientActionOnPatient = async (options) => {
         `catch-error-${actionName}-error`,
         buildDurationText(startTime, Date.now())
       );
+      await closeCurrentPage(false);
       break;
-    } finally {
-      await closePageSafely(page);
     }
   }
 };

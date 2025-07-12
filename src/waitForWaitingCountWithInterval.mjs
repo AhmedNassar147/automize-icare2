@@ -9,12 +9,23 @@ import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItI
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 
-const INTERVAL = 65_000;
-const NOT_LOGGED_SLEEP_TIME = 22_000;
+const INTERVAL = 62_000;
+const NOT_LOGGED_SLEEP_TIME = 25_000;
 
 const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
   try {
     const intervalTime = INTERVAL + Math.random() * 9000;
+
+    if (!page || !page?.reload) {
+      await sleep(intervalTime);
+      console.log(
+        `Will recreate page on next loop iteration, refreshing in ${
+          intervalTime / 1000
+        }s...`
+      );
+
+      return true;
+    }
 
     console.log(`${logString}refreshing in ${intervalTime / 1000}s...`);
     await sleep(intervalTime);

@@ -40,34 +40,30 @@ const processCollectingPatients = async ({
 
       if (isThereNotNewPatients) {
         console.log("⏳ No more new patients found, exiting...");
-        await sleep(2_000);
+        await sleep(3_000 + Math.random() * 100);
         break;
       }
 
       const row = rows[processedCount];
 
-      console.time("🕒 collect-row-referral");
       const referralId = await getReferralIdBasedTableRow(row);
-      console.timeEnd("🕒 collect-row-referral");
 
       if (!referralId) {
-        console.log(`⏩ Skipping not found referralId: ${referralId}`);
-        continue;
+        console.log(`⏩ didn't find referralId: ${referralId}`);
+        break;
       }
 
       if (patientsStore.has(referralId)) {
         console.log("⚠️ Patient already collected...");
-        continue;
+        await sleep(1000);
+        break;
       }
 
       const iconButton = await row.$("td:last-child button");
       if (!iconButton) {
         console.log("⚠️ No button found in this row, skipping...");
-        continue;
+        break;
       }
-
-      processedCount++;
-      console.log(`\n👉 Processing row ${processedCount} of ${rowsLength}`);
 
       console.log(`📡 Monitoring referralId=(${referralId}) API responses...`);
       const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
@@ -76,7 +72,6 @@ const processCollectingPatients = async ({
         useDefaultMessageIfNotFound: true,
       });
 
-      console.log(`✅ clicking patient button for referralId=(${referralId})`);
       await sleep(50 + Math.random() * 50);
       await iconButton.click();
 
@@ -92,20 +87,20 @@ const processCollectingPatients = async ({
           await sendWhatsappMessage(phoneNumber, {
             message: `❌ Tried ${checkDetailsPageRetry} times to enter the details page for referralId=(${referralId}) collection, but there is something wrong.`,
           });
+          checkDetailsPageRetry = 0;
           await goToHomePage(page, cursor);
           await sleep(COOLDOWN_AFTER_BATCH);
 
-          checkDetailsPageRetry = 0;
           break;
         }
 
         await goToHomePage(page, cursor);
         checkDetailsPageRetry += 1;
-        await sleep(400 + Math.random() * 20);
+        await sleep(1500 + Math.random() * 70);
         continue;
-      } else {
-        checkDetailsPageRetry = 0;
       }
+
+      checkDetailsPageRetry = 0;
 
       await makeKeyboardNoise(page, logString);
 
@@ -114,32 +109,31 @@ const processCollectingPatients = async ({
         logString,
         page,
         sectionsIndices: [1, 2, 3],
-        scrollDelay: 250,
+        scrollDelay: 200,
       });
 
-      console.log("_areWeInDetailsPage_when fetch details");
       let detailsApiData;
 
       try {
         detailsApiData = await detailsApiDataPromise;
       } catch (err) {
+        await goToHomePage(page, cursor);
         console.error(
           `❌ Failed collecting API data for referralId=${referralId}:`,
           err.message
         );
-        await goToHomePage(page, cursor);
-        await sleep(1000);
-        continue;
+        break;
       }
 
       const { patientName, specialty, apisError } = detailsApiData;
 
       if (apisError) {
         await goToHomePage(page, cursor);
-        await sleep(2000);
-
-        console.log(`❌ Skipping referralId=${referralId}, reason:`, apisError);
-        continue;
+        console.log(
+          `❌ Error when colleting referralId=${referralId}, reason:`,
+          apisError
+        );
+        break;
       }
 
       const attachmentData = await collectPatientAttachments({
@@ -157,6 +151,8 @@ const processCollectingPatients = async ({
       };
 
       await patientsStore.addPatients(finalData);
+      processedCount++;
+      console.log(`\n👉 Processed row ${processedCount} of ${rowsLength}`);
 
       await goToHomePage(page, cursor);
 
@@ -167,15 +163,14 @@ const processCollectingPatients = async ({
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
-      if (processedCount === rowsLength) {
+      if (processedCount >= rowsLength) {
         console.log(
           `😴 Sleeping ${COOLDOWN_AFTER_BATCH / 1000}s after final patient...`
         );
         await sleep(COOLDOWN_AFTER_BATCH);
+        break;
       }
     }
-
-    console.log(`✅ Collected ${processedCount} patients successfully.`);
   } catch (err) {
     console.error("🛑 Fatal error during collecting patients:", err.message);
   }

@@ -4,13 +4,15 @@
  *
  *
  */
+
+const cellSpan = "td:nth-child(2) span";
+
 const getReferralIdBasedTableRow = async (row) => {
   try {
-    await row.waitForSelector("td:nth-child(2) span", {
-      timeout: 2000,
-      visible: true,
+    await row.waitForSelector(cellSpan, {
+      timeout: 2500,
     });
-    const referralId = await row.$eval("td:nth-child(2) span", (el) =>
+    const referralId = await row.$eval(cellSpan, (el) =>
       (el?.textContent || "").trim().replace(/\s|\n|\t|\\/g, "")
     );
     return referralId;

@@ -4,7 +4,7 @@
  *
  */
 const closePageSafely = async (page) => {
-  if (page && !page.isClosed()) {
+  if (page && typeof page.close === "function") {
     await page.close().catch(() => {});
   }
 };
