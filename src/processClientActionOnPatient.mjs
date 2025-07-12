@@ -102,7 +102,7 @@ const processClientActionOnPatient = async (options) => {
 👤 Name: _${patientName}_\n`;
 
   let navigationStartTime = Date.now();
-  console.time("🕒 navigation-for-user-action");
+  console.time("🕒 navigation-for-user-action_time");
   const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,
@@ -155,7 +155,7 @@ const processClientActionOnPatient = async (options) => {
     return;
   }
 
-  console.timeEnd("🕒 navigation-for-user-action");
+  console.timeEnd("🕒 navigation-for-user-action_time");
 
   const startTime = Date.now();
 
@@ -176,7 +176,7 @@ const processClientActionOnPatient = async (options) => {
 
   while (true) {
     try {
-      console.time("🕒 action_page_referral_button_collection");
+      console.time("🕒 referral_button_collection_time");
       const referralIdRecordResult = await collectHomePageTableRows(
         page,
         referralId
@@ -193,7 +193,7 @@ const processClientActionOnPatient = async (options) => {
         );
         break;
       }
-      console.timeEnd("🕒 action_page_referral_button_collection");
+      console.timeEnd("🕒 referral_button_collection_time");
 
       await iconButton.click();
 
@@ -205,7 +205,7 @@ const processClientActionOnPatient = async (options) => {
 
         if (hasReachedMaxRetriesForDetailsPage) {
           await sendErrorMessage(
-            `Tried ${checkDetailsPageRetry} times to to enter the details page, but there is something wrong.`,
+            `Tried ${checkDetailsPageRetry} times to enter the details page, but there is something wrong.`,
             "enter-details-page-failed-reachedMax",
             buildDurationText(startTime, Date.now())
           );
@@ -219,9 +219,9 @@ const processClientActionOnPatient = async (options) => {
         continue;
       }
 
-      console.time("🕒 buttons_collect_action");
+      console.time("🕒 submission_buttons_time");
       const referralButtons = await getSubmissionButtonsIfFound(page);
-      console.timeEnd("🕒 buttons_collect_action");
+      console.timeEnd("🕒 submission_buttons_time");
 
       if (!referralButtons) {
         const hasReachedMaxRetriesForSubmission =
@@ -242,7 +242,7 @@ const processClientActionOnPatient = async (options) => {
         continue;
       }
 
-      console.time("🕒 scrollDetailsPageSections");
+      console.time("🕒 scoll_sections_time");
       const sectionEl = await scrollDetailsPageSections({
         page,
         cursor,
@@ -250,7 +250,7 @@ const processClientActionOnPatient = async (options) => {
         sectionsIndices: [1, 2],
         noCursorMovemntIfFailed: true,
       });
-      console.timeEnd("🕒 scrollDetailsPageSections");
+      console.timeEnd("🕒 scoll_sections_time");
 
       if (!sectionEl) {
         await sendErrorMessage(
@@ -261,7 +261,7 @@ const processClientActionOnPatient = async (options) => {
         break;
       }
 
-      console.time("🕒 select_action_option");
+      console.time("🕒 select_action_option_time");
       const hasOptionSelected = await selectAttachmentDropdownOption({
         page,
         cursor,
@@ -270,7 +270,7 @@ const processClientActionOnPatient = async (options) => {
         sectionEl,
         logString,
       });
-      console.timeEnd("🕒 select_action_option");
+      console.timeEnd("🕒 select_action_option_time");
 
       if (!hasOptionSelected) {
         await sendErrorMessage(
@@ -281,14 +281,16 @@ const processClientActionOnPatient = async (options) => {
         break;
       }
 
-      const fileInput = await page.$('#upload-single-file input[type="file"]');
-
-      console.time("🕒 keyboard_noise_action");
+      console.time("🕒 keyboard_noise_action_time");
       await makeKeyboardNoise(page, logString);
-      console.timeEnd("🕒 keyboard_noise_action");
+      console.timeEnd("🕒 keyboard_noise_action_time");
 
       console.time("🕒 file-upload-time");
       try {
+        const fileInput = await page.$(
+          '#upload-single-file input[type="file"]'
+        );
+
         await fileInput.uploadFile(resolve(filePath));
       } catch (error) {
         const err = error?.message || String(error);
@@ -306,20 +308,22 @@ const processClientActionOnPatient = async (options) => {
 
       const selectedButton = isAcceptance ? acceptButton : rejectButton;
 
-      console.time("🕒 submission-button-scroll-to-click");
+      console.time("🕒 submission-button-scroll");
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 4000 });
+      console.timeEnd("🕒 submission-button-scroll");
 
+      console.time("🕒 submission-button-click");
       await humanClick(page, cursor, selectedButton);
-      const durationText = buildDurationText(startTime, Date.now());
-      console.timeEnd("🕒 submission-button-scroll-to-click");
+      console.timeEnd("🕒 submission-button-click");
 
-      await sleep(8000);
+      const durationText = buildDurationText(startTime, Date.now());
+      await sleep(6000);
 
       const currentPageUrl = page.url();
 
       const isRequestDone = currentPageUrl
         .toLowerCase()
-        .endsWith("dashboard/referral");
+        .includes("dashboard/referral");
 
       if (!isRequestDone) {
         await sendErrorMessage(

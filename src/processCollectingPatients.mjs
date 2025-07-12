@@ -90,7 +90,7 @@ const processCollectingPatients = async ({
 
         if (hasReachedMaxRetriesForDetailsPage) {
           await sendWhatsappMessage(phoneNumber, {
-            message: `❌ Tried ${checkDetailsPageRetry} times to to enter the details page for referralId=(${referralId}) collection, but there is something wrong.`,
+            message: `❌ Tried ${checkDetailsPageRetry} times to enter the details page for referralId=(${referralId}) collection, but there is something wrong.`,
           });
           await goToHomePage(page, cursor);
           await sleep(COOLDOWN_AFTER_BATCH);
