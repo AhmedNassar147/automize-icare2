@@ -4,8 +4,8 @@
  *
  */
 import humanClick from "./humanClick.mjs";
-// import scrollIntoView from "./scrollIntoView.mjs";
-// import isElementInvisible from "./isElementInvisible.mjs";
+import scrollIntoView from "./scrollIntoView.mjs";
+import isElementInvisible from "./isElementInvisible.mjs";
 
 /**
  * Selects an option from a Material UI dropdown ("Acceptance" or "Rejection").
@@ -23,7 +23,7 @@ const selectAttachmentDropdownOption = async ({
   page,
   cursor,
   option,
-  // viewportHeight,
+  viewportHeight,
   sectionEl,
   logString,
 }) => {
@@ -37,14 +37,11 @@ const selectAttachmentDropdownOption = async ({
   }
 
   // // Ensure visible and scroll if necessary
-  // const hidden = await isElementInvisible(dropdownTrigger, viewportHeight);
+  const hidden = await isElementInvisible(dropdownTrigger, viewportHeight);
 
-  // if (hidden) {
-  //   console.log(
-  //     `👀 Dropdown trigger is out of view. Scrolling in ${logString}`
-  //   );
-  //   await scrollIntoView(page, cursor, dropdownTrigger);
-  // }
+  if (hidden) {
+    await scrollIntoView(page, cursor, dropdownTrigger);
+  }
 
   // Open the dropdown
   console.log("🖱️ Clicking dropdown...");
@@ -52,7 +49,7 @@ const selectAttachmentDropdownOption = async ({
 
   // Wait for the dropdown menu to render
   await page.waitForSelector('ul[role="listbox"] li[role="option"]', {
-    timeout: 3000,
+    timeout: 3500,
   });
 
   const options = await page.$$('ul[role="listbox"] li[role="option"]');

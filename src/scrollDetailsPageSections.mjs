@@ -12,7 +12,7 @@ const scrollDetailsPageSections = async ({
   cursor,
   logString,
   noCursorMovemntIfFailed = false,
-  scrollDelay = 125,
+  scrollDelay = 100,
 }) => {
   try {
     console.log(`✅ Scrolling sections in ${logString}`);
@@ -31,7 +31,7 @@ const scrollDetailsPageSections = async ({
         section
       );
 
-      await sleep(scrollDelay + Math.random() * 60);
+      await sleep(scrollDelay + Math.random() * 90);
     }
 
     return [viewportHeight, sections[sectionsIndices.at(-1)] || null];

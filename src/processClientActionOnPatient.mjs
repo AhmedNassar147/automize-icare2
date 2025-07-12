@@ -21,7 +21,15 @@ import {
   generatedPdfsPathForRejection,
 } from "./constants.mjs";
 
-const WHATS_APP_LOADING_TIME = 42_000;
+// console.time("🕒 click-upper-item");
+// await searchForItemCountAndClickItIfFound(
+//   page,
+//   "Confirmed Referrals",
+//   true
+// );
+// console.timeEnd("🕒 click-upper-item");
+
+const WHATS_APP_LOADING_TIME = 45_000;
 
 const startingPageUrl =
   "https://referralprogram.globemedsaudi.com/Dashboard/Referral";
@@ -75,7 +83,7 @@ const buildDurationText = (startTime, endTime) => {
   return durationText;
 };
 
-const MAX_RETRIES_FOR_SUBMISSION_BUTTONS = 5;
+const MAX_RETRIES_FOR_SUBMISSION_BUTTONS = 6;
 
 const processClientActionOnPatient = async (options) => {
   const startTime = Date.now();
@@ -194,24 +202,16 @@ const processClientActionOnPatient = async (options) => {
           "no-patients-in-home-table",
           buildDurationText(startTime, Date.now())
         );
-
         break;
       }
       console.timeEnd("🕒 action_page_referral_button_collection");
 
-      // console.time("🕒 scroll_eye_button");
-      // await iconButton.scrollIntoViewIfNeeded({ timeout: 3000 });
-      // console.time("actionPageVisitTime");
-      // await humanClick(page, cursor, iconButton);
-      // console.timeEnd("actionPageVisitTime");
-      // console.time("🕒 scroll_eye_button");
-
-      await sleep(30 + Math.random() * 50);
+      await sleep(20 + Math.random() * 50);
       await iconButton.click();
       const areWeInDetailsPage = await checkIfWeInDetailsPage(page);
 
       if (!areWeInDetailsPage) {
-        await sleep(1000);
+        await sleep(3000);
         console.log("we are not in details page");
         continue;
       }
@@ -239,7 +239,7 @@ const processClientActionOnPatient = async (options) => {
 
       if (!referralButtons) {
         await goToHomePage(page, cursor);
-        await sleep(90 + Math.random() * 20);
+        await sleep(80 + Math.random() * 20);
         submissionButtonsRetry += 1;
         continue;
       }
@@ -263,7 +263,7 @@ const processClientActionOnPatient = async (options) => {
         break;
       }
 
-      console.time("🕒 select action option");
+      console.time("🕒 select_action_option");
       await selectAttachmentDropdownOption({
         page,
         cursor,
@@ -272,16 +272,15 @@ const processClientActionOnPatient = async (options) => {
         sectionEl,
         logString,
       });
-      console.timeEnd("🕒 select action option");
+      console.timeEnd("🕒 select_action_option");
 
       const fileInput = await page.$('#upload-single-file input[type="file"]');
 
       await makeKeyboardNoise(page, logString);
 
+      console.time("🕒 file-upload-time");
       try {
-        console.time("🕒 file-upload-time");
         await fileInput.uploadFile(resolve(filePath));
-        console.timeEnd("🕒 file-upload-time");
       } catch (error) {
         const err = error?.message || String(error);
         await sendErrorMessage(
@@ -292,11 +291,13 @@ const processClientActionOnPatient = async (options) => {
 
         break;
       }
+      console.timeEnd("🕒 file-upload-time");
 
       const [acceptButton, rejectButton] = referralButtons;
 
       const selectedButton = isAcceptance ? acceptButton : rejectButton;
 
+      console.time("🕒 submission-button-scroll-to-click");
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
 
       const responsePromise = page.waitForResponse(
@@ -305,11 +306,12 @@ const processClientActionOnPatient = async (options) => {
           res.request().method() === "POST" &&
           res.status() >= 200 &&
           res.status() < 300,
-        { timeout: 45_000 }
+        { timeout: 40_000 }
       );
 
       await humanClick(page, cursor, selectedButton);
       const durationText = buildDurationText(startTime, Date.now());
+      console.timeEnd("🕒 submission-button-scroll-to-click");
 
       let errorMessage = "No response";
       let apiCatchError = "";
@@ -399,6 +401,13 @@ const processClientActionOnPatient = async (options) => {
 };
 
 export default processClientActionOnPatient;
+
+// console.time("🕒 scroll_eye_button");
+// await iconButton.scrollIntoViewIfNeeded({ timeout: 3000 });
+// console.time("actionPageVisitTime");
+// await humanClick(page, cursor, iconButton);
+// console.timeEnd("actionPageVisitTime");
+// console.time("🕒 scroll_eye_button");
 
 // const { totalRemainingTimeMs, ...otherSnakBardData } =
 //   await getCurrentAlertRemainingTime(page);
