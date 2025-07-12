@@ -13,6 +13,7 @@ import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
 import readJsonFile from "./readJsonFile.mjs";
 import sendMessageUsingWhatsapp, {
   shutdownAllClients,
+  initializeClient,
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processClientActionOnPatient from "./processClientActionOnPatient.mjs";
@@ -81,6 +82,8 @@ const collectConfirmedPatient = false;
 
     const patientsStore = new PatientStore(collectedPatients || []);
     await patientsStore.scheduleAllInitialPatients();
+
+    await initializeClient(process.env.CLIENT_WHATSAPP_NUMBER, patientsStore);
 
     const sendWhatsappMessage = sendMessageUsingWhatsapp(patientsStore);
 

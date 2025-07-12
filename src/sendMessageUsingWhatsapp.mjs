@@ -48,7 +48,7 @@ const withLock = async (key, fn) => {
   }
 };
 
-const initializeClient = async (
+export const initializeClient = async (
   number,
   patientsStore,
   { headless = false } = {}
