@@ -65,7 +65,11 @@ const selectAttachmentDropdownOption = async ({
 
     const selector = `ul[role="listbox"] li[role="option"]:nth-child(${itemOrder})`;
 
-    await page.waitForSelector(selector, { timeout: 3000, visible: true });
+    try {
+      console.time("dropdown_option_wait");
+      await page.waitForSelector(selector, { timeout: 3000, visible: true });
+      console.timeEnd("dropdown_option_wait");
+    } catch (error) {}
 
     await page.click(selector);
 
