@@ -14,7 +14,7 @@ import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
 import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 
-const COOLDOWN_AFTER_BATCH = 55_000;
+// const COOLDOWN_AFTER_BATCH = 55_000;
 const MAX_RETRIES = 6;
 
 const processCollectingPatients = async ({
@@ -89,14 +89,14 @@ const processCollectingPatients = async ({
           });
           checkDetailsPageRetry = 0;
           await goToHomePage(page, cursor);
-          await sleep(COOLDOWN_AFTER_BATCH);
+          // await sleep(2000 + Math.random() * 70);
 
           break;
         }
 
-        await goToHomePage(page, cursor);
         checkDetailsPageRetry += 1;
-        await sleep(1500 + Math.random() * 70);
+        await goToHomePage(page, cursor);
+        await sleep(1000 + Math.random() * 70);
         continue;
       }
 
@@ -164,10 +164,10 @@ const processCollectingPatients = async ({
       ]);
 
       if (processedCount >= rowsLength) {
-        console.log(
-          `😴 Sleeping ${COOLDOWN_AFTER_BATCH / 1000}s after final patient...`
-        );
-        await sleep(COOLDOWN_AFTER_BATCH);
+        // console.log(
+        //   `😴 Sleeping ${COOLDOWN_AFTER_BATCH / 1000}s after final patient...`
+        // );
+        // await sleep(COOLDOWN_AFTER_BATCH);
         break;
       }
     }

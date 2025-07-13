@@ -200,12 +200,12 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const diff = caseActualWillBeSubmittedAtMS - 10 - Date.now();
+  const remainingTimeMS = caseActualWillBeSubmittedAtMS - 3 - Date.now();
 
-  console.log("diff to execute action: ", diff);
+  console.log("remainingTimeMS to execute action: ", remainingTimeMS);
 
-  if (diff > 10) {
-    await sleep(diff);
+  if (remainingTimeMS > 3) {
+    await sleep(remainingTimeMS);
   }
 
   let submissionButtonsRetry = 0;
@@ -216,6 +216,11 @@ const processClientActionOnPatient = async ({
   while (true) {
     try {
       if (submissionButtonsRetry || checkDetailsPageRetry) {
+        console.log(
+          `referralId=${referralId}_RETURNED_TO_HOME_times_${
+            submissionButtonsRetry + checkDetailsPageRetry
+          }`
+        );
         const referralIdRecordResultData = await collectHomePageTableRows(
           page,
           referralId

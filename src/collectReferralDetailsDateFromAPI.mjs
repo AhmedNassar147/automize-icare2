@@ -19,6 +19,17 @@ const getCleanText = (raw = "") =>
     .replace(/\s+/g, " ")
     .trim();
 
+const getFormattedDateTime = (dateMs) => {
+  const formatWithMs = new Intl.DateTimeFormat("en-SA", {
+    dateStyle: "short",
+    timeStyle: "medium",
+    hour12: false,
+    fractionalSecondDigits: 3,
+  });
+
+  return formatWithMs.format(new Date(dateMs));
+};
+
 const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
   const {
     response,
@@ -27,6 +38,7 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
     networkStatus,
     apiCatchError,
     apiCatchMessage,
+    headers,
   } = responseData || {};
 
   const { statusCode, data: apiData } = response || {};
@@ -45,6 +57,7 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
         networkStatus,
         requestStartTime,
         receivedAt,
+        responseHeaders: headers,
       },
     };
   }
@@ -57,9 +70,14 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
     ...otherDetailsData
   } = apiData;
 
-  const latency = requestStartTime ? receivedAt - requestStartTime : 1500;
+  const latency =
+    requestStartTime != null ? receivedAt - requestStartTime : 380;
+  const halfLatency = Math.max(Math.floor(latency / 2), 0);
 
-  const serverSentAtMS = receivedAt + latency;
+  const serverSentAtMS =
+    requestStartTime != null
+      ? requestStartTime + halfLatency
+      : receivedAt - halfLatency;
 
   const timingData = getWhenCaseStarted(
     serverSentAtMS,
@@ -70,14 +88,17 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
   return {
     timingData: {
       detailsApiCalledAtMs: requestStartTime,
+      detailsApiCalledAt: requestStartTime
+        ? getFormattedDateTime(requestStartTime)
+        : null,
       detailsRequestNetworkLatency: latency,
       detailsApiReturnedAtMs: receivedAt,
+      detailsApiReturnedAt: getFormattedDateTime(receivedAt),
       detailsResponseFiredFromServerAtMS: serverSentAtMS,
-      detailsApiCalledAt: requestStartTime
-        ? new Date(requestStartTime).toLocaleString()
-        : null,
-      detailsApiReturnedAt: new Date(receivedAt).toLocaleString(),
+      serverSentAtMsBasedRecievedMinusLat: receivedAt - halfLatency,
+      serverSentAtMsBasedRequestPlusLat: (requestStartTime || 0) + halfLatency,
       ...timingData,
+      responseHeaders: headers,
     },
     specialty: requiredSpecialty,
     subSpecialty: specialty || requiredSpecialty,
@@ -217,11 +238,14 @@ const collectReferralDetailsDateFromAPI = ({
 
             const data = await res.json();
 
+            const headers = res.headers();
+
             responses[key] = {
               response: data,
               receivedAt,
               requestStartTime,
               networkStatus: res.status(),
+              headers,
             };
 
             console.log(`✅ Got ${key} response for referralId=${referralId}`);
