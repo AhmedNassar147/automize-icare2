@@ -4,9 +4,9 @@
  *
  */
 import humanClick from "./humanClick.mjs";
+import sleep from "./sleep.mjs";
 // import scrollIntoView from "./scrollIntoView.mjs";
 // import isElementInvisible from "./isElementInvisible.mjs";
-// import sleep from "./sleep.mjs";
 
 /**
  * Selects an option from a Material UI dropdown ("Acceptance" or "Rejection").
@@ -46,7 +46,10 @@ const selectAttachmentDropdownOption = async ({
     await dropdownTrigger.click();
     await sleep(20 + Math.random() * 50);
   } catch (err) {
-    console.log("⚠️ Default click failed, falling back to humanClick.");
+    console.log(
+      "⚠️ Default click failed, falling back to humanClick.",
+      err.message
+    );
     await dropdownTrigger.scrollIntoViewIfNeeded().catch(() => {});
     await humanClick(page, cursor, dropdownTrigger);
   }

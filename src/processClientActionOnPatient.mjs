@@ -200,7 +200,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const diff = caseActualWillBeSubmittedAtMS - 150 - Date.now();
+  const diff = caseActualWillBeSubmittedAtMS - Date.now();
 
   console.log("diff to execute action: ", diff);
 
@@ -208,10 +208,10 @@ const processClientActionOnPatient = async ({
     await sleep(diff);
   }
 
-  const startTime = Date.now();
-
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
+
+  const startTime = Date.now();
 
   while (true) {
     try {
@@ -343,7 +343,7 @@ const processClientActionOnPatient = async ({
       await humanClick(page, cursor, selectedButton);
 
       const durationText = buildDurationText(startTime, Date.now());
-      await sleep(6000);
+      await sleep(8000);
 
       const currentPageUrl = page.url();
 
