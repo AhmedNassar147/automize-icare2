@@ -59,7 +59,7 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
 
   const latency = requestStartTime ? receivedAt - requestStartTime : 1500;
 
-  const serverSentAtMS = receivedAt - latency;
+  const serverSentAtMS = receivedAt + latency;
 
   const timingData = getWhenCaseStarted(
     serverSentAtMS,
@@ -70,13 +70,13 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
   return {
     timingData: {
       detailsApiCalledAtMs: requestStartTime,
+      detailsRequestNetworkLatency: latency,
+      detailsApiReturnedAtMs: receivedAt,
+      detailsResponseFiredFromServerAtMS: serverSentAtMS,
       detailsApiCalledAt: requestStartTime
         ? new Date(requestStartTime).toLocaleString()
         : null,
-      detailsApiReturnedAtMs: receivedAt,
       detailsApiReturnedAt: new Date(receivedAt).toLocaleString(),
-      detailsRequestNetworkLatency: latency,
-      detailsResponseFiredFromServerAtMS: serverSentAtMS,
       ...timingData,
     },
     specialty: requiredSpecialty,
