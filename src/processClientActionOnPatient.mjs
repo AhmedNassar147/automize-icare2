@@ -202,7 +202,7 @@ const processClientActionOnPatient = async ({
 
   const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now();
 
-  if (remainingTimeMS) {
+  if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
     await sleep(remainingTimeMS);
   }
