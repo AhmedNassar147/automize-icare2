@@ -232,27 +232,27 @@ const processClientActionOnPatient = async ({
 
       await iconButton.click();
 
-      const areWeInDetailsPage = await checkIfWeInDetailsPage(page);
+      await checkIfWeInDetailsPage(page);
 
-      if (!areWeInDetailsPage) {
-        const hasReachedMaxRetriesForDetailsPage =
-          checkDetailsPageRetry >= MAX_RETRIES;
+      // if (!areWeInDetailsPage) {
+      //   const hasReachedMaxRetriesForDetailsPage =
+      //     checkDetailsPageRetry >= MAX_RETRIES;
 
-        if (hasReachedMaxRetriesForDetailsPage) {
-          await sendErrorMessage(
-            `Tried ${checkDetailsPageRetry} times to enter the details page, but there is something wrong.`,
-            "enter-details-page-failed-reachedMax",
-            buildDurationText(startTime, Date.now())
-          );
+      //   if (hasReachedMaxRetriesForDetailsPage) {
+      //     await sendErrorMessage(
+      //       `Tried ${checkDetailsPageRetry} times to enter the details page, but there is something wrong.`,
+      //       "enter-details-page-failed-reachedMax",
+      //       buildDurationText(startTime, Date.now())
+      //     );
 
-          await closeCurrentPage(false);
-          break;
-        }
+      //     await closeCurrentPage(false);
+      //     break;
+      //   }
 
-        await goToHomePage(page, cursor);
-        checkDetailsPageRetry += 1;
-        continue;
-      }
+      //   await goToHomePage(page, cursor);
+      //   checkDetailsPageRetry += 1;
+      //   continue;
+      // }
 
       const referralButtons = await getSubmissionButtonsIfFound(page);
 
@@ -271,13 +271,11 @@ const processClientActionOnPatient = async ({
           break;
         }
 
-        await goToHomePage(page, cursor);
         submissionButtonsRetry += 1;
+        await goToHomePage(page, cursor);
         continue;
       }
 
-      // console.time("🕒 scoll_sections_time");
-      // console.timeEnd("🕒 scoll_sections_time");
       const sectionEl = await scrollDetailsPageSections({
         page,
         cursor,
@@ -297,7 +295,6 @@ const processClientActionOnPatient = async ({
         break;
       }
 
-      console.time("🕒 select_action_option_time");
       const hasOptionSelected = await selectAttachmentDropdownOption({
         page,
         cursor,
@@ -316,7 +313,6 @@ const processClientActionOnPatient = async ({
         await closeCurrentPage(true);
         break;
       }
-      console.timeEnd("🕒 select_action_option_time");
 
       await makeKeyboardNoise(page, logString);
 

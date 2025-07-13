@@ -12,7 +12,7 @@ const checkIfWeInDetailsPage = async (page, isCollectAction) => {
 
   try {
     await page.waitForSelector(".statusContainer", {
-      timeout: 9000,
+      timeout: 10_000,
       visible: true,
     });
 

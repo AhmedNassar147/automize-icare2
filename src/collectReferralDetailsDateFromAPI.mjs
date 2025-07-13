@@ -74,10 +74,10 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
   } = apiData;
 
   const latency =
-    requestStartTime != null ? receivedAt - requestStartTime : 320;
+    requestStartTime != null ? receivedAt - requestStartTime : 500;
   const halfLatency = Math.max(Math.floor(latency / 2), 0);
 
-  const serverSentAtMS = receivedAt - halfLatency;
+  const serverSentAtMS = receivedAt - latency;
 
   const __serverSentAtMS =
     requestStartTime != null ? requestStartTime + halfLatency : serverSentAtMS;

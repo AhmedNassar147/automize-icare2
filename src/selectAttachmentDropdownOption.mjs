@@ -27,7 +27,6 @@ const selectAttachmentDropdownOption = async ({
 }) => {
   // const normalized = option.trim().toLowerCase();
 
-  console.time("🕒 dropdown_triger_time");
   // Step 1: Find the dropdown trigger inside section
   let dropdownTrigger = await sectionEl.waitForSelector(
     'div[role="combobox"]',
@@ -36,8 +35,6 @@ const selectAttachmentDropdownOption = async ({
       visible: true,
     }
   );
-
-  console.timeEnd("🕒 dropdown_triger_time");
 
   if (!dropdownTrigger) {
     console.log(`❌ Still no dropdown trigger found.`);
@@ -66,10 +63,13 @@ const selectAttachmentDropdownOption = async ({
     const selector = `ul[role="listbox"] li[role="option"]:nth-child(${itemOrder})`;
 
     try {
-      console.time("dropdown_option_wait");
       await page.waitForSelector(selector, { timeout: 3000, visible: true });
-      console.timeEnd("dropdown_option_wait");
-    } catch (error) {}
+    } catch (error) {
+      console.log(
+        "Error when waiting for dropdown options selector:",
+        error.message
+      );
+    }
 
     await page.click(selector);
 
