@@ -200,11 +200,11 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const diff = caseActualWillBeSubmittedAtMS - Date.now();
+  const diff = caseActualWillBeSubmittedAtMS - 10 - Date.now();
 
   console.log("diff to execute action: ", diff);
 
-  if (diff > 0) {
+  if (diff > 10) {
     await sleep(diff);
   }
 
@@ -364,9 +364,9 @@ const processClientActionOnPatient = async ({
 
       await sendSuccessMessage(durationText);
 
-      const deletionResponse = await patientsStore.removePatientByReferralId(
-        referralId
-      );
+      // const deletionResponse = await patientsStore.removePatientByReferralId(
+      //   referralId
+      // );
 
       await Promise.allSettled([
         checkPathExists(acceptanceFilePath).then(
@@ -377,7 +377,7 @@ const processClientActionOnPatient = async ({
         ),
       ]);
 
-      console.log(deletionResponse?.message);
+      // console.log(deletionResponse?.message);
       await closeCurrentPage(false);
       break;
     } catch (error) {
