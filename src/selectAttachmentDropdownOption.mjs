@@ -3,10 +3,10 @@
  * Helper: `selectAttachmentDropdownOption`.
  *
  */
+import { writeFile } from "fs/promises";
 import humanClick from "./humanClick.mjs";
-import sleep from "./sleep.mjs";
-// import scrollIntoView from "./scrollIntoView.mjs";
-// import isElementInvisible from "./isElementInvisible.mjs";
+// import sleep from "./sleep.mjs";
+import { htmlFilesPath } from "./constants.mjs";
 
 /**
  * Selects an option from a Material UI dropdown ("Acceptance" or "Rejection").
@@ -25,26 +25,31 @@ const selectAttachmentDropdownOption = async ({
   sectionEl,
   logString,
 }) => {
-  const normalized = option.trim().toLowerCase();
+  // const normalized = option.trim().toLowerCase();
 
+  console.time("🕒 dropdown_triger_time");
   // Step 1: Find the dropdown trigger inside section
-  let dropdownTrigger = await sectionEl.$('div[role="combobox"]');
+  let dropdownTrigger = await sectionEl.waitForSelector(
+    'div[role="combobox"]',
+    {
+      timeout: 5000,
+      visible: true,
+    }
+  );
+
+  console.timeEnd("🕒 dropdown_triger_time");
 
   if (!dropdownTrigger) {
-    console.log(
-      `❌ Dropdown trigger not found in "${logString}", trying fallback...`
-    );
-    dropdownTrigger = await sectionEl.$(".MuiSelect-select[role='combobox']");
-    if (!dropdownTrigger) {
-      console.log(`❌ Still no dropdown trigger found.`);
-      return false;
-    }
+    console.log(`❌ Still no dropdown trigger found.`);
+
+    const html = await page.content();
+    await writeFile(`${htmlFilesPath}/dropdown-trigger-not-found.html`, html);
+    return false;
   }
 
   // Step 2: Try to click (fast), fallback to humanClick if needed
   try {
     await dropdownTrigger.click();
-    await sleep(20 + Math.random() * 50);
   } catch (err) {
     console.log(
       "⚠️ Default click failed, falling back to humanClick.",
@@ -56,23 +61,15 @@ const selectAttachmentDropdownOption = async ({
 
   // Step 3: Try to find and click the matching dropdown option
   try {
-    const found = await page.$$eval(
-      'ul[role="listbox"] li[role="option"]',
-      (items, normalized) => {
-        const match = items.find((el) =>
-          (el.textContent || "").toLowerCase().includes(normalized)
-        );
-        if (match) match.click();
-        return !!match;
-      },
-      normalized
-    );
+    const itemOrder = option === "Acceptance" ? 1 : 2;
 
-    if (!found) {
-      console.log(`❌ Option "${option}" not found in dropdown.`);
-    }
+    const selector = `ul[role="listbox"] li[role="option"]:nth-child(${itemOrder})`;
 
-    return found;
+    await page.waitForSelector(selector, { timeout: 3000, visible: true });
+
+    await page.click(selector);
+
+    return true;
   } catch (error) {
     console.log(
       `⚠️ Error selecting dropdown option "${option}":`,
@@ -83,6 +80,31 @@ const selectAttachmentDropdownOption = async ({
 };
 
 export default selectAttachmentDropdownOption;
+
+// console.log(
+//   `❌ Dropdown trigger not found in "${logString}", trying fallback...`
+// );
+
+// dropdownTrigger = await sectionEl.waitForSelector('div[role="combobox"]', {
+//   timeout: 5000,
+//   visible: true,
+// });
+
+// const found = await page.$$eval(
+//   'ul[role="listbox"] li[role="option"]',
+//   (items, normalized) => {
+//     const match = items.find((el) =>
+//       (el.textContent || "").toLowerCase().includes(normalized)
+//     );
+//     if (match) match.click();
+//     return !!match;
+//   },
+//   normalized
+// );
+
+// if (!found) {
+//   console.log(`❌ Option "${option}" not found in dropdown.`);
+// }
 
 // const matchingOptionHandle = await page.waitForFunction(
 //   (targetText) => {

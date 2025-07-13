@@ -178,7 +178,7 @@ const processClientActionOnPatient = async ({
     return;
   }
 
-  await sleep(20);
+  await sleep(30);
   const referralIdRecordResult = await collectHomePageTableRows(
     page,
     referralId
@@ -200,11 +200,10 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = caseActualWillBeSubmittedAtMS - 3 - Date.now();
+  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now();
 
-  console.log("remainingTimeMS to execute action: ", remainingTimeMS);
-
-  if (remainingTimeMS > 3) {
+  if (remainingTimeMS) {
+    console.log("remainingTimeMS to execute action: ", remainingTimeMS);
     await sleep(remainingTimeMS);
   }
 
@@ -298,8 +297,7 @@ const processClientActionOnPatient = async ({
         break;
       }
 
-      // console.time("🕒 select_action_option_time");
-      // console.timeEnd("🕒 select_action_option_time");
+      console.time("🕒 select_action_option_time");
       const hasOptionSelected = await selectAttachmentDropdownOption({
         page,
         cursor,
@@ -318,6 +316,7 @@ const processClientActionOnPatient = async ({
         await closeCurrentPage(true);
         break;
       }
+      console.timeEnd("🕒 select_action_option_time");
 
       await makeKeyboardNoise(page, logString);
 

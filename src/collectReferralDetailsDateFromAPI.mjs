@@ -20,14 +20,17 @@ const getCleanText = (raw = "") =>
     .trim();
 
 const getFormattedDateTime = (dateMs) => {
-  const formatWithMs = new Intl.DateTimeFormat("en-SA", {
+  const now = new Date(dateMs);
+
+  const formatted = now.toLocaleString("en-SA", {
     dateStyle: "short",
     timeStyle: "medium",
     hour12: false,
-    fractionalSecondDigits: 3,
   });
 
-  return formatWithMs.format(new Date(dateMs));
+  // Add milliseconds (zero-padded to 3 digits)
+  const ms = now.getMilliseconds().toString().padStart(3, "0");
+  return `${formatted}.${ms}`;
 };
 
 const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
@@ -71,13 +74,13 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
   } = apiData;
 
   const latency =
-    requestStartTime != null ? receivedAt - requestStartTime : 380;
+    requestStartTime != null ? receivedAt - requestStartTime : 320;
   const halfLatency = Math.max(Math.floor(latency / 2), 0);
 
-  const serverSentAtMS =
-    requestStartTime != null
-      ? requestStartTime + halfLatency
-      : receivedAt - halfLatency;
+  const serverSentAtMS = receivedAt - halfLatency;
+
+  const __serverSentAtMS =
+    requestStartTime != null ? requestStartTime + halfLatency : serverSentAtMS;
 
   const timingData = getWhenCaseStarted(
     serverSentAtMS,
@@ -95,7 +98,7 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
       detailsApiReturnedAtMs: receivedAt,
       detailsApiReturnedAt: getFormattedDateTime(receivedAt),
       detailsResponseFiredFromServerAtMS: serverSentAtMS,
-      serverSentAtMsBasedRecievedMinusLat: receivedAt - halfLatency,
+      __serverSentAtMS,
       serverSentAtMsBasedRequestPlusLat: (requestStartTime || 0) + halfLatency,
       ...timingData,
       responseHeaders: headers,
