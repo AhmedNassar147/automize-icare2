@@ -131,10 +131,53 @@ export default getWhenCaseStarted;
 
 // // const wastedTimeInMins = parseFloat((elapsedMs / 1000 / 60).toFixed(1));
 
+// const parseDateInSaudiToMs = (datetimeStr) => {
+//   // Step 1: Create formatter for "en-SA" locale and get Saudi time zone
+//   const saudiTimeZone = 'Asia/Riyadh';
+
+//   // Step 2: Use DateTimeFormat to parse string (you can also do manual parsing)
+//   // Since the input is fixed format, we'll parse it directly
+
+//   // Split into parts
+//   const [datePart, timePartWithPeriod] = datetimeStr.split(", ");
+//   const [month, day, year] = datePart.split("/").map(Number);
+//   const [timePart, period] = timePartWithPeriod.split(" ");
+//   let [hour, minute, second] = timePart.split(":").map(Number);
+
+//   // Convert 12h to 24h format
+//   if (period === "PM" && hour !== 12) hour += 12;
+//   if (period === "AM" && hour === 12) hour = 0;
+
+//   // Create a date in the Saudi time zone
+//   const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+
+//   // Convert the UTC date to Saudi local timestamp
+//   const saudiTime = new Intl.DateTimeFormat('en-US', {
+//     timeZone: saudiTimeZone,
+//     hour12: false,
+//     year: 'numeric',
+//     month: '2-digit',
+//     day: '2-digit',
+//     hour: '2-digit',
+//     minute: '2-digit',
+//     second: '2-digit'
+//   }).format(date);
+
+//   const [d, t] = saudiTime.split(", ");
+//   const [saYear, saMonth, saDay] = d.split("/").reverse().map(Number);
+//   const [saHour, saMin, saSec] = t.split(":").map(Number);
+
+//   const finalDate = new Date(saYear, saMonth - 1, saDay, saHour, saMin, saSec);
+//   return finalDate.getTime(); // Milliseconds timestamp
+// };
+
+// const ms = parseDateInSaudiToMs("7/15/2025, 12:46:43 AM");
+// console.log("Milliseconds:", ms);
+
 // console.log(
 //   getWhenCaseStarted(
-//     Date.now(),
-//     "A waiting period of 15 minutes shall pass before an action can be performed. There is 12 minute(s) and 42 second(s) remaining."
+//     parseDateInSaudiToMs("7/15/2025, 12:46:43 AM"),
+//     "A waiting period of 15 minutes shall pass before an action can be performed. There is 14 minute(s) and 34 second(s) remaining."
 //   )
 // );
 

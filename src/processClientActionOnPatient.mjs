@@ -10,7 +10,7 @@ import checkPathExists from "./checkPathExists.mjs";
 import humanClick from "./humanClick.mjs";
 import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import goToHomePage from "./goToHomePage.mjs";
-import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
+// import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
@@ -202,7 +202,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 60;
+  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 59.5;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -233,7 +233,6 @@ const processClientActionOnPatient = async ({
       }
 
       await iconButton.click();
-
       await checkIfWeInDetailsPage(page);
 
       // if (!areWeInDetailsPage) {
@@ -278,14 +277,14 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
-      const sectionEl = await scrollDetailsPageSections({
-        page,
-        cursor,
-        logString,
-        // sectionsIndices: [1, 2],
-        sectionsIndices: [2],
-        noCursorMovemntIfFailed: true,
-      });
+      // const sectionEl = await scrollDetailsPageSections({
+      //   page,
+      //   cursor,
+      //   logString,
+      //   // sectionsIndices: [1, 2],
+      //   sectionsIndices: [2],
+      //   noCursorMovemntIfFailed: true,
+      // });
 
       // if (!sectionEl) {
       //   await sendErrorMessage(
@@ -303,7 +302,7 @@ const processClientActionOnPatient = async ({
           page,
           cursor,
           option: actionName,
-          sectionEl,
+          // sectionEl,
         });
 
       if (!hasOptionSelected) {
@@ -349,7 +348,7 @@ const processClientActionOnPatient = async ({
       await humanClick(page, cursor, selectedButton);
 
       const durationText = buildDurationText(startTime, Date.now());
-      await sleep(17_000);
+      await sleep(20_000);
 
       const currentPageUrl = page.url();
 

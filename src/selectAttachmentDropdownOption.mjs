@@ -36,13 +36,16 @@ const selectAttachmentDropdownOption = async ({
 
   // Step 2: Try to click (fast), fallback to humanClick if needed
   try {
+    await dropdownTrigger
+      .scrollIntoViewIfNeeded({ timeout: 3000 })
+      .catch(() => {});
+
     await dropdownTrigger.click();
   } catch (err) {
     console.log(
       "⚠️ Default click failed, falling back to humanClick.",
       err.message
     );
-    await dropdownTrigger.scrollIntoViewIfNeeded().catch(() => {});
     await humanClick(page, cursor, dropdownTrigger);
   }
 

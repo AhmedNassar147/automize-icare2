@@ -6,9 +6,9 @@
 const checkIfWeInDetailsPage = async (page, isCollectAction) => {
   let areWeInDetailsPage = false;
 
-  const label = `🕒 areWeInDetailsPage${isCollectAction ? "_collect" : ""}`;
+  // const label = `🕒 areWeInDetailsPage${isCollectAction ? "_collect" : ""}`;
 
-  console.time(label);
+  // console.time(label);
 
   try {
     await page.waitForSelector(".statusContainer", {
@@ -24,8 +24,8 @@ const checkIfWeInDetailsPage = async (page, isCollectAction) => {
     // });
   }
 
-  console.timeEnd(label);
-  console.log(`Are we in home page ?:${areWeInDetailsPage}`);
+  // console.timeEnd(label);
+  // console.log(`Are we in home page ?:${areWeInDetailsPage}`);
 
   return areWeInDetailsPage;
 };
