@@ -213,6 +213,8 @@ const processClientActionOnPatient = async ({
   const startTime = Date.now();
 
   while (true) {
+    const loopStartTime = Date.now();
+
     try {
       if (submissionButtonsRetry || checkDetailsPageRetry) {
         console.log(
@@ -232,7 +234,10 @@ const processClientActionOnPatient = async ({
 
       await iconButton.click();
 
+      console.time("🕒 adetails_page_in");
       await checkIfWeInDetailsPage(page);
+      console.timeEnd("🕒 adetails_page_in");
+      const inDetailsPageStartTime = Date.now();
 
       // if (!areWeInDetailsPage) {
       //   const hasReachedMaxRetriesForDetailsPage =
@@ -254,10 +259,19 @@ const processClientActionOnPatient = async ({
       //   continue;
       // }
 
+      console.time("🕒 searching_submission_buttons");
       const referralButtons = await getSubmissionButtonsIfFound(page);
+      console.timeEnd("🕒 searching_submission_buttons");
 
       if (!referralButtons) {
-        console.log("DIFF_G", Date.now() - startTime);
+        const currentNow = Date.now();
+        console.log("DIFF_G", {
+          fromOriginalStart: currentNow - startTime,
+          fromLoopStart: currentNow - loopStartTime,
+          fromDetailsPageStart: currentNow - inDetailsPageStartTime,
+          fromOrginalStartToAfterDetailsPage:
+            inDetailsPageStartTime - loopStartTime,
+        });
         const hasReachedMaxRetriesForSubmission =
           submissionButtonsRetry >= MAX_RETRIES;
 
@@ -296,18 +310,17 @@ const processClientActionOnPatient = async ({
       //   break;
       // }
 
-      const hasOptionSelected = await selectAttachmentDropdownOption({
-        page,
-        cursor,
-        option: actionName,
-        // viewportHeight,
-        sectionEl,
-        logString,
-      });
+      const [hasOptionSelected, selectionError] =
+        await selectAttachmentDropdownOption({
+          page,
+          cursor,
+          option: actionName,
+          sectionEl,
+        });
 
       if (!hasOptionSelected) {
         await sendErrorMessage(
-          `We tried times to select ${actionName}, but couldn't.`,
+          `We tried times to select ${actionName}, but couldn't find it.\n*selectionError:* ${selectionError}`,
           "list-item-not-found",
           buildDurationText(startTime, Date.now())
         );

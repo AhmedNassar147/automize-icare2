@@ -8,27 +8,17 @@ import humanClick from "./humanClick.mjs";
 // import sleep from "./sleep.mjs";
 import { htmlFilesPath } from "./constants.mjs";
 
-/**
- * Selects an option from a Material UI dropdown ("Acceptance" or "Rejection").
- *
- * @param {object} opts - Options object.
- * @param {import("puppeteer").Page} opts.page - Puppeteer page instance.
- * @param {import("ghost-cursor").GhostCursor} opts.cursor - Ghost cursor instance.
- * @param {"Acceptance" | "Rejection"} opts.option - Option to select.
- * @param {string} opts.logString - Label for logging.
- * @param {import("puppeteer").ElementHandle<Element>} opts.sectionEl - Scope element containing the dropdown.
- */
 const selectAttachmentDropdownOption = async ({
   page,
   cursor,
   option,
   sectionEl,
-  logString,
 }) => {
+  const mainObject = sectionEl || page;
+
   // const normalized = option.trim().toLowerCase();
 
-  // Step 1: Find the dropdown trigger inside section
-  let dropdownTrigger = await (sectionEl || page).waitForSelector(
+  const dropdownTrigger = await mainObject.waitForSelector(
     'div[role="combobox"]',
     {
       timeout: 5000,
@@ -41,7 +31,7 @@ const selectAttachmentDropdownOption = async ({
 
     const html = await page.content();
     await writeFile(`${htmlFilesPath}/dropdown-trigger-not-found.html`, html);
-    return false;
+    return [false, "couldn't find the dropdown trigger"];
   }
 
   // Step 2: Try to click (fast), fallback to humanClick if needed
@@ -62,24 +52,18 @@ const selectAttachmentDropdownOption = async ({
 
     const selector = `ul[role="listbox"] li[role="option"]:nth-child(${itemOrder})`;
 
-    try {
-      await page.waitForSelector(selector, { timeout: 4000, visible: true });
-    } catch (error) {
-      console.log(
-        "Error when waiting for dropdown options selector:",
-        error.message
-      );
-    }
+    const optionEl = await page.waitForSelector(selector, {
+      timeout: 5000,
+      visible: true,
+    });
 
-    await page.click(selector);
-
-    return true;
+    await optionEl.click();
+    return [true];
   } catch (error) {
-    console.log(
-      `⚠️ Error selecting dropdown option "${option}":`,
-      error.message
-    );
-    return false;
+    const _error = `⚠️ Error selecting dropdown option "${option}": ${error.message}`;
+
+    console.log(_error);
+    return [false, _error];
   }
 };
 
