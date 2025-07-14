@@ -26,7 +26,7 @@ import {
 //   ? "referrals/accept-referral"
 //   : "referrals/reject-referral";
 
-const WHATS_APP_LOADING_TIME = 45_000;
+// const WHATS_APP_LOADING_TIME = 45_000;
 const MAX_RETRIES = 6;
 
 const startingPageUrl =
@@ -164,7 +164,7 @@ const processClientActionOnPatient = async ({
     if (navigateToHomePage) {
       await goToHomePage(page, cursor);
     }
-    await sleep(WHATS_APP_LOADING_TIME);
+    // await sleep(WHATS_APP_LOADING_TIME);
     await closePageSafely(page);
   };
 
@@ -200,7 +200,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 700;
+  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 100;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -285,16 +285,16 @@ const processClientActionOnPatient = async ({
         noCursorMovemntIfFailed: true,
       });
 
-      if (!sectionEl) {
-        await sendErrorMessage(
-          "The upload section was not found.",
-          "upload-section-not-found",
-          buildDurationText(startTime, Date.now())
-        );
+      // if (!sectionEl) {
+      //   await sendErrorMessage(
+      //     "The upload section was not found.",
+      //     "upload-section-not-found",
+      //     buildDurationText(startTime, Date.now())
+      //   );
 
-        await closeCurrentPage(true);
-        break;
-      }
+      //   await closeCurrentPage(true);
+      //   break;
+      // }
 
       const hasOptionSelected = await selectAttachmentDropdownOption({
         page,
@@ -344,7 +344,7 @@ const processClientActionOnPatient = async ({
       await humanClick(page, cursor, selectedButton);
 
       const durationText = buildDurationText(startTime, Date.now());
-      await sleep(10_000);
+      await sleep(12_000);
 
       const currentPageUrl = page.url();
 

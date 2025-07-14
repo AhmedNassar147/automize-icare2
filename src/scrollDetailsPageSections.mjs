@@ -24,11 +24,6 @@ const scrollDetailsPageSections = async ({
       const section = sections[index];
       if (!section) continue;
 
-      // await page.evaluate(
-      //   (el) => el.scrollIntoView({ behavior: "smooth", block: "center" }),
-      //   section
-      // );
-
       await section.scrollIntoViewIfNeeded({ timeout: 3000 });
       await sleep(scrollDelay + Math.random() * 90);
     }

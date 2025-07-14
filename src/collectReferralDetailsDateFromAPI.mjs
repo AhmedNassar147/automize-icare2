@@ -327,7 +327,7 @@ const collectReferralDetailsDateFromAPI = ({
           (k) => !responses[k]
         ),
       });
-    }, 18_000);
+    }, 25_000);
   });
 };
 
