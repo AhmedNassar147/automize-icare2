@@ -112,7 +112,9 @@ const processClientActionOnPatient = async ({
     `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`
   );
 
-  const filePath = isAcceptance ? acceptanceFilePath : rejectionFilePath;
+  const filePath = resolve(
+    isAcceptance ? acceptanceFilePath : rejectionFilePath
+  );
 
   const baseMessage = `🚨 *\`${actionName.toUpperCase()}\`* Case Alert! 🚨
 🆔 Referral: *${referralId}*
@@ -200,7 +202,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now();
+  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 58;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -213,8 +215,6 @@ const processClientActionOnPatient = async ({
   const startTime = Date.now();
 
   while (true) {
-    const loopStartTime = Date.now();
-
     try {
       if (submissionButtonsRetry || checkDetailsPageRetry) {
         console.log(
@@ -235,7 +235,6 @@ const processClientActionOnPatient = async ({
       await iconButton.click();
 
       await checkIfWeInDetailsPage(page);
-      const inDetailsPageStartTime = Date.now();
 
       // if (!areWeInDetailsPage) {
       //   const hasReachedMaxRetriesForDetailsPage =
@@ -257,19 +256,9 @@ const processClientActionOnPatient = async ({
       //   continue;
       // }
 
-      console.time("🕒 searching_submission_buttons");
       const referralButtons = await getSubmissionButtonsIfFound(page);
-      console.timeEnd("🕒 searching_submission_buttons");
 
       if (!referralButtons) {
-        const currentNow = Date.now();
-        console.log("DIFF_G", {
-          fromOriginalStart: currentNow - startTime,
-          fromLoopStart: currentNow - loopStartTime,
-          fromDetailsPageStart: currentNow - inDetailsPageStartTime,
-          fromOrginalStartToAfterDetailsPage:
-            inDetailsPageStartTime - loopStartTime,
-        });
         const hasReachedMaxRetriesForSubmission =
           submissionButtonsRetry >= MAX_RETRIES;
 
@@ -293,7 +282,8 @@ const processClientActionOnPatient = async ({
         page,
         cursor,
         logString,
-        sectionsIndices: [1, 2],
+        // sectionsIndices: [1, 2],
+        sectionsIndices: [2],
         noCursorMovemntIfFailed: true,
       });
 
@@ -333,7 +323,7 @@ const processClientActionOnPatient = async ({
           '#upload-single-file input[type="file"]'
         );
 
-        await fileInput.uploadFile(resolve(filePath));
+        await fileInput.uploadFile(filePath);
       } catch (error) {
         const err = error?.message || String(error);
         await sendErrorMessage(
@@ -350,12 +340,16 @@ const processClientActionOnPatient = async ({
 
       const selectedButton = isAcceptance ? acceptButton : rejectButton;
 
-      await selectedButton.scrollIntoViewIfNeeded({ timeout: 4000 });
+      try {
+        await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
+      } catch (error) {
+        console.log(`Errorm when scrolling into selectedButton`, error.message);
+      }
 
       await humanClick(page, cursor, selectedButton);
 
       const durationText = buildDurationText(startTime, Date.now());
-      await sleep(12_000);
+      await sleep(17_000);
 
       const currentPageUrl = page.url();
 
