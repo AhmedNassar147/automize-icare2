@@ -234,9 +234,7 @@ const processClientActionOnPatient = async ({
 
       await iconButton.click();
 
-      console.time("🕒 adetails_page_in");
       await checkIfWeInDetailsPage(page);
-      console.timeEnd("🕒 adetails_page_in");
       const inDetailsPageStartTime = Date.now();
 
       // if (!areWeInDetailsPage) {
