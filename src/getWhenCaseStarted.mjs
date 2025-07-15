@@ -17,46 +17,34 @@ const formatMsToMinutesSeconds = (ms) => {
 
 const pluralize = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-const getTimingData = (baseTimeMS, caseActualLeftMs) => {
-  // const elapsedMs = EFFECTIVE_REVIEW_DURATION_MS - caseActualLeftMs;
+const getDateLocalString = (date) => {
+  const dateObject = date instanceof Date ? date : new Date(date);
 
-  // const caseReceivedAtMS = baseTimeMS - elapsedMs;
-  const caseReceivedAt = new Date(baseTimeMS).toLocaleString();
-
-  const caseActualWillBeSubmittedAtMS = baseTimeMS + caseActualLeftMs;
-
-  const caseActualWillBeSubmittedAt = new Date(
-    caseActualWillBeSubmittedAtMS
-  ).toLocaleString();
-
-  return {
-    caseReceivedAtMS: baseTimeMS,
-    caseReceivedAt,
-    caseActualWillBeSubmittedAtMS,
-    caseActualWillBeSubmittedAt,
-  };
+  return dateObject.toLocaleString("en-SA", {
+    timeZone: "Asia/Riyadh",
+    dateStyle: "full",
+    timeStyle: "medium",
+    hour12: false,
+  });
 };
 
 const getWhenCaseStarted = (
-  baseTimeMS,
+  serverDateHeader,
   message,
   useDefaultMessageIfNotFound
 ) => {
   if (!message && !useDefaultMessageIfNotFound) {
     return {
       caseActualLeftMs: 0,
+      caseAlertMessage: message,
     };
   }
-
-  let hasApiMessageFound = !!message;
 
   if (useDefaultMessageIfNotFound && !message) {
     message = "There is 14 minute(s) and 42 second(s) remaining.";
   }
 
-  // const match = (message || "").match(
-  //   /(\d+)\s+minute\(s\)\s+and\s+(\d+)\s+second\(s\)/
-  // );
+  const date = new Date(serverDateHeader); // Server time (GMT)
 
   const match = message.match(
     /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/
@@ -65,65 +53,156 @@ const getWhenCaseStarted = (
   const minsLeft = parseInt(match?.[1], 10) ?? 0;
   const secsLeft = parseInt(match?.[2], 10) ?? 0;
 
-  const caseActualLeftMs = (minsLeft * 60 + secsLeft) * 1000;
+  const leftMs = (minsLeft * 60 + secsLeft) * 1000;
 
-  const {
-    caseReceivedAtMS,
-    caseReceivedAt,
-    caseActualWillBeSubmittedAt,
-    caseActualWillBeSubmittedAtMS,
-  } = getTimingData(baseTimeMS, caseActualLeftMs);
+  const willBeSubmittedAt = new Date(date.getTime() + leftMs);
 
-  let caseUserReceivedAtMS = caseReceivedAtMS;
-  let caseUserReceivedAt = caseReceivedAt;
-  let caseUserLeftMs = caseActualLeftMs;
-  let caseUserWillBeSubmittedAtMS = caseActualWillBeSubmittedAtMS;
-  let caseUserWillBeSubmittedAt = caseActualWillBeSubmittedAt;
+  const caseActualWillBeSubmittedAtMS = willBeSubmittedAt.getTime();
+  const caseActualWillBeSubmittedAt = getDateLocalString(willBeSubmittedAt);
 
   const timeWithUserReaction = estimatedTimeForProcessingAction + 3000;
 
-  if (caseActualLeftMs > timeWithUserReaction) {
-    caseUserLeftMs = caseActualLeftMs - estimatedTimeForProcessingAction;
+  let caseUserWillBeSubmittedAtMS = caseActualWillBeSubmittedAtMS;
+  let caseUserWillBeSubmittedAt = caseActualWillBeSubmittedAt;
+  let caseUserAlertMessage = message;
 
-    const {
-      caseActualWillBeSubmittedAt,
-      caseActualWillBeSubmittedAtMS,
-      caseReceivedAt,
-      caseReceivedAtMS,
-    } = getTimingData(baseTimeMS, caseUserLeftMs);
+  if (caseActualWillBeSubmittedAtMS > timeWithUserReaction) {
+    caseUserWillBeSubmittedAtMS =
+      caseActualWillBeSubmittedAtMS - estimatedTimeForProcessingAction;
 
-    caseUserReceivedAtMS = caseReceivedAtMS;
-    caseUserReceivedAt = caseReceivedAt;
-    caseUserWillBeSubmittedAtMS = caseActualWillBeSubmittedAtMS;
-    caseUserWillBeSubmittedAt = caseActualWillBeSubmittedAt;
+    caseUserWillBeSubmittedAt = getDateLocalString(caseUserWillBeSubmittedAtMS);
+
+    const caseUserLeftMs = leftMs - estimatedTimeForProcessingAction;
+
+    const { minutes: reviewMinutes, seconds: reviewSeconds } =
+      formatMsToMinutesSeconds(caseUserLeftMs);
+
+    caseUserAlertMessage = `You have ${pluralize(
+      reviewMinutes,
+      "minute"
+    )} and ${pluralize(reviewSeconds, "second")} to review.`;
   }
 
-  const { minutes: reviewMinutes, seconds: reviewSeconds } =
-    formatMsToMinutesSeconds(caseUserLeftMs);
-
-  const caseUserAlertMessage = `You have ${pluralize(
-    reviewMinutes,
-    "minute"
-  )} and ${pluralize(reviewSeconds, "second")} to review.`;
-
   return {
-    caseReceivedAtMS,
-    caseReceivedAt,
-    caseActualLeftMs,
+    caseReceivedAt: getDateLocalString(date),
+    caseAlertMessage: message,
     caseActualWillBeSubmittedAt,
     caseActualWillBeSubmittedAtMS,
-    caseAlertMessage: message,
     caseUserAlertMessage,
-    hasApiMessageFound,
-    caseUserReceivedAtMS,
-    caseUserReceivedAt,
-    caseUserLeftMs,
     caseUserWillBeSubmittedAtMS,
     caseUserWillBeSubmittedAt,
   };
 };
 
 export default getWhenCaseStarted;
+
+// const getTimingData = (baseTimeMS, caseActualLeftMs) => {
+//   // const elapsedMs = EFFECTIVE_REVIEW_DURATION_MS - caseActualLeftMs;
+
+//   // const caseReceivedAtMS = baseTimeMS - elapsedMs;
+//   const caseReceivedAt = new Date(baseTimeMS).toLocaleString();
+
+//   const caseActualWillBeSubmittedAtMS = baseTimeMS + caseActualLeftMs;
+
+//   const caseActualWillBeSubmittedAt = new Date(
+//     caseActualWillBeSubmittedAtMS
+//   ).toLocaleString();
+
+//   return {
+//     caseReceivedAtMS: baseTimeMS,
+//     caseReceivedAt,
+//     caseActualWillBeSubmittedAtMS,
+//     caseActualWillBeSubmittedAt,
+//   };
+// };
+
+// const getWhenCaseStarted = (
+//   baseTimeMS,
+//   message,
+//   useDefaultMessageIfNotFound
+// ) => {
+//   if (!message && !useDefaultMessageIfNotFound) {
+//     return {
+//       caseActualLeftMs: 0,
+//     };
+//   }
+
+//   let hasApiMessageFound = !!message;
+
+//   if (useDefaultMessageIfNotFound && !message) {
+//     message = "There is 14 minute(s) and 42 second(s) remaining.";
+//   }
+
+//   // const match = (message || "").match(
+//   //   /(\d+)\s+minute\(s\)\s+and\s+(\d+)\s+second\(s\)/
+//   // );
+
+//   const match = message.match(
+//     /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/
+//   );
+
+//   const minsLeft = parseInt(match?.[1], 10) ?? 0;
+//   const secsLeft = parseInt(match?.[2], 10) ?? 0;
+
+//   const caseActualLeftMs = (minsLeft * 60 + secsLeft) * 1000;
+
+//   const {
+//     caseReceivedAtMS,
+//     caseReceivedAt,
+//     caseActualWillBeSubmittedAt,
+//     caseActualWillBeSubmittedAtMS,
+//   } = getTimingData(baseTimeMS, caseActualLeftMs);
+
+//   let caseUserReceivedAtMS = caseReceivedAtMS;
+//   let caseUserReceivedAt = caseReceivedAt;
+//   let caseUserLeftMs = caseActualLeftMs;
+//   let caseUserWillBeSubmittedAtMS = caseActualWillBeSubmittedAtMS;
+//   let caseUserWillBeSubmittedAt = caseActualWillBeSubmittedAt;
+
+//   const timeWithUserReaction = estimatedTimeForProcessingAction + 3000;
+
+//   if (caseActualLeftMs > timeWithUserReaction) {
+//     caseUserLeftMs = caseActualLeftMs - estimatedTimeForProcessingAction;
+
+//     const {
+//       caseActualWillBeSubmittedAt,
+//       caseActualWillBeSubmittedAtMS,
+//       caseReceivedAt,
+//       caseReceivedAtMS,
+//     } = getTimingData(baseTimeMS, caseUserLeftMs);
+
+//     caseUserReceivedAtMS = caseReceivedAtMS;
+//     caseUserReceivedAt = caseReceivedAt;
+//     caseUserWillBeSubmittedAtMS = caseActualWillBeSubmittedAtMS;
+//     caseUserWillBeSubmittedAt = caseActualWillBeSubmittedAt;
+//   }
+
+//   const { minutes: reviewMinutes, seconds: reviewSeconds } =
+//     formatMsToMinutesSeconds(caseUserLeftMs);
+
+//   const caseUserAlertMessage = `You have ${pluralize(
+//     reviewMinutes,
+//     "minute"
+//   )} and ${pluralize(reviewSeconds, "second")} to review.`;
+
+//   return {
+//     caseReceivedAtMS,
+//     caseReceivedAt,
+//     caseActualLeftMs,
+//     caseActualWillBeSubmittedAt,
+//     caseActualWillBeSubmittedAtMS,
+//     caseAlertMessage: message,
+//     caseUserAlertMessage,
+//     hasApiMessageFound,
+//     caseUserReceivedAtMS,
+//     caseUserReceivedAt,
+//     caseUserLeftMs,
+//     caseUserWillBeSubmittedAtMS,
+//     caseUserWillBeSubmittedAt,
+//   };
+// };
+
+// export default getWhenCaseStarted;
 
 // // const caseLeftTimeInMins = parseFloat(
 // //   (caseActualLeftMs / 1000 / 60).toFixed(1)

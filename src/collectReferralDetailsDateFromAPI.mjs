@@ -83,7 +83,7 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
     requestStartTime != null ? requestStartTime + halfLatency : serverSentAtMS;
 
   const timingData = getWhenCaseStarted(
-    serverSentAtMS,
+    headers.date,
     message,
     useDefaultMessageIfNotFound
   );

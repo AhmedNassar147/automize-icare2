@@ -202,7 +202,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 59.5;
+  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now();
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -258,6 +258,11 @@ const processClientActionOnPatient = async ({
       const referralButtons = await getSubmissionButtonsIfFound(page);
 
       if (!referralButtons) {
+        console.log(
+          `no_buttons_time_${submissionButtonsRetry}=${
+            Date.now() - startTime
+          } MS`
+        );
         const hasReachedMaxRetriesForSubmission =
           submissionButtonsRetry >= MAX_RETRIES;
 
