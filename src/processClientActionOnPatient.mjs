@@ -21,6 +21,7 @@ import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
 } from "./constants.mjs";
+import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
 
 // const endpoint = isAcceptance
 //   ? "referrals/accept-referral"
@@ -37,7 +38,8 @@ const getSubmissionButtonsIfFound = async (page) => {
     const section = await page.waitForSelector(
       "section.referral-button-container",
       {
-        timeout: 1000,
+        timeout: 900,
+        // visible: true
       }
     );
     if (!section) return false;
@@ -202,7 +204,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now();
+  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 1040;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -212,9 +214,9 @@ const processClientActionOnPatient = async ({
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
 
-  const startTime = Date.now();
-
   while (true) {
+    const startTime = Date.now();
+
     try {
       if (submissionButtonsRetry || checkDetailsPageRetry) {
         console.log(
@@ -233,7 +235,7 @@ const processClientActionOnPatient = async ({
       }
 
       await iconButton.click();
-      await checkIfWeInDetailsPage(page);
+      await checkIfWeInDetailsPage(page); // check_start: 436.406ms
 
       // if (!areWeInDetailsPage) {
       //   const hasReachedMaxRetriesForDetailsPage =
@@ -255,14 +257,28 @@ const processClientActionOnPatient = async ({
       //   continue;
       // }
 
-      const referralButtons = await getSubmissionButtonsIfFound(page);
+      const referralButtons = await getSubmissionButtonsIfFound(page); // check_buttons: 86.561ms
 
       if (!referralButtons) {
-        console.log(
-          `no_buttons_time_${submissionButtonsRetry}=${
-            Date.now() - startTime
-          } MS`
-        );
+        const current = Date.now();
+        const { hasMessageFound, totalRemainingTimeMs, minutes, seconds } =
+          await getCurrentAlertRemainingTime(page);
+
+        console.log("no_buttons_time", {
+          submissionButtonsRetry: submissionButtonsRetry || 0,
+          startTime,
+          current,
+          diff: current - startTime,
+          hasMessageFound,
+          totalRemainingTimeMs,
+          minutes,
+          seconds,
+        });
+
+        if (hasMessageFound && totalRemainingTimeMs > 0) {
+          await sleep(totalRemainingTimeMs);
+        }
+
         const hasReachedMaxRetriesForSubmission =
           submissionButtonsRetry >= MAX_RETRIES;
 
@@ -302,6 +318,7 @@ const processClientActionOnPatient = async ({
       //   break;
       // }
 
+      // console.time("check_dropdown") // 310.666ms
       const [hasOptionSelected, selectionError] =
         await selectAttachmentDropdownOption({
           page,
@@ -319,7 +336,9 @@ const processClientActionOnPatient = async ({
         await closeCurrentPage(true);
         break;
       }
+      // console.timeEnd("check_dropdown")
 
+      // console.time("check_noise-upload") // 144.667
       await makeKeyboardNoise(page, logString);
 
       try {
@@ -339,18 +358,36 @@ const processClientActionOnPatient = async ({
         await closeCurrentPage(true);
         break;
       }
+      // console.timeEnd("check_noise-upload")
 
       const [acceptButton, rejectButton] = referralButtons;
 
       const selectedButton = isAcceptance ? acceptButton : rejectButton;
 
+      console.time("check_submit_scroll"); // 3.419s
       try {
         await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       } catch (error) {
-        console.log(`Errorm when scrolling into selectedButton`, error.message);
+        console.log(`Error when scrolling into selectedButton`, error.message);
       }
+      console.timeEnd("check_submit_scroll");
 
-      await humanClick(page, cursor, selectedButton);
+      console.time("check_submit"); // 3.419s
+      // await humanClick(page, cursor, selectedButton);
+      // ✂️ Shorter delays to make it snappier but still human-ish
+      const moveDelay = 1.5 + Math.random() * 5;
+      const hesitate = 1 + Math.random() * 5; // was 2–12 ms
+      const waitForClick = 1 + Math.random() * 5; // was 1–11 ms
+
+      await cursor.click(selectedButton, {
+        clickCount: 1,
+        moveDelay,
+        hesitate,
+        waitForClick,
+        radius: 3,
+        randomizeMoveDelay: true,
+      });
+      console.timeEnd("check_submit");
 
       const durationText = buildDurationText(startTime, Date.now());
       await sleep(20_000);

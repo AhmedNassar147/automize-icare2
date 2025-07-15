@@ -57,10 +57,10 @@ const getCurrentAlertRemainingTime = async (page) => {
       seconds = parseInt(match[2], 10) || 0;
       hasMessageFound = true;
     } else {
-      console.warn("⚠️ Time format not recognized in message:", message);
+      console.log("⚠️ Time format not recognized in message:", message);
     }
   } catch (err) {
-    console.warn(`⚠️ No alert message found within timeout: ${timeout}`);
+    console.log(`⚠️ No alert message found within timeout: ${timeout}`);
   }
 
   const totalRemainingTimeMs = (minutes * 60 + seconds) * 1000;
