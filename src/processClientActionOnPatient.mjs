@@ -38,8 +38,7 @@ const getSubmissionButtonsIfFound = async (page) => {
     const section = await page.waitForSelector(
       "section.referral-button-container",
       {
-        timeout: 900,
-        // visible: true
+        timeout: 1000,
       }
     );
     if (!section) return false;
@@ -204,7 +203,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 1040;
+  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 1045;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -236,26 +235,6 @@ const processClientActionOnPatient = async ({
 
       await iconButton.click();
       await checkIfWeInDetailsPage(page); // check_start: 436.406ms
-
-      // if (!areWeInDetailsPage) {
-      //   const hasReachedMaxRetriesForDetailsPage =
-      //     checkDetailsPageRetry >= MAX_RETRIES;
-
-      //   if (hasReachedMaxRetriesForDetailsPage) {
-      //     await sendErrorMessage(
-      //       `Tried ${checkDetailsPageRetry} times to enter the details page, but there is something wrong.`,
-      //       "enter-details-page-failed-reachedMax",
-      //       buildDurationText(startTime, Date.now())
-      //     );
-
-      //     await closeCurrentPage(false);
-      //     break;
-      //   }
-
-      //   await goToHomePage(page, cursor);
-      //   checkDetailsPageRetry += 1;
-      //   continue;
-      // }
 
       const referralButtons = await getSubmissionButtonsIfFound(page); // check_buttons: 86.561ms
 
@@ -443,6 +422,26 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
+
+// if (!areWeInDetailsPage) {
+//   const hasReachedMaxRetriesForDetailsPage =
+//     checkDetailsPageRetry >= MAX_RETRIES;
+
+//   if (hasReachedMaxRetriesForDetailsPage) {
+//     await sendErrorMessage(
+//       `Tried ${checkDetailsPageRetry} times to enter the details page, but there is something wrong.`,
+//       "enter-details-page-failed-reachedMax",
+//       buildDurationText(startTime, Date.now())
+//     );
+
+//     await closeCurrentPage(false);
+//     break;
+//   }
+
+//   await goToHomePage(page, cursor);
+//   checkDetailsPageRetry += 1;
+//   continue;
+// }
 
 // console.time("🕒 click-upper-item");
 // await searchForItemCountAndClickItIfFound(

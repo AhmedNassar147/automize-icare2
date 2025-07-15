@@ -75,12 +75,8 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
 
   const latency =
     requestStartTime != null ? receivedAt - requestStartTime : 350;
-  const halfLatency = Math.max(Math.floor(latency / 2), 0);
 
   const serverSentAtMS = receivedAt - latency;
-
-  const __serverSentAtMS =
-    requestStartTime != null ? requestStartTime + halfLatency : serverSentAtMS;
 
   const timingData = getWhenCaseStarted(
     headers.date,
@@ -99,8 +95,6 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
       detailsApiReturnedAt: getFormattedDateTime(receivedAt),
       detailsResponseFiredFromServerAtMS: serverSentAtMS,
       detailsResponseFiredFromServerAt: getFormattedDateTime(serverSentAtMS),
-      __serverSentAtMSAt: getFormattedDateTime(__serverSentAtMS),
-      __serverSentAtMS,
       ...timingData,
       responseHeaders: headers,
     },
@@ -327,7 +321,7 @@ const collectReferralDetailsDateFromAPI = ({
           (k) => !responses[k]
         ),
       });
-    }, 25_000);
+    }, 27_000);
   });
 };
 
