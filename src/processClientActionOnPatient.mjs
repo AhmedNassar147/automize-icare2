@@ -203,7 +203,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 1045;
+  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 1193;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -212,6 +212,8 @@ const processClientActionOnPatient = async ({
 
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
+
+  const caseAllowedTimeReachedAtMS = Date.now(); // ✅ Log when timer ends
 
   while (true) {
     const startTime = Date.now();
@@ -237,6 +239,11 @@ const processClientActionOnPatient = async ({
       await checkIfWeInDetailsPage(page); // check_start: 436.406ms
 
       const referralButtons = await getSubmissionButtonsIfFound(page); // check_buttons: 86.561ms
+      console.log(
+        `click_button_navigate_search_buttons_round_${referralId}_${submissionButtonsRetry}_took: ${
+          Date.now() - startTime
+        }`
+      );
 
       if (!referralButtons) {
         const current = Date.now();
@@ -244,6 +251,7 @@ const processClientActionOnPatient = async ({
           await getCurrentAlertRemainingTime(page);
 
         console.log("no_buttons_time", {
+          referralId,
           submissionButtonsRetry: submissionButtonsRetry || 0,
           startTime,
           current,
@@ -253,7 +261,6 @@ const processClientActionOnPatient = async ({
           minutes,
           seconds,
         });
-
         if (hasMessageFound && totalRemainingTimeMs > 0) {
           await sleep(totalRemainingTimeMs);
         }
@@ -277,25 +284,14 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
-      // const sectionEl = await scrollDetailsPageSections({
-      //   page,
-      //   cursor,
-      //   logString,
-      //   // sectionsIndices: [1, 2],
-      //   sectionsIndices: [2],
-      //   noCursorMovemntIfFailed: true,
-      // });
+      const now = Date.now();
+      const delayAfterZeroSeconds = now - caseAllowedTimeReachedAtMS;
 
-      // if (!sectionEl) {
-      //   await sendErrorMessage(
-      //     "The upload section was not found.",
-      //     "upload-section-not-found",
-      //     buildDurationText(startTime, Date.now())
-      //   );
-
-      //   await closeCurrentPage(true);
-      //   break;
-      // }
+      console.log("✅ Submission buttons became visible after:", {
+        ms: delayAfterZeroSeconds,
+        seconds: (delayAfterZeroSeconds / 1000).toFixed(2),
+        retries: submissionButtonsRetry,
+      });
 
       // console.time("check_dropdown") // 310.666ms
       const [hasOptionSelected, selectionError] =
@@ -422,6 +418,26 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
+
+// const sectionEl = await scrollDetailsPageSections({
+//   page,
+//   cursor,
+//   logString,
+//   // sectionsIndices: [1, 2],
+//   sectionsIndices: [2],
+//   noCursorMovemntIfFailed: true,
+// });
+
+// if (!sectionEl) {
+//   await sendErrorMessage(
+//     "The upload section was not found.",
+//     "upload-section-not-found",
+//     buildDurationText(startTime, Date.now())
+//   );
+
+//   await closeCurrentPage(true);
+//   break;
+// }
 
 // if (!areWeInDetailsPage) {
 //   const hasReachedMaxRetriesForDetailsPage =

@@ -32,7 +32,10 @@ const processSendCollectedPatientsToWhatsapp =
       caseUserAlertMessage,
       caseUserWillBeSubmittedAt,
       icds,
+      referralCauseDetails,
     }) => {
+      const { note } = referralCauseDetails || {};
+
       const message =
         `🚨 *New Case Alert!* 🚨\n\n` +
         `📥 *Received At:* 🟦 \`${caseReceivedAt}\`\n` +
@@ -40,11 +43,11 @@ const processSendCollectedPatientsToWhatsapp =
         `⏳ *Cutoff Time:* 🟧 \`${cutoffTime} seconds\`\n` +
         `🕐 *actionable At:* 🟨 \`${caseUserWillBeSubmittedAt}\`\n\n` +
         `────────────────────────\n\n` +
+        `🔢 *Referral ID:* \`${referralId}\`\n` +
         `👤 *Name:* \`${patientName}\`\n` +
         `📱 *Mobile:* \`${mobileNumber || ""}\`\n` +
         `🌐 *Nationality:* \`${nationality || ""}\`\n` +
         `🆔 *National ID:* \`${nationalId}\`\n` +
-        `🔢 *Referral ID:* \`${referralId}\`\n` +
         `🏷️ *Referral Type:* \`${referralType}\`\n` +
         `🩺 *Specialty:* \`${specialty || ""}\`\n` +
         `🔬 *Sub-Specialty:* \`${subSpecialty || ""}\`\n` +
@@ -52,6 +55,7 @@ const processSendCollectedPatientsToWhatsapp =
         `📍 *Zone:* \`${providerZone}\`\n` +
         `🗓️ *Requested At:* \`${requestDate}\`\n` +
         `📝 *Reason:* \`${referralCause}\`\n` +
+        `🧾 *CauseNote:*\`${note || ""}\`\n` +
         `🧾 *ICDs:*\`${(icds || []).join("\n") || ""}\`\n\n` +
         `⚠️ *‼️ ATTENTION ‼️*\n\n` +
         `────────────────────────\n` +
