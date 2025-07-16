@@ -1,3 +1,8 @@
+/*
+ *
+ * Helper: `collectHomePageTableRows`.
+ *
+ */
 import { homePageTableSelector } from "./constants.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 
@@ -25,7 +30,8 @@ const collectHomePageTableRows = async (page, referralId = null) => {
 
       if (!tdCount) continue;
 
-      const currentReferralId = await getReferralIdBasedTableRow(row);
+      const { referralId: currentReferralId } =
+        await getReferralIdBasedTableRow(row);
 
       if (currentReferralId === referralId) {
         const iconButton = await row.$("td:last-child button");

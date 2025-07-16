@@ -338,19 +338,19 @@ const processClientActionOnPatient = async ({
 
       const selectedButton = isAcceptance ? acceptButton : rejectButton;
 
-      console.time("check_submit_scroll"); // 3.419s
+      // console.time("check_submit_scroll");
       try {
         await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       } catch (error) {
         console.log(`Error when scrolling into selectedButton`, error.message);
       }
-      console.timeEnd("check_submit_scroll");
+      // console.timeEnd("check_submit_scroll");
 
-      console.time("check_submit"); // 3.419s
+      // console.time("check_submit"); // 3.419s
       // await humanClick(page, cursor, selectedButton);
       // ✂️ Shorter delays to make it snappier but still human-ish
       const moveDelay = 1 + Math.random() * 3;
-      const hesitate = 1 + Math.random() * 4; // was 2–12 ms
+      const hesitate = 1 + Math.random() * 3; // was 2–12 ms
       const waitForClick = 1 + Math.random() * 4; // was 1–11 ms
 
       await cursor.click(selectedButton, {
@@ -361,7 +361,7 @@ const processClientActionOnPatient = async ({
         radius: 3,
         randomizeMoveDelay: true,
       });
-      console.timeEnd("check_submit");
+      // console.timeEnd("check_submit");
 
       const durationText = buildDurationText(startTime, Date.now());
       await sleep(20_000);

@@ -4,43 +4,23 @@
  *
  *
  */
-
-const cellSpan = "td:nth-child(2) span";
+const filter = (el) =>
+  (el?.textContent || "").trim().replace(/\s|\n|\t|\\/g, "");
 
 const getReferralIdBasedTableRow = async (row) => {
   try {
-    await row.waitForSelector(cellSpan, {
-      timeout: 2500,
-    });
-    const referralId = await row.$eval(cellSpan, (el) =>
-      (el?.textContent || "").trim().replace(/\s|\n|\t|\\/g, "")
-    );
-    return referralId;
+    await row.waitForSelector("td span", { timeout: 2500 });
+
+    const [referralDate, referralId] = await Promise.all([
+      row.$eval("td:nth-child(1) span", filter),
+      row.$eval("td:nth-child(2) span", filter),
+    ]);
+
+    return { referralDate, referralId };
   } catch (e) {
-    console.error("Failed to get referral ID:", e.message);
-    return "";
+    console.error("❌ Failed to get referral row data:", e.message);
+    return {};
   }
 };
 
 export default getReferralIdBasedTableRow;
-
-// /*
-//  *
-//  * Helper: `getReferralIdBasedTableRow`.
-//  *
-//  *
-//  */
-// const getReferralIdBasedTableRow = async (row) => {
-//   try {
-//     const referralId = await row.$eval(
-//       "td:nth-child(2) span",
-//       (el) => el.textContent?.trim().replace(/\s|\n|\t|\\/g, "") || ""
-//     );
-//     return referralId;
-//   } catch (e) {
-//     console.log("ERRR", e.message)
-//     return "";
-//   }
-// };
-
-// export default getReferralIdBasedTableRow;

@@ -40,13 +40,15 @@ const processCollectingPatients = async ({
 
       if (isThereNotNewPatients) {
         console.log("⏳ No more new patients found, exiting...");
-        await sleep(3_000 + Math.random() * 100);
+        await sleep(1500 + Math.random() * 100);
         break;
       }
 
       const row = rows[processedCount];
 
-      const referralId = await getReferralIdBasedTableRow(row);
+      const { referralId, referralDate } = await getReferralIdBasedTableRow(
+        row
+      );
 
       if (!referralId) {
         console.log(`⏩ didn't find referralId: ${referralId}`);
@@ -72,7 +74,7 @@ const processCollectingPatients = async ({
         useDefaultMessageIfNotFound: true,
       });
 
-      await sleep(50 + Math.random() * 50);
+      await sleep(40 + Math.random() * 50);
       await iconButton.click();
 
       const logString = `details page for referralId=(${referralId})`;
@@ -146,6 +148,7 @@ const processCollectingPatients = async ({
 
       const finalData = {
         referralId,
+        referralDate,
         ...detailsApiData,
         files: attachmentData,
       };
