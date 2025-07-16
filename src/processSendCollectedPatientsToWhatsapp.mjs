@@ -55,7 +55,7 @@ const processSendCollectedPatientsToWhatsapp =
         `📍 *Zone:* \`${providerZone}\`\n` +
         `🗓️ *Requested At:* \`${requestDate}\`\n` +
         `📝 *Reason:* \`${referralCause}\`\n` +
-        `🧾 *CauseNote:*\`${note || ""}\`\n` +
+        `🧾 *CauseNote:* \`${note || ""}\`\n` +
         `🧾 *ICDs:*\`${(icds || []).join("\n") || ""}\`\n\n` +
         `⚠️ *‼️ ATTENTION ‼️*\n\n` +
         `────────────────────────\n` +
