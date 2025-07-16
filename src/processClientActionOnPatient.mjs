@@ -7,7 +7,6 @@ import { unlink } from "fs/promises";
 import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
-import humanClick from "./humanClick.mjs";
 import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 // import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
@@ -350,9 +349,9 @@ const processClientActionOnPatient = async ({
       console.time("check_submit"); // 3.419s
       // await humanClick(page, cursor, selectedButton);
       // ✂️ Shorter delays to make it snappier but still human-ish
-      const moveDelay = 1.5 + Math.random() * 5;
-      const hesitate = 1 + Math.random() * 5; // was 2–12 ms
-      const waitForClick = 1 + Math.random() * 5; // was 1–11 ms
+      const moveDelay = 1 + Math.random() * 3;
+      const hesitate = 1 + Math.random() * 4; // was 2–12 ms
+      const waitForClick = 1 + Math.random() * 4; // was 1–11 ms
 
       await cursor.click(selectedButton, {
         clickCount: 1,
