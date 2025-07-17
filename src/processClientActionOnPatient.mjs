@@ -94,7 +94,12 @@ const processClientActionOnPatient = async ({
   console.time("🕒 prepare_user_action_start_time");
   const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
-  const { referralId, patientName, caseActualWillBeSubmittedAtMS } = patient;
+  const {
+    referralId,
+    patientName,
+    caseActualWillBeSubmittedAtMS,
+    referralEndDate,
+  } = patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
 
@@ -202,7 +207,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 1193;
+  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 1250;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -211,8 +216,6 @@ const processClientActionOnPatient = async ({
 
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
-
-  const caseAllowedTimeReachedAtMS = Date.now(); // ✅ Log when timer ends
 
   while (true) {
     const startTime = Date.now();
@@ -235,15 +238,16 @@ const processClientActionOnPatient = async ({
       }
 
       await iconButton.click();
+      console.log("✅ Submission buttons became visible after:", {
+        referralEndDate,
+        currentDate: new Date().toLocaleString("en-US", {
+          timeZone: "Asia/Riyadh",
+        }),
+      });
+
       await checkIfWeInDetailsPage(page); // check_start: 436.406ms
 
       const referralButtons = await getSubmissionButtonsIfFound(page); // check_buttons: 86.561ms
-      console.log(
-        `click_button_navigate_search_buttons_round_${referralId}_${submissionButtonsRetry}_took: ${
-          Date.now() - startTime
-        }`
-      );
-
       if (!referralButtons) {
         const current = Date.now();
         const { hasMessageFound, totalRemainingTimeMs, minutes, seconds } =
@@ -282,15 +286,6 @@ const processClientActionOnPatient = async ({
         await goToHomePage(page, cursor);
         continue;
       }
-
-      const now = Date.now();
-      const delayAfterZeroSeconds = now - caseAllowedTimeReachedAtMS;
-
-      console.log("✅ Submission buttons became visible after:", {
-        ms: delayAfterZeroSeconds,
-        seconds: (delayAfterZeroSeconds / 1000).toFixed(2),
-        retries: submissionButtonsRetry,
-      });
 
       // console.time("check_dropdown") // 310.666ms
       const [hasOptionSelected, selectionError] =

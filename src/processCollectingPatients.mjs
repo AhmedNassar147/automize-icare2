@@ -17,6 +17,33 @@ import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 // const COOLDOWN_AFTER_BATCH = 55_000;
 const MAX_RETRIES = 6;
 
+const getSaudiStartAndEndDate = (referralDate) => {
+  const utcDate = new Date(referralDate);
+
+  // Convert to Saudi time
+  const saStartDate = new Date(
+    utcDate.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
+  );
+
+  // Clone for end date
+  const saEndDate = new Date(saStartDate);
+  saEndDate.setMinutes(saEndDate.getMinutes() + 15);
+
+  return {
+    referralDate,
+    referralStartDate: saStartDate.toLocaleString("en-SA", {
+      timeZone: "Asia/Riyadh",
+      hour12: false,
+    }),
+    referralEndDate: saEndDate.toLocaleString("en-SA", {
+      timeZone: "Asia/Riyadh",
+      hour12: false,
+    }),
+    referralStartTimestamp: saStartDate.getTime(),
+    referralEndTimestamp: saEndDate.getTime(),
+  };
+};
+
 const processCollectingPatients = async ({
   browser,
   patientsStore,
@@ -148,7 +175,7 @@ const processCollectingPatients = async ({
 
       const finalData = {
         referralId,
-        referralDate,
+        ...getSaudiStartAndEndDate(referralDate),
         ...detailsApiData,
         files: attachmentData,
       };
