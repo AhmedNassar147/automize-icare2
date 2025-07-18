@@ -4,6 +4,7 @@
  *
  */
 import getWhenCaseStarted from "./getWhenCaseStarted.mjs";
+import formatToDateTime from "./formatToDateTime.mjs";
 
 const apiEndpoints = {
   details: "referrals/details",
@@ -18,20 +19,6 @@ const getCleanText = (raw = "") =>
     .replace(/\\["nrt]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-
-const getFormattedDateTime = (dateMs) => {
-  const now = new Date(dateMs);
-
-  const formatted = now.toLocaleString("en-SA", {
-    dateStyle: "short",
-    timeStyle: "medium",
-    hour12: false,
-  });
-
-  // Add milliseconds (zero-padded to 3 digits)
-  const ms = now.getMilliseconds().toString().padStart(3, "0");
-  return `${formatted}.${ms}`;
-};
 
 const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
   const {
@@ -88,13 +75,13 @@ const buildDetailsApiData = (responseData, useDefaultMessageIfNotFound) => {
     timingData: {
       detailsApiCalledAtMs: requestStartTime,
       detailsApiCalledAt: requestStartTime
-        ? getFormattedDateTime(requestStartTime)
+        ? formatToDateTime(requestStartTime)
         : null,
       detailsRequestNetworkLatency: latency,
       detailsApiReturnedAtMs: receivedAt,
-      detailsApiReturnedAt: getFormattedDateTime(receivedAt),
+      detailsApiReturnedAt: formatToDateTime(receivedAt),
       detailsResponseFiredFromServerAtMS: serverSentAtMS,
-      detailsResponseFiredFromServerAt: getFormattedDateTime(serverSentAtMS),
+      detailsResponseFiredFromServerAt: formatToDateTime(serverSentAtMS),
       ...timingData,
       responseHeaders: headers,
     },

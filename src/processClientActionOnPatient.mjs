@@ -9,16 +9,17 @@ import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
 import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import goToHomePage from "./goToHomePage.mjs";
-// import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
+import formatToDateTime from "./formatToDateTime.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
+  HOME_PAGE_URL,
 } from "./constants.mjs";
 import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
 
@@ -26,11 +27,7 @@ import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
 //   ? "referrals/accept-referral"
 //   : "referrals/reject-referral";
 
-// const WHATS_APP_LOADING_TIME = 45_000;
-const MAX_RETRIES = 6;
-
-const startingPageUrl =
-  "https://referralprogram.globemedsaudi.com/Dashboard/Referral";
+const MAX_RETRIES = 8;
 
 const getSubmissionButtonsIfFound = async (page) => {
   try {
@@ -99,6 +96,7 @@ const processClientActionOnPatient = async ({
     patientName,
     caseActualWillBeSubmittedAtMS,
     referralEndDate,
+    referralEndTimestamp,
   } = patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
@@ -128,7 +126,7 @@ const processClientActionOnPatient = async ({
   const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,
-    startingPageUrl,
+    startingPageUrl: HOME_PAGE_URL,
   });
 
   const sendSuccessMessage = async (durationText) => {
@@ -207,7 +205,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = caseActualWillBeSubmittedAtMS - Date.now() + 1250;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 280;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -216,6 +214,8 @@ const processClientActionOnPatient = async ({
 
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
+
+  const outerLoopMs = Date.now();
 
   while (true) {
     const startTime = Date.now();
@@ -237,17 +237,29 @@ const processClientActionOnPatient = async ({
         }
       }
 
+      console.time("click_eye");
       await iconButton.click();
-      console.log("✅ Submission buttons became visible after:", {
-        referralEndDate,
-        currentDate: new Date().toLocaleString("en-US", {
-          timeZone: "Asia/Riyadh",
-        }),
-      });
-
+      console.timeEnd("click_eye");
+      console.time("loading-details-page");
       await checkIfWeInDetailsPage(page); // check_start: 436.406ms
+      console.timeEnd("loading-details-page");
 
+      console.time("buttons-check");
       const referralButtons = await getSubmissionButtonsIfFound(page); // check_buttons: 86.561ms
+      console.timeEnd("buttons-check");
+
+      const current = Date.now();
+      console.log(
+        `✅ Submission buttons became visible after _${referralId}_`,
+        {
+          referralId,
+          referralEndDate,
+          currentDate: formatToDateTime(current),
+          diff: current - outerLoopMs,
+          referralButtons: !!referralButtons,
+        }
+      );
+
       if (!referralButtons) {
         const current = Date.now();
         const { hasMessageFound, totalRemainingTimeMs, minutes, seconds } =
@@ -342,11 +354,9 @@ const processClientActionOnPatient = async ({
       // console.timeEnd("check_submit_scroll");
 
       // console.time("check_submit"); // 3.419s
-      // await humanClick(page, cursor, selectedButton);
-      // ✂️ Shorter delays to make it snappier but still human-ish
-      const moveDelay = 1 + Math.random() * 3;
-      const hesitate = 1 + Math.random() * 3; // was 2–12 ms
-      const waitForClick = 1 + Math.random() * 4; // was 1–11 ms
+      const moveDelay = 2 + Math.random() * 1.8;
+      const hesitate = 1.9 + Math.random() * 1.7;
+      const waitForClick = 2 + Math.random() * 1.7;
 
       await cursor.click(selectedButton, {
         clickCount: 1,

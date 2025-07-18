@@ -73,3 +73,5 @@ export const SECTIONS_IN_DETAILS_PAGE = [
 export const dashboardLinkSelector = 'a[href="/dashboard/referral"]';
 
 export const APP_URL = "https://referralprogram.globemedsaudi.com";
+export const HOME_PAGE_URL =
+  "https://referralprogram.globemedsaudi.com/Dashboard/Referral";
