@@ -17,15 +17,15 @@ import closePageSafely from "./closePageSafely.mjs";
 import sleep from "./sleep.mjs";
 
 const excelColumns = [
-  { header: "Referral Date", key: "Referral Date", width: 35 },
-  { header: "GMS Referral Id", key: "GMS Referral Id", width: 30 },
-  { header: "MOH Referral Nb", key: "MOH Referral Nb", width: 30 },
-  { header: "Patient Name", key: "Patient Name", width: 30 },
-  { header: "National ID", key: "National ID", width: 30 },
-  { header: "Referral Type", key: "Referral Type", width: 30 },
+  { header: "Referral Date", key: "Referral Date", width: 33 },
+  { header: "GMS Referral Id", key: "GMS Referral Id", width: 27 },
+  { header: "MOH Referral Nb", key: "MOH Referral Nb", width: 27 },
+  { header: "Patient Name", key: "Patient Name", width: 40 },
+  { header: "National ID", key: "National ID", width: 28 },
+  { header: "Referral Type", key: "Referral Type", width: 28 },
   { header: "Referral Reason", key: "Referral Reason", width: 30 },
   { header: "Source Zone", key: "Source Zone", width: 30 },
-  { header: "Assigned provider", key: "Assigned provider", width: 30 },
+  { header: "Assigned Provider", key: "Assigned Provider", width: 40 },
 ];
 
 const getViewData = async (page, targetText) => {
