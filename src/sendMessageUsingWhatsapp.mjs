@@ -79,7 +79,10 @@ export const initializeClient = async (
 
     const client = new Client({
       authStrategy: new LocalAuth({ clientId: authId }),
-      puppeteer: { headless },
+      puppeteer: {
+        headless,
+        executablePath: process.env.CHROME_EXECUTABLE_PATH,
+      },
     });
 
     const state = {
