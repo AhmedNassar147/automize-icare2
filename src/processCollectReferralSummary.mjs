@@ -75,10 +75,7 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
   //   return;
   // }
 
-  const html = await readFile(
-    join(htmlFilesPath, "referralSummary.html"),
-    "utf8"
-  );
+  const html = await readFile(join(htmlFilesPath, "summary.html"));
 
   const page = await browser.newPage();
 
