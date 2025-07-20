@@ -131,7 +131,7 @@ const processCollectingPatients = async ({
 
       checkDetailsPageRetry = 0;
 
-      await makeKeyboardNoise(page, logString);
+      await makeKeyboardNoise(page);
 
       await scrollDetailsPageSections({
         cursor,

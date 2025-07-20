@@ -251,9 +251,11 @@ const sendMessageWithFiles = async (number, msgWithFiles) => {
 
   try {
     if (message) await client.sendMessage(chatId, message);
+
     if (Array.isArray(files)) {
       for (const { extension, fileBase64, fileName } of files) {
         const mimeType = getMimeType(extension);
+
         const cleanBase64 = fileBase64.replace(/^data:.*?base64,/, "").trim();
         const media = new MessageMedia(
           mimeType,

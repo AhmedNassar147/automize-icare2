@@ -24,6 +24,16 @@ export const PATIENT_SECTIONS_STATUS = {
     foundCountText: "confirmed referrals requests",
     noCountText: "No confirmed referrals requests found",
   },
+  ADMITTED: {
+    targetText: "Admitted Requests",
+    foundCountText: "Admitted referrals requests",
+    noCountText: "No Admitted referrals found",
+  },
+  DISCHARGED: {
+    targetText: "Discharged Requests",
+    foundCountText: "Discharged Requests requests",
+    noCountText: "No Discharged Requests found",
+  },
 };
 
 export const USER_ACTION_TYPES = {

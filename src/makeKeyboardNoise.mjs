@@ -5,11 +5,13 @@
  */
 import sleep from "./sleep.mjs";
 
-const makeKeyboardNoise = async (page, logString) => {
-  console.log(`✅ click tabs and arrows in ${logString}`);
+const makeKeyboardNoise = async (page, noTab) => {
   // Simulate user interaction
-  await page.keyboard.press("Tab");
-  await sleep(30 + Math.random() * 25);
+  if (!noTab) {
+    await page.keyboard.press("Tab");
+    await sleep(30 + Math.random() * 20);
+  }
+
   await page.keyboard.press("ArrowDown");
 };
 

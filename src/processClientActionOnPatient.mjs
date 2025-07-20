@@ -4,6 +4,7 @@
  *
  */
 import { unlink } from "fs/promises";
+// import { writeFile } from "fs/promises";
 import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
@@ -20,8 +21,9 @@ import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
+  // htmlFilesPath
 } from "./constants.mjs";
-import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
+// import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
 
 // const endpoint = isAcceptance
 //   ? "referrals/accept-referral"
@@ -205,7 +207,7 @@ const processClientActionOnPatient = async ({
 
   console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 280;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 290;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -215,12 +217,12 @@ const processClientActionOnPatient = async ({
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
 
-  const outerLoopMs = Date.now();
+  // const outerLoopMs = Date.now();
 
+  const startTime = Date.now();
   while (true) {
-    const startTime = Date.now();
-
     try {
+      // console.time("click_eye"); // 49.242
       if (submissionButtonsRetry || checkDetailsPageRetry) {
         console.log(
           `referralId=${referralId}_RETURNED_TO_HOME_times_${
@@ -237,16 +239,12 @@ const processClientActionOnPatient = async ({
         }
       }
 
-      console.time("click_eye");
       await iconButton.click();
-      console.timeEnd("click_eye");
-      console.time("loading-details-page");
-      await checkIfWeInDetailsPage(page); // check_start: 436.406ms
-      console.timeEnd("loading-details-page");
+      // console.timeEnd("click_eye");
 
-      console.time("buttons-check");
-      const referralButtons = await getSubmissionButtonsIfFound(page); // check_buttons: 86.561ms
-      console.timeEnd("buttons-check");
+      // console.time("loading-details-page"); // 412.444 to 436.406ms
+      await checkIfWeInDetailsPage(page);
+      // console.timeEnd("loading-details-page");
 
       const current = Date.now();
       console.log(
@@ -255,30 +253,33 @@ const processClientActionOnPatient = async ({
           referralId,
           referralEndDate,
           currentDate: formatToDateTime(current),
-          diff: current - outerLoopMs,
-          referralButtons: !!referralButtons,
+          diff: current - startTime,
         }
       );
 
-      if (!referralButtons) {
-        const current = Date.now();
-        const { hasMessageFound, totalRemainingTimeMs, minutes, seconds } =
-          await getCurrentAlertRemainingTime(page);
+      // console.time("buttons-check"); // 20.731
+      const referralButtons = await getSubmissionButtonsIfFound(page); // check_buttons: 86.561ms
+      // console.timeEnd("buttons-check");
 
-        console.log("no_buttons_time", {
-          referralId,
-          submissionButtonsRetry: submissionButtonsRetry || 0,
-          startTime,
-          current,
-          diff: current - startTime,
-          hasMessageFound,
-          totalRemainingTimeMs,
-          minutes,
-          seconds,
-        });
-        if (hasMessageFound && totalRemainingTimeMs > 0) {
-          await sleep(totalRemainingTimeMs);
-        }
+      if (!referralButtons) {
+        // const current = Date.now();
+        // const { hasMessageFound, totalRemainingTimeMs, minutes, seconds } =
+        //   await getCurrentAlertRemainingTime(page);
+
+        // console.log("no_buttons_time", {
+        //   referralId,
+        //   submissionButtonsRetry: submissionButtonsRetry || 0,
+        //   startTime,
+        //   current,
+        //   diff: current - startTime,
+        //   hasMessageFound,
+        //   totalRemainingTimeMs,
+        //   minutes,
+        //   seconds,
+        // });
+        // if (hasMessageFound && totalRemainingTimeMs > 0) {
+        //   await sleep(totalRemainingTimeMs);
+        // }
 
         const hasReachedMaxRetriesForSubmission =
           submissionButtonsRetry >= MAX_RETRIES;
@@ -320,7 +321,7 @@ const processClientActionOnPatient = async ({
       // console.timeEnd("check_dropdown")
 
       // console.time("check_noise-upload") // 144.667
-      await makeKeyboardNoise(page, logString);
+      await makeKeyboardNoise(page, true);
 
       try {
         const fileInput = await page.$(
@@ -353,23 +354,26 @@ const processClientActionOnPatient = async ({
       }
       // console.timeEnd("check_submit_scroll");
 
-      // console.time("check_submit"); // 3.419s
-      const moveDelay = 2 + Math.random() * 1.8;
-      const hesitate = 1.9 + Math.random() * 1.7;
-      const waitForClick = 2 + Math.random() * 1.7;
-
+      console.time("check_submit"); // 3.419s
       await cursor.click(selectedButton, {
         clickCount: 1,
-        moveDelay,
-        hesitate,
-        waitForClick,
-        radius: 3,
+        hesitate: 1.6 + Math.random() * 5,
+        waitForClick: 1.6 + Math.random() * 4.5,
+        moveDelay: 1.5 + Math.random() * 4.5,
+        radius: 2 + Math.random(),
         randomizeMoveDelay: true,
       });
-      // console.timeEnd("check_submit");
+      console.timeEnd("check_submit");
 
       const durationText = buildDurationText(startTime, Date.now());
-      await sleep(20_000);
+      // try {
+      //   const html = await page.content();
+      //   await writeFile(`${htmlFilesPath}/details_page.html`, html);
+      // } catch (error) {
+      //   console.log("couldn't get details page html", error.message)
+      // }
+
+      await sleep(27_000);
 
       const currentPageUrl = page.url();
 

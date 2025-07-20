@@ -17,6 +17,7 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processClientActionOnPatient from "./processClientActionOnPatient.mjs";
+import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
 import {
   waitingPatientsFolderDirectory,
   COLLECTD_PATIENTS_FULL_FILE_PATH,
@@ -94,6 +95,9 @@ const collectConfirmedPatient = false;
         patientsStore,
         sendWhatsappMessage,
       }))();
+
+    (async () =>
+      await processCollectReferralSummary(browser, sendWhatsappMessage))();
 
     patientsStore.on(
       "patientsAdded",
