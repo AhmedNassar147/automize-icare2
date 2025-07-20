@@ -17,6 +17,7 @@ import closePageSafely from "./closePageSafely.mjs";
 import sleep from "./sleep.mjs";
 
 const excelColumns = [
+  { header: "order", key: "order", width: 20 },
   { header: "Referral Date", key: "Referral Date", width: 33 },
   { header: "GMS Referral Id", key: "GMS Referral Id", width: 27 },
   { header: "MOH Referral Nb", key: "MOH Referral Nb", width: 27 },
@@ -88,14 +89,17 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
 
   // Merge & deduplicate by "GMS Referral Id"
   // const combined = [...admittedData, ...dischargedData];
-  const combined = [...admittedData];
+  const combined = [...admittedData].map((item, index) => ({
+    order: index + 1,
+    ...item,
+  }));
 
   const unique = Array.from(
     new Map(combined.map((item) => [item["GMS Referral Id"], item])).values()
   ).sort((a, b) => {
     const dateA = new Date(a["Referral Date"]);
     const dateB = new Date(b["Referral Date"]);
-    return dateA - dateB;
+    return dateB - dateA;
   });
 
   const workbook = new ExcelJS.Workbook();
