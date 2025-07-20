@@ -5,44 +5,44 @@
  */
 import ExcelJS from "exceljs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 import { HOME_PAGE_URL, PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import sleep from "./sleep.mjs";
 
 const excelColumns = [
-  { header: "Referral Date", key: "Referral Date" },
-  { header: "GMS Referral Id", key: "GMS Referral Id" },
-  { header: "MOH Referral Nb", key: "MOH Referral Nb" },
-  { header: "Patient Name", key: "Patient Name" },
-  { header: "National ID", key: "National ID" },
-  { header: "Referral Type", key: "Referral Type" },
-  { header: "Source Zone", key: "Source Zone" },
-  { header: "Assigned provider", key: "Assigned provider" },
+  { header: "Referral Date", key: "Referral Date", width: 80 },
+  { header: "GMS Referral Id", key: "GMS Referral Id", width: 60 },
+  { header: "MOH Referral Nb", key: "MOH Referral Nb", width: 60 },
+  { header: "Patient Name", key: "Patient Name", width: 60 },
+  { header: "National ID", key: "National ID", width: 60 },
+  { header: "Referral Type", key: "Referral Type", width: 60 },
+  { header: "Source Zone", key: "Source Zone", width: 60 },
+  { header: "Assigned provider", key: "Assigned provider", width: 60 },
 ];
-
-const extractTableData = (rows) => {
-  const headers = Array.from(document.querySelectorAll("thead th")).map((th) =>
-    th.innerText.trim()
-  );
-
-  return rows.map((row) => {
-    const cells = Array.from(row.querySelectorAll("td"));
-    const rowData = {};
-    for (let i = 0; i < headers.length && i < cells.length; i++) {
-      if (headers[i]) {
-        rowData[headers[i]] = cells[i].innerText.trim();
-      }
-    }
-    return rowData;
-  });
-};
 
 const getViewData = async (page, targetText) => {
   await searchForItemCountAndClickItIfFound(page, targetText, true);
-  const rows = await collectHomePageTableRows(page);
-  const data = await extractTableData(rows);
+  await sleep(1000);
+
+  const data = await page.evaluate(() => {
+    const headers = Array.from(document.querySelectorAll("thead th")).map(
+      (th) => th.innerText.trim()
+    );
+
+    const rowElements = Array.from(document.querySelectorAll("tbody tr"));
+
+    return rowElements.map((row) => {
+      const cells = Array.from(row.querySelectorAll("td"));
+      const rowData = {};
+      for (let i = 0; i < headers.length && i < cells.length; i++) {
+        if (headers[i]) {
+          rowData[headers[i]] = cells[i].innerText.trim();
+        }
+      }
+      return rowData;
+    });
+  });
 
   return data;
 };
@@ -79,12 +79,31 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
   sheet.columns = excelColumns;
 
   unique.forEach((row) => sheet.addRow(row));
+
+  sheet.getRow(1).eachCell((cell) => {
+    cell.font = {
+      name: "Arial",
+      size: 14,
+      bold: true,
+    };
+  });
+
+  sheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.font = {
+        name: "Arial",
+        size: 13, // 👈 fontSize
+        bold: false, // 👈 fontWeight: bold = true
+      };
+    });
+  });
+
   const buffer = await workbook.xlsx.writeBuffer();
 
   await sendWhatsappMessage(process.env.CLIENT_WHATSAPP_NUMBER, {
     files: [
       {
-        filename: "referral-summary",
+        fileName: "referral-summary",
         fileBase64: buffer.toString("base64"),
         extension: "xlsx",
       },
