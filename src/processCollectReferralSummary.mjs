@@ -4,26 +4,33 @@
  *
  */
 import ExcelJS from "exceljs";
-import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
-import { HOME_PAGE_URL, PATIENT_SECTIONS_STATUS } from "./constants.mjs";
+import { readFile } from "fs/promises";
+import { join } from "path";
+// import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+// import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
+import {
+  // HOME_PAGE_URL,
+  PATIENT_SECTIONS_STATUS,
+  htmlFilesPath,
+} from "./constants.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import sleep from "./sleep.mjs";
 
 const excelColumns = [
-  { header: "Referral Date", key: "Referral Date", width: 80 },
-  { header: "GMS Referral Id", key: "GMS Referral Id", width: 60 },
-  { header: "MOH Referral Nb", key: "MOH Referral Nb", width: 60 },
-  { header: "Patient Name", key: "Patient Name", width: 60 },
-  { header: "National ID", key: "National ID", width: 60 },
-  { header: "Referral Type", key: "Referral Type", width: 60 },
-  { header: "Source Zone", key: "Source Zone", width: 60 },
-  { header: "Assigned provider", key: "Assigned provider", width: 60 },
+  { header: "Referral Date", key: "Referral Date", width: 35 },
+  { header: "GMS Referral Id", key: "GMS Referral Id", width: 30 },
+  { header: "MOH Referral Nb", key: "MOH Referral Nb", width: 30 },
+  { header: "Patient Name", key: "Patient Name", width: 30 },
+  { header: "National ID", key: "National ID", width: 30 },
+  { header: "Referral Type", key: "Referral Type", width: 30 },
+  { header: "Referral Reason", key: "Referral Reason", width: 30 },
+  { header: "Source Zone", key: "Source Zone", width: 30 },
+  { header: "Assigned provider", key: "Assigned provider", width: 30 },
 ];
 
 const getViewData = async (page, targetText) => {
-  await searchForItemCountAndClickItIfFound(page, targetText, true);
-  await sleep(1000);
+  // await searchForItemCountAndClickItIfFound(page, targetText, true);
+  // await sleep(1000);
 
   const data = await page.evaluate(() => {
     const headers = Array.from(document.querySelectorAll("thead th")).map(
@@ -32,39 +39,59 @@ const getViewData = async (page, targetText) => {
 
     const rowElements = Array.from(document.querySelectorAll("tbody tr"));
 
-    return rowElements.map((row) => {
-      const cells = Array.from(row.querySelectorAll("td"));
-      const rowData = {};
-      for (let i = 0; i < headers.length && i < cells.length; i++) {
-        if (headers[i]) {
-          rowData[headers[i]] = cells[i].innerText.trim();
+    return rowElements
+      .map((row) => {
+        const cells = Array.from(row.querySelectorAll("td"));
+        const rowData = {};
+
+        // Check if the row has at least one non-empty cell
+        const hasData = cells.some(
+          (td) => td.innerText && td.innerText.trim() !== ""
+        );
+
+        if (!hasData) return null; // skip this row
+
+        for (let i = 0; i < headers.length && i < cells.length; i++) {
+          if (headers[i]) {
+            rowData[headers[i]] = cells[i].innerText.trim();
+          }
         }
-      }
-      return rowData;
-    });
+        return rowData;
+      })
+      .filter(Boolean);
   });
 
   return data;
 };
 
 const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
-  const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
-    browser,
-    sendWhatsappMessage,
-    startingPageUrl: HOME_PAGE_URL,
-  });
+  // const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+  //   browser,
+  //   sendWhatsappMessage,
+  //   startingPageUrl: HOME_PAGE_URL,
+  // });
 
-  if (!isLoggedIn) {
-    return;
-  }
+  // if (!isLoggedIn) {
+  //   return;
+  // }
+
+  const html = await readFile(
+    join(htmlFilesPath, "referralSummary.html"),
+    "utf8"
+  );
+
+  const page = await browser.newPage();
+
+  await page.setContent(html, { waitUntil: "domcontentloaded" });
 
   const { DISCHARGED, ADMITTED } = PATIENT_SECTIONS_STATUS;
 
   const admittedData = await getViewData(page, ADMITTED.targetText);
-  const dischargedData = await getViewData(page, DISCHARGED.targetText);
+  // const dischargedData = await getViewData(page, DISCHARGED.targetText);
 
   // Merge & deduplicate by "GMS Referral Id"
-  const combined = [...admittedData, ...dischargedData];
+  // const combined = [...admittedData, ...dischargedData];
+  const combined = [...admittedData];
 
   const unique = Array.from(
     new Map(combined.map((item) => [item["GMS Referral Id"], item])).values()
