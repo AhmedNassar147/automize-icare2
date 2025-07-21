@@ -184,7 +184,7 @@ const processClientActionOnPatient = async ({
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 55.5;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 56;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -250,7 +250,7 @@ const processClientActionOnPatient = async ({
         // sectionEl,
       });
 
-      await makeKeyboardNoise(page, true);
+      await makeKeyboardNoise(page);
 
       try {
         const fileInput = await page.$(
@@ -275,7 +275,6 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
-      await sleep(2);
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
 
       const submissionTimeLabel = createTimeLabel("click_submit");
@@ -291,9 +290,9 @@ const processClientActionOnPatient = async ({
 
       await cursor.click(selectedButton, {
         clickCount: 1,
-        hesitate: 1.997538332,
-        waitForClick: 1.9859645502,
-        moveDelay: 2.22135,
+        hesitate: 1.897538332,
+        waitForClick: 1.8859645502,
+        moveDelay: 2.12135,
         radius: 2 + Math.random(),
         randomizeMoveDelay: true,
       });
