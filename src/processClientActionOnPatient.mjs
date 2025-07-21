@@ -4,30 +4,21 @@
  *
  */
 import { unlink } from "fs/promises";
-// import { writeFile } from "fs/promises";
 import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
-// import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
+import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-// import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-// import formatToDateTime from "./formatToDateTime.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
-  // htmlFilesPath
 } from "./constants.mjs";
-// import getCurrentAlertRemainingTime from "./getCurrentAlertRemainingTime.mjs";
-
-// const endpoint = isAcceptance
-//   ? "referrals/accept-referral"
-//   : "referrals/reject-referral";
 
 const MAX_RETRIES = 8;
 const buttonsSelector = "section.referral-button-container button";
@@ -193,15 +184,16 @@ const processClientActionOnPatient = async ({
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 40;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 54;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
     await sleep(remainingTimeMS);
   }
 
-  const startTime = Date.now();
   while (true) {
+    const startTime = Date.now();
+
     try {
       if (submissionButtonsRetry || checkDetailsPageRetry) {
         console.log(
@@ -219,51 +211,17 @@ const processClientActionOnPatient = async ({
         }
       }
 
-      const iconButtonClickLabel = createTimeLabel("click_eye");
-      console.time(iconButtonClickLabel);
+      // const iconButtonClickLabel = createTimeLabel("click_eye");
+      // console.time(iconButtonClickLabel);
       await iconButton.click();
-      console.timeEnd(iconButtonClickLabel);
+      // console.timeEnd(iconButtonClickLabel);
 
-      // console.time("loading-details-page"); // 412.444 to 436.406ms
-      // await checkIfWeInDetailsPage(page);
-      // console.timeEnd("loading-details-page");
-
-      // const current = Date.now();
-      // console.log(
-      //   `✅ Submission buttons became visible after _${referralId}_`,
-      //   {
-      //     referralId,
-      //     referralEndDate,
-      //     currentDate: formatToDateTime(current),
-      //     diff: current - startTime,
-      //   }
-      // );
-
-      const timmingLabel = createTimeLabel("buttons_check");
-      console.time(timmingLabel);
+      // const timmingLabel = createTimeLabel("buttons_check");
+      // console.time(timmingLabel);
       const referralButtons = await getSubmissionButtonsIfFound(page);
-      console.timeEnd(timmingLabel);
+      // console.timeEnd(timmingLabel);
 
       if (!referralButtons) {
-        // const current = Date.now();
-        // const { hasMessageFound, totalRemainingTimeMs, minutes, seconds } =
-        //   await getCurrentAlertRemainingTime(page);
-
-        // console.log("no_buttons_time", {
-        //   referralId,
-        //   submissionButtonsRetry: submissionButtonsRetry || 0,
-        //   startTime,
-        //   current,
-        //   diff: current - startTime,
-        //   hasMessageFound,
-        //   totalRemainingTimeMs,
-        //   minutes,
-        //   seconds,
-        // });
-        // if (hasMessageFound && totalRemainingTimeMs > 0) {
-        //   await sleep(totalRemainingTimeMs);
-        // }
-
         const hasReachedMaxRetriesForSubmission =
           submissionButtonsRetry >= MAX_RETRIES;
 
@@ -292,6 +250,8 @@ const processClientActionOnPatient = async ({
         // sectionEl,
       });
 
+      await makeKeyboardNoise(page, true);
+
       try {
         const fileInput = await page.$(
           '#upload-single-file input[type="file"]'
@@ -315,34 +275,32 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
-      try {
-        await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
-      } catch (error) {
-        console.log(`Error when scrolling into selectedButton`, error.message);
-      }
+      await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
+      await makeKeyboardNoise(page);
 
       const submissionTimeLabel = createTimeLabel("click_submit");
-      console.time(submissionTimeLabel); // 3.419s
-      const clickOptions = {
+      console.time(submissionTimeLabel);
+      // const clickOptions = {
+      //   clickCount: 1,
+      //   hesitate: 1.3 + Math.random(),
+      //   waitForClick: 1.2 + Math.random(),
+      //   moveDelay: 1.2 + Math.random(),
+      //   radius: 2 + Math.random(),
+      //   randomizeMoveDelay: true,
+      // };
+
+      await cursor.click(selectedButton, {
         clickCount: 1,
-        hesitate: 1.3 + Math.random() * 2.5,
-        waitForClick: 1.4 + Math.random() * 2.5,
-        moveDelay: 1.3 + Math.random() * 2.5,
+        hesitate: 1.999538336,
+        waitForClick: 1.7899647509,
+        moveDelay: 2.24113954,
         radius: 2 + Math.random(),
         randomizeMoveDelay: true,
-      };
-
-      await cursor.click(selectedButton, clickOptions);
+      });
       console.timeEnd(submissionTimeLabel);
 
       const durationText = buildDurationText(startTime, Date.now());
-      console.log("clickOptions", clickOptions);
-      // try {
-      //   const html = await page.content();
-      //   await writeFile(`${htmlFilesPath}/details_page.html`, html);
-      // } catch (error) {
-      //   console.log("couldn't get details page html", error.message)
-      // }
+      // console.log("clickOptions", clickOptions);
 
       await sleep(27_000);
 
@@ -409,8 +367,33 @@ export default processClientActionOnPatient;
 // }
 // console.timeEnd("check_dropdown")
 
+// console.time("loading-details-page"); // 412.444 to 436.406ms
+// await checkIfWeInDetailsPage(page);
+// console.timeEnd("loading-details-page");
+
+// try {
+//   const html = await page.content();
+//   await writeFile(`${htmlFilesPath}/details_page.html`, html);
+// } catch (error) {
+//   console.log("couldn't get details page html", error.message)
+// }
+
+// const current = Date.now();
+// console.log(
+//   `✅ Submission buttons became visible after _${referralId}_`,
+//   {
+//     referralId,
+//     referralEndDate,
+//     currentDate: formatToDateTime(current),
+//     diff: current - startTime,
+//   }
+// );
+
 // console.time("check_noise-upload") // 144.667
-// await makeKeyboardNoise(page);
+
+// const endpoint = isAcceptance
+//   ? "referrals/accept-referral"
+//   : "referrals/reject-referral";
 
 // const sectionEl = await scrollDetailsPageSections({
 //   page,
