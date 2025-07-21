@@ -8,14 +8,14 @@ import { unlink } from "fs/promises";
 import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
-import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
+// import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
+// import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-import formatToDateTime from "./formatToDateTime.mjs";
+// import formatToDateTime from "./formatToDateTime.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -30,41 +30,20 @@ import {
 //   : "referrals/reject-referral";
 
 const MAX_RETRIES = 8;
+const buttonsSelector = "section.referral-button-container button";
 
 const getSubmissionButtonsIfFound = async (page) => {
   try {
-    const section = await page.waitForSelector(
-      "section.referral-button-container",
-      {
-        timeout: 1000,
-      }
-    );
-    if (!section) return false;
+    await page.waitForSelector(buttonsSelector, {
+      timeout: 3_000,
+      visible: true,
+    });
 
-    const buttons = await section.$$("button");
+    const buttons = await page.$$(buttonsSelector);
 
-    if (!buttons.length) return false;
+    if (buttons.length < 2) return false;
 
-    let acceptButton = null;
-    let rejectButton = null;
-
-    for (const btn of buttons) {
-      const text = (await page.evaluate((el) => el.textContent, btn))
-        .trim()
-        .toLowerCase();
-
-      if (text.includes("accept referral")) {
-        acceptButton = btn;
-      } else if (text.includes("reject referral")) {
-        rejectButton = btn;
-      }
-    }
-
-    if (acceptButton && rejectButton) {
-      return [acceptButton, rejectButton];
-    }
-
-    return false;
+    return buttons;
   } catch (err) {
     console.log("❌ Failed to get submission buttons:", err.message);
     return false;
@@ -90,15 +69,16 @@ const processClientActionOnPatient = async ({
 }) => {
   let preparingStartTime = Date.now();
 
-  console.time("🕒 prepare_user_action_start_time");
+  // console.time("🕒 prepare_user_action_start_time");
   const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
   const {
     referralId,
     patientName,
-    caseActualWillBeSubmittedAtMS,
-    referralEndDate,
+    // caseActualWillBeSubmittedAtMS,
     referralEndTimestamp,
+    referralEndDate,
+    referralDate,
   } = patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
@@ -205,24 +185,24 @@ const processClientActionOnPatient = async ({
     return;
   }
 
-  console.timeEnd("🕒 prepare_user_action_start_time");
+  let submissionButtonsRetry = 0;
+  let checkDetailsPageRetry = 0;
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 290;
+  const createTimeLabel = (label) =>
+    `${label}_${referralId}_${submissionButtonsRetry}`;
+
+  // console.timeEnd("🕒 prepare_user_action_start_time");
+
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 40;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
     await sleep(remainingTimeMS);
   }
 
-  let submissionButtonsRetry = 0;
-  let checkDetailsPageRetry = 0;
-
-  // const outerLoopMs = Date.now();
-
   const startTime = Date.now();
   while (true) {
     try {
-      // console.time("click_eye"); // 49.242
       if (submissionButtonsRetry || checkDetailsPageRetry) {
         console.log(
           `referralId=${referralId}_RETURNED_TO_HOME_times_${
@@ -239,27 +219,30 @@ const processClientActionOnPatient = async ({
         }
       }
 
+      const iconButtonClickLabel = createTimeLabel("click_eye");
+      console.time(iconButtonClickLabel);
       await iconButton.click();
-      // console.timeEnd("click_eye");
+      console.timeEnd(iconButtonClickLabel);
 
       // console.time("loading-details-page"); // 412.444 to 436.406ms
-      await checkIfWeInDetailsPage(page);
+      // await checkIfWeInDetailsPage(page);
       // console.timeEnd("loading-details-page");
 
-      const current = Date.now();
-      console.log(
-        `✅ Submission buttons became visible after _${referralId}_`,
-        {
-          referralId,
-          referralEndDate,
-          currentDate: formatToDateTime(current),
-          diff: current - startTime,
-        }
-      );
+      // const current = Date.now();
+      // console.log(
+      //   `✅ Submission buttons became visible after _${referralId}_`,
+      //   {
+      //     referralId,
+      //     referralEndDate,
+      //     currentDate: formatToDateTime(current),
+      //     diff: current - startTime,
+      //   }
+      // );
 
-      // console.time("buttons-check"); // 20.731
-      const referralButtons = await getSubmissionButtonsIfFound(page); // check_buttons: 86.561ms
-      // console.timeEnd("buttons-check");
+      const timmingLabel = createTimeLabel("buttons_check");
+      console.time(timmingLabel);
+      const referralButtons = await getSubmissionButtonsIfFound(page);
+      console.timeEnd(timmingLabel);
 
       if (!referralButtons) {
         // const current = Date.now();
@@ -301,27 +284,13 @@ const processClientActionOnPatient = async ({
       }
 
       // console.time("check_dropdown") // 310.666ms
-      const [hasOptionSelected, selectionError] =
-        await selectAttachmentDropdownOption({
-          page,
-          cursor,
-          option: actionName,
-          // sectionEl,
-        });
-
-      if (!hasOptionSelected) {
-        await sendErrorMessage(
-          `We tried times to select ${actionName}, but couldn't find it.\n*selectionError:* ${selectionError}`,
-          "list-item-not-found",
-          buildDurationText(startTime, Date.now())
-        );
-        await closeCurrentPage(true);
-        break;
-      }
-      // console.timeEnd("check_dropdown")
-
-      // console.time("check_noise-upload") // 144.667
-      await makeKeyboardNoise(page, true);
+      // const [hasOptionSelected, selectionError] =
+      await selectAttachmentDropdownOption({
+        page,
+        cursor,
+        option: actionName,
+        // sectionEl,
+      });
 
       try {
         const fileInput = await page.$(
@@ -342,30 +311,32 @@ const processClientActionOnPatient = async ({
       }
       // console.timeEnd("check_noise-upload")
 
-      const [acceptButton, rejectButton] = referralButtons;
+      const selectedButton = isAcceptance
+        ? referralButtons[0]
+        : referralButtons[1];
 
-      const selectedButton = isAcceptance ? acceptButton : rejectButton;
-
-      // console.time("check_submit_scroll");
       try {
         await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       } catch (error) {
         console.log(`Error when scrolling into selectedButton`, error.message);
       }
-      // console.timeEnd("check_submit_scroll");
 
-      console.time("check_submit"); // 3.419s
-      await cursor.click(selectedButton, {
+      const submissionTimeLabel = createTimeLabel("click_submit");
+      console.time(submissionTimeLabel); // 3.419s
+      const clickOptions = {
         clickCount: 1,
-        hesitate: 1.6 + Math.random() * 5,
-        waitForClick: 1.6 + Math.random() * 4.5,
-        moveDelay: 1.5 + Math.random() * 4.5,
+        hesitate: 1.3 + Math.random() * 2.5,
+        waitForClick: 1.4 + Math.random() * 2.5,
+        moveDelay: 1.3 + Math.random() * 2.5,
         radius: 2 + Math.random(),
         randomizeMoveDelay: true,
-      });
-      console.timeEnd("check_submit");
+      };
+
+      await cursor.click(selectedButton, clickOptions);
+      console.timeEnd(submissionTimeLabel);
 
       const durationText = buildDurationText(startTime, Date.now());
+      console.log("clickOptions", clickOptions);
       // try {
       //   const html = await page.content();
       //   await writeFile(`${htmlFilesPath}/details_page.html`, html);
@@ -426,6 +397,20 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
+
+// if (!hasOptionSelected) {
+//   await sendErrorMessage(
+//     `We tried times to select ${actionName}, but couldn't find it.\n*selectionError:* ${selectionError}`,
+//     "list-item-not-found",
+//     buildDurationText(startTime, Date.now())
+//   );
+//   await closeCurrentPage(true);
+//   break;
+// }
+// console.timeEnd("check_dropdown")
+
+// console.time("check_noise-upload") // 144.667
+// await makeKeyboardNoise(page);
 
 // const sectionEl = await scrollDetailsPageSections({
 //   page,
