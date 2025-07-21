@@ -275,8 +275,8 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
-      await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       await makeKeyboardNoise(page);
+      await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
 
       const submissionTimeLabel = createTimeLabel("click_submit");
       console.time(submissionTimeLabel);
@@ -292,8 +292,8 @@ const processClientActionOnPatient = async ({
       await cursor.click(selectedButton, {
         clickCount: 1,
         hesitate: 1.999538336,
-        waitForClick: 1.7899647509,
-        moveDelay: 2.24113954,
+        waitForClick: 1.9999645504,
+        moveDelay: 2.25113554,
         radius: 2 + Math.random(),
         randomizeMoveDelay: true,
       });
