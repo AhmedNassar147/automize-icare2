@@ -3,6 +3,7 @@
  * Helper: `processSendCollectedPatientsToWhatsapp`.
  *
  */
+import speakText from "./speakText.mjs";
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
 import { estimatedTimeForProcessingAction } from "./constants.mjs";
 
@@ -74,6 +75,10 @@ const processSendCollectedPatientsToWhatsapp =
       process.env.CLIENT_WHATSAPP_NUMBER,
       addedPatients.map(formatPatient)
     );
+
+    try {
+      speakText("Please check your WhatsApp, there is a new patient");
+    } catch (error) {}
   };
 
 export default processSendCollectedPatientsToWhatsapp;

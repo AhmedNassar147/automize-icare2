@@ -281,10 +281,10 @@ const processClientActionOnPatient = async ({
       console.time(submissionTimeLabel);
       await cursor.click(selectedButton, {
         clickCount: 1,
-        hesitate: 5 + Math.random() * 1.5,
-        waitForClick: 23 + Math.random(),
-        moveDelay: 12 + Math.random(),
-        radius: 2.5 + Math.random(),
+        hesitate: 3 + Math.random() * 1.5,
+        waitForClick: 8.5 + Math.random(),
+        moveDelay: 8 + Math.random(),
+        radius: 3 + Math.random(),
         randomizeMoveDelay: true,
       });
       console.timeEnd(submissionTimeLabel);
