@@ -184,7 +184,7 @@ const processClientActionOnPatient = async ({
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 56;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 67;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -279,22 +279,13 @@ const processClientActionOnPatient = async ({
 
       const submissionTimeLabel = createTimeLabel("click_submit");
       console.time(submissionTimeLabel);
-      // const clickOptions = {
-      //   clickCount: 1,
-      //   hesitate: 1.3 + Math.random(),
-      //   waitForClick: 1.2 + Math.random(),
-      //   moveDelay: 1.2 + Math.random(),
-      //   radius: 2 + Math.random(),
-      //   randomizeMoveDelay: true,
-      // };
-
       await cursor.click(selectedButton, {
         clickCount: 1,
-        hesitate: 1.897538332,
-        waitForClick: 1.8859645502,
-        moveDelay: 2.12135,
+        hesitate: 160 + Math.random(),
+        waitForClick: 160 + Math.random(),
+        moveDelay: 170 + Math.random(),
         radius: 2 + Math.random(),
-        randomizeMoveDelay: true,
+        randomizeMoveDelay: false,
       });
       console.timeEnd(submissionTimeLabel);
 
