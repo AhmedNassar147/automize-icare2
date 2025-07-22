@@ -5,7 +5,7 @@
  */
 import { exec } from "child_process";
 
-const speakText = (text, times = 4, delayMs = 4300) => {
+const speakText = (text, times = 4, delayMs = 4200) => {
   let count = 0;
 
   // Escape single quotes for PowerShell

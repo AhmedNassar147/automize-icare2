@@ -28,7 +28,6 @@ import {
   generatedPdfsPathForRejection,
   screenshotsFolderDirectory,
 } from "./constants.mjs";
-// import speakText from "./speakText.mjs";
 
 const collectConfirmedPatient = false;
 
@@ -66,17 +65,6 @@ const collectConfirmedPatient = false;
 
 (async () => {
   try {
-    // const now = new Date();
-    // const saTime = new Date(
-    //   now.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
-    // );
-    // const hour = saTime.getHours();
-
-    // if (hour >= 1) {
-    //   speakText("Please check your WhatsApp, there is a new patient");
-    // }
-    // return;
-
     await Promise.all([
       generateFolderIfNotExisting(screenshotsFolderDirectory),
       generateFolderIfNotExisting(waitingPatientsFolderDirectory),

@@ -77,7 +77,15 @@ const processSendCollectedPatientsToWhatsapp =
     );
 
     try {
-      speakText("Please check your WhatsApp, there is a new patient");
+      const now = new Date();
+      const saTime = new Date(
+        now.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
+      );
+      const hour = saTime.getHours();
+
+      if (hour >= 1 || hour <= 10) {
+        speakText("Please check your WhatsApp, there is a new patient");
+      }
     } catch (error) {}
   };
 
