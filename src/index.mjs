@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import puppeteer from "puppeteer";
+// import twilio from "twilio";
 import PatientStore from "./PatientStore.mjs";
 import waitForWaitingCountWithInterval from "./waitForWaitingCountWithInterval.mjs";
 import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
@@ -29,6 +30,26 @@ import {
 } from "./constants.mjs";
 
 const collectConfirmedPatient = false;
+
+// const twilioClient = twilio(
+//   process.env.TWILIO_ACCOUNT_SID,
+//   process.env.TWILIO_AUTH_TOKEN
+// );
+
+// const numbers = await twilioClient.incomingPhoneNumbers.list();
+
+// console.log("numbers", numbers);
+
+// const createCall = async () => {
+//   const call = await twilioClient.calls.create({
+//     from: "+15076775062",
+//     to: "+966569157706", // Saudi number in international format
+//     url: "https://twimlets.com/message?Message%5B0%5D=A%20new%20patient%20has%20been%20received.%20Please%20check%20WhatsApp.",
+//   });
+
+//   console.log("Call initiated:", call.sid);
+// };
+
 // puppeteer.use(StealthPlugin());
 
 // "--no-sandbox", // avoid sandbox restrictions (detectable, but sometimes needed)
