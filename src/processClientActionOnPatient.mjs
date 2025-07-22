@@ -184,7 +184,7 @@ const processClientActionOnPatient = async ({
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 87;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 86;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -281,8 +281,8 @@ const processClientActionOnPatient = async ({
       console.time(submissionTimeLabel);
       await cursor.click(selectedButton, {
         clickCount: 1,
-        hesitate: 6 + Math.random() * 1.5,
-        waitForClick: 24 + Math.random(),
+        hesitate: 5 + Math.random() * 1.5,
+        waitForClick: 23 + Math.random(),
         moveDelay: 12 + Math.random(),
         radius: 2.5 + Math.random(),
         randomizeMoveDelay: true,
