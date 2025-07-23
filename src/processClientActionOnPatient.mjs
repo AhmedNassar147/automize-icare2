@@ -282,7 +282,7 @@ const processClientActionOnPatient = async ({
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
 
       await cursor.move(selectedButton, { overshootThreshold: 550 });
-      await sleep(200 + Math.random() * 200); // simulate hover pause
+      await sleep(200 + Math.random() * 170); // simulate hover pause
 
       await cursor.click(selectedButton, {
         hesitate: 5 + Math.random() * 3, // delay before click (5-8ms)
