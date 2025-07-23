@@ -277,21 +277,34 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
-      await makeKeyboardNoise(page);
-
+      await makeKeyboardNoise(page, true);
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
 
-      await cursor.move(selectedButton, { overshootThreshold: 550 });
-      await sleep(200 + Math.random() * 170); // simulate hover pause
+      // await cursor.move(selectedButton, {
+      //     overshootThreshold: 650
+      //  });
+      // await sleep(190); // simulate hover pause
+
+      // const options = {
+      //   hesitate: 2.309732318833028,
+      //   waitForClick: 10.080821303362214,
+      //   moveDelay: 0
+      // }
+
+      // await cursor.click(selectedButton, options);
 
       await cursor.click(selectedButton, {
-        hesitate: 4 + Math.random() * 3, // delay before click (4-7ms)
-        waitForClick: 15 + Math.random() * 10, // (15-25ms between down & up)
-        moveDelay: 0,
+        clickCount: 1,
+        hesitate: 6.5 + Math.random() * 3.5,
+        waitForClick: 10 + Math.random() * 4,
+        moveDelay: 15 + Math.random() * 3.5,
+        radius: 3 + Math.random(),
+        randomizeMoveDelay: false,
       });
       console.timeEnd(submissionTimeLabel);
 
       const durationText = buildDurationText(startTime, Date.now());
+      console.log("durationText", durationText);
       // console.log("clickOptions", clickOptions);
 
       await sleep(27_000);
