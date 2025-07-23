@@ -87,10 +87,10 @@ const bezier = (p0, p1, p2, p3, t) => {
 };
 
 const humanClick = async (page, target) => {
-  const moveTime = 1000 + Math.random() * 80;
-  const hoverTime = 380 + Math.random() * 80;
-  const hesitate = 380 + Math.random() * 80;
-  const pressTime = 380 + Math.random() * 80;
+  const moveTime = 800 + Math.random() * 75;
+  const hoverTime = 300 + Math.random() * 70;
+  const hesitate = 300 + Math.random() * 70;
+  const pressTime = 350 + Math.random() * 70;
 
   let element = target;
   if (typeof target === "string") {
@@ -110,8 +110,8 @@ const humanClick = async (page, target) => {
   }
 
   const start = {
-    x: 100 + Math.random() * 100,
-    y: 100 + Math.random() * 100,
+    x: 100 + Math.random() * 90,
+    y: 100 + Math.random() * 90,
   };
 
   const end = {
@@ -122,12 +122,12 @@ const humanClick = async (page, target) => {
   const cp1 = jitter(
     start.x + (end.x - start.x) / 3,
     start.y + (end.y - start.y) / 3,
-    55
+    50
   );
   const cp2 = jitter(
     start.x + ((end.x - start.x) * 2) / 3,
     start.y + ((end.y - start.y) * 2) / 3,
-    55
+    50
   );
 
   const steps = 38;

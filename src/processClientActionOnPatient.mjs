@@ -273,7 +273,6 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
-      await makeKeyboardNoise(page, true);
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
 
       await humanClick(page, selectedButton);
