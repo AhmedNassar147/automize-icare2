@@ -3,7 +3,7 @@
  * Helper: `scrollDetailsPageSections`.
  *
  */
-import moveFromCurrentToRandomPosition from "./moveFromCurrentToRandomPosition.mjs";
+import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import sleep from "./sleep.mjs";
 
 // const viewportHeight = await page.evaluate(() => window.innerHeight);
@@ -11,9 +11,7 @@ import sleep from "./sleep.mjs";
 const scrollDetailsPageSections = async ({
   page,
   sectionsIndices,
-  cursor,
   logString,
-  noCursorMovemntIfFailed = false,
   scrollDelay = 80,
 }) => {
   try {
@@ -30,13 +28,8 @@ const scrollDetailsPageSections = async ({
 
     return sections[sectionsIndices.at(-1)] || null;
   } catch (err) {
-    if (!noCursorMovemntIfFailed) {
-      console.log(
-        `⚠️ Failed to scroll, using cursor in ${logString}:`,
-        err.message
-      );
-      await moveFromCurrentToRandomPosition(cursor);
-    }
+    console.log(`⚠️ Failed to scroll  ${logString}:`, err.message);
+    await makeKeyboardNoise(page, true);
 
     return null;
   }

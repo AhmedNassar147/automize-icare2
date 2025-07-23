@@ -117,14 +117,14 @@ const processCollectingPatients = async ({
             message: `❌ Tried ${checkDetailsPageRetry} times to enter the details page for referralId=(${referralId}) collection, but there is something wrong.`,
           });
           checkDetailsPageRetry = 0;
-          await goToHomePage(page, cursor);
+          await goToHomePage(page);
           // await sleep(2000 + Math.random() * 70);
 
           break;
         }
 
         checkDetailsPageRetry += 1;
-        await goToHomePage(page, cursor);
+        await goToHomePage(page);
         await sleep(1000 + Math.random() * 70);
         continue;
       }
@@ -138,7 +138,7 @@ const processCollectingPatients = async ({
         logString,
         page,
         sectionsIndices: [1, 2, 3],
-        scrollDelay: 200,
+        scrollDelay: 180,
       });
 
       let detailsApiData;
@@ -146,7 +146,7 @@ const processCollectingPatients = async ({
       try {
         detailsApiData = await detailsApiDataPromise;
       } catch (err) {
-        await goToHomePage(page, cursor);
+        await goToHomePage(page);
         console.error(
           `❌ Failed collecting API data for referralId=${referralId}:`,
           err.message
@@ -157,7 +157,7 @@ const processCollectingPatients = async ({
       const { patientName, specialty, apisError } = detailsApiData;
 
       if (apisError) {
-        await goToHomePage(page, cursor);
+        await goToHomePage(page);
         console.log(
           `❌ Error when colleting referralId=${referralId}, reason:`,
           apisError
@@ -184,7 +184,7 @@ const processCollectingPatients = async ({
       processedCount++;
       console.log(`\n👉 Processed row ${processedCount} of ${rowsLength}`);
 
-      await goToHomePage(page, cursor);
+      await goToHomePage(page);
 
       await sleep(1000);
 

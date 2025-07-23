@@ -3,7 +3,7 @@
  * Helper: `humanClick`.
  *
  */
-import { sleep } from "./sleep.mjs";
+import sleep from "./sleep.mjs";
 
 // const humanClick = async (page, cursor, selectorOrElementHandle) => {
 //   try {
@@ -86,11 +86,11 @@ const bezier = (p0, p1, p2, p3, t) => {
   };
 };
 
-const humanClick = async (page, c, target) => {
-  const moveTime = 1000 + Math.random() * 150; // 1–1.15s
-  const hoverTime = 500 + Math.random() * 100;
-  const hesitate = 400 + Math.random() * 80;
-  const pressTime = 450 + Math.random() * 80;
+const humanClick = async (page, target) => {
+  const moveTime = 990 + Math.random() * 80;
+  const hoverTime = 380 + Math.random() * 80;
+  const hesitate = 380 + Math.random() * 80;
+  const pressTime = 380 + Math.random() * 80;
 
   let element = target;
   if (typeof target === "string") {
@@ -122,15 +122,15 @@ const humanClick = async (page, c, target) => {
   const cp1 = jitter(
     start.x + (end.x - start.x) / 3,
     start.y + (end.y - start.y) / 3,
-    60
+    55
   );
   const cp2 = jitter(
     start.x + ((end.x - start.x) * 2) / 3,
     start.y + ((end.y - start.y) * 2) / 3,
-    60
+    55
   );
 
-  const steps = 40;
+  const steps = 38;
   const delay = moveTime / steps;
 
   for (let i = 0; i <= steps; i++) {

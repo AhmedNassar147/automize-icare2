@@ -7,7 +7,7 @@
  * - Puppeteer
  * - Designed to work with `fingerprint-injector` (if in use)
  */
-import randomMouseJitter from "../randomMouseJitter.mjs";
+// import randomMouseJitter from "../randomMouseJitter.mjs";
 import randomIdleDelay from "../randomIdleDelay.mjs";
 import readJsonFile from "../readJsonFile.mjs";
 
@@ -1843,7 +1843,7 @@ const applyStealth = async (page) => {
 
   await page.emulateTimezone(timezone);
 
-  await randomMouseJitter(page);
+  // await randomMouseJitter(page);
   await page.click("body");
 
   await randomIdleDelay();

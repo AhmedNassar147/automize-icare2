@@ -13,6 +13,7 @@ import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
+import humanClick from "./humanClick.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -96,7 +97,7 @@ const processClientActionOnPatient = async ({
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
 
-  const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+  const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,
     startingPageUrl: HOME_PAGE_URL,
@@ -140,7 +141,7 @@ const processClientActionOnPatient = async ({
 
   const closeCurrentPage = async (navigateToHomePage) => {
     if (navigateToHomePage) {
-      await goToHomePage(page, cursor);
+      await goToHomePage(page);
     }
     // await sleep(WHATS_APP_LOADING_TIME);
     await closePageSafely(page);
@@ -237,18 +238,13 @@ const processClientActionOnPatient = async ({
       //   }
 
       //   submissionButtonsRetry += 1;
-      //   await goToHomePage(page, cursor);
+      //   await goToHomePage(page);
       //   continue;
       // }
 
       // console.time("check_dropdown") // 310.666ms
       // const [hasOptionSelected, selectionError] =
-      await selectAttachmentDropdownOption({
-        page,
-        cursor,
-        option: actionName,
-        // sectionEl,
-      });
+      await selectAttachmentDropdownOption(page, actionName);
 
       await makeKeyboardNoise(page);
 
@@ -280,27 +276,7 @@ const processClientActionOnPatient = async ({
       await makeKeyboardNoise(page, true);
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
 
-      // await cursor.move(selectedButton, {
-      //     overshootThreshold: 650
-      //  });
-      // await sleep(190); // simulate hover pause
-
-      // const options = {
-      //   hesitate: 2.309732318833028,
-      //   waitForClick: 10.080821303362214,
-      //   moveDelay: 0
-      // }
-
-      // await cursor.click(selectedButton, options);
-
-      await cursor.click(selectedButton, {
-        clickCount: 1,
-        hesitate: 6.5 + Math.random() * 3.5,
-        waitForClick: 10 + Math.random() * 4,
-        moveDelay: 15 + Math.random() * 3.5,
-        radius: 3 + Math.random(),
-        randomizeMoveDelay: false,
-      });
+      await humanClick(page, selectedButton);
       console.timeEnd(submissionTimeLabel);
 
       const durationText = buildDurationText(startTime, Date.now());
@@ -381,29 +357,12 @@ export default processClientActionOnPatient;
 // }
 // console.timeEnd("check_dropdown")
 
-// console.time("loading-details-page"); // 412.444 to 436.406ms
-// await checkIfWeInDetailsPage(page);
-// console.timeEnd("loading-details-page");
-
 // try {
 //   const html = await page.content();
 //   await writeFile(`${htmlFilesPath}/details_page.html`, html);
 // } catch (error) {
 //   console.log("couldn't get details page html", error.message)
 // }
-
-// const current = Date.now();
-// console.log(
-//   `✅ Submission buttons became visible after _${referralId}_`,
-//   {
-//     referralId,
-//     referralEndDate,
-//     currentDate: formatToDateTime(current),
-//     diff: current - startTime,
-//   }
-// );
-
-// console.time("check_noise-upload") // 144.667
 
 // const endpoint = isAcceptance
 //   ? "referrals/accept-referral"
@@ -415,7 +374,6 @@ export default processClientActionOnPatient;
 //   logString,
 //   // sectionsIndices: [1, 2],
 //   sectionsIndices: [2],
-//   noCursorMovemntIfFailed: true,
 // });
 
 // if (!sectionEl) {
@@ -506,17 +464,6 @@ export default processClientActionOnPatient;
 //     _err
 //   );
 // }
-
-// console.time("🕒 keyboard_noise_action");
-// await makeKeyboardNoise(page, logString);
-// console.timeEnd("🕒 keyboard_noise_action");
-
-// console.time("🕒 scroll_eye_button");
-// await iconButton.scrollIntoViewIfNeeded({ timeout: 3000 });
-// console.time("actionPageVisitTime");
-// await humanClick(page, cursor, iconButton);
-// console.timeEnd("actionPageVisitTime");
-// console.time("🕒 scroll_eye_button");
 
 // const { totalRemainingTimeMs, ...otherSnakBardData } =
 //   await getCurrentAlertRemainingTime(page);

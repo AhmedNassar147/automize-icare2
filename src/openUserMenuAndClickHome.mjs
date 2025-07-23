@@ -49,7 +49,7 @@ import randomMouseJitter from "./randomMouseJitter.mjs";
 const openUserMenuAndClickHome = async (page, cursor) => {
   await randomMouseJitter(cursor, 2);
 
-  await humanClick(page, cursor, ".MuiAvatar-root.MuiAvatar-circular");
+  await humanClick(page, ".MuiAvatar-root.MuiAvatar-circular");
 
   // Wait for menu to appear
   await page.waitForSelector(".MuiPopover-root", {

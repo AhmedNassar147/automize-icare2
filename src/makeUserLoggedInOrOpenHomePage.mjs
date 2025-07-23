@@ -79,7 +79,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
         if (isLoginPage) {
           await humanType(page, cursor, "#Input_Username", userName);
           await humanType(page, cursor, "#Input_Password", password);
-          await humanClick(page, cursor, loginButtonSelector);
+          await humanClick(page, loginButtonSelector);
 
           try {
             await page.waitForNavigation({

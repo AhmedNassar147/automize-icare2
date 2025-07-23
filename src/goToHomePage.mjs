@@ -10,8 +10,8 @@ import sleep from "./sleep.mjs";
 
 const timeout = 7_000;
 
-const goToHomePage = async (page, cursor) => {
-  await humanClick(page, cursor, dashboardLinkSelector);
+const goToHomePage = async (page) => {
+  await humanClick(page, dashboardLinkSelector);
 
   await waitForHomeLink(page, timeout);
   await sleep(40 + Math.random() * 50);

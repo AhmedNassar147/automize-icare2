@@ -8,12 +8,7 @@ import humanClick from "./humanClick.mjs";
 // import sleep from "./sleep.mjs";
 import { htmlFilesPath } from "./constants.mjs";
 
-const selectAttachmentDropdownOption = async ({
-  page,
-  cursor,
-  option,
-  sectionEl,
-}) => {
+const selectAttachmentDropdownOption = async (page, option, sectionEl) => {
   const mainObject = sectionEl || page;
 
   // const normalized = option.trim().toLowerCase();
@@ -46,7 +41,7 @@ const selectAttachmentDropdownOption = async ({
       "⚠️ Default click failed, falling back to humanClick.",
       err.message
     );
-    await humanClick(page, cursor, dropdownTrigger);
+    await humanClick(page, dropdownTrigger);
   }
 
   // Step 3: Try to find and click the matching dropdown option
