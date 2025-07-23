@@ -87,10 +87,10 @@ const bezier = (p0, p1, p2, p3, t) => {
 };
 
 const humanClick = async (page, target) => {
-  const moveTime = 800 + Math.random() * 75;
-  const hoverTime = 300 + Math.random() * 70;
-  const hesitate = 300 + Math.random() * 70;
-  const pressTime = 350 + Math.random() * 70;
+  const moveTime = 800 + Math.random() * 45;
+  const hoverTime = 300 + Math.random() * 65;
+  const hesitate = 300 + Math.random() * 65;
+  const pressTime = 300 + Math.random() * 65;
 
   let element = target;
   if (typeof target === "string") {

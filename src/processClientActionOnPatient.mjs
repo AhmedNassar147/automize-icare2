@@ -274,6 +274,7 @@ const processClientActionOnPatient = async ({
         : referralButtons[1];
 
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
+      await page.keyboard.press("ArrowDown");
 
       await humanClick(page, selectedButton);
       console.timeEnd(submissionTimeLabel);
