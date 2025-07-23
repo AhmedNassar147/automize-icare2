@@ -78,12 +78,13 @@ const processSendCollectedPatientsToWhatsapp =
 
     try {
       const now = new Date();
+
       const saTime = new Date(
         now.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
       );
       const hour = saTime.getHours();
 
-      if (hour >= 1 || hour <= 10) {
+      if (hour >= 22 || hour <= 9) {
         speakText("Please check your WhatsApp, there is a new patient");
       }
     } catch (error) {}

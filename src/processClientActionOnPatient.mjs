@@ -221,25 +221,25 @@ const processClientActionOnPatient = async ({
       const referralButtons = await getSubmissionButtonsIfFound(page);
       // console.timeEnd(timmingLabel);
 
-      if (!referralButtons) {
-        const hasReachedMaxRetriesForSubmission =
-          submissionButtonsRetry >= MAX_RETRIES;
+      // if (!referralButtons) {
+      //   const hasReachedMaxRetriesForSubmission =
+      //     submissionButtonsRetry >= MAX_RETRIES;
 
-        if (hasReachedMaxRetriesForSubmission) {
-          await sendErrorMessage(
-            `Tried ${submissionButtonsRetry} times to find the submission buttons, but none were found.`,
-            "submission-buttons-not-found-reachedMax",
-            buildDurationText(startTime, Date.now())
-          );
+      //   if (hasReachedMaxRetriesForSubmission) {
+      //     await sendErrorMessage(
+      //       `Tried ${submissionButtonsRetry} times to find the submission buttons, but none were found.`,
+      //       "submission-buttons-not-found-reachedMax",
+      //       buildDurationText(startTime, Date.now())
+      //     );
 
-          await closeCurrentPage(true);
-          break;
-        }
+      //     await closeCurrentPage(true);
+      //     break;
+      //   }
 
-        submissionButtonsRetry += 1;
-        await goToHomePage(page, cursor);
-        continue;
-      }
+      //   submissionButtonsRetry += 1;
+      //   await goToHomePage(page, cursor);
+      //   continue;
+      // }
 
       // console.time("check_dropdown") // 310.666ms
       // const [hasOptionSelected, selectionError] =
@@ -269,23 +269,25 @@ const processClientActionOnPatient = async ({
         await closeCurrentPage(true);
         break;
       }
-      // console.timeEnd("check_noise-upload")
+
+      const submissionTimeLabel = createTimeLabel("click_submit");
+      console.time(submissionTimeLabel);
 
       const selectedButton = isAcceptance
         ? referralButtons[0]
         : referralButtons[1];
 
+      await makeKeyboardNoise(page);
+
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
 
-      const submissionTimeLabel = createTimeLabel("click_submit");
-      console.time(submissionTimeLabel);
+      await cursor.move(selectedButton, { overshootThreshold: 550 });
+      await sleep(200 + Math.random() * 200); // simulate hover pause
+
       await cursor.click(selectedButton, {
-        clickCount: 1,
-        hesitate: 3 + Math.random() * 1.5,
-        waitForClick: 8.5 + Math.random(),
-        moveDelay: 8 + Math.random(),
-        radius: 3 + Math.random(),
-        randomizeMoveDelay: true,
+        hesitate: 5 + Math.random() * 3, // delay before click (5-8ms)
+        waitForClick: 15 + Math.random() * 10, // (15-25ms between down & up)
+        moveDelay: 0,
       });
       console.timeEnd(submissionTimeLabel);
 
@@ -345,6 +347,15 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
+
+// await cursor.click(selectedButton, {
+//   clickCount: 1,
+//   hesitate: 6.5 + Math.random() * 3.5,
+//   waitForClick: 10 + Math.random() * 4,
+//   moveDelay: 12 + Math.random() * 3.5,
+//   radius: 3 + Math.random(),
+//   randomizeMoveDelay: true,
+// });
 
 // if (!hasOptionSelected) {
 //   await sendErrorMessage(
