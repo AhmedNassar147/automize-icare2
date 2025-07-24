@@ -3,7 +3,7 @@
  * Helper: `processClientActionOnPatient`.
  *
  */
-import { unlink } from "fs/promises";
+import { unlink, writeFile } from "fs/promises";
 import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
@@ -19,6 +19,7 @@ import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
+  htmlFilesPath,
 } from "./constants.mjs";
 
 const MAX_RETRIES = 8;
@@ -185,7 +186,7 @@ const processClientActionOnPatient = async ({
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 86;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 84;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -222,25 +223,25 @@ const processClientActionOnPatient = async ({
       const referralButtons = await getSubmissionButtonsIfFound(page);
       // console.timeEnd(timmingLabel);
 
-      // if (!referralButtons) {
-      //   const hasReachedMaxRetriesForSubmission =
-      //     submissionButtonsRetry >= MAX_RETRIES;
+      if (!referralButtons) {
+        const hasReachedMaxRetriesForSubmission =
+          submissionButtonsRetry >= MAX_RETRIES;
 
-      //   if (hasReachedMaxRetriesForSubmission) {
-      //     await sendErrorMessage(
-      //       `Tried ${submissionButtonsRetry} times to find the submission buttons, but none were found.`,
-      //       "submission-buttons-not-found-reachedMax",
-      //       buildDurationText(startTime, Date.now())
-      //     );
+        if (hasReachedMaxRetriesForSubmission) {
+          await sendErrorMessage(
+            `Tried ${submissionButtonsRetry} times to find the submission buttons, but none were found.`,
+            "submission-buttons-not-found-reachedMax",
+            buildDurationText(startTime, Date.now())
+          );
 
-      //     await closeCurrentPage(true);
-      //     break;
-      //   }
+          await closeCurrentPage(true);
+          break;
+        }
 
-      //   submissionButtonsRetry += 1;
-      //   await goToHomePage(page);
-      //   continue;
-      // }
+        submissionButtonsRetry += 1;
+        await goToHomePage(page);
+        continue;
+      }
 
       // console.time("check_dropdown") // 310.666ms
       // const [hasOptionSelected, selectionError] =
@@ -276,12 +277,26 @@ const processClientActionOnPatient = async ({
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       await page.keyboard.press("ArrowDown");
 
-      await humanClick(page, selectedButton);
+      await humanClick(page, selectedButton, true);
       console.timeEnd(submissionTimeLabel);
 
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
       // console.log("clickOptions", clickOptions);
+
+      // 2.8s  {
+      //   moveTime: 653.4178568056968,
+      //   hoverTime: 192.49845947902497,
+      //   hesitate: 158.46315992126802,
+      //   pressTime: 160.7974255968207
+      // }
+
+      //  3 sec {
+      //   moveTime: 658.8485430018737,
+      //   hoverTime: 197.3121987600792,
+      //   hesitate: 151.36555124154148,
+      //   pressTime: 169.45787094721092
+      // }
 
       await sleep(27_000);
 
@@ -321,6 +336,13 @@ const processClientActionOnPatient = async ({
       await closeCurrentPage(false);
       break;
     } catch (error) {
+      try {
+        const html = await page.content();
+        await writeFile(`${htmlFilesPath}/details_page_catch_error.html`, html);
+      } catch (error) {
+        console.log("couldn't get details page html", error.message);
+      }
+
       const _err = error?.message || String(error);
 
       console.log(`🛑 Error during ${actionName} of ${referralId}:`, _err);
@@ -463,27 +485,6 @@ export default processClientActionOnPatient;
 //     `🛑 Error during submission API call ${actionName} of ${referralId}:`,
 //     _err
 //   );
-// }
-
-// const { totalRemainingTimeMs, ...otherSnakBardData } =
-//   await getCurrentAlertRemainingTime(page);
-
-// console.log(
-//   "detailsApiData",
-//   JSON.stringify({ totalRemainingTimeMs, ...otherSnakBardData }, null, 2)
-// );
-
-// const hasTimeingDataButStillHasLeftTime = totalRemainingTimeMs > 0;
-
-// if (hasTimeingDataButStillHasLeftTime) {
-//   await goToHomePage(page, cursor);
-
-//   const sleepTime =
-//     totalRemainingTimeMs >= 4000 ? totalRemainingTimeMs - 2000 : 0;
-
-//   await sleep(sleepTime);
-
-//   continue;
 // }
 
 // const inputContainer = await sectionEl.$('div[id="upload-single-file"]');

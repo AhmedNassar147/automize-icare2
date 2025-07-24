@@ -86,11 +86,11 @@ const bezier = (p0, p1, p2, p3, t) => {
   };
 };
 
-const humanClick = async (page, target) => {
-  const moveTime = 800 + Math.random() * 45;
-  const hoverTime = 300 + Math.random() * 65;
-  const hesitate = 300 + Math.random() * 65;
-  const pressTime = 300 + Math.random() * 65;
+const humanClick = async (page, target, log) => {
+  const moveTime = 640 + Math.random() * 10;
+  const hoverTime = 190 + Math.random() * 10;
+  const hesitate = 150 + Math.random() * 10;
+  const pressTime = 160 + Math.random() * 10;
 
   let element = target;
   if (typeof target === "string") {
@@ -130,7 +130,7 @@ const humanClick = async (page, target) => {
     50
   );
 
-  const steps = 38;
+  const steps = 36;
   const delay = moveTime / steps;
 
   for (let i = 0; i <= steps; i++) {
@@ -146,6 +146,15 @@ const humanClick = async (page, target) => {
   await page.mouse.down();
   await sleep(pressTime);
   await page.mouse.up();
+
+  if (log) {
+    console.log("CLICK_OPTIONS", {
+      moveTime,
+      hoverTime,
+      hesitate,
+      pressTime,
+    });
+  }
 };
 
 export default humanClick;

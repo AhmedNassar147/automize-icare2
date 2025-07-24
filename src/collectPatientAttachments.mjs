@@ -60,7 +60,7 @@ const collectPatientAttachments = async ({
             res.status() >= 200 &&
             res.status() < 300 &&
             res.request().method() === "GET",
-          { timeout: 17_000 }
+          { timeout: 20_000 }
         ),
         (async () => {
           await sleep(180);
@@ -82,14 +82,14 @@ const collectPatientAttachments = async ({
       }
 
       const cd = response.headers()["content-disposition"] || "";
-      const extension = extractExtensionFromContentDisposition(cd);
+      const extension = extractExtensionFromContentDisposition(cd) || "pdf";
       const buffer = await response.buffer();
 
       const fileName = `${referralId}_${specialty || ""}.${extension}`;
 
       downloadedFiles.push({
         fileName,
-        extension,
+        extension: extension,
         fileBase64: buffer.toString("base64"),
       });
 
