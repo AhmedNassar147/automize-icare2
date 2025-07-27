@@ -4,17 +4,16 @@
  *
  */
 import ExcelJS from "exceljs";
-import { readFile } from "fs/promises";
-import { join } from "path";
-// import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-// import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
-import {
-  // HOME_PAGE_URL,
-  PATIENT_SECTIONS_STATUS,
-  htmlFilesPath,
-} from "./constants.mjs";
+import { writeFile } from "fs/promises";
+import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import sleep from "./sleep.mjs";
+import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+import {
+  PATIENT_SECTIONS_STATUS,
+  waitingPatientsFolderDirectory,
+  HOME_PAGE_URL,
+} from "./constants.mjs";
 
 const excelColumns = [
   { header: "order", key: "order", width: 20 },
@@ -30,8 +29,8 @@ const excelColumns = [
 ];
 
 const getViewData = async (page, targetText) => {
-  // await searchForItemCountAndClickItIfFound(page, targetText, true);
-  // await sleep(1000);
+  await searchForItemCountAndClickItIfFound(page, targetText, true);
+  await sleep(2000);
 
   const data = await page.evaluate(() => {
     const headers = Array.from(document.querySelectorAll("thead th")).map(
@@ -45,12 +44,10 @@ const getViewData = async (page, targetText) => {
         const cells = Array.from(row.querySelectorAll("td"));
         const rowData = {};
 
-        // Check if the row has at least one non-empty cell
         const hasData = cells.some(
           (td) => td.innerText && td.innerText.trim() !== ""
         );
-
-        if (!hasData) return null; // skip this row
+        if (!hasData) return null;
 
         for (let i = 0; i < headers.length && i < cells.length; i++) {
           if (headers[i]) {
@@ -65,42 +62,93 @@ const getViewData = async (page, targetText) => {
   return data;
 };
 
+const parseDate = (str) => {
+  const date = new Date(str);
+  return isNaN(date) ? null : date;
+};
+
+const getWeeklyRange = () => {
+  const today = new Date();
+  const day = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+  // Get last Tuesday
+  const lastTuesday = new Date(today);
+  const daysSinceTuesday = day >= 2 ? day - 2 : 7 - (2 - day); // 2 = Tuesday
+  lastTuesday.setDate(today.getDate() - daysSinceTuesday);
+  lastTuesday.setHours(0, 0, 0, 0);
+
+  // This week's Monday (after that Tuesday)
+  const thisMonday = new Date(lastTuesday);
+  thisMonday.setDate(lastTuesday.getDate() + 6);
+  thisMonday.setHours(23, 59, 59, 999);
+
+  return { lastTuesday, thisMonday };
+};
+
+const filterReferralData = (data, startingReferralDate, weekly) => {
+  const { lastTuesday, thisMonday } = getWeeklyRange();
+  const startDate = startingReferralDate
+    ? new Date(startingReferralDate)
+    : null;
+
+  return data.filter((item) => {
+    const referralDate = parseDate(item["Referral Date"]);
+    if (!referralDate) return false;
+
+    const afterStart = startDate ? referralDate >= startDate : true;
+    const inWeeklyRange = weekly
+      ? referralDate >= lastTuesday && referralDate <= thisMonday
+      : true;
+
+    return afterStart && inWeeklyRange;
+  });
+};
+
+// const startingReferralDate = "2025-07-18T21:47:30";
+const startingReferralDate = undefined;
+const weekly = true; // Set to true if you want to filter by the last week
+
 const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
-  // const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
-  //   browser,
-  //   sendWhatsappMessage,
-  //   startingPageUrl: HOME_PAGE_URL,
-  // });
+  const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+    browser,
+    sendWhatsappMessage,
+    startingPageUrl: HOME_PAGE_URL,
+  });
 
-  // if (!isLoggedIn) {
-  //   return;
-  // }
+  if (!isLoggedIn) {
+    console.log("User is not logged in, cannot collect referral summary.");
+    return;
+  }
 
-  const html = await readFile(join(htmlFilesPath, "summary.html"), "utf8");
-
-  const page = await browser.newPage();
-
-  await page.setContent(html, { waitUntil: "domcontentloaded" });
-
-  const { DISCHARGED, ADMITTED } = PATIENT_SECTIONS_STATUS;
-
+  const { ADMITTED } = PATIENT_SECTIONS_STATUS;
   const admittedData = await getViewData(page, ADMITTED.targetText);
-  // const dischargedData = await getViewData(page, DISCHARGED.targetText);
 
-  // Merge & deduplicate by "GMS Referral Id"
-  // const combined = [...admittedData, ...dischargedData];
-  const combined = [...admittedData].map((item, index) => ({
-    order: index + 1,
-    ...item,
-  }));
+  const filtered = filterReferralData(
+    admittedData,
+    startingReferralDate,
+    weekly
+  );
 
   const unique = Array.from(
-    new Map(combined.map((item) => [item["GMS Referral Id"], item])).values()
-  ).sort((a, b) => {
-    const dateA = new Date(a["Referral Date"]);
-    const dateB = new Date(b["Referral Date"]);
-    return dateB - dateA;
-  });
+    new Map(filtered.map((item) => [item["GMS Referral Id"], item])).values()
+  )
+    .sort((a, b) => {
+      const dateA = new Date(a["Referral Date"]);
+      const dateB = new Date(b["Referral Date"]);
+      return dateB - dateA;
+    })
+    .map((item, index) => ({
+      order: index + 1,
+      ...item,
+    }));
+
+  const jsonData = JSON.stringify(unique, null, 2);
+
+  await writeFile(
+    `${waitingPatientsFolderDirectory}/referrals.json`,
+    jsonData,
+    "utf8"
+  );
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("referral summary");
@@ -120,8 +168,8 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
     row.eachCell((cell) => {
       cell.font = {
         name: "Arial",
-        size: 13, // 👈 fontSize
-        bold: false, // 👈 fontWeight: bold = true
+        size: 13,
+        bold: false,
       };
     });
   });
@@ -138,8 +186,7 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
     ],
   });
 
-  await sleep(12_000);
-
+  // await sleep(12_000);
   await closePageSafely(page);
 };
 

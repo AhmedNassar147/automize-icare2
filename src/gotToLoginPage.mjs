@@ -23,7 +23,7 @@ const gotToLoginPage = async (page) => {
   const hasAnotherNavigation =
     currentUrl.includes("account/login") || currentUrl.includes("signin");
 
-  console.log("currentUrl when gotToLoginPage", currentUrl);
+  // console.log("currentUrl when gotToLoginPage", currentUrl);
 
   if (hasAnotherNavigation) {
     try {

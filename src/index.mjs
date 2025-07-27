@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import puppeteer from "puppeteer";
+import cron from "node-cron";
 // import twilio from "twilio";
 import PatientStore from "./PatientStore.mjs";
 import waitForWaitingCountWithInterval from "./waitForWaitingCountWithInterval.mjs";
@@ -18,7 +19,7 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processClientActionOnPatient from "./processClientActionOnPatient.mjs";
-// import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
+import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
 import {
   waitingPatientsFolderDirectory,
   COLLECTD_PATIENTS_FULL_FILE_PATH,
@@ -117,8 +118,24 @@ const collectConfirmedPatient = false;
         sendWhatsappMessage,
       }))();
 
-    // (async () =>
-    //   await processCollectReferralSummary(browser, sendWhatsappMessage))();
+    cron.schedule(
+      "59 23 * * 1",
+      async () => {
+        console.log(
+          "[CRON] Starting referral summary job at",
+          new Date().toISOString()
+        );
+        try {
+          await processCollectReferralSummary(browser, sendWhatsappMessage);
+          console.log("[CRON] Referral summary job completed successfully.");
+        } catch (err) {
+          console.error("[CRON] Referral summary job failed:", err.message);
+        }
+      },
+      {
+        timezone: "Asia/Riyadh",
+      }
+    );
 
     patientsStore.on(
       "patientsAdded",
