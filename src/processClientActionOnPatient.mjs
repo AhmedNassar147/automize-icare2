@@ -275,7 +275,7 @@ const processClientActionOnPatient = async ({
         : referralButtons[1];
 
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
-      await page.keyboard.press("ArrowDown");
+      // await page.keyboard.press("ArrowDown");
 
       await humanClick(page, selectedButton, true);
       console.timeEnd(submissionTimeLabel);
@@ -283,6 +283,14 @@ const processClientActionOnPatient = async ({
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
       // console.log("clickOptions", clickOptions);
+
+      // 2.7s
+      //       {
+      //   moveTime: 644.305230112018,
+      //   hoverTime: 173.99894296019255,
+      //   hesitate: 159.141079049646,
+      //   pressTime: 180.1918598381556
+      // }
 
       // 2.8s  {
       //   moveTime: 653.4178568056968,
@@ -319,9 +327,9 @@ const processClientActionOnPatient = async ({
 
       await sendSuccessMessage(durationText);
 
-      // const deletionResponse = await patientsStore.removePatientByReferralId(
-      //   referralId
-      // );
+      const deletionResponse = await patientsStore.removePatientByReferralId(
+        referralId
+      );
 
       await Promise.allSettled([
         checkPathExists(acceptanceFilePath).then(
@@ -332,7 +340,7 @@ const processClientActionOnPatient = async ({
         ),
       ]);
 
-      // console.log(deletionResponse?.message);
+      console.log(deletionResponse?.message);
       await closeCurrentPage(false);
       break;
     } catch (error) {
@@ -358,6 +366,40 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
+// 2.9s  {
+//   moveTime: 644.88191019873,
+//   hoverTime: 190.12604375782314,
+//   hesitate: 152.35696466448138,
+//   pressTime: 160.65730951608552
+// }
+
+// 2.7s  {
+//   moveTime: 644.7426967875355,
+//   hoverTime: 195.26710804146398,
+//   hesitate: 155.56445293966058,
+//   pressTime: 167.37894380587187
+// }
+
+// 2.8s {
+//   moveTime: 646.5474544710079,
+//   hoverTime: 198.91769156620686,
+//   hesitate: 150.70578246061757,
+//   pressTime: 164.27161036152668
+// }
+
+// 2.8s  {
+//   moveTime: 653.4178568056968,
+//   hoverTime: 192.49845947902497,
+//   hesitate: 158.46315992126802,
+//   pressTime: 160.7974255968207
+// }
+
+//  3 sec {
+//   moveTime: 658.8485430018737,
+//   hoverTime: 197.3121987600792,
+//   hesitate: 151.36555124154148,
+//   pressTime: 169.45787094721092
+// }
 
 // await cursor.click(selectedButton, {
 //   clickCount: 1,

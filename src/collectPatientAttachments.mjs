@@ -60,7 +60,7 @@ const collectPatientAttachments = async ({
             res.status() >= 200 &&
             res.status() < 300 &&
             res.request().method() === "GET",
-          { timeout: 20_000 }
+          { timeout: 22_000 }
         ),
         (async () => {
           await sleep(180);
