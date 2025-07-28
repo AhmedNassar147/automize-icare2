@@ -180,10 +180,12 @@ const bezier = (p0, p1, p2, p3, t) => {
   };
 };
 
+const easeInOutQuad = (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
+
 const humanClick = async (page, target, log = false) => {
   const moveTime = 695 + Math.random() * 100; // 695–795 ms
   const hoverTime = 170 + Math.random() * 30; // 170–200 ms
-  const hesitate = 165 + Math.random() * 20; // 165–185 ms
+  const hesitate = 170 + Math.random() * 20; // 170–190 ms
   const pressTime = 185 + Math.random() * 40; // 185–225 ms
 
   let element = target;
@@ -232,7 +234,9 @@ const humanClick = async (page, target, log = false) => {
 
   let last = start;
   for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
+    const tLinear = i / steps;
+    const t = easeInOutQuad(tLinear); // 👈 Use eased progress
+
     const { x, y } = bezier(start, cp1, cp2, end, t);
     const jitteredDelay = Math.max(8, delay + Math.random() * 4 - 2);
     await page.mouse.move(x, y);
@@ -262,7 +266,7 @@ const humanClick = async (page, target, log = false) => {
       Math.max(box.y, end.y + settleOffsetY)
     );
 
-    await sleep(15 + Math.random() * 10);
+    await sleep(20 + Math.random() * 10);
     await page.mouse.move(settleX, settleY, { steps: 2 });
   }
 
