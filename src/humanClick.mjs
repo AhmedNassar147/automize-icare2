@@ -87,10 +87,10 @@ import sleep from "./sleep.mjs";
 // };
 
 // const humanClick = async (page, target, log) => {
-//   const moveTime = 640 + Math.random() * 10;
-//   const hoverTime = 190 + Math.random() * 10;
-//   const hesitate = 150 + Math.random() * 10;
-//   const pressTime = 160 + Math.random() * 10;
+// const moveTime = 640 + Math.random() * 10;
+// const hoverTime = 190 + Math.random() * 10;
+// const hesitate = 150 + Math.random() * 10;
+// const pressTime = 160 + Math.random() * 10;
 
 //   let element = target;
 //   if (typeof target === "string") {
@@ -181,10 +181,10 @@ const bezier = (p0, p1, p2, p3, t) => {
 };
 
 const humanClick = async (page, target, log = false) => {
-  const moveTime = 520 + Math.random() * 100;
-  const hoverTime = 120 + Math.random() * 15;
-  const hesitate = 130 + Math.random() * 10;
-  const pressTime = 145 + Math.random() * 30;
+  const moveTime = 650 + Math.random() * 10;
+  const hoverTime = 170 + Math.random() * 10;
+  const hesitate = 160 + Math.random() * 10;
+  const pressTime = 160 + Math.random() * 15;
 
   let element = target;
   if (typeof target === "string") {
@@ -201,13 +201,11 @@ const humanClick = async (page, target, log = false) => {
     return;
   }
 
-  // Center + offset click target
   const end = {
     x: box.x + box.width / 2 + (Math.random() - 0.5) * 6,
     y: box.y + box.height / 2 + (Math.random() - 0.5) * 6,
   };
 
-  // Start from somewhere on the screen (simulate previous location)
   const start = {
     x: 100 + Math.random() * 500,
     y: 100 + Math.random() * 300,
@@ -224,23 +222,27 @@ const humanClick = async (page, target, log = false) => {
     40
   );
 
-  const steps = 30 + Math.floor(Math.random() * 7);
+  const steps = 35 + Math.floor(Math.random() * 3);
   const delay = moveTime / steps;
 
+  let last = start;
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
     const { x, y } = bezier(start, cp1, cp2, end, t);
     const jitteredDelay = Math.max(8, delay + Math.random() * 4 - 2);
     await page.mouse.move(x, y);
+    last = { x, y };
     await sleep(jitteredDelay);
   }
 
-  // Slight overshoot + correction
-  // await page.mouse.move(end.x + 2, end.y + 2);
-  // await sleep(20 + Math.random() * 40);
-  await page.mouse.move(end.x, end.y);
+  // ➕ Gentle correction if final position is slightly off
+  const dist = Math.hypot(end.x - last.x, end.y - last.y);
+  if (dist > 2) {
+    await sleep(25 + Math.random() * 15);
+    await page.mouse.move(end.x, end.y, { steps: 3 });
+  }
 
-  await element.hover(); // Fire hover/enter/mousemove
+  await element.hover(); // Still important for mouseover
   await sleep(hoverTime);
   await sleep(hesitate);
 
@@ -255,6 +257,7 @@ const humanClick = async (page, target, log = false) => {
       hesitate,
       pressTime,
       steps,
+      finalCorrection: dist > 2,
     });
   }
 };
