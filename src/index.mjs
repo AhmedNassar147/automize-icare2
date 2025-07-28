@@ -95,22 +95,11 @@ const collectConfirmedPatient = false;
         "--disable-backgrounding-occluded-windows", // Same as above
         "--disable-dev-shm-usage", // Stability; safe even if not needed
         "--enable-webgl", // WebGL is often checked
-        "--no-sandbox", // Prevents sandboxing
-        "--disable-setuid-sandbox", // Avoids setuid sandboxing
-        "--disable-background-networking",
-        "--disable-client-side-phishing-detection",
-        "--disable-component-update",
-        "--disable-domain-reliability",
-        "--disable-hang-monitor",
-        "--disable-ipc-flooding-protection",
-        "--disable-popup-blocking",
-        "--disable-prompt-on-repost",
         "--disable-sync",
-        "--metrics-recording-only",
-        "--no-default-browser-check",
-        "--safebrowsing-disable-auto-update",
-        "--font-cache-shared", // More consistent font rendering (Windows only)
         "--renderer-process-limit=1",
+        "--disable-prompt-on-repost",
+        "--no-default-browser-check",
+        "--font-cache-shared", // More consistent font rendering (Windows only)
       ],
     });
 
