@@ -181,11 +181,10 @@ const bezier = (p0, p1, p2, p3, t) => {
 };
 
 const humanClick = async (page, target, log = false) => {
-  const moveTime = 690 + Math.random() * 60; // 690–750 ms
-  // const hoverTime = 160 + Math.random() * 30; // 160–190 ms
-  const hoverTime = 230 + Math.random() * 30; // 230–260 ms
-  // const hesitate = 150 + Math.random() * 50; // 150–200 ms
-  const pressTime = 160 + Math.random() * 60; // 160–220 ms
+  const moveTime = 680 + Math.random() * 100; // 680–780 ms
+  const hoverTime = 160 + Math.random() * 30; // 160–190 ms
+  const hesitate = 140 + Math.random() * 20; // 140–160 ms
+  const pressTime = 160 + Math.random() * 40; // 160–200 ms
 
   let element = target;
   if (typeof target === "string") {
@@ -217,13 +216,14 @@ const humanClick = async (page, target, log = false) => {
     start.y + (end.y - start.y) / 3,
     40
   );
+
   const cp2 = jitter(
     start.x + ((end.x - start.x) * 2) / 3,
     start.y + ((end.y - start.y) * 2) / 3,
     40
   );
 
-  const steps = 35 + Math.floor(Math.random() * 3);
+  const steps = 35 + Math.floor(Math.random() * 2);
   const delay = moveTime / steps;
 
   let last = start;
@@ -236,18 +236,35 @@ const humanClick = async (page, target, log = false) => {
     await sleep(jitteredDelay);
   }
 
-  // ➕ Gentle correction if final position is slightly off
   const dist = Math.hypot(end.x - last.x, end.y - last.y);
 
   if (dist > 2) {
-    const correctionSteps = Math.min(10, Math.max(3, Math.round(dist / 2))); // between 3 and 10 steps
+    const correctionSteps = Math.min(8, Math.max(3, Math.round(dist / 2)));
     await sleep(25 + Math.random() * 15);
     await page.mouse.move(end.x, end.y, { steps: correctionSteps });
   }
 
-  await element.hover(); // Still important for mouseover
+  // 🧠 Micro-settling (with safety clipping)
+  if (Math.random() < 0.6) {
+    const settleOffsetX = (Math.random() - 0.5) * 1.5;
+    const settleOffsetY = (Math.random() - 0.5) * 1.5;
+
+    const settleX = Math.min(
+      box.x + box.width,
+      Math.max(box.x, end.x + settleOffsetX)
+    );
+    const settleY = Math.min(
+      box.y + box.height,
+      Math.max(box.y, end.y + settleOffsetY)
+    );
+
+    await sleep(15 + Math.random() * 10);
+    await page.mouse.move(settleX, settleY, { steps: 2 });
+  }
+
+  await element.hover();
   await sleep(hoverTime);
-  // await sleep(hesitate);
+  await sleep(hesitate);
 
   await page.mouse.down();
   await sleep(pressTime);
@@ -257,7 +274,7 @@ const humanClick = async (page, target, log = false) => {
     console.log("CLICK_OPTIONS", {
       moveTime,
       hoverTime,
-      // hesitate,
+      hesitate,
       pressTime,
       steps,
       finalCorrection: dist > 2,
