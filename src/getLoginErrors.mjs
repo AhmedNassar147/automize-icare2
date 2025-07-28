@@ -16,7 +16,7 @@ const getLoginErrors = async (page) => {
       items.map((li) => li?.textContent?.trim()).filter(Boolean)
     );
 
-    return errors;
+    return errors.filter(Boolean);
   } catch (error) {
     // Optional debug log:
     // console.warn("⚠️ No visible login error found in DOM:", error.message);

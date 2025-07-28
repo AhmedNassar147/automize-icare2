@@ -98,10 +98,12 @@ const makeUserLoggedInOrOpenHomePage = async ({
           .includes("/account/login");
 
         if (isStillInLoginPage) {
-          const shouldCloseApp = await shouldCloseAppWhenLogin(
-            page,
-            sendWhatsappMessage
-          );
+          const { shouldCloseApp, isErrorAboutLockedOut } =
+            await shouldCloseAppWhenLogin(page, sendWhatsappMessage);
+
+          if (isErrorAboutLockedOut) {
+            return [page, cursor, false, true];
+          }
 
           if (shouldCloseApp) {
             await browser.close();

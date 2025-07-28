@@ -12,6 +12,8 @@ import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 const INTERVAL = 62_000;
 const NOT_LOGGED_SLEEP_TIME = 25_000;
 
+const LOCKED_OUT_SLEEP_TIME = 40_000;
+
 const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
   try {
     const intervalTime = INTERVAL + Math.random() * 9000;
@@ -65,7 +67,7 @@ const waitForWaitingCountWithInterval = async ({
 
   while (true) {
     try {
-      const [newPage, newCursor, isLoggedIn] =
+      const [newPage, newCursor, isLoggedIn, isErrorAboutLockedOut] =
         await makeUserLoggedInOrOpenHomePage({
           browser,
           cursor,
@@ -75,6 +77,16 @@ const waitForWaitingCountWithInterval = async ({
 
       page = newPage;
       cursor = newCursor;
+
+      if (isErrorAboutLockedOut) {
+        console.log(
+          `🔐 We are locked out, retrying in ${
+            LOCKED_OUT_SLEEP_TIME / 1000
+          }s...`
+        );
+        await sleep(LOCKED_OUT_SLEEP_TIME);
+        continue;
+      }
 
       if (!isLoggedIn) {
         console.log(

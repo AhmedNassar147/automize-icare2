@@ -4,17 +4,23 @@
  *
  */
 import getLoginErrors from "./getLoginErrors.mjs";
-import sleep from "./sleep.mjs";
 
 const shouldCloseAppWhenLogin = async (page, sendWhatsappMessage) => {
   const clientPhoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
   const errors = await getLoginErrors(page);
 
-  if (errors?.length) {
+  const errorsLength = errors?.length ?? 0;
+
+  if (errorsLength) {
     console.error(
       `❌ Login errors: ${errors.join(", ")} sending errors to client...`
     );
+
+    const isErrorAboutLockedOut =
+      errorsLength === 1 && errors[0].includes("locked out");
+
+    const shouldCloseApp = errorsLength > 1 || !isErrorAboutLockedOut;
 
     await sendWhatsappMessage(clientPhoneNumber, [
       {
@@ -23,7 +29,11 @@ const shouldCloseAppWhenLogin = async (page, sendWhatsappMessage) => {
           "────────────────────────\n" +
           errors.map((error, i) => `🔸 ${i + 1}. ${error}`).join("\n") +
           "\n\n" +
-          "⚠️ *CLOSING APP UNTILL FIXED*",
+          `⚠️ ${
+            shouldCloseApp
+              ? "*CLOSING APP UNTILL FIXED*"
+              : "*RE-TRYING IN 40 SECONDS*"
+          }`,
       },
     ]);
 
@@ -31,12 +41,15 @@ const shouldCloseAppWhenLogin = async (page, sendWhatsappMessage) => {
       path: `screenshots/login-error-${Date.now()}.png`,
     });
 
-    await sleep(12_000);
-
-    return true;
+    return {
+      shouldCloseApp,
+      isErrorAboutLockedOut,
+    };
   }
 
-  return false;
+  return {
+    shouldCloseApp: false,
+  };
 };
 
 export default shouldCloseAppWhenLogin;
