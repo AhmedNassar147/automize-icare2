@@ -7,6 +7,7 @@ import sleep from "./sleep.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 import processCollectingPatients from "./processCollectingPatients.mjs";
+import closePageSafely from "./closePageSafely.mjs";
 import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 
 const INTERVAL = 62_000;
@@ -85,16 +86,11 @@ const waitForWaitingCountWithInterval = async ({
           }minutes...`
         );
 
+        await closePageSafely(page);
+
         await sleep(LOCKED_OUT_SLEEP_TIME);
-
-        const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(
-          page
-        );
-
-        if (shouldCreateNewpage) {
-          page = null;
-          cursor = null;
-        }
+        page = null;
+        cursor = null;
         continue;
       }
 
