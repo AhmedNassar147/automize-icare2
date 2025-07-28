@@ -181,10 +181,11 @@ const bezier = (p0, p1, p2, p3, t) => {
 };
 
 const humanClick = async (page, target, log = false) => {
-  const moveTime = 650 + Math.random() * 10;
-  const hoverTime = 170 + Math.random() * 10;
-  const hesitate = 160 + Math.random() * 10;
-  const pressTime = 160 + Math.random() * 15;
+  const moveTime = 690 + Math.random() * 70; // 690–760 ms
+  // const hoverTime = 160 + Math.random() * 30; // 160–190 ms
+  const hoverTime = 230 + Math.random() * 50; // 230–280 ms
+  // const hesitate = 150 + Math.random() * 50; // 150–200 ms
+  const pressTime = 160 + Math.random() * 60; // 160–220 ms
 
   let element = target;
   if (typeof target === "string") {
@@ -237,14 +238,16 @@ const humanClick = async (page, target, log = false) => {
 
   // ➕ Gentle correction if final position is slightly off
   const dist = Math.hypot(end.x - last.x, end.y - last.y);
+
   if (dist > 2) {
+    const correctionSteps = Math.min(10, Math.max(3, Math.round(dist / 2))); // between 3 and 10 steps
     await sleep(25 + Math.random() * 15);
-    await page.mouse.move(end.x, end.y, { steps: 3 });
+    await page.mouse.move(end.x, end.y, { steps: correctionSteps });
   }
 
   await element.hover(); // Still important for mouseover
   await sleep(hoverTime);
-  await sleep(hesitate);
+  // await sleep(hesitate);
 
   await page.mouse.down();
   await sleep(pressTime);
@@ -254,7 +257,7 @@ const humanClick = async (page, target, log = false) => {
     console.log("CLICK_OPTIONS", {
       moveTime,
       hoverTime,
-      hesitate,
+      // hesitate,
       pressTime,
       steps,
       finalCorrection: dist > 2,
