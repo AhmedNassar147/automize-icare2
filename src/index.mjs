@@ -79,8 +79,8 @@ const collectConfirmedPatient = false;
       defaultViewport: null,
       executablePath: process.env.CHROME_EXECUTABLE_PATH,
       userDataDir: process.env.USER_PROFILE_PATH,
-      ignoreDefaultArgs: ["--enable-automation"],
       protocolTimeout: 120000,
+      ignoreDefaultArgs: ["--enable-automation"],
       args: [
         "--start-maximized", // Open full screen like real users
         "--disable-blink-features=AutomationControlled", // Prevent `navigator.webdriver = true`
@@ -95,6 +95,22 @@ const collectConfirmedPatient = false;
         "--disable-backgrounding-occluded-windows", // Same as above
         "--disable-dev-shm-usage", // Stability; safe even if not needed
         "--enable-webgl", // WebGL is often checked
+        "--no-sandbox", // Prevents sandboxing
+        "--disable-setuid-sandbox", // Avoids setuid sandboxing
+        "--disable-background-networking",
+        "--disable-client-side-phishing-detection",
+        "--disable-component-update",
+        "--disable-domain-reliability",
+        "--disable-hang-monitor",
+        "--disable-ipc-flooding-protection",
+        "--disable-popup-blocking",
+        "--disable-prompt-on-repost",
+        "--disable-sync",
+        "--metrics-recording-only",
+        "--no-default-browser-check",
+        "--safebrowsing-disable-auto-update",
+        "--font-cache-shared", // More consistent font rendering (Windows only)
+        "--renderer-process-limit=1",
       ],
     });
 

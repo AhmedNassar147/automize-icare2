@@ -181,10 +181,10 @@ const bezier = (p0, p1, p2, p3, t) => {
 };
 
 const humanClick = async (page, target, log = false) => {
-  const moveTime = 680 + Math.random() * 100; // 680–780 ms
-  const hoverTime = 160 + Math.random() * 30; // 160–190 ms
-  const hesitate = 140 + Math.random() * 20; // 140–160 ms
-  const pressTime = 160 + Math.random() * 40; // 160–200 ms
+  const moveTime = 695 + Math.random() * 100; // 695–795 ms
+  const hoverTime = 170 + Math.random() * 30; // 170–200 ms
+  const hesitate = 160 + Math.random() * 20; // 160–180 ms
+  const pressTime = 185 + Math.random() * 40; // 185–225 ms
 
   let element = target;
   if (typeof target === "string") {
@@ -223,7 +223,11 @@ const humanClick = async (page, target, log = false) => {
     40
   );
 
-  const steps = 35 + Math.floor(Math.random() * 2);
+  const distance = Math.hypot(end.x - start.x, end.y - start.y);
+  const steps = Math.max(
+    20,
+    Math.round(distance / 8) + Math.floor(Math.random() * 4)
+  );
   const delay = moveTime / steps;
 
   let last = start;
@@ -240,7 +244,7 @@ const humanClick = async (page, target, log = false) => {
 
   if (dist > 2) {
     const correctionSteps = Math.min(8, Math.max(3, Math.round(dist / 2)));
-    await sleep(25 + Math.random() * 15);
+    await sleep(20 + Math.random() * 15);
     await page.mouse.move(end.x, end.y, { steps: correctionSteps });
   }
 
