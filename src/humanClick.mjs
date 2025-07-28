@@ -183,7 +183,7 @@ const bezier = (p0, p1, p2, p3, t) => {
 const humanClick = async (page, target, log = false) => {
   const moveTime = 695 + Math.random() * 100; // 695–795 ms
   const hoverTime = 170 + Math.random() * 30; // 170–200 ms
-  const hesitate = 160 + Math.random() * 20; // 160–180 ms
+  const hesitate = 165 + Math.random() * 20; // 165–185 ms
   const pressTime = 185 + Math.random() * 40; // 185–225 ms
 
   let element = target;
@@ -225,7 +225,7 @@ const humanClick = async (page, target, log = false) => {
 
   const distance = Math.hypot(end.x - start.x, end.y - start.y);
   const steps = Math.max(
-    20,
+    25,
     Math.round(distance / 8) + Math.floor(Math.random() * 4)
   );
   const delay = moveTime / steps;
