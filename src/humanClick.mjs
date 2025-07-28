@@ -181,9 +181,9 @@ const bezier = (p0, p1, p2, p3, t) => {
 };
 
 const humanClick = async (page, target, log = false) => {
-  const moveTime = 690 + Math.random() * 70; // 690–760 ms
+  const moveTime = 690 + Math.random() * 60; // 690–750 ms
   // const hoverTime = 160 + Math.random() * 30; // 160–190 ms
-  const hoverTime = 230 + Math.random() * 50; // 230–280 ms
+  const hoverTime = 230 + Math.random() * 30; // 230–260 ms
   // const hesitate = 150 + Math.random() * 50; // 150–200 ms
   const pressTime = 160 + Math.random() * 60; // 160–220 ms
 
