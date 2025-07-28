@@ -32,7 +32,7 @@ const shouldCloseAppWhenLogin = async (page, sendWhatsappMessage) => {
           `⚠️ ${
             shouldCloseApp
               ? "*CLOSING APP UNTILL FIXED*"
-              : "*RE-TRYING IN 40 SECONDS*"
+              : "*RE-TRYING IN 40 MINUTES*"
           }`,
       },
     ]);
