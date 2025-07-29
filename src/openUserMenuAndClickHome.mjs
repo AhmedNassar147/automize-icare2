@@ -4,7 +4,6 @@
  *
  */
 import humanClick from "./humanClick.mjs";
-import randomMouseJitter from "./randomMouseJitter.mjs";
 
 // this is the user menu on navbar
 
@@ -47,7 +46,7 @@ import randomMouseJitter from "./randomMouseJitter.mjs";
 }
 
 const openUserMenuAndClickHome = async (page, cursor) => {
-  await randomMouseJitter(cursor, 2);
+  // await randomMouseJitter(cursor, 2);
 
   await humanClick(page, ".MuiAvatar-root.MuiAvatar-circular");
 
@@ -92,7 +91,7 @@ const openUserMenuAndClickHome = async (page, cursor) => {
         waitUntil: "networkidle2",
         timeout: 10000,
       });
-      await randomMouseJitter(cursor, 4);
+      // await randomMouseJitter(cursor, 4);
     } catch (err) {
       console.log("⚠️ Navigation after clicking Home took too long.");
     }

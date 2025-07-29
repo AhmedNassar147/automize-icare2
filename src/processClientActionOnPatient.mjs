@@ -13,6 +13,7 @@ import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
+import humanMouseMove from "./humanMouseMove.mjs";
 import humanClick from "./humanClick.mjs";
 import {
   USER_ACTION_TYPES,
@@ -65,14 +66,7 @@ const processClientActionOnPatient = async ({
   // console.time("🕒 prepare_user_action_start_time");
   const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
-  const {
-    referralId,
-    patientName,
-    // caseActualWillBeSubmittedAtMS,
-    referralEndTimestamp,
-    referralEndDate,
-    referralDate,
-  } = patient;
+  const { referralId, patientName, referralEndTimestamp } = patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
 
@@ -144,7 +138,6 @@ const processClientActionOnPatient = async ({
     if (navigateToHomePage) {
       await goToHomePage(page);
     }
-    // await sleep(WHATS_APP_LOADING_TIME);
     await closePageSafely(page);
   };
 
@@ -243,6 +236,26 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
+      await humanMouseMove({
+        page,
+        start: {
+          x: 80 + Math.random() * 200,
+          y: 100 + Math.random() * 300,
+        },
+        end: {
+          x: 150 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
+          y: 200 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
+        },
+        moveTime: 100 + Math.random() * 100,
+        maxSteps: 20,
+        useTinyFlicksAtEnd: true,
+        delayAfterDone: 10 + Math.random() * 12,
+      });
+
+      const randY = 100 + Math.random() * 50;
+      await page.mouse.wheel({ deltaY: randY });
+      await sleep(8 + Math.random() * 10);
+
       // console.time("check_dropdown") // 310.666ms
       // const [hasOptionSelected, selectionError] =
       await selectAttachmentDropdownOption(page, actionName);
@@ -250,11 +263,18 @@ const processClientActionOnPatient = async ({
       await makeKeyboardNoise(page);
 
       try {
+        const browseButton = await page.$("#upload-single-file button");
+        if (browseButton) {
+          await browseButton.hover();
+          await sleep(10 + Math.random() * 8);
+        }
+
         const fileInput = await page.$(
           '#upload-single-file input[type="file"]'
         );
 
         await fileInput.uploadFile(filePath);
+        await sleep(8 + Math.random() * 10);
       } catch (error) {
         const err = error?.message || String(error);
         await sendErrorMessage(
@@ -267,44 +287,31 @@ const processClientActionOnPatient = async ({
         break;
       }
 
-      const submissionTimeLabel = createTimeLabel("click_submit");
-      console.time(submissionTimeLabel);
+      // const submissionTimeLabel = createTimeLabel("click_submit");
+      // console.time(submissionTimeLabel);
 
       const selectedButton = isAcceptance
         ? referralButtons[0]
         : referralButtons[1];
 
+      if (Math.random() < 0.3) {
+        await page.keyboard.press("ArrowDown");
+        await sleep(10 + Math.random() * 12);
+      } else if (Math.random() < 0.2) {
+        await page.keyboard.down("Shift");
+        await page.keyboard.press("Tab");
+        await page.keyboard.up("Shift");
+        await sleep(10 + Math.random() * 12);
+      }
+
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
-      // await page.keyboard.press("ArrowDown");
 
       await humanClick(page, selectedButton, true);
-      console.timeEnd(submissionTimeLabel);
+      // console.timeEnd(submissionTimeLabel);
 
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
       // console.log("clickOptions", clickOptions);
-
-      // 2.7s
-      //       {
-      //   moveTime: 644.305230112018,
-      //   hoverTime: 173.99894296019255,
-      //   hesitate: 159.141079049646,
-      //   pressTime: 180.1918598381556
-      // }
-
-      // 2.8s  {
-      //   moveTime: 653.4178568056968,
-      //   hoverTime: 192.49845947902497,
-      //   hesitate: 158.46315992126802,
-      //   pressTime: 160.7974255968207
-      // }
-
-      //  3 sec {
-      //   moveTime: 658.8485430018737,
-      //   hoverTime: 197.3121987600792,
-      //   hesitate: 151.36555124154148,
-      //   pressTime: 169.45787094721092
-      // }
 
       await sleep(27_000);
 
