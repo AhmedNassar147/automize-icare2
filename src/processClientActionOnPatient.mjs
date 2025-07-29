@@ -256,6 +256,8 @@ const processClientActionOnPatient = async ({
       await page.mouse.wheel({ deltaY: randY });
       await sleep(8 + Math.random() * 10);
 
+      await page.keyboard.press("ArrowDown");
+
       // console.time("check_dropdown") // 310.666ms
       // const [hasOptionSelected, selectionError] =
       await selectAttachmentDropdownOption(page, actionName);
