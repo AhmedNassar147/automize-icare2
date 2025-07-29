@@ -307,17 +307,42 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
+      if (Math.random() < 0.05) {
+        await page.keyboard.press("ArrowDown");
+        await sleep(8 + Math.random() * 12);
+      } else if (Math.random() < 0.4) {
+        await page.keyboard.down("Shift");
+        await sleep(10 + Math.random() * 7);
+        const direction = Math.random() < 0.7 ? "ArrowDown" : "ArrowLeft";
+        await page.keyboard.press(direction);
+        await page.keyboard.up("Shift");
+        await page.keyboard.press("ArrowDown");
+        await sleep(5 + Math.random() * 8);
+      } else if (Math.random() < 0.2) {
+        await page.keyboard.down("Shift");
+        await sleep(10 + Math.random() * 7);
+        await page.keyboard.press("ArrowRight");
+        await page.keyboard.up("Shift");
+        await page.keyboard.press("ArrowDown");
+        await sleep(5 + Math.random() * 8);
+      }
+
       if (isPageUsingStrictRecaptchaMode) {
-        if (Math.random() < 0.4) {
-          await page.keyboard.down("Shift");
-          await page.keyboard.press("ArrowDown");
-          await sleep(10 + Math.random() * 10);
-        } else if (Math.random() < 0.2) {
-          await page.keyboard.down("Shift");
-          await page.keyboard.press("Tab");
-          await page.keyboard.press("ArrowDown");
-          await sleep(10 + Math.random() * 10);
-        }
+        await humanMouseMove({
+          page,
+          start: {
+            x: 350 + Math.random() * 200,
+            y: 500 + Math.random() * 300,
+          },
+          end: {
+            x: 560 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
+            y: 650 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
+          },
+          moveTime: 500 + Math.random() * 100,
+          maxSteps: 25,
+          useTinyFlicksAtEnd: false,
+          delayAfterDone: 10 + Math.random() * 12,
+        });
       }
 
       await humanScrollToElement(
