@@ -239,27 +239,29 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
-      await humanMouseMove({
-        page,
-        start: {
-          x: 80 + Math.random() * 200,
-          y: 100 + Math.random() * 300,
-        },
-        end: {
-          x: 150 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
-          y: 200 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
-        },
-        moveTime: 100 + Math.random() * 100,
-        maxSteps: 20,
-        useTinyFlicksAtEnd: true,
-        delayAfterDone: 10 + Math.random() * 12,
-      });
+      if (isPageUsingStrictRecaptchaMode) {
+        await humanMouseMove({
+          page,
+          start: {
+            x: 80 + Math.random() * 200,
+            y: 100 + Math.random() * 300,
+          },
+          end: {
+            x: 150 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
+            y: 200 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
+          },
+          moveTime: 100 + Math.random() * 100,
+          maxSteps: 20,
+          useTinyFlicksAtEnd: true,
+          delayAfterDone: 10 + Math.random() * 12,
+        });
 
-      const randY = 100 + Math.random() * 60;
-      await page.mouse.wheel({ deltaY: randY });
-      await sleep(10 + Math.random() * 10);
+        const randY = 100 + Math.random() * 60;
+        await page.mouse.wheel({ deltaY: randY });
 
-      await page.keyboard.press("ArrowDown");
+        await sleep(10 + Math.random() * 10);
+        await page.keyboard.press("ArrowDown");
+      }
 
       // console.time("check_dropdown") // 310.666ms
       // const [hasOptionSelected, selectionError] =
@@ -272,10 +274,12 @@ const processClientActionOnPatient = async ({
       await makeKeyboardNoise(page);
 
       try {
-        const browseButton = await page.$("#upload-single-file button");
-        if (browseButton) {
-          await browseButton.hover();
-          await sleep(10 + Math.random() * 8);
+        if (isPageUsingStrictRecaptchaMode) {
+          const browseButton = await page.$("#upload-single-file button");
+          if (browseButton) {
+            await browseButton.hover();
+            await sleep(10 + Math.random() * 8);
+          }
         }
 
         const fileInput = await page.$(
@@ -303,15 +307,17 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
-      if (Math.random() < 0.4) {
-        await page.keyboard.down("Shift");
-        await page.keyboard.press("ArrowDown");
-        await sleep(10 + Math.random() * 10);
-      } else if (Math.random() < 0.2) {
-        await page.keyboard.down("Shift");
-        await page.keyboard.press("Tab");
-        await page.keyboard.press("ArrowDown");
-        await sleep(10 + Math.random() * 10);
+      if (isPageUsingStrictRecaptchaMode) {
+        if (Math.random() < 0.4) {
+          await page.keyboard.down("Shift");
+          await page.keyboard.press("ArrowDown");
+          await sleep(10 + Math.random() * 10);
+        } else if (Math.random() < 0.2) {
+          await page.keyboard.down("Shift");
+          await page.keyboard.press("Tab");
+          await page.keyboard.press("ArrowDown");
+          await sleep(10 + Math.random() * 10);
+        }
       }
 
       await humanScrollToElement(
