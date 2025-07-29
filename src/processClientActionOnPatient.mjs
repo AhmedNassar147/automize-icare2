@@ -252,7 +252,7 @@ const processClientActionOnPatient = async ({
         delayAfterDone: 10 + Math.random() * 12,
       });
 
-      const randY = 100 + Math.random() * 50;
+      const randY = 100 + Math.random() * 60;
       await page.mouse.wheel({ deltaY: randY });
       await sleep(8 + Math.random() * 10);
 
