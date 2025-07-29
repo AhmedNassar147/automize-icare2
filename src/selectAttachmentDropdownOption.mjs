@@ -43,7 +43,11 @@ const selectAttachmentDropdownOption = async (
       isPageUsingStrictRecaptchaMode
     );
 
-    await dropdownTrigger.click();
+    if (isPageUsingStrictRecaptchaMode) {
+      await humanClick(page, dropdownTrigger);
+    } else {
+      await dropdownTrigger.click();
+    }
   } catch (err) {
     console.log(
       "⚠️ Default click failed, falling back to humanClick.",
