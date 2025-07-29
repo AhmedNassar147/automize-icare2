@@ -5,10 +5,16 @@
  */
 import { writeFile } from "fs/promises";
 import humanClick from "./humanClick.mjs";
+import humanScrollToElement from "./humanScrollToElement.mjs";
 // import sleep from "./sleep.mjs";
 import { htmlFilesPath } from "./constants.mjs";
 
-const selectAttachmentDropdownOption = async (page, option, sectionEl) => {
+const selectAttachmentDropdownOption = async (
+  page,
+  option,
+  isPageUsingStrictRecaptchaMode,
+  sectionEl
+) => {
   const mainObject = sectionEl || page;
 
   // const normalized = option.trim().toLowerCase();
@@ -31,9 +37,11 @@ const selectAttachmentDropdownOption = async (page, option, sectionEl) => {
 
   // Step 2: Try to click (fast), fallback to humanClick if needed
   try {
-    await dropdownTrigger
-      .scrollIntoViewIfNeeded({ timeout: 3000 })
-      .catch(() => {});
+    await humanScrollToElement(
+      page,
+      dropdownTrigger,
+      isPageUsingStrictRecaptchaMode
+    );
 
     await dropdownTrigger.click();
   } catch (err) {
@@ -66,49 +74,3 @@ const selectAttachmentDropdownOption = async (page, option, sectionEl) => {
 };
 
 export default selectAttachmentDropdownOption;
-
-// console.log(
-//   `❌ Dropdown trigger not found in "${logString}", trying fallback...`
-// );
-
-// dropdownTrigger = await sectionEl.waitForSelector('div[role="combobox"]', {
-//   timeout: 5000,
-//   visible: true,
-// });
-
-// const found = await page.$$eval(
-//   'ul[role="listbox"] li[role="option"]',
-//   (items, normalized) => {
-//     const match = items.find((el) =>
-//       (el.textContent || "").toLowerCase().includes(normalized)
-//     );
-//     if (match) match.click();
-//     return !!match;
-//   },
-//   normalized
-// );
-
-// if (!found) {
-//   console.log(`❌ Option "${option}" not found in dropdown.`);
-// }
-
-// const matchingOptionHandle = await page.waitForFunction(
-//   (targetText) => {
-//     const items = Array.from(
-//       document.querySelectorAll('ul[role="listbox"] li[role="option"]')
-//     );
-//     return items.find((el) =>
-//       el.textContent?.trim().toLowerCase().includes(targetText)
-//     );
-//   },
-//   { timeout: 4000 },
-//   normalized
-// );
-
-// const elementHandle = matchingOptionHandle?.asElement();
-
-// if (elementHandle) {
-//   await humanClick(page, cursor, elementHandle);
-// } else {
-//   console.log(`❌ Option "${option}" not found.`);
-// }

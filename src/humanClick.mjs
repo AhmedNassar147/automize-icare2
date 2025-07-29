@@ -7,10 +7,10 @@ import sleep from "./sleep.mjs";
 import humanMouseMove from "./humanMouseMove.mjs";
 
 const humanClick = async (page, target, log = false) => {
-  const moveTime = 695 + Math.random() * 100; // 695–795 ms
-  const hoverTime = 170 + Math.random() * 30; // 170–200 ms
-  const hesitate = 175 + Math.random() * 20; // 170–195 ms
-  const pressTime = 190 + Math.random() * 40; // 185–230 ms
+  const moveTime = 660 + Math.random() * 250; // 660–910 ms
+  const hoverTime = 155 + Math.random() * 90; // 155–245 ms
+  const hesitate = 145 + Math.random() * 90; // 145–235 ms
+  const pressTime = 165 + Math.random() * 90; // 165–255 ms
 
   let element = target;
   if (typeof target === "string") {

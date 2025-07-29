@@ -15,6 +15,7 @@ import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import humanMouseMove from "./humanMouseMove.mjs";
 import humanClick from "./humanClick.mjs";
+import humanScrollToElement from "./humanScrollToElement.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -53,6 +54,8 @@ const buildDurationText = (startTime, endTime) => {
 
   return durationText;
 };
+
+const isPageUsingStrictRecaptchaMode = true;
 
 const processClientActionOnPatient = async ({
   browser,
@@ -254,13 +257,17 @@ const processClientActionOnPatient = async ({
 
       const randY = 100 + Math.random() * 60;
       await page.mouse.wheel({ deltaY: randY });
-      await sleep(8 + Math.random() * 10);
+      await sleep(10 + Math.random() * 10);
 
       await page.keyboard.press("ArrowDown");
 
       // console.time("check_dropdown") // 310.666ms
       // const [hasOptionSelected, selectionError] =
-      await selectAttachmentDropdownOption(page, actionName);
+      await selectAttachmentDropdownOption(
+        page,
+        actionName,
+        isPageUsingStrictRecaptchaMode
+      );
 
       await makeKeyboardNoise(page);
 
@@ -276,7 +283,7 @@ const processClientActionOnPatient = async ({
         );
 
         await fileInput.uploadFile(filePath);
-        await sleep(8 + Math.random() * 10);
+        await sleep(10 + Math.random() * 10);
       } catch (error) {
         const err = error?.message || String(error);
         await sendErrorMessage(
@@ -296,17 +303,22 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
-      if (Math.random() < 0.3) {
+      if (Math.random() < 0.4) {
+        await page.keyboard.down("Shift");
         await page.keyboard.press("ArrowDown");
-        await sleep(10 + Math.random() * 12);
+        await sleep(10 + Math.random() * 10);
       } else if (Math.random() < 0.2) {
         await page.keyboard.down("Shift");
         await page.keyboard.press("Tab");
-        await page.keyboard.up("Shift");
-        await sleep(10 + Math.random() * 12);
+        await page.keyboard.press("ArrowDown");
+        await sleep(10 + Math.random() * 10);
       }
 
-      await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
+      await humanScrollToElement(
+        page,
+        selectedButton,
+        isPageUsingStrictRecaptchaMode
+      );
 
       await humanClick(page, selectedButton, true);
       // console.timeEnd(submissionTimeLabel);
