@@ -13,7 +13,7 @@ import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-import humanMouseMove from "./humanMouseMove.mjs";
+// import humanMouseMove from "./humanMouseMove.mjs";
 import humanClick from "./humanClick.mjs";
 import humanScrollToElement from "./humanScrollToElement.mjs";
 import {
