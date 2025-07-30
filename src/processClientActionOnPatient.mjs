@@ -154,11 +154,10 @@ const processClientActionOnPatient = async ({
     return;
   }
 
-  await sleep(30);
   const referralIdRecordResult = await collectHomePageTableRows(
     page,
     referralId,
-    3000
+    4000
   );
 
   let { iconButton } = referralIdRecordResult || {};
@@ -261,8 +260,11 @@ const processClientActionOnPatient = async ({
       const first = createTimeLabel("first");
       console.time(first);
       await page.keyboard.press("ArrowDown");
-      await sleep(20 + Math.random() * 10);
-      await page.keyboard.press("ArrowDown");
+
+      // if(Math.random() < 0.2){
+      //   await sleep(20 + Math.random() * 10);
+      //   await page.keyboard.press("ArrowDown");
+      // }
       console.timeEnd(first);
 
       const dropdown = createTimeLabel("check_dropdown");
@@ -275,19 +277,16 @@ const processClientActionOnPatient = async ({
       );
 
       await makeKeyboardNoise(page);
-
       console.timeEnd(dropdown);
 
       const upload = createTimeLabel("upload");
       console.time(upload);
 
       try {
-        if (isPageUsingStrictRecaptchaMode) {
-          const browseButton = await page.$("#upload-single-file button");
-          if (browseButton) {
-            await browseButton.hover();
-            await sleep(15 + Math.random() * 8);
-          }
+        const browseButton = await page.$("#upload-single-file button");
+        if (browseButton) {
+          await browseButton.hover();
+          await sleep(10 + Math.random() * 8);
         }
 
         const fileInput = await page.$(
@@ -295,7 +294,7 @@ const processClientActionOnPatient = async ({
         );
 
         await fileInput.uploadFile(filePath);
-        await sleep(15 + Math.random() * 12);
+        // await sleep(10 + Math.random() * 10);
       } catch (error) {
         const err = error?.message || String(error);
         await sendErrorMessage(
@@ -317,37 +316,33 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
-      if (Math.random() < 0.4) {
-        await page.keyboard.down("Shift");
-        await sleep(10 + Math.random() * 7);
-        const direction = Math.random() < 0.7 ? "ArrowRight" : "ArrowLeft";
-        await page.keyboard.press(direction);
-        await page.keyboard.up("Shift");
-        await sleep(5 + Math.random() * 8);
-      } else if (Math.random() < 0.2) {
-        await page.keyboard.down("ArrowDown");
-        await sleep(10 + Math.random() * 7);
-      }
-
       const last_scroll = createTimeLabel("last_scroll");
       console.time(last_scroll);
+      if (Math.random() < 0.2) {
+        await page.keyboard.press("ArrowDown");
+      }
+      // await page.mouse.wheel({ deltaY: 110 + Math.random() * 20 });
+      // await sleep(15 + Math.random() * 10);
 
-      await page.mouse.wheel({ deltaY: 110 + Math.random() * 20 });
-      await sleep(15 + Math.random() * 10);
+      // await selectedButton.evaluate((el) =>
+      //   el.scrollIntoView({ behavior: "smooth", block: "center" })
+      // );
 
-      await selectedButton.evaluate((el) =>
-        el.scrollIntoView({ behavior: "smooth", block: "center" })
-      );
+      await sleep(12 + Math.random() * 5);
+      await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       console.timeEnd(last_scroll);
 
+      const submit_time = createTimeLabel("submit");
+      console.time(submit_time);
       await humanClick(page, selectedButton, { log: true });
+      console.timeEnd(submit_time);
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
       // console.timeEnd(submissionTimeLabel);
 
       // console.log("clickOptions", clickOptions);
 
-      await sleep(27_000);
+      await sleep(28_000);
 
       const currentPageUrl = page.url();
 
@@ -407,15 +402,6 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
-
-// await cursor.click(selectedButton, {
-//   clickCount: 1,
-//   hesitate: 6.5 + Math.random() * 3.5,
-//   waitForClick: 10 + Math.random() * 4,
-//   moveDelay: 12 + Math.random() * 3.5,
-//   radius: 3 + Math.random(),
-//   randomizeMoveDelay: true,
-// });
 
 // if (!hasOptionSelected) {
 //   await sendErrorMessage(

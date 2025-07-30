@@ -75,11 +75,11 @@ const humanMouseMove = async ({
 
     const { x, y } = bezier(start, cp1, cp2, end, t);
 
-    if (i > 0 && i < steps - 1 && Math.random() < 0.04) {
-      await sleep(5 + Math.random() * 10); // quick hesitation
+    if (Math.random() < 0.03 && i > 1 && i < steps - 1) {
+      await sleep(4 + Math.random() * 6);
     }
 
-    const jitteredDelay = Math.max(8, delay + Math.random() * 4 - 2);
+    const jitteredDelay = Math.max(4, delay + Math.random() * 3 - 2);
     await page.mouse.move(x, y);
     last = { x, y };
     await sleep(jitteredDelay);
@@ -89,16 +89,15 @@ const humanMouseMove = async ({
 
   if (dist > 2) {
     const correctionSteps = Math.min(8, Math.max(3, Math.round(dist / 2)));
-    await sleep(10 + Math.random() * 15);
     await page.mouse.move(end.x, end.y, { steps: correctionSteps });
   }
 
-  if (useTinyFlicksAtEnd && Math.random() < 0.5) {
-    const settleX = end.x + (Math.random() - 0.5) * 1.2;
-    const settleY = end.y + (Math.random() - 0.5) * 1.2;
-    await sleep(8 + Math.random() * 10);
-    await page.mouse.move(settleX, settleY, { steps: 2 });
-  }
+  // if (useTinyFlicksAtEnd && Math.random() < 0.5) {
+  //   const settleX = end.x + (Math.random() - 0.5) * 1.2;
+  //   const settleY = end.y + (Math.random() - 0.5) * 1.2;
+  //   await sleep(8 + Math.random() * 10);
+  //   await page.mouse.move(settleX, settleY, { steps: 2 });
+  // }
 
   if (delayAfterDone) {
     await sleep(delayAfterDone);

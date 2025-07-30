@@ -5,8 +5,9 @@
  */
 import { writeFile } from "fs/promises";
 import humanClick from "./humanClick.mjs";
-import sleep from "./sleep.mjs";
+// import sleep from "./sleep.mjs";
 import { htmlFilesPath } from "./constants.mjs";
+import sleep from "./sleep.mjs";
 
 const selectAttachmentDropdownOption = async (
   page,
@@ -36,16 +37,13 @@ const selectAttachmentDropdownOption = async (
 
   // Step 2: Try to click (fast), fallback to humanClick if needed
   try {
-    await dropdownTrigger.evaluate((el) =>
-      el.scrollIntoView({ behavior: "smooth", block: "end" })
-    );
+    await dropdownTrigger
+      .scrollIntoViewIfNeeded({ timeout: 3000 })
+      .catch(() => {});
 
-    if (Math.random() < 0.6) {
-      await page.keyboard.press("ArrowDown");
-    }
+    await sleep(15 * Math.random() * 25);
 
     await dropdownTrigger.click();
-    await sleep(30 + Math.random() * 20);
   } catch (err) {
     console.log(
       "⚠️ Default click failed, falling back to humanClick.",
@@ -66,7 +64,7 @@ const selectAttachmentDropdownOption = async (
     const selector = `ul[role="listbox"] li[role="option"]:nth-child(${itemOrder})`;
 
     const optionEl = await page.waitForSelector(selector, {
-      timeout: 5000,
+      timeout: 6500,
       visible: true,
     });
 
@@ -75,6 +73,8 @@ const selectAttachmentDropdownOption = async (
   } catch (error) {
     const _error = `⚠️ Error selecting dropdown option "${option}": ${error.message}`;
 
+    const html = await page.content();
+    await writeFile(`${htmlFilesPath}/dropdown-option-not-found.html`, html);
     console.log(_error);
     return [false, _error];
   }

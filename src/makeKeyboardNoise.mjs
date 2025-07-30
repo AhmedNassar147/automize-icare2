@@ -9,7 +9,7 @@ const makeKeyboardNoise = async (page, noArrow) => {
   // Simulate user interaction
   await page.keyboard.press("Tab");
 
-  await sleep(15 + Math.random() * 10);
+  await sleep(8 + Math.random() * 10);
 
   if (!noArrow) {
     await page.keyboard.press("ArrowDown");
