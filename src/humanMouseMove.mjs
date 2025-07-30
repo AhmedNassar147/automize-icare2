@@ -76,7 +76,7 @@ const humanMouseMove = async ({
     const { x, y } = bezier(start, cp1, cp2, end, t);
 
     if (i > 0 && i < steps - 1 && Math.random() < 0.04) {
-      await sleep(7 + Math.random() * 10); // quick hesitation
+      await sleep(5 + Math.random() * 10); // quick hesitation
     }
 
     const jitteredDelay = Math.max(8, delay + Math.random() * 4 - 2);
@@ -89,7 +89,7 @@ const humanMouseMove = async ({
 
   if (dist > 2) {
     const correctionSteps = Math.min(8, Math.max(3, Math.round(dist / 2)));
-    await sleep(15 + Math.random() * 15);
+    await sleep(10 + Math.random() * 15);
     await page.mouse.move(end.x, end.y, { steps: correctionSteps });
   }
 

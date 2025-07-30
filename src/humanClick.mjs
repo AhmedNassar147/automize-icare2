@@ -6,11 +6,30 @@
 import sleep from "./sleep.mjs";
 import humanMouseMove from "./humanMouseMove.mjs";
 
-const humanClick = async (page, target, log = false) => {
-  const moveTime = 660 + Math.random() * 250; // 660–910 ms
-  const hoverTime = 155 + Math.random() * 90; // 155–245 ms
-  const hesitate = 145 + Math.random() * 90; // 145–235 ms
-  const pressTime = 165 + Math.random() * 90; // 165–255 ms
+const defaultOptions = {
+  log: false,
+  moveTime: 640,
+  maxSteps: 20,
+  hesitateTime: 130,
+  hoverTime: 130,
+};
+
+const humanClick = async (page, target, options = {}) => {
+  const {
+    log,
+    moveTime: _moveTime,
+    hoverTime: _hoverTime,
+    hesitateTime: _hesitateTime,
+    maxSteps,
+  } = {
+    ...defaultOptions,
+    ...options,
+  };
+
+  const moveTime = _moveTime + Math.random() * 140; // 640–780 ms
+  const hoverTime = _hoverTime + Math.random() * 30; // 130–160 ms
+  const hesitate = _hesitateTime + Math.random() * 30; // 130–160 ms
+  const pressTime = 150 + Math.random() * 30; // 150–180 ms
 
   let element = target;
   if (typeof target === "string") {
@@ -29,7 +48,7 @@ const humanClick = async (page, target, log = false) => {
 
   const start = {
     x: 100 + Math.random() * 500,
-    y: 100 + Math.random() * 300,
+    y: 100 + Math.random() * 350,
   };
 
   const end = {
@@ -42,11 +61,11 @@ const humanClick = async (page, target, log = false) => {
     start,
     end,
     moveTime,
-    maxSteps: 28,
+    maxSteps,
     useTinyFlicksAtEnd: false,
   });
 
-  if (Math.random() < 0.6) {
+  if (Math.random() < 0.5) {
     const settleOffsetX = (Math.random() - 0.5) * 1.5;
     const settleOffsetY = (Math.random() - 0.5) * 1.5;
 

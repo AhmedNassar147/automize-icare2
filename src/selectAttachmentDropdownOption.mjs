@@ -5,8 +5,6 @@
  */
 import { writeFile } from "fs/promises";
 import humanClick from "./humanClick.mjs";
-import humanScrollToElement from "./humanScrollToElement.mjs";
-// import sleep from "./sleep.mjs";
 import { htmlFilesPath } from "./constants.mjs";
 
 const selectAttachmentDropdownOption = async (
@@ -28,7 +26,7 @@ const selectAttachmentDropdownOption = async (
   );
 
   if (!dropdownTrigger) {
-    console.log(`❌ dropdown trigger found.`);
+    console.log(`❌ dropdown trigger not found.`);
 
     const html = await page.content();
     await writeFile(`${htmlFilesPath}/dropdown-trigger-not-found.html`, html);
@@ -37,14 +35,21 @@ const selectAttachmentDropdownOption = async (
 
   // Step 2: Try to click (fast), fallback to humanClick if needed
   try {
-    await humanScrollToElement(
-      page,
-      dropdownTrigger,
-      isPageUsingStrictRecaptchaMode
+    await dropdownTrigger.evaluate((el) =>
+      el.scrollIntoView({ behavior: "smooth", block: "end" })
     );
 
+    if (Math.random() < 0.6) {
+      await page.keyboard.press("ArrowDown");
+    }
+
     if (isPageUsingStrictRecaptchaMode) {
-      await humanClick(page, dropdownTrigger);
+      await humanClick(page, dropdownTrigger, {
+        moveTime: 40 + Math.random() * 30,
+        maxSteps: 12 + Math.floor(Math.random() * 4),
+        hesitateTime: 80,
+        hoverTime: 80,
+      });
     } else {
       await dropdownTrigger.click();
     }
@@ -53,7 +58,12 @@ const selectAttachmentDropdownOption = async (
       "⚠️ Default click failed, falling back to humanClick.",
       err.message
     );
-    await humanClick(page, dropdownTrigger);
+    await humanClick(page, dropdownTrigger, {
+      moveTime: 40 + Math.random() * 30,
+      maxSteps: 12 + Math.floor(Math.random() * 4),
+      hesitateTime: 80,
+      hoverTime: 80,
+    });
   }
 
   // Step 3: Try to find and click the matching dropdown option

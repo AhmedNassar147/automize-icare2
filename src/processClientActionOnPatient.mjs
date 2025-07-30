@@ -239,31 +239,33 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
-      if (isPageUsingStrictRecaptchaMode) {
-        await humanMouseMove({
-          page,
-          start: {
-            x: 80 + Math.random() * 200,
-            y: 100 + Math.random() * 300,
-          },
-          end: {
-            x: 150 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
-            y: 200 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
-          },
-          moveTime: 100 + Math.random() * 100,
-          maxSteps: 20,
-          useTinyFlicksAtEnd: true,
-          delayAfterDone: 10 + Math.random() * 12,
-        });
+      // if (isPageUsingStrictRecaptchaMode) {
+      //   await humanMouseMove({
+      //     page,
+      //     start: {
+      //       x: 80 + Math.random() * 100,
+      //       y: 100 + Math.random() * 150,
+      //     },
+      //     end: {
+      //       x: 190 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
+      //       y: 300 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
+      //     },
+      //     moveTime: 50 + Math.random() * 100,
+      //     maxSteps: 10,
+      //     useTinyFlicksAtEnd: false,
+      //     delayAfterDone: 10 + Math.random() * 12,
+      //   });
+      // }
 
-        const randY = 100 + Math.random() * 60;
-        await page.mouse.wheel({ deltaY: randY });
+      const first = createTimeLabel("first");
+      console.time(first);
+      await page.keyboard.press("ArrowDown");
+      await sleep(20 + Math.random() * 10);
+      await page.keyboard.press("ArrowDown");
+      console.timeEnd(first);
 
-        await sleep(10 + Math.random() * 10);
-        await page.keyboard.press("ArrowDown");
-      }
-
-      // console.time("check_dropdown") // 310.666ms
+      const dropdown = createTimeLabel("check_dropdown");
+      console.time(dropdown);
       // const [hasOptionSelected, selectionError] =
       await selectAttachmentDropdownOption(
         page,
@@ -272,13 +274,17 @@ const processClientActionOnPatient = async ({
       );
 
       await makeKeyboardNoise(page);
+      console.timeEnd(dropdown);
+
+      const upload = createTimeLabel("upload");
+      console.time(upload);
 
       try {
         if (isPageUsingStrictRecaptchaMode) {
           const browseButton = await page.$("#upload-single-file button");
           if (browseButton) {
             await browseButton.hover();
-            await sleep(10 + Math.random() * 8);
+            await sleep(15 + Math.random() * 8);
           }
         }
 
@@ -287,7 +293,7 @@ const processClientActionOnPatient = async ({
         );
 
         await fileInput.uploadFile(filePath);
-        await sleep(10 + Math.random() * 10);
+        await sleep(12 + Math.random() * 10);
       } catch (error) {
         const err = error?.message || String(error);
         await sendErrorMessage(
@@ -300,6 +306,10 @@ const processClientActionOnPatient = async ({
         break;
       }
 
+      await sleep(8 + Math.random() * 7);
+      await page.keyboard.press("ArrowDown");
+      console.timeEnd(upload);
+
       // const submissionTimeLabel = createTimeLabel("click_submit");
       // console.time(submissionTimeLabel);
 
@@ -307,55 +317,33 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
-      if (Math.random() < 0.05) {
-        await page.keyboard.press("ArrowDown");
-        await sleep(8 + Math.random() * 12);
-      } else if (Math.random() < 0.4) {
+      if (Math.random() < 0.4) {
         await page.keyboard.down("Shift");
         await sleep(10 + Math.random() * 7);
-        const direction = Math.random() < 0.7 ? "ArrowDown" : "ArrowLeft";
+        const direction = Math.random() < 0.7 ? "ArrowRight" : "ArrowLeft";
         await page.keyboard.press(direction);
         await page.keyboard.up("Shift");
-        await page.keyboard.press("ArrowDown");
         await sleep(5 + Math.random() * 8);
       } else if (Math.random() < 0.2) {
-        await page.keyboard.down("Shift");
+        await page.keyboard.down("ArrowDown");
         await sleep(10 + Math.random() * 7);
-        await page.keyboard.press("ArrowRight");
-        await page.keyboard.up("Shift");
-        await page.keyboard.press("ArrowDown");
-        await sleep(5 + Math.random() * 8);
       }
 
-      if (isPageUsingStrictRecaptchaMode) {
-        await humanMouseMove({
-          page,
-          start: {
-            x: 350 + Math.random() * 200,
-            y: 500 + Math.random() * 300,
-          },
-          end: {
-            x: 560 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
-            y: 650 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
-          },
-          moveTime: 500 + Math.random() * 100,
-          maxSteps: 25,
-          useTinyFlicksAtEnd: false,
-          delayAfterDone: 10 + Math.random() * 12,
-        });
-      }
-
+      const last_scroll = createTimeLabel("last_scroll");
+      console.time(last_scroll);
       await humanScrollToElement(
         page,
         selectedButton,
         isPageUsingStrictRecaptchaMode
       );
 
-      await humanClick(page, selectedButton, true);
-      // console.timeEnd(submissionTimeLabel);
+      console.timeEnd(last_scroll);
 
+      await humanClick(page, selectedButton, { log: true });
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
+      // console.timeEnd(submissionTimeLabel);
+
       // console.log("clickOptions", clickOptions);
 
       await sleep(27_000);
@@ -418,40 +406,6 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
-// 2.9s  {
-//   moveTime: 644.88191019873,
-//   hoverTime: 190.12604375782314,
-//   hesitate: 152.35696466448138,
-//   pressTime: 160.65730951608552
-// }
-
-// 2.7s  {
-//   moveTime: 644.7426967875355,
-//   hoverTime: 195.26710804146398,
-//   hesitate: 155.56445293966058,
-//   pressTime: 167.37894380587187
-// }
-
-// 2.8s {
-//   moveTime: 646.5474544710079,
-//   hoverTime: 198.91769156620686,
-//   hesitate: 150.70578246061757,
-//   pressTime: 164.27161036152668
-// }
-
-// 2.8s  {
-//   moveTime: 653.4178568056968,
-//   hoverTime: 192.49845947902497,
-//   hesitate: 158.46315992126802,
-//   pressTime: 160.7974255968207
-// }
-
-//  3 sec {
-//   moveTime: 658.8485430018737,
-//   hoverTime: 197.3121987600792,
-//   hesitate: 151.36555124154148,
-//   pressTime: 169.45787094721092
-// }
 
 // await cursor.click(selectedButton, {
 //   clickCount: 1,
