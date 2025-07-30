@@ -8,7 +8,7 @@ import humanMouseMove from "./humanMouseMove.mjs";
 
 const defaultOptions = {
   log: false,
-  moveTime: 640,
+  moveTime: 680,
   maxSteps: 20,
   hesitateTime: 130,
   hoverTime: 130,
@@ -26,7 +26,7 @@ const humanClick = async (page, target, options = {}) => {
     ...options,
   };
 
-  const moveTime = _moveTime + Math.random() * 140; // 640–780 ms
+  const moveTime = _moveTime + Math.random() * 110; // 670–780 ms
   const hoverTime = _hoverTime + Math.random() * 30; // 130–160 ms
   const hesitate = _hesitateTime + Math.random() * 30; // 130–160 ms
   const pressTime = 150 + Math.random() * 30; // 150–180 ms
@@ -48,7 +48,7 @@ const humanClick = async (page, target, options = {}) => {
 
   const start = {
     x: 100 + Math.random() * 500,
-    y: 100 + Math.random() * 350,
+    y: 100 + Math.random() * 480,
   };
 
   const end = {

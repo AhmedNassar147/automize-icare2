@@ -294,7 +294,7 @@ const processClientActionOnPatient = async ({
         );
 
         await fileInput.uploadFile(filePath);
-        await sleep(12 + Math.random() * 10);
+        await sleep(15 + Math.random() * 12);
       } catch (error) {
         const err = error?.message || String(error);
         await sendErrorMessage(
@@ -307,8 +307,6 @@ const processClientActionOnPatient = async ({
         break;
       }
 
-      await sleep(8 + Math.random() * 7);
-      await page.keyboard.press("ArrowDown");
       console.timeEnd(upload);
 
       // const submissionTimeLabel = createTimeLabel("click_submit");
@@ -336,8 +334,7 @@ const processClientActionOnPatient = async ({
         el.scrollIntoView({ behavior: "smooth", block: "end" })
       );
       await sleep(15 + Math.random() * 10);
-      await page.mouse.wheel({ deltaY: 50 });
-
+      await page.mouse.wheel({ deltaY: 100 + Math.random() * 20 });
       console.timeEnd(last_scroll);
 
       await humanClick(page, selectedButton, { log: true });
@@ -535,52 +532,3 @@ export default processClientActionOnPatient;
 //     _err
 //   );
 // }
-
-// const inputContainer = await sectionEl.$('div[id="upload-single-file"]');
-
-// if (!inputContainer) {
-//   await sendErrorMessage(
-//     "The File upload container was not found.",
-//     "inputContainer-not-found",
-//     buildDurationText(startTime, Date.now())
-//   );
-//   break;
-// }
-
-// if (!fileInput) {
-//   await sendErrorMessage(
-//     "The File upload input was not found.",
-//     "fileInput-not-found",
-//     buildDurationText(startTime, Date.now())
-//   );
-//   break;
-// }
-
-// let browseButton = await inputContainer.$(
-//   "button.MuiTypography-root.MuiLink-button"
-// );
-
-// if (!browseButton) {
-//   const [_browseButton] = await inputContainer.$x(
-//     './/button[contains(text(), "browse")]'
-//   );
-
-//   browseButton = _browseButton;
-// }
-
-// if (!browseButton) {
-//   await page.screenshot({
-//     path: `screenshots/browse-button-not-found-${referralId}-${Date.now()}.png`,
-//   });
-
-//   return await sendErrorMessage(`The "browse" button was not found.`);
-// }
-
-// console.log(`🖱️ Moving to "browse" button visually...`);
-
-// await cursor.move(browseButton, {
-//   moveDelay: 10 + Math.random() * 12,
-//   randomizeMoveDelay: true,
-//   maxTries: 6,
-//   moveSpeed: 1.4 + Math.random() * 0.3,
-// });
