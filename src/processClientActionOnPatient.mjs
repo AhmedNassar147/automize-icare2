@@ -15,7 +15,7 @@ import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 // import humanMouseMove from "./humanMouseMove.mjs";
 import humanClick from "./humanClick.mjs";
-import humanScrollToElement from "./humanScrollToElement.mjs";
+// import humanScrollToElement from "./humanScrollToElement.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -332,11 +332,11 @@ const processClientActionOnPatient = async ({
 
       const last_scroll = createTimeLabel("last_scroll");
       console.time(last_scroll);
-      await humanScrollToElement(
-        page,
-        selectedButton,
-        isPageUsingStrictRecaptchaMode
+      await selectedButton.evaluate((el) =>
+        el.scrollIntoView({ behavior: "smooth", block: "end" })
       );
+      await sleep(15 + Math.random() * 10);
+      await page.mouse.wheel({ deltaY: 50 });
 
       console.timeEnd(last_scroll);
 
