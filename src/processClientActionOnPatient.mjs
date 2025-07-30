@@ -157,7 +157,8 @@ const processClientActionOnPatient = async ({
   await sleep(30);
   const referralIdRecordResult = await collectHomePageTableRows(
     page,
-    referralId
+    referralId,
+    3000
   );
 
   let { iconButton } = referralIdRecordResult || {};
@@ -165,7 +166,7 @@ const processClientActionOnPatient = async ({
   if (!iconButton) {
     console.log("referralIdRecordResult: ", referralIdRecordResult);
     await sendErrorMessage(
-      "The Pending referrals list is empty or eye button not found.",
+      "The Pending referrals table is empty or eye button not found.",
       "no-patients-in-home-table",
       buildDurationText(preparingStartTime, Date.now())
     );

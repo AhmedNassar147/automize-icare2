@@ -8,11 +8,15 @@ import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 
 const tableRowsSelector = `${homePageTableSelector} tbody tr`;
 
-const collectHomePageTableRows = async (page, referralId = null) => {
+const collectHomePageTableRows = async (
+  page,
+  referralId = null,
+  tableBodyTimeout
+) => {
   // // Wait only if needed
   await page
     .waitForSelector(tableRowsSelector, {
-      timeout: 2000,
+      timeout: tableBodyTimeout || 2000,
       visible: true,
     })
     .catch(() => {}); // Ignore timeout
@@ -34,7 +38,7 @@ const collectHomePageTableRows = async (page, referralId = null) => {
         await getReferralIdBasedTableRow(row);
 
       if (currentReferralId === referralId) {
-        const iconButton = await row.$("td:last-child button");
+        const iconButton = await row.$("td.iconCell button");
         return { row, iconButton };
       }
     }

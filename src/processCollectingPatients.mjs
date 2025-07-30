@@ -88,7 +88,8 @@ const processCollectingPatients = async ({
         break;
       }
 
-      const iconButton = await row.$("td:last-child button");
+      const iconButton = await row.$("td.iconCell button");
+
       if (!iconButton) {
         console.log("⚠️ No button found in this row, skipping...");
         break;
