@@ -275,6 +275,7 @@ const processClientActionOnPatient = async ({
       );
 
       await makeKeyboardNoise(page);
+
       console.timeEnd(dropdown);
 
       const upload = createTimeLabel("upload");
@@ -330,11 +331,13 @@ const processClientActionOnPatient = async ({
 
       const last_scroll = createTimeLabel("last_scroll");
       console.time(last_scroll);
-      await selectedButton.evaluate((el) =>
-        el.scrollIntoView({ behavior: "smooth", block: "end" })
-      );
+
+      await page.mouse.wheel({ deltaY: 110 + Math.random() * 20 });
       await sleep(15 + Math.random() * 10);
-      await page.mouse.wheel({ deltaY: 100 + Math.random() * 20 });
+
+      await selectedButton.evaluate((el) =>
+        el.scrollIntoView({ behavior: "smooth", block: "center" })
+      );
       console.timeEnd(last_scroll);
 
       await humanClick(page, selectedButton, { log: true });

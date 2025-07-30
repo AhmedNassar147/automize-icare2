@@ -5,6 +5,7 @@
  */
 import { writeFile } from "fs/promises";
 import humanClick from "./humanClick.mjs";
+import sleep from "./sleep.mjs";
 import { htmlFilesPath } from "./constants.mjs";
 
 const selectAttachmentDropdownOption = async (
@@ -43,16 +44,8 @@ const selectAttachmentDropdownOption = async (
       await page.keyboard.press("ArrowDown");
     }
 
-    if (isPageUsingStrictRecaptchaMode) {
-      await humanClick(page, dropdownTrigger, {
-        moveTime: 40 + Math.random() * 20,
-        maxSteps: 10 + Math.floor(Math.random() * 4),
-        hesitateTime: 80,
-        hoverTime: 80,
-      });
-    } else {
-      await dropdownTrigger.click();
-    }
+    await dropdownTrigger.click();
+    await sleep(30 + Math.random() * 20);
   } catch (err) {
     console.log(
       "⚠️ Default click failed, falling back to humanClick.",
