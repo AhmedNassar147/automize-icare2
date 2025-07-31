@@ -14,16 +14,16 @@ const defaultOptions = {
 export const humanBehaviorConfig = {
   fast: {
     moveTime: [390, 460], // milliseconds total
-    maxSteps: [14, 19], // fewer steps but still curved
-    hoverTime: [80, 100], // short hover
-    hesitateTime: [80, 110], // minimal hesitation
+    maxSteps: [14, 18], // fewer steps but still curved
+    hoverTime: [80, 105], // short hover
+    hesitateTime: [80, 115], // minimal hesitation
     startDistance: [70, 185], // short entrance
   },
   default: {
-    moveTime: [560, 685],
-    maxSteps: [20, 24],
+    moveTime: [540, 685],
+    maxSteps: [19, 22],
     hoverTime: [100, 140],
-    hesitateTime: [100, 125],
+    hesitateTime: [90, 125],
     startDistance: [120, 245],
   },
 };
