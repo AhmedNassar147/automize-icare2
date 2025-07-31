@@ -321,7 +321,7 @@ const processClientActionOnPatient = async ({
       await humanClick(page, selectedButton, {
         log: true,
         maxSteps: isSuperAcceptance ? 13 : 18,
-        moveTime: isSuperAcceptance ? 350 : 470,
+        moveTime: isSuperAcceptance ? 350 : 480,
         hesitateTime: isSuperAcceptance ? 80 : 110,
       });
       console.timeEnd(submit_time);
