@@ -7,7 +7,6 @@ import { writeFile } from "fs/promises";
 import humanClick from "./humanClick.mjs";
 // import sleep from "./sleep.mjs";
 import { htmlFilesPath } from "./constants.mjs";
-import sleep from "./sleep.mjs";
 
 const selectAttachmentDropdownOption = async (
   page,
@@ -41,7 +40,7 @@ const selectAttachmentDropdownOption = async (
       .scrollIntoViewIfNeeded({ timeout: 3000 })
       .catch(() => {});
 
-    await sleep(15 * Math.random() * 25);
+    // await sleep(10 * Math.random() * 10);
 
     await dropdownTrigger.click();
   } catch (err) {

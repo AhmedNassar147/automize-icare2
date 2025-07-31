@@ -36,7 +36,6 @@ const humanMouseMove = async ({
   end,
   moveTime,
   maxSteps,
-  useTinyFlicksAtEnd = false,
   delayAfterDone,
 }) => {
   if (!page || !start || !end || typeof page.mouse?.move !== "function") {
@@ -44,7 +43,7 @@ const humanMouseMove = async ({
     return;
   }
 
-  const _maxSteps = maxSteps || 15;
+  const _maxSteps = maxSteps || 12;
   const _moveTime = moveTime ? moveTime : 20 + Math.random() * 80;
 
   const cp1 = jitter(
@@ -60,13 +59,14 @@ const humanMouseMove = async ({
   );
 
   const distance = Math.hypot(end.x - start.x, end.y - start.y);
-
-  const steps = Math.max(
+  const steps = Math.min(
     _maxSteps,
-    Math.round(distance / 8) + Math.floor(Math.random() * 4)
+    Math.max(13, Math.round(distance / 9) + Math.floor(Math.random() * 3))
   );
 
   const delay = _moveTime / steps;
+
+  console.log("steps", steps);
 
   let last = start;
   for (let i = 0; i <= steps; i++) {
@@ -75,11 +75,11 @@ const humanMouseMove = async ({
 
     const { x, y } = bezier(start, cp1, cp2, end, t);
 
-    if (Math.random() < 0.03 && i > 1 && i < steps - 1) {
+    if (Math.random() < 0.05 && i > 1 && i < steps - 1) {
       await sleep(4 + Math.random() * 6);
     }
 
-    const jitteredDelay = Math.max(4, delay + Math.random() * 3 - 2);
+    const jitteredDelay = delay * (0.85 + Math.random() * 0.3);
     await page.mouse.move(x, y);
     last = { x, y };
     await sleep(jitteredDelay);
@@ -92,12 +92,12 @@ const humanMouseMove = async ({
     await page.mouse.move(end.x, end.y, { steps: correctionSteps });
   }
 
-  // if (useTinyFlicksAtEnd && Math.random() < 0.5) {
-  //   const settleX = end.x + (Math.random() - 0.5) * 1.2;
-  //   const settleY = end.y + (Math.random() - 0.5) * 1.2;
-  //   await sleep(8 + Math.random() * 10);
-  //   await page.mouse.move(settleX, settleY, { steps: 2 });
-  // }
+  if (Math.random() < 0.5) {
+    const settleX = end.x + (Math.random() - 0.5) * 1.2;
+    const settleY = end.y + (Math.random() - 0.5) * 1.2;
+    await sleep(5 + Math.random() * 10);
+    await page.mouse.move(settleX, settleY, { steps: 2 });
+  }
 
   if (delayAfterDone) {
     await sleep(delayAfterDone);

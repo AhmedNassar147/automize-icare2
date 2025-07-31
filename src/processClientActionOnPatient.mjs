@@ -182,7 +182,7 @@ const processClientActionOnPatient = async ({
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 84;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 85;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -257,18 +257,16 @@ const processClientActionOnPatient = async ({
       //   });
       // }
 
-      const first = createTimeLabel("first");
-      console.time(first);
-      await page.keyboard.press("ArrowDown");
+      if (Math.random() < 0.3) {
+        const first = createTimeLabel("first");
+        console.time(first);
+        await page.keyboard.press("ArrowDown");
+        await sleep(7 + Math.random() * 8);
+        console.timeEnd(first);
+      }
 
-      // if(Math.random() < 0.2){
-      //   await sleep(20 + Math.random() * 10);
-      //   await page.keyboard.press("ArrowDown");
-      // }
-      console.timeEnd(first);
-
-      const dropdown = createTimeLabel("check_dropdown");
-      console.time(dropdown);
+      const check_dropdown = createTimeLabel("check_dropdown");
+      console.time(check_dropdown);
       // const [hasOptionSelected, selectionError] =
       await selectAttachmentDropdownOption(
         page,
@@ -277,21 +275,26 @@ const processClientActionOnPatient = async ({
       );
 
       await makeKeyboardNoise(page);
-      console.timeEnd(dropdown);
+      console.timeEnd(check_dropdown);
 
       const upload = createTimeLabel("upload");
       console.time(upload);
 
       try {
-        const browseButton = await page.$("#upload-single-file button");
-        if (browseButton) {
-          await browseButton.hover();
-          await sleep(10 + Math.random() * 8);
-        }
-
         const fileInput = await page.$(
           '#upload-single-file input[type="file"]'
         );
+
+        // if (Math.random() < 0.4) {
+        const browse_button = createTimeLabel("browse");
+        console.time(browse_button);
+        const browseButton = await page.$("#upload-single-file button");
+        if (browseButton) {
+          await browseButton.hover();
+          await sleep(6 + Math.random() * 8);
+        }
+        console.timeEnd(browse_button);
+        // }
 
         await fileInput.uploadFile(filePath);
         // await sleep(10 + Math.random() * 10);
@@ -318,7 +321,7 @@ const processClientActionOnPatient = async ({
 
       const last_scroll = createTimeLabel("last_scroll");
       console.time(last_scroll);
-      if (Math.random() < 0.2) {
+      if (Math.random() < 0.4) {
         await page.keyboard.press("ArrowDown");
       }
       // await page.mouse.wheel({ deltaY: 110 + Math.random() * 20 });
@@ -328,7 +331,7 @@ const processClientActionOnPatient = async ({
       //   el.scrollIntoView({ behavior: "smooth", block: "center" })
       // );
 
-      await sleep(12 + Math.random() * 5);
+      // await sleep(10 + Math.random() * 5);
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       console.timeEnd(last_scroll);
 

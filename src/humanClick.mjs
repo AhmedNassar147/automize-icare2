@@ -8,10 +8,10 @@ import humanMouseMove from "./humanMouseMove.mjs";
 
 const defaultOptions = {
   log: false,
-  moveTime: 360,
-  maxSteps: 15,
+  moveTime: 400,
+  maxSteps: 14,
+  hoverTime: 80,
   hesitateTime: 90,
-  hoverTime: 90,
 };
 
 const humanClick = async (page, target, options = {}) => {
@@ -28,8 +28,10 @@ const humanClick = async (page, target, options = {}) => {
 
   const moveTime = _moveTime + Math.random() * 100;
   const hoverTime = _hoverTime + Math.random() * 25;
-  const hesitate = _hesitateTime + Math.random() * 20;
-  const pressTime = 145 + Math.random() * 25;
+  const hesitate = _hesitateTime + Math.random() * 25;
+  const pressTime = Math.round(
+    90 + (Math.random() - 0.5) * 40 + (Math.random() - 0.5) * 20
+  );
 
   let element = target;
   if (typeof target === "string") {
@@ -46,14 +48,19 @@ const humanClick = async (page, target, options = {}) => {
     return;
   }
 
-  const start = {
-    x: 150 + Math.random() * 500,
-    y: 150 + Math.random() * 480,
-  };
-
   const end = {
     x: box.x + box.width / 2 + (Math.random() - 0.5) * 6,
     y: box.y + box.height / 2 + (Math.random() - 0.5) * 6,
+  };
+
+  const startOffsetAngle = Math.random() * 2 * Math.PI;
+  const t = Math.random();
+  const eased = Math.sqrt(t); // Bias toward smaller values
+  const startDistance = 90 + eased * 220;
+
+  const start = {
+    x: end.x + Math.cos(startOffsetAngle) * startDistance,
+    y: end.y + Math.sin(startOffsetAngle) * startDistance,
   };
 
   await humanMouseMove({
@@ -62,7 +69,6 @@ const humanClick = async (page, target, options = {}) => {
     end,
     moveTime,
     maxSteps,
-    useTinyFlicksAtEnd: false,
   });
 
   if (Math.random() < 0.3) {
