@@ -36,12 +36,6 @@ export const PATIENT_SECTIONS_STATUS = {
   },
 };
 
-export const USER_ACTION_TYPES = {
-  ACCEPT: "accept",
-  REJECT: "reject",
-  COLLECT: "collect",
-};
-
 // the user will review patient till the 13 minute of the counter
 // export const STOP_USER_ACTION_MINUTES = ALLOWED_MINUTES_TO_REVIEW_PATIENTS - 13;
 
@@ -65,7 +59,15 @@ export const USER_MESSAGES = {
   noAction: "No-need, No scheduled action to cancel for this patient.",
 };
 
+export const USER_ACTION_TYPES = {
+  SUPPER_ACCEPT: "super_accept",
+  ACCEPT: "accept",
+  REJECT: "reject",
+  COLLECT: "collect",
+};
+
 export const CONFIRMATION_TYPES = {
+  SUPPER_ACCEPT: ["super_accept", "11"],
   ACCEPT: ["accept", "1"],
   REJECT: ["reject", "00"],
   CANCEL: ["cancel", "0"],

@@ -69,7 +69,8 @@ const processClientActionOnPatient = async ({
   // console.time("🕒 prepare_user_action_start_time");
   const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
-  const { referralId, patientName, referralEndTimestamp } = patient;
+  const { referralId, patientName, referralEndTimestamp, isSuperAcceptance } =
+    patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
 
@@ -177,6 +178,10 @@ const processClientActionOnPatient = async ({
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
 
+  if (isSuperAcceptance) {
+    console.log(`supper acceptance is running on patient ${referralId}`);
+  }
+
   const createTimeLabel = (label) =>
     `${label}_${referralId}_${submissionButtonsRetry}`;
 
@@ -239,25 +244,7 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
-      // if (isPageUsingStrictRecaptchaMode) {
-      //   await humanMouseMove({
-      //     page,
-      //     start: {
-      //       x: 80 + Math.random() * 100,
-      //       y: 100 + Math.random() * 150,
-      //     },
-      //     end: {
-      //       x: 190 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
-      //       y: 300 + (Math.random() - 0.5) * 8 + (Math.random() < 0.3 ? 5 : 0),
-      //     },
-      //     moveTime: 50 + Math.random() * 100,
-      //     maxSteps: 10,
-      //     useTinyFlicksAtEnd: false,
-      //     delayAfterDone: 10 + Math.random() * 12,
-      //   });
-      // }
-
-      if (Math.random() < 0.3) {
+      if (!isSuperAcceptance && Math.random() < 0.3) {
         const first = createTimeLabel("first");
         console.time(first);
         await page.keyboard.press("ArrowDown");
@@ -278,6 +265,7 @@ const processClientActionOnPatient = async ({
       console.timeEnd(check_dropdown);
 
       const upload = createTimeLabel("upload");
+
       console.time(upload);
 
       try {
@@ -285,16 +273,16 @@ const processClientActionOnPatient = async ({
           '#upload-single-file input[type="file"]'
         );
 
-        // if (Math.random() < 0.4) {
-        const browse_button = createTimeLabel("browse");
-        console.time(browse_button);
-        const browseButton = await page.$("#upload-single-file button");
-        if (browseButton) {
-          await browseButton.hover();
-          await sleep(6 + Math.random() * 8);
+        if (!isSuperAcceptance) {
+          const browse_button = createTimeLabel("browse");
+          console.time(browse_button);
+          const browseButton = await page.$("#upload-single-file button");
+          if (browseButton) {
+            await browseButton.hover();
+          }
         }
+
         console.timeEnd(browse_button);
-        // }
 
         await fileInput.uploadFile(filePath);
         // await sleep(10 + Math.random() * 10);
@@ -309,7 +297,6 @@ const processClientActionOnPatient = async ({
         await closeCurrentPage(true);
         break;
       }
-
       console.timeEnd(upload);
 
       // const submissionTimeLabel = createTimeLabel("click_submit");
@@ -321,23 +308,22 @@ const processClientActionOnPatient = async ({
 
       const last_scroll = createTimeLabel("last_scroll");
       console.time(last_scroll);
-      if (Math.random() < 0.4) {
+
+      if (isSuperAcceptance || Math.random() < 0.4) {
         await page.keyboard.press("ArrowDown");
       }
-      // await page.mouse.wheel({ deltaY: 110 + Math.random() * 20 });
-      // await sleep(15 + Math.random() * 10);
 
-      // await selectedButton.evaluate((el) =>
-      //   el.scrollIntoView({ behavior: "smooth", block: "center" })
-      // );
-
-      // await sleep(10 + Math.random() * 5);
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       console.timeEnd(last_scroll);
 
       const submit_time = createTimeLabel("submit");
       console.time(submit_time);
-      await humanClick(page, selectedButton, { log: true });
+      await humanClick(page, selectedButton, {
+        log: true,
+        maxSteps: isSuperAcceptance ? 13 : 18,
+        moveTime: isSuperAcceptance ? 350 : 450,
+        hesitateTime: isSuperAcceptance ? 80 : 110,
+      });
       console.timeEnd(submit_time);
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);

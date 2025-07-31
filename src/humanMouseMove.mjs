@@ -61,7 +61,10 @@ const humanMouseMove = async ({
   const distance = Math.hypot(end.x - start.x, end.y - start.y);
   const steps = Math.min(
     _maxSteps,
-    Math.max(13, Math.round(distance / 9) + Math.floor(Math.random() * 3))
+    Math.max(
+      _maxSteps,
+      Math.round(distance / 9) + Math.floor(Math.random() * 3)
+    )
   );
 
   const delay = _moveTime / steps;

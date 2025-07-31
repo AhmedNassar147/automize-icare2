@@ -170,7 +170,7 @@ export const initializeClient = async (
           return;
         }
 
-        const { isAcceptance, isCancellation, isRejection } =
+        const { isAcceptance, isSuperAcceptance, isCancellation, isRejection } =
           validateReplyText(body);
 
         if (!isAcceptance && !isCancellation && !isRejection) {
@@ -214,7 +214,8 @@ export const initializeClient = async (
         if (isAcceptance) {
           result = await patientsStore.scheduleAcceptedPatient(
             referralId,
-            scheduledAt
+            scheduledAt,
+            isSuperAcceptance
           );
         } else if (isRejection) {
           result = await patientsStore.scheduleRejectedPatient(

@@ -8,10 +8,10 @@ import humanMouseMove from "./humanMouseMove.mjs";
 
 const defaultOptions = {
   log: false,
-  moveTime: 400,
-  maxSteps: 14,
+  moveTime: 480,
+  maxSteps: 18,
   hoverTime: 80,
-  hesitateTime: 90,
+  hesitateTime: 110,
 };
 
 const humanClick = async (page, target, options = {}) => {
@@ -26,12 +26,10 @@ const humanClick = async (page, target, options = {}) => {
     ...options,
   };
 
-  const moveTime = _moveTime + Math.random() * 100;
+  const moveTime = _moveTime + Math.random() * 200;
   const hoverTime = _hoverTime + Math.random() * 25;
   const hesitate = _hesitateTime + Math.random() * 25;
-  const pressTime = Math.round(
-    90 + (Math.random() - 0.5) * 40 + (Math.random() - 0.5) * 20
-  );
+  const pressTime = 110 + Math.random() * 70;
 
   let element = target;
   if (typeof target === "string") {
@@ -56,7 +54,7 @@ const humanClick = async (page, target, options = {}) => {
   const startOffsetAngle = Math.random() * 2 * Math.PI;
   const t = Math.random();
   const eased = Math.sqrt(t); // Bias toward smaller values
-  const startDistance = 90 + eased * 220;
+  const startDistance = 130 + eased * 250;
 
   const start = {
     x: end.x + Math.cos(startOffsetAngle) * startDistance,
@@ -91,6 +89,10 @@ const humanClick = async (page, target, options = {}) => {
   await element.hover();
   await sleep(hoverTime);
   await sleep(hesitate);
+
+  await page.mouse.move(end.x + Math.random(), end.y + Math.random(), {
+    steps: 1,
+  });
 
   await page.mouse.down();
   await sleep(pressTime);

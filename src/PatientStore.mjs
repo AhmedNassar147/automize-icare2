@@ -93,6 +93,7 @@ class PatientStore extends EventEmitter {
         eventName: isRejection ? "patientRejected" : "patientAccepted",
         patient,
         skipResetingPatient: true,
+        isSuperAcceptance: patient.isSuperAcceptance,
       });
 
       console.log(`Called From Initial Schedule: ${message}`);
@@ -180,6 +181,7 @@ class PatientStore extends EventEmitter {
     patient,
     scheduledAt,
     skipResetingPatient,
+    isSuperAcceptance,
   }) {
     const {
       referralId,
@@ -220,6 +222,7 @@ class PatientStore extends EventEmitter {
       const updatedPatient = {
         ...patient,
         scheduledAt,
+        isSuperAcceptance,
         userActionName: isAccepting
           ? USER_ACTION_TYPES.ACCEPT
           : USER_ACTION_TYPES.REJECT,
@@ -239,7 +242,7 @@ class PatientStore extends EventEmitter {
     };
   }
 
-  async scheduleAcceptedPatient(referralId, scheduledAt) {
+  async scheduleAcceptedPatient(referralId, scheduledAt, isSuperAcceptance) {
     const { patient, message } = this.findPatientByReferralId(referralId);
     if (message) {
       return { success: false, message };
@@ -250,6 +253,7 @@ class PatientStore extends EventEmitter {
       eventName: "patientAccepted",
       patient,
       scheduledAt,
+      isSuperAcceptance,
     });
   }
 
