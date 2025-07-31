@@ -20,11 +20,11 @@ export const humanBehaviorConfig = {
     startDistance: [70, 185], // short entrance
   },
   default: {
-    moveTime: [540, 685],
+    moveTime: [540, 720],
     maxSteps: [19, 22],
     hoverTime: [100, 140],
-    hesitateTime: [90, 125],
-    startDistance: [120, 245],
+    hesitateTime: [95, 125],
+    startDistance: [135, 245],
   },
 };
 
