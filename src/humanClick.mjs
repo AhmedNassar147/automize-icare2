@@ -7,35 +7,48 @@ import sleep from "./sleep.mjs";
 import humanMouseMove from "./humanMouseMove.mjs";
 
 const defaultOptions = {
-  log: false,
-  moveTime: 480,
-  maxSteps: 18,
-  hoverTime: 80,
-  hesitateTime: 110,
+  debug: false,
+  mode: "default",
 };
 
-const humanClick = async (page, target, options = {}) => {
-  const {
-    log,
-    moveTime: _moveTime,
-    hoverTime: _hoverTime,
-    hesitateTime: _hesitateTime,
-    maxSteps,
-  } = {
-    ...defaultOptions,
-    ...options,
-  };
+export const humanBehaviorConfig = {
+  fast: {
+    moveTime: [390, 460], // milliseconds total
+    maxSteps: [14, 19], // fewer steps but still curved
+    hoverTime: [80, 100], // short hover
+    hesitateTime: [80, 110], // minimal hesitation
+    startDistance: [70, 185], // short entrance
+  },
+  default: {
+    moveTime: [560, 685],
+    maxSteps: [20, 24],
+    hoverTime: [100, 140],
+    hesitateTime: [100, 125],
+    startDistance: [120, 245],
+  },
+};
 
-  const moveTime = _moveTime + Math.random() * 200;
-  const hoverTime = _hoverTime + Math.random() * 25;
-  const hesitate = _hesitateTime + Math.random() * 25;
-  const pressTime = 110 + Math.random() * 70;
+const pickInRange = ([min, max]) => min + Math.random() * (max - min);
+
+const humanClick = async (page, target, options = {}) => {
+  const { mode: _mode, debug } = { ...defaultOptions, ...options };
+
+  const mode = _mode === "fast" ? "fast" : "default";
+
+  const config = humanBehaviorConfig[mode];
+
+  const moveTime = pickInRange(config.moveTime);
+  const hoverTime = pickInRange(config.hoverTime);
+  const hesitateTime = pickInRange(config.hesitateTime);
+  const pressTime = 115 + Math.random() * 85;
+  const startDistance = pickInRange(config.startDistance);
+  const maxSteps = Math.floor(pickInRange(config.maxSteps));
 
   let element = target;
   if (typeof target === "string") {
     element = await page.$(target);
     if (!element) {
-      console.log(`humanClick: Element ${target} not found on the page.`);
+      console.log(`humanClick: Element ${target} not found`);
       return;
     }
   }
@@ -52,13 +65,12 @@ const humanClick = async (page, target, options = {}) => {
   };
 
   const startOffsetAngle = Math.random() * 2 * Math.PI;
-  const t = Math.random();
-  const eased = Math.sqrt(t); // Bias toward smaller values
-  const startDistance = 120 + eased * 230;
+  const eased = Math.sqrt(Math.random()); // bias toward smaller
+  const actualDistance = startDistance * eased;
 
   const start = {
-    x: end.x + Math.cos(startOffsetAngle) * startDistance,
-    y: end.y + Math.sin(startOffsetAngle) * startDistance,
+    x: end.x + Math.cos(startOffsetAngle) * actualDistance,
+    y: end.y + Math.sin(startOffsetAngle) * actualDistance,
   };
 
   await humanMouseMove({
@@ -69,41 +81,30 @@ const humanClick = async (page, target, options = {}) => {
     maxSteps,
   });
 
-  if (Math.random() < 0.3) {
-    const settleOffsetX = (Math.random() - 0.5) * 1.5;
-    const settleOffsetY = (Math.random() - 0.5) * 1.5;
-
-    const settleX = Math.min(
-      box.x + box.width,
-      Math.max(box.x, end.x + settleOffsetX)
-    );
-    const settleY = Math.min(
-      box.y + box.height,
-      Math.max(box.y, end.y + settleOffsetY)
-    );
-
+  if (Math.random() < 0.55) {
+    const settleX = end.x + (Math.random() - 0.5) * 1.2;
+    const settleY = end.y + (Math.random() - 0.5) * 1.2;
     await page.mouse.move(settleX, settleY, { steps: 2 });
-    await sleep(8 + Math.random() * 10);
+    await sleep(5 + Math.random() * 8);
   }
 
   await element.hover();
   await sleep(hoverTime);
-  await sleep(hesitate);
-
-  await page.mouse.move(end.x + Math.random(), end.y + Math.random(), {
-    steps: 1,
-  });
+  await sleep(hesitateTime);
 
   await page.mouse.down();
   await sleep(pressTime);
   await page.mouse.up();
 
-  if (log) {
-    console.log("CLICK_OPTIONS", {
+  if (debug) {
+    console.log("CLICK_STATS", {
+      mode,
       moveTime,
       hoverTime,
-      hesitate,
+      hesitateTime,
       pressTime,
+      maxSteps,
+      startDistance,
     });
   }
 };

@@ -49,10 +49,7 @@ const selectAttachmentDropdownOption = async (
       err.message
     );
     await humanClick(page, dropdownTrigger, {
-      moveTime: 40 + Math.random() * 20,
-      maxSteps: 10 + Math.floor(Math.random() * 4),
-      hesitateTime: 80,
-      hoverTime: 80,
+      mode: "fast",
     });
   }
 

@@ -244,7 +244,7 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
-      if (!isSuperAcceptance && Math.random() < 0.3) {
+      if (isSuperAcceptance || Math.random() < 0.3) {
         const first = createTimeLabel("first");
         console.time(first);
         await page.keyboard.press("ArrowDown");
@@ -273,16 +273,15 @@ const processClientActionOnPatient = async ({
           '#upload-single-file input[type="file"]'
         );
 
-        if (!isSuperAcceptance) {
+        if (isSuperAcceptance) {
           const browse_button = createTimeLabel("browse");
           console.time(browse_button);
           const browseButton = await page.$("#upload-single-file button");
           if (browseButton) {
             await browseButton.hover();
           }
+          console.timeEnd(browse_button);
         }
-
-        console.timeEnd(browse_button);
 
         await fileInput.uploadFile(filePath);
         // await sleep(10 + Math.random() * 10);
@@ -316,13 +315,13 @@ const processClientActionOnPatient = async ({
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       console.timeEnd(last_scroll);
 
+      await sleep(25 + Math.random() * 25);
+
       const submit_time = createTimeLabel("submit");
       console.time(submit_time);
       await humanClick(page, selectedButton, {
-        log: true,
-        maxSteps: isSuperAcceptance ? 13 : 18,
-        moveTime: isSuperAcceptance ? 350 : 480,
-        hesitateTime: isSuperAcceptance ? 80 : 110,
+        debug: true,
+        mode: isSuperAcceptance ? "fast" : "default",
       });
       console.timeEnd(submit_time);
       const durationText = buildDurationText(startTime, Date.now());
