@@ -5,7 +5,6 @@
  */
 import { writeFile } from "fs/promises";
 import humanClick from "./humanClick.mjs";
-// import sleep from "./sleep.mjs";
 import { htmlFilesPath } from "./constants.mjs";
 
 const selectAttachmentDropdownOption = async (

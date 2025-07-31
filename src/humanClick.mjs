@@ -24,7 +24,7 @@ export const humanBehaviorConfig = {
     maxSteps: [19, 22],
     hoverTime: [100, 130],
     hesitateTime: [95, 125],
-    startDistance: [140, 200],
+    startDistance: [140, 210],
   },
 };
 

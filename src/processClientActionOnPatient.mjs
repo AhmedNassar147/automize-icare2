@@ -244,13 +244,10 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
-      if (isSuperAcceptance || Math.random() < 0.3) {
-        const first = createTimeLabel("first");
-        console.time(first);
-        await page.keyboard.press("ArrowDown");
-        await sleep(7 + Math.random() * 8);
-        console.timeEnd(first);
-      }
+      const first = createTimeLabel("first");
+      console.time(first);
+      await page.keyboard.press("ArrowDown");
+      console.timeEnd(first);
 
       const check_dropdown = createTimeLabel("check_dropdown");
       console.time(check_dropdown);
@@ -273,18 +270,15 @@ const processClientActionOnPatient = async ({
           '#upload-single-file input[type="file"]'
         );
 
-        if (isSuperAcceptance) {
-          const browse_button = createTimeLabel("browse");
-          console.time(browse_button);
-          const browseButton = await page.$("#upload-single-file button");
-          if (browseButton) {
-            await browseButton.hover();
-          }
-          console.timeEnd(browse_button);
+        const browse_button = createTimeLabel("browse");
+        console.time(browse_button);
+        const browseButton = await page.$("#upload-single-file button");
+        if (browseButton) {
+          await browseButton.hover();
         }
+        console.timeEnd(browse_button);
 
         await fileInput.uploadFile(filePath);
-        // await sleep(10 + Math.random() * 10);
       } catch (error) {
         const err = error?.message || String(error);
         await sendErrorMessage(
@@ -298,9 +292,6 @@ const processClientActionOnPatient = async ({
       }
       console.timeEnd(upload);
 
-      // const submissionTimeLabel = createTimeLabel("click_submit");
-      // console.time(submissionTimeLabel);
-
       const selectedButton = isAcceptance
         ? referralButtons[0]
         : referralButtons[1];
@@ -308,27 +299,21 @@ const processClientActionOnPatient = async ({
       const last_scroll = createTimeLabel("last_scroll");
       console.time(last_scroll);
 
-      if (isSuperAcceptance || Math.random() < 0.4) {
-        await page.keyboard.press("ArrowDown");
-      }
+      await page.keyboard.press("ArrowDown");
 
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       console.timeEnd(last_scroll);
 
-      await sleep(25 + Math.random() * 25);
-
+      await sleep(8 + Math.random() * 10);
       const submit_time = createTimeLabel("submit");
       console.time(submit_time);
       await humanClick(page, selectedButton, {
         debug: true,
-        mode: isSuperAcceptance ? "fast" : "default",
+        // mode: isSuperAcceptance ? "fast" : "default",
       });
       console.timeEnd(submit_time);
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
-      // console.timeEnd(submissionTimeLabel);
-
-      // console.log("clickOptions", clickOptions);
 
       await sleep(28_000);
 
