@@ -54,7 +54,7 @@ const humanClick = async (page, target, options = {}) => {
   const startOffsetAngle = Math.random() * 2 * Math.PI;
   const t = Math.random();
   const eased = Math.sqrt(t); // Bias toward smaller values
-  const startDistance = 130 + eased * 250;
+  const startDistance = 120 + eased * 230;
 
   const start = {
     x: end.x + Math.cos(startOffsetAngle) * startDistance,
