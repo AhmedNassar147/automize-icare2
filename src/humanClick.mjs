@@ -13,18 +13,18 @@ const defaultOptions = {
 
 export const humanBehaviorConfig = {
   fast: {
-    moveTime: [390, 460], // milliseconds total
+    moveTime: [370, 430], // milliseconds total
     maxSteps: [14, 18], // fewer steps but still curved
-    hoverTime: [80, 105], // short hover
-    hesitateTime: [80, 115], // minimal hesitation
-    startDistance: [70, 185], // short entrance
+    hoverTime: [75, 95], // short hover
+    hesitateTime: [80, 100], // minimal hesitation
+    startDistance: [70, 170], // short entrance
   },
   default: {
     moveTime: [540, 720],
     maxSteps: [19, 22],
-    hoverTime: [100, 140],
+    hoverTime: [100, 130],
     hesitateTime: [95, 125],
-    startDistance: [135, 245],
+    startDistance: [140, 200],
   },
 };
 
@@ -40,7 +40,7 @@ const humanClick = async (page, target, options = {}) => {
   const moveTime = pickInRange(config.moveTime);
   const hoverTime = pickInRange(config.hoverTime);
   const hesitateTime = pickInRange(config.hesitateTime);
-  const pressTime = 115 + Math.random() * 85;
+  const pressTime = 130 + Math.random() * 50;
   const startDistance = pickInRange(config.startDistance);
   const maxSteps = Math.floor(pickInRange(config.maxSteps));
 
@@ -105,6 +105,8 @@ const humanClick = async (page, target, options = {}) => {
       pressTime,
       maxSteps,
       startDistance,
+      start,
+      end,
     });
   }
 };
