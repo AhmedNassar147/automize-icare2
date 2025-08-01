@@ -59,17 +59,11 @@ const humanMouseMove = async ({
   );
 
   const distance = Math.hypot(end.x - start.x, end.y - start.y);
-  const steps = Math.min(
-    _maxSteps,
-    Math.max(
-      _maxSteps,
-      Math.round(distance / 9) + Math.floor(Math.random() * 3)
-    )
-  );
-
-  const delay = _moveTime / steps;
+  const steps = Math.max(Math.floor(distance / 8), _maxSteps);
 
   console.log("steps", steps);
+
+  const delay = _moveTime / steps;
 
   let last = start;
   for (let i = 0; i <= steps; i++) {
@@ -78,7 +72,7 @@ const humanMouseMove = async ({
 
     const { x, y } = bezier(start, cp1, cp2, end, t);
 
-    if (Math.random() < 0.05 && i > 1 && i < steps - 1) {
+    if (Math.random() < 0.4 && i > 1 && i < steps - 1) {
       await sleep(4 + Math.random() * 6);
     }
 

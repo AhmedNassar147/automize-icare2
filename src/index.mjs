@@ -29,6 +29,7 @@ import {
   generatedPdfsPathForRejection,
   screenshotsFolderDirectory,
 } from "./constants.mjs";
+// import fuckThem from "./fuckThem.mjs";
 
 const collectConfirmedPatient = false;
 
@@ -141,6 +142,10 @@ const collectConfirmedPatient = false;
         timezone: "Asia/Riyadh",
       }
     );
+
+    // (async () => {
+    //   await fuckThem(browser);
+    // })();
 
     patientsStore.on(
       "patientsAdded",

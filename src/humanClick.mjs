@@ -17,14 +17,12 @@ export const humanBehaviorConfig = {
     maxSteps: [14, 18], // fewer steps but still curved
     hoverTime: [75, 95], // short hover
     hesitateTime: [80, 100], // minimal hesitation
-    startDistance: [70, 170], // short entrance
   },
   default: {
     moveTime: [540, 720],
-    maxSteps: [19, 22],
+    maxSteps: [20, 24],
     hoverTime: [100, 130],
     hesitateTime: [95, 125],
-    startDistance: [140, 210],
   },
 };
 
@@ -40,8 +38,7 @@ const humanClick = async (page, target, options = {}) => {
   const moveTime = pickInRange(config.moveTime);
   const hoverTime = pickInRange(config.hoverTime);
   const hesitateTime = pickInRange(config.hesitateTime);
-  const pressTime = 130 + Math.random() * 50;
-  const startDistance = pickInRange(config.startDistance);
+  const pressTime = 140 + Math.random() * 50;
   const maxSteps = Math.floor(pickInRange(config.maxSteps));
 
   let element = target;
@@ -64,13 +61,14 @@ const humanClick = async (page, target, options = {}) => {
     y: box.y + box.height / 2 + (Math.random() - 0.5) * 6,
   };
 
-  const startOffsetAngle = Math.random() * 2 * Math.PI;
-  const eased = Math.sqrt(Math.random()); // bias toward smaller
-  const actualDistance = startDistance * eased;
+  const offset = {
+    x: -pickInRange([70, 160]) + (Math.random() - 0.5) * 14,
+    y: -pickInRange([90, 180]) + (Math.random() - 0.5) * 14,
+  };
 
   const start = {
-    x: end.x + Math.cos(startOffsetAngle) * actualDistance,
-    y: end.y + Math.sin(startOffsetAngle) * actualDistance,
+    x: end.x + offset.x,
+    y: end.y + offset.y,
   };
 
   await humanMouseMove({
@@ -79,6 +77,7 @@ const humanClick = async (page, target, options = {}) => {
     end,
     moveTime,
     maxSteps,
+    delayAfterDone: 20 + Math.random() * 15,
   });
 
   if (Math.random() < 0.55) {
@@ -104,7 +103,6 @@ const humanClick = async (page, target, options = {}) => {
       hesitateTime,
       pressTime,
       maxSteps,
-      startDistance,
       start,
       end,
     });

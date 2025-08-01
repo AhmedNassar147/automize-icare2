@@ -270,13 +270,13 @@ const processClientActionOnPatient = async ({
           '#upload-single-file input[type="file"]'
         );
 
-        const browse_button = createTimeLabel("browse");
-        console.time(browse_button);
-        const browseButton = await page.$("#upload-single-file button");
-        if (browseButton) {
-          await browseButton.hover();
-        }
-        console.timeEnd(browse_button);
+        // const browse_button = createTimeLabel("browse");
+        // console.time(browse_button);
+        // const browseButton = await page.$("#upload-single-file button");
+        // if (browseButton) {
+        //   await browseButton.hover();
+        // }
+        // console.timeEnd(browse_button);
 
         await fileInput.uploadFile(filePath);
       } catch (error) {
@@ -304,14 +304,13 @@ const processClientActionOnPatient = async ({
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       console.timeEnd(last_scroll);
 
-      await sleep(8 + Math.random() * 10);
-      const submit_time = createTimeLabel("submit");
-      console.time(submit_time);
-      await humanClick(page, selectedButton, {
-        debug: true,
-        // mode: isSuperAcceptance ? "fast" : "default",
-      });
-      console.timeEnd(submit_time);
+      // const submit_time = createTimeLabel("submit");
+      // console.time(submit_time);
+      // await humanClick(page, selectedButton, {
+      //   debug: true,
+      //   // mode: isSuperAcceptance ? "fast" : "default",
+      // });
+      // console.timeEnd(submit_time);
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
 
