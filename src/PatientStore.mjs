@@ -308,6 +308,10 @@ class PatientStore extends EventEmitter {
     this.patientTimers.clear();
   }
 
+  forceReloadHomePage() {
+    this.emit("forceReloadHomePage", true);
+  }
+
   toJSON() {
     return {
       patients: this.getAllPatients(),

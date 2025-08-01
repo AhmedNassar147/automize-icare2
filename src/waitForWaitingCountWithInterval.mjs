@@ -114,6 +114,13 @@ const waitForWaitingCountWithInterval = async ({
         continue;
       }
 
+      sendWhatsappMessage.on("forceReloadHomePage", async () => {
+        await closePageSafely(page);
+
+        page = null;
+        cursor = null;
+      });
+
       const { count } = await searchForItemCountAndClickItIfFound(
         page,
         targetText,

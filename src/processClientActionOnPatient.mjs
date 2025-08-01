@@ -315,6 +315,7 @@ const processClientActionOnPatient = async ({
       }
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
+      sendWhatsappMessage.forceReloadHomePage();
 
       await sleep(28_000);
 
