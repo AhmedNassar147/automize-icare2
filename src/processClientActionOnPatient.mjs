@@ -304,13 +304,15 @@ const processClientActionOnPatient = async ({
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
       console.timeEnd(last_scroll);
 
-      // const submit_time = createTimeLabel("submit");
-      // console.time(submit_time);
-      // await humanClick(page, selectedButton, {
-      //   debug: true,
-      //   // mode: isSuperAcceptance ? "fast" : "default",
-      // });
-      // console.timeEnd(submit_time);
+      if (isSuperAcceptance) {
+        const submit_time = createTimeLabel("submit");
+        console.time(submit_time);
+        await humanClick(page, selectedButton, {
+          debug: true,
+          // mode: isSuperAcceptance ? "fast" : "default",
+        });
+        console.timeEnd(submit_time);
+      }
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
 

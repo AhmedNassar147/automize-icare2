@@ -15,14 +15,14 @@ export const humanBehaviorConfig = {
   fast: {
     moveTime: [370, 430], // milliseconds total
     maxSteps: [14, 18], // fewer steps but still curved
-    hoverTime: [75, 95], // short hover
-    hesitateTime: [80, 100], // minimal hesitation
+    hoverTime: [75, 110], // short hover
+    hesitateTime: [80, 110], // minimal hesitation
   },
   default: {
     moveTime: [540, 720],
-    maxSteps: [20, 24],
-    hoverTime: [100, 130],
-    hesitateTime: [95, 125],
+    maxSteps: [20, 25],
+    hoverTime: [100, 140],
+    hesitateTime: [95, 135],
   },
 };
 
@@ -38,7 +38,7 @@ const humanClick = async (page, target, options = {}) => {
   const moveTime = pickInRange(config.moveTime);
   const hoverTime = pickInRange(config.hoverTime);
   const hesitateTime = pickInRange(config.hesitateTime);
-  const pressTime = 140 + Math.random() * 50;
+  const pressTime = 130 + Math.random() * 50;
   const maxSteps = Math.floor(pickInRange(config.maxSteps));
 
   let element = target;
@@ -61,9 +61,18 @@ const humanClick = async (page, target, options = {}) => {
     y: box.y + box.height / 2 + (Math.random() - 0.5) * 6,
   };
 
+  const direction = Math.random() < 0.65 ? "top-left" : "top-right";
+  const startingXPoint = pickInRange([75, 165]);
+
+  const yOffset =
+    Math.random() < 0.15 ? -pickInRange([220, 320]) : -pickInRange([120, 200]);
+
   const offset = {
-    x: -pickInRange([70, 160]) + (Math.random() - 0.5) * 14,
-    y: -pickInRange([90, 180]) + (Math.random() - 0.5) * 14,
+    x:
+      direction === "top-left"
+        ? -startingXPoint + (Math.random() - 0.5) * 20
+        : startingXPoint + (Math.random() - 0.5) * 20,
+    y: yOffset + (Math.random() - 0.5) * 20,
   };
 
   const start = {
@@ -105,6 +114,7 @@ const humanClick = async (page, target, options = {}) => {
       maxSteps,
       start,
       end,
+      direction,
     });
   }
 };
