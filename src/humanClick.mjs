@@ -14,15 +14,13 @@ const defaultOptions = {
 export const humanBehaviorConfig = {
   fast: {
     moveTime: [370, 430], // milliseconds total
-    maxSteps: [14, 18], // fewer steps but still curved
     hoverTime: [75, 110], // short hover
     hesitateTime: [80, 110], // minimal hesitation
   },
   default: {
-    moveTime: [540, 720],
-    maxSteps: [20, 25],
-    hoverTime: [100, 140],
-    hesitateTime: [95, 135],
+    moveTime: [590, 700],
+    hoverTime: [105, 130],
+    hesitateTime: [110, 130],
   },
 };
 
@@ -39,7 +37,6 @@ const humanClick = async (page, target, options = {}) => {
   const hoverTime = pickInRange(config.hoverTime);
   const hesitateTime = pickInRange(config.hesitateTime);
   const pressTime = 130 + Math.random() * 50;
-  const maxSteps = Math.floor(pickInRange(config.maxSteps));
 
   let element = target;
   if (typeof target === "string") {
@@ -61,18 +58,18 @@ const humanClick = async (page, target, options = {}) => {
     y: box.y + box.height / 2 + (Math.random() - 0.5) * 6,
   };
 
-  const direction = Math.random() < 0.65 ? "top-left" : "top-right";
-  const startingXPoint = pickInRange([75, 165]);
+  const direction = Math.random() < 0.68 ? "top-left" : "top-right";
+  const startingXPoint = pickInRange([80, 160]);
 
   const yOffset =
-    Math.random() < 0.15 ? -pickInRange([220, 320]) : -pickInRange([120, 200]);
+    Math.random() < 0.15 ? -pickInRange([160, 230]) : -pickInRange([125, 200]);
 
   const offset = {
     x:
       direction === "top-left"
-        ? -startingXPoint + (Math.random() - 0.5) * 20
-        : startingXPoint + (Math.random() - 0.5) * 20,
-    y: yOffset + (Math.random() - 0.5) * 20,
+        ? -startingXPoint + (Math.random() - 0.5) * 15
+        : startingXPoint + (Math.random() - 0.5) * 15,
+    y: yOffset + (Math.random() - 0.5) * 15,
   };
 
   const start = {
@@ -85,8 +82,7 @@ const humanClick = async (page, target, options = {}) => {
     start,
     end,
     moveTime,
-    maxSteps,
-    delayAfterDone: 20 + Math.random() * 15,
+    delayAfterDone: 15 + Math.random() * 15,
   });
 
   if (Math.random() < 0.55) {
@@ -111,7 +107,6 @@ const humanClick = async (page, target, options = {}) => {
       hoverTime,
       hesitateTime,
       pressTime,
-      maxSteps,
       start,
       end,
       direction,
