@@ -301,7 +301,7 @@ const processClientActionOnPatient = async ({
 
       const submit_start_time = performance.now();
       await clickButtonThatObservedByRecapctahaInvisbleV2(page, selectedButton);
-      console.log(buildDurationText(performance.now(), submit_start_time));
+      console.log(buildDurationText(submit_start_time, performance.now()));
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
 
