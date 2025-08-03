@@ -4,6 +4,7 @@
  *
  */
 import { unlink, writeFile } from "fs/promises";
+import { performance } from "perf_hooks";
 import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
@@ -188,7 +189,7 @@ const processClientActionOnPatient = async ({
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 84.5;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 84.75;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -298,18 +299,13 @@ const processClientActionOnPatient = async ({
       // await page.keyboard.press("ArrowDown");
       // console.timeEnd(last_scroll);
 
-      const submit_time = createTimeLabel("submit");
-      console.time(submit_time);
+      const submit_start_time = performance.now();
       await clickButtonThatObservedByRecapctahaInvisbleV2(page, selectedButton);
+      const submit_end_time = performance.now();
+      console.log(
+        `SUBMISSION TIME ${(submit_end_time - submit_start_time).toFixed(2)} ms`
+      );
 
-      // if (isSuperAcceptance) {
-      //   await humanClick(page, selectedButton, {
-      //     debug: true,
-
-      //     // mode: isSuperAcceptance ? "fast" : "default",
-      //   });
-      // }
-      console.timeEnd(submit_time);
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
 

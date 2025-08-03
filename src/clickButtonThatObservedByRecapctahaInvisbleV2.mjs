@@ -48,7 +48,7 @@ const moveMouseWithCurve = async (
     await page.mouse.move(pt.x, pt.y);
     await sleep(5 + Math.random() * 8);
     if (Math.random() < 0.25) {
-      await sleep(10 + Math.random() * 20);
+      await sleep(5 + Math.random() * 5);
     }
   }
 };
@@ -70,6 +70,26 @@ const fireMovementEvent = async (page, finalPoint) => {
       );
     },
     { x: finalPoint.x, y: finalPoint.y }
+  );
+};
+
+const fireMouseEvent = async (page, eventName, finalClick) => {
+  await page.evaluate(
+    (eventName, { x, y }) => {
+      const el = document.elementFromPoint(x, y);
+      if (el) {
+        el.dispatchEvent(
+          new MouseEvent(eventName, {
+            bubbles: true,
+            cancelable: true,
+            clientX: x,
+            clientY: y,
+          })
+        );
+      }
+    },
+    eventName,
+    finalClick
   );
 };
 
@@ -102,37 +122,29 @@ export const clickButtonThatObservedByRecapctahaInvisbleV2 = async (
   const randomInside =
     insideTargets[Math.floor(Math.random() * insideTargets.length)];
 
-  await sleep(10 + Math.random() * 10);
+  await sleep(3 + Math.random() * 5);
 
   // Step 1: Move from start to center
   await moveMouseWithCurve(
     page,
     start,
     center,
-    48,
-    22 + Math.floor(Math.random() * 4)
+    45,
+    20 + (Math.random() < 0.45 ? 1 : 0)
   );
 
-  await sleep(15 + Math.random() * 25);
-
-  // Optional: Micro jitter
-  // if (Math.random() < 0.7) {
-  //   console.log("Optional: Micro jitter (done)");
-  //   await page.mouse.move(
-  //     center.x + (Math.random() - 0.5) * 1.2,
-  //     center.y + (Math.random() - 0.5) * 1.2
-  //   );
-  //   // await sleep(5 + Math.random() * 5);c
-  // }
+  await sleep(15 + Math.random() * 20);
 
   // Step 2: Move to random inside target
   await moveMouseWithCurve(
     page,
     center,
     randomInside,
-    18,
-    11 + Math.floor(Math.random() * 6)
+    12,
+    11 + Math.floor(Math.random() * 4)
   );
+  await fireMovementEvent(page, randomInside);
+  await sleep(5 + Math.random() * 8);
 
   // Optional micro jitter again
   if (Math.random() < 0.8) {
@@ -141,29 +153,10 @@ export const clickButtonThatObservedByRecapctahaInvisbleV2 = async (
       randomInside.x + (Math.random() - 0.5) * 2,
       randomInside.y + (Math.random() - 0.5) * 2
     );
-    await sleep(10 + Math.random() * 5);
   }
 
-  // Simulate human decision delay
-  await sleep(20 + Math.random() * 20);
+  await sleep(10 + Math.random() * 10);
 
-  // Step 3: Settle back to center
-  await moveMouseWithCurve(
-    page,
-    randomInside,
-    center,
-    12,
-    14 + Math.floor(Math.random() * 4)
-  );
-
-  await sleep(10 + Math.random() * 20);
-
-  // Fire hover
-  await buttonElementHandle.hover();
-  await sleep(60 + Math.random() * 40);
-  await fireMovementEvent(page, center);
-
-  // Final micro positioning
   const finalClick = {
     x: center.x + (Math.random() - 0.5) * 3,
     y: center.y + (Math.random() - 0.5) * 3,
@@ -172,16 +165,31 @@ export const clickButtonThatObservedByRecapctahaInvisbleV2 = async (
   finalClick.x = Math.min(Math.max(finalClick.x, box.x), box.x + box.width);
   finalClick.y = Math.min(Math.max(finalClick.y, box.y), box.y + box.height);
 
-  await page.mouse.move(finalClick.x, finalClick.y);
-  await fireMovementEvent(page, finalClick);
-  await sleep(20 + Math.random() * 10);
+  // Step 3: Settle back to center
+  await moveMouseWithCurve(
+    page,
+    randomInside,
+    finalClick,
+    16,
+    13 + Math.floor(Math.random() * 4)
+  );
 
-  const holdTime = 95 + Math.random() * (Math.random() < 0.3 ? 120 : 70);
+  await buttonElementHandle.hover(); // Step 1
+  await fireMovementEvent(page, finalClick); // Step 2
+  await page.mouse.move(finalClick.x, finalClick.y); // Step 3
+  await sleep(60 + Math.random() * 40); // Step 4
+
+  const holdTime = 90 + Math.random() * (Math.random() < 0.3 ? 120 : 70);
+
+  await fireMouseEvent(page, "mousedown", finalClick);
+  await sleep(5 + Math.random() * 8);
   await page.mouse.down();
-  await sleep(holdTime);
+  await sleep(holdTime); // simulate holding
+
+  await fireMouseEvent(page, "mouseup", finalClick);
+  await sleep(20 + Math.random() * 20);
   await page.mouse.up();
-  // await sleep(20 + Math.random() * 20);
-  console.log("holdTime", holdTime);
+  await fireMouseEvent(page, "click", finalClick);
 };
 
 export default clickButtonThatObservedByRecapctahaInvisbleV2;
