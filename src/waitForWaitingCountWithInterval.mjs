@@ -175,14 +175,12 @@ const waitForWaitingCountWithInterval = async ({
       });
     } catch (error) {
       console.error("🛑 Unexpected error during loop:", error.message);
-      const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(
-        page
-      );
+    }
+    const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(page);
 
-      if (shouldCreateNewpage) {
-        page = null;
-        cursor = null;
-      }
+    if (shouldCreateNewpage) {
+      page = null;
+      cursor = null;
     }
   }
 };

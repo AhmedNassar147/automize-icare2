@@ -7,7 +7,7 @@ import { unlink, writeFile } from "fs/promises";
 import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
-import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
+// import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
