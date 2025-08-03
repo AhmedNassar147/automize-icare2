@@ -44,7 +44,10 @@ const makeUserLoggedInOrOpenHomePage = async ({
   const password = process.env.CLIENT_PASSWORD;
 
   let page = currentPage || (await browser.newPage());
-  let cursor = _cursor && currentPage ? _cursor : createCursor(page);
+  let cursor =
+    _cursor && currentPage
+      ? _cursor
+      : createCursor(page, { x: 280, y: 400 }, true);
 
   let retries = 0;
 
@@ -85,7 +88,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
           const button = await page.$(loginButtonSelector);
 
           const submit_start_time = performance.now();
-          await clickButtonThatObservedByRecapctahaInvisbleV2(page, button);
+          await clickButtonThatObservedByRecapctahaInvisbleV2(cursor, button);
           const submit_end_time = performance.now();
           console.log(
             `login time ${(

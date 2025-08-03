@@ -4,7 +4,7 @@
  *
  */
 import { unlink, writeFile } from "fs/promises";
-import { performance } from "perf_hooks";
+// import { performance } from "perf_hooks";
 import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
@@ -17,7 +17,7 @@ import closePageSafely from "./closePageSafely.mjs";
 // import humanMouseMove from "./humanMouseMove.mjs";
 // import humanClick from "./humanClick.mjs";
 // import humanScrollToElement from "./humanScrollToElement.mjs";
-import clickButtonThatObservedByRecapctahaInvisbleV2 from "./clickButtonThatObservedByRecapctahaInvisbleV2.mjs";
+// import clickButtonThatObservedByRecapctahaInvisbleV2 from "./clickButtonThatObservedByRecapctahaInvisbleV2.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -98,7 +98,7 @@ const processClientActionOnPatient = async ({
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
 
-  const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+  const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,
     startingPageUrl: HOME_PAGE_URL,
@@ -299,9 +299,12 @@ const processClientActionOnPatient = async ({
       // await page.keyboard.press("ArrowDown");
       // console.timeEnd(last_scroll);
 
-      const submit_start_time = performance.now();
-      await clickButtonThatObservedByRecapctahaInvisbleV2(page, selectedButton);
-      console.log(buildDurationText(submit_start_time, performance.now()));
+      // const submit_start_time = performance.now();
+      // await clickButtonThatObservedByRecapctahaInvisbleV2(
+      //   cursor,
+      //   selectedButton
+      // );
+      // console.log(buildDurationText(submit_start_time, performance.now()));
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
 
