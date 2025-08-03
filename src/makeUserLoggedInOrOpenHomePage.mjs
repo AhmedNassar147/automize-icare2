@@ -4,9 +4,10 @@
  *
  */
 import { createCursor } from "ghost-cursor";
+import { performance } from "perf_hooks";
 import checkIfLoginPage from "./checkIfLoginPage.mjs";
 import humanType from "./humanType.mjs";
-import humanClick from "./humanClick.mjs";
+// import humanClick from "./humanClick.mjs";
 import sleep from "./sleep.mjs";
 import waitForHomeLink from "./waitForHomeLink.mjs";
 import gotToLoginPage from "./gotToLoginPage.mjs";
@@ -83,9 +84,15 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
           const button = await page.$(loginButtonSelector);
 
-          console.time("click-login-button");
+          const submit_start_time = performance.now();
           await clickButtonThatObservedByRecapctahaInvisbleV2(page, button);
-          console.timeEnd("click-login-button");
+          const submit_end_time = performance.now();
+          console.log(
+            `login time ${(
+              (submit_end_time - submit_start_time) /
+              1000
+            ).toFixed(2)} s`
+          );
           // await humanClick(page, loginButtonSelector);
 
           try {

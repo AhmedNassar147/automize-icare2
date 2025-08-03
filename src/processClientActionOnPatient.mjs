@@ -51,7 +51,7 @@ const buildDurationText = (startTime, endTime) => {
   const executionDurationMs = endTime - startTime;
 
   const durationText = `🕒 *Took*: \`${(executionDurationMs / 1000).toFixed(
-    1
+    2
   )} seconds\``;
 
   return durationText;
@@ -301,11 +301,7 @@ const processClientActionOnPatient = async ({
 
       const submit_start_time = performance.now();
       await clickButtonThatObservedByRecapctahaInvisbleV2(page, selectedButton);
-      const submit_end_time = performance.now();
-      console.log(
-        `SUBMISSION TIME ${(submit_end_time - submit_start_time).toFixed(2)} ms`
-      );
-
+      console.log(buildDurationText(performance.now(), submit_start_time));
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
 
