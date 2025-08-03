@@ -30,7 +30,7 @@ const buttonsSelector = "section.referral-button-container button";
 const getSubmissionButtonsIfFound = async (page) => {
   try {
     await page.waitForSelector(buttonsSelector, {
-      timeout: 3_000,
+      timeout: 1500,
       // visible: true,
     });
 
@@ -187,7 +187,7 @@ const processClientActionOnPatient = async ({
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 85;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 84.5;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -257,8 +257,6 @@ const processClientActionOnPatient = async ({
         actionName,
         isPageUsingStrictRecaptchaMode
       );
-
-      await page.keyboard.press("ArrowDown");
       // console.timeEnd(check_dropdown);
 
       // const upload = createTimeLabel("upload");
@@ -314,13 +312,13 @@ const processClientActionOnPatient = async ({
 
       await sleep(29_000);
 
+      patientsStore.forceReloadHomePage();
+
       const currentPageUrl = page.url();
 
       const isRequestDone = currentPageUrl
         .toLowerCase()
         .includes("dashboard/referral");
-
-      patientsStore.forceReloadHomePage();
 
       if (!isRequestDone) {
         await sendErrorMessage(
