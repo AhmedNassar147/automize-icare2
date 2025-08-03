@@ -4,14 +4,14 @@
  *
  */
 import { createCursor } from "ghost-cursor";
-import { performance } from "perf_hooks";
+// import { performance } from "perf_hooks";
 import checkIfLoginPage from "./checkIfLoginPage.mjs";
 import humanType from "./humanType.mjs";
-// import humanClick from "./humanClick.mjs";
+import humanClick from "./humanClick.mjs";
 import sleep from "./sleep.mjs";
 import waitForHomeLink from "./waitForHomeLink.mjs";
 import gotToLoginPage from "./gotToLoginPage.mjs";
-import clickButtonThatObservedByRecapctahaInvisbleV2 from "./clickButtonThatObservedByRecapctahaInvisbleV2.mjs";
+// import clickButtonThatObservedByRecapctahaInvisbleV2 from "./clickButtonThatObservedByRecapctahaInvisbleV2.mjs";
 import shouldCloseAppWhenLogin from "./shouldCloseAppWhenLogin.mjs";
 import { homePageTableSelector } from "./constants.mjs";
 
@@ -85,18 +85,17 @@ const makeUserLoggedInOrOpenHomePage = async ({
           await humanType(page, cursor, "#Input_Username", userName);
           await humanType(page, cursor, "#Input_Password", password);
 
-          const button = await page.$(loginButtonSelector);
-
-          const submit_start_time = performance.now();
-          await clickButtonThatObservedByRecapctahaInvisbleV2(cursor, button);
-          const submit_end_time = performance.now();
-          console.log(
-            `login time ${(
-              (submit_end_time - submit_start_time) /
-              1000
-            ).toFixed(2)} s`
-          );
-          // await humanClick(page, loginButtonSelector);
+          // const button = await page.$(loginButtonSelector);
+          // const submit_start_time = performance.now();
+          // await clickButtonThatObservedByRecapctahaInvisbleV2(cursor, button);
+          // const submit_end_time = performance.now();
+          // console.log(
+          //   `login time ${(
+          //     (submit_end_time - submit_start_time) /
+          //     1000
+          //   ).toFixed(2)} s`
+          // );
+          await humanClick(page, loginButtonSelector);
 
           try {
             await page.waitForNavigation({
