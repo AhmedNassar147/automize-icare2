@@ -41,7 +41,7 @@ const getWhenCaseStarted = (
   }
 
   if (useDefaultMessageIfNotFound && !message) {
-    message = "There is 14 minute(s) and 42 second(s) remaining.";
+    message = "There is 4 minute(s) and 42 second(s) remaining.";
   }
 
   const date = new Date(serverDateHeader); // Server time (GMT)

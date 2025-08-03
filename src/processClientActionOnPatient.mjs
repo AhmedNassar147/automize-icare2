@@ -31,7 +31,7 @@ const getSubmissionButtonsIfFound = async (page) => {
   try {
     await page.waitForSelector(buttonsSelector, {
       timeout: 3_000,
-      visible: true,
+      // visible: true,
     });
 
     const buttons = await page.$$(buttonsSelector);
@@ -244,13 +244,13 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
-      const first = createTimeLabel("first");
-      console.time(first);
-      await page.keyboard.press("ArrowDown");
-      console.timeEnd(first);
+      // const first = createTimeLabel("first");
+      // console.time(first);
+      // await page.keyboard.press("ArrowDown");
+      // console.timeEnd(first);
 
-      const check_dropdown = createTimeLabel("check_dropdown");
-      console.time(check_dropdown);
+      // const check_dropdown = createTimeLabel("check_dropdown");
+      // console.time(check_dropdown);
       // const [hasOptionSelected, selectionError] =
       await selectAttachmentDropdownOption(
         page,
@@ -258,13 +258,11 @@ const processClientActionOnPatient = async ({
         isPageUsingStrictRecaptchaMode
       );
 
-      await makeKeyboardNoise(page);
-      console.timeEnd(check_dropdown);
+      await page.keyboard.press("ArrowDown");
+      // console.timeEnd(check_dropdown);
 
-      const upload = createTimeLabel("upload");
-
-      console.time(upload);
-
+      // const upload = createTimeLabel("upload");
+      // console.time(upload);
       try {
         const fileInput = await page.$(
           '#upload-single-file input[type="file"]'
@@ -277,7 +275,6 @@ const processClientActionOnPatient = async ({
         //   await browseButton.hover();
         // }
         // console.timeEnd(browse_button);
-
         await fileInput.uploadFile(filePath);
       } catch (error) {
         const err = error?.message || String(error);
@@ -290,40 +287,40 @@ const processClientActionOnPatient = async ({
         await closeCurrentPage(true);
         break;
       }
-      console.timeEnd(upload);
+      // console.timeEnd(upload);
 
       const selectedButton = isAcceptance
         ? referralButtons[0]
         : referralButtons[1];
 
-      const last_scroll = createTimeLabel("last_scroll");
-      console.time(last_scroll);
-
-      await page.keyboard.press("ArrowDown");
-
-      await selectedButton.scrollIntoViewIfNeeded({ timeout: 3000 });
-      console.timeEnd(last_scroll);
+      // const last_scroll = createTimeLabel("last_scroll");
+      // console.time(last_scroll);
+      await selectedButton.scrollIntoViewIfNeeded({ timeout: 2500 });
+      // await page.keyboard.press("ArrowDown");
+      // console.timeEnd(last_scroll);
 
       if (isSuperAcceptance) {
         const submit_time = createTimeLabel("submit");
         console.time(submit_time);
         await humanClick(page, selectedButton, {
           debug: true,
+
           // mode: isSuperAcceptance ? "fast" : "default",
         });
         console.timeEnd(submit_time);
       }
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
-      sendWhatsappMessage.forceReloadHomePage();
 
-      await sleep(28_000);
+      await sleep(29_000);
 
       const currentPageUrl = page.url();
 
       const isRequestDone = currentPageUrl
         .toLowerCase()
         .includes("dashboard/referral");
+
+      patientsStore.forceReloadHomePage();
 
       if (!isRequestDone) {
         await sendErrorMessage(

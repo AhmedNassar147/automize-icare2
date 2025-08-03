@@ -308,6 +308,14 @@ class PatientStore extends EventEmitter {
     this.patientTimers.clear();
   }
 
+  // cancelHomePageForceReload() {
+  //   this.removeAllListeners("forceReloadHomePage");
+  // }
+
+  hasReloadListener() {
+    return this.listenerCount("forceReloadHomePage") > 0;
+  }
+
   forceReloadHomePage() {
     this.emit("forceReloadHomePage", true);
   }

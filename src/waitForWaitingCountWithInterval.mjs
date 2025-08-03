@@ -8,6 +8,7 @@ import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs
 import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import closePageSafely from "./closePageSafely.mjs";
+import goToHomePage from "./goToHomePage.mjs";
 import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
 
 const INTERVAL = 62_000;
@@ -66,6 +67,33 @@ const waitForWaitingCountWithInterval = async ({
     } patients...`
   );
 
+  if (!patientsStore.hasReloadListener()) {
+    patientsStore.on("forceReloadHomePage", async () => {
+      console.log("📢 Received forceReloadHomePage event");
+      if (page) {
+        const currentPageUrl = page.url();
+
+        const isHomePage = currentPageUrl
+          .toLowerCase()
+          .includes("dashboard/referral");
+
+        if (!isHomePage) {
+          await sleep(6_000);
+        }
+
+        try {
+          await goToHomePage(page);
+          await page.reload({ waitUntil: "domcontentloaded" });
+          console.log("🔄 Page reloaded successfully from event.");
+        } catch (err) {
+          console.error("🔁 Error during manual homepage reload:", err.message);
+        }
+      } else {
+        console.warn("⚠️ forceReloadHomePage event fired but page is null");
+      }
+    });
+  }
+
   while (true) {
     try {
       const [newPage, newCursor, isLoggedIn, isErrorAboutLockedOut] =
@@ -114,13 +142,6 @@ const waitForWaitingCountWithInterval = async ({
         continue;
       }
 
-      sendWhatsappMessage.on("forceReloadHomePage", async () => {
-        await closePageSafely(page);
-
-        page = null;
-        cursor = null;
-      });
-
       const { count } = await searchForItemCountAndClickItIfFound(
         page,
         targetText,
@@ -154,13 +175,14 @@ const waitForWaitingCountWithInterval = async ({
       });
     } catch (error) {
       console.error("🛑 Unexpected error during loop:", error.message);
-    }
+      const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(
+        page
+      );
 
-    const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(page);
-
-    if (shouldCreateNewpage) {
-      page = null;
-      cursor = null;
+      if (shouldCreateNewpage) {
+        page = null;
+        cursor = null;
+      }
     }
   }
 };

@@ -21,7 +21,7 @@ const selectAttachmentDropdownOption = async (
     'div[role="combobox"]',
     {
       timeout: 5000,
-      visible: true,
+      // visible: true,
     }
   );
 
@@ -35,13 +35,17 @@ const selectAttachmentDropdownOption = async (
 
   // Step 2: Try to click (fast), fallback to humanClick if needed
   try {
-    await dropdownTrigger
-      .scrollIntoViewIfNeeded({ timeout: 3000 })
-      .catch(() => {});
+    // await dropdownTrigger
+    //   .scrollIntoViewIfNeeded({ timeout: 3000 })
+    //   .catch(() => {});
 
     // await sleep(10 * Math.random() * 10);
 
-    await dropdownTrigger.click();
+    // await dropdownTrigger.click();
+    await Promise.allSettled([
+      dropdownTrigger.scrollIntoViewIfNeeded({ timeout: 2000 }),
+      dropdownTrigger.click(),
+    ]);
   } catch (err) {
     console.log(
       "⚠️ Default click failed, falling back to humanClick.",
@@ -60,7 +64,7 @@ const selectAttachmentDropdownOption = async (
 
     const optionEl = await page.waitForSelector(selector, {
       timeout: 6500,
-      visible: true,
+      // visible: true,
     });
 
     await optionEl.click();
