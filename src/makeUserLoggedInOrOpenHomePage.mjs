@@ -10,6 +10,7 @@ import humanClick from "./humanClick.mjs";
 import sleep from "./sleep.mjs";
 import waitForHomeLink from "./waitForHomeLink.mjs";
 import gotToLoginPage from "./gotToLoginPage.mjs";
+import clickButtonThatObservedByRecapctahaInvisbleV2 from "./clickButtonThatObservedByRecapctahaInvisbleV2.mjs";
 import shouldCloseAppWhenLogin from "./shouldCloseAppWhenLogin.mjs";
 import { homePageTableSelector } from "./constants.mjs";
 
@@ -79,7 +80,13 @@ const makeUserLoggedInOrOpenHomePage = async ({
         if (isLoginPage) {
           await humanType(page, cursor, "#Input_Username", userName);
           await humanType(page, cursor, "#Input_Password", password);
-          await humanClick(page, loginButtonSelector);
+
+          const button = await page.$(loginButtonSelector);
+
+          console.time("click-login-button");
+          await clickButtonThatObservedByRecapctahaInvisbleV2(page, button);
+          console.timeEnd("click-login-button");
+          // await humanClick(page, loginButtonSelector);
 
           try {
             await page.waitForNavigation({

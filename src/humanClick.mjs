@@ -36,7 +36,7 @@ const humanClick = async (page, target, options = {}) => {
   const moveTime = pickInRange(config.moveTime);
   const hoverTime = pickInRange(config.hoverTime);
   const hesitateTime = pickInRange(config.hesitateTime);
-  const pressTime = 130 + Math.random() * 50;
+  const pressTime = 120 + Math.random() * 50;
 
   let element = target;
   if (typeof target === "string") {
@@ -82,7 +82,7 @@ const humanClick = async (page, target, options = {}) => {
     start,
     end,
     moveTime,
-    delayAfterDone: 15 + Math.random() * 15,
+    delayAfterDone: 10 + Math.random() * 15,
   });
 
   if (Math.random() < 0.55) {

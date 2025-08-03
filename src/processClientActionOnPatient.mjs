@@ -14,8 +14,9 @@ import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 // import humanMouseMove from "./humanMouseMove.mjs";
-import humanClick from "./humanClick.mjs";
+// import humanClick from "./humanClick.mjs";
 // import humanScrollToElement from "./humanScrollToElement.mjs";
+import clickButtonThatObservedByRecapctahaInvisbleV2 from "./clickButtonThatObservedByRecapctahaInvisbleV2.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -297,16 +298,18 @@ const processClientActionOnPatient = async ({
       // await page.keyboard.press("ArrowDown");
       // console.timeEnd(last_scroll);
 
-      if (isSuperAcceptance) {
-        const submit_time = createTimeLabel("submit");
-        console.time(submit_time);
-        await humanClick(page, selectedButton, {
-          debug: true,
+      const submit_time = createTimeLabel("submit");
+      console.time(submit_time);
+      await clickButtonThatObservedByRecapctahaInvisbleV2(page, selectedButton);
 
-          // mode: isSuperAcceptance ? "fast" : "default",
-        });
-        console.timeEnd(submit_time);
-      }
+      // if (isSuperAcceptance) {
+      //   await humanClick(page, selectedButton, {
+      //     debug: true,
+
+      //     // mode: isSuperAcceptance ? "fast" : "default",
+      //   });
+      // }
+      console.timeEnd(submit_time);
       const durationText = buildDurationText(startTime, Date.now());
       console.log("durationText", durationText);
 
