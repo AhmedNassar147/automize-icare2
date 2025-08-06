@@ -107,7 +107,8 @@ class PatientStore extends EventEmitter {
     for (const patient of newPatients) {
       const key = this.keyExtractor(patient);
       if (key && !this.patientsById.has(key)) {
-        this.patientsById.set(key, patient);
+        const { files, ...patientData } = patient;
+        this.patientsById.set(key, patientData);
         added.push(patient);
       }
     }

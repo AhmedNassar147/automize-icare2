@@ -36,7 +36,7 @@ const processSendCollectedPatientsToWhatsapp =
     }) => {
       const message =
         `🚨 *New Case Alert!* 🚨\n\n` +
-        `🕐 *Actionable At*: ${referralEndDateActionablAt}\n\n` +
+        `🕐 *Actionable At*: ${referralEndDateActionablAt}\n` +
         `🕐 *cutoffTime*: ${cutoffTime}s\n` +
         `────────────────────────\n\n` +
         `🔢 *Referral ID:* \`${referralId}\`\n` +
