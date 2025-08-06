@@ -4,18 +4,25 @@
  *
  */
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
-import collectReferralDetailsDateFromAPI from "./collectReferralDetailsDateFromAPI.mjs";
 import sleep from "./sleep.mjs";
-import collectPatientAttachments from "./collectPatientAttachments.mjs";
-import goToHomePage from "./goToHomePage.mjs";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
-import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
-import scrollDetailsPageSections from "./scrollDetailsPageSections.mjs";
-import checkIfWeInDetailsPage from "./checkIfWeInDetailsPage.mjs";
+import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
+import { estimatedTimeForProcessingAction } from "./constants.mjs";
 
-// const COOLDOWN_AFTER_BATCH = 55_000;
-const MAX_RETRIES = 6;
+const formateDateToString = (date) =>
+  new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Riyadh",
+    hour12: true,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+    .format(date)
+    .replace(",", "");
 
 const getSaudiStartAndEndDate = (referralDate) => {
   const utcDate = new Date(referralDate);
@@ -29,33 +36,29 @@ const getSaudiStartAndEndDate = (referralDate) => {
   const saEndDate = new Date(saStartDate);
   saEndDate.setMinutes(saEndDate.getMinutes() + 15);
 
+  const referralEndTimestamp = saEndDate.getTime();
+  const timeWithUserReaction = estimatedTimeForProcessingAction + 3000;
+
+  const referralEndDateActionableAtMS =
+    referralEndTimestamp > timeWithUserReaction
+      ? referralEndTimestamp - estimatedTimeForProcessingAction
+      : referralEndTimestamp;
+
   return {
     referralDate,
-    referralStartDate: saStartDate.toLocaleString("en-SA", {
-      timeZone: "Asia/Riyadh",
-      hour12: false,
-    }),
-    referralEndDate: saEndDate.toLocaleString("en-SA", {
-      timeZone: "Asia/Riyadh",
-      hour12: false,
-    }),
-    referralStartTimestamp: saStartDate.getTime(),
-    referralEndTimestamp: saEndDate.getTime(),
+    referralStartDate: formateDateToString(saStartDate),
+    referralEndDate: formateDateToString(saEndDate),
+    referralEndTimestamp: referralEndTimestamp,
+    referralEndDateActionableAtMS,
+    referralEndDateActionablAt: formateDateToString(
+      referralEndDateActionableAtMS
+    ),
   };
 };
 
-const processCollectingPatients = async ({
-  browser,
-  patientsStore,
-  page,
-  cursor,
-  sendWhatsappMessage,
-}) => {
-  const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
-
+const processCollectingPatients = async ({ browser, patientsStore, page }) => {
   try {
     let processedCount = 0;
-    let checkDetailsPageRetry = 0;
 
     while (true) {
       // 🔁 Always re-fetch rows after page changes
@@ -88,117 +91,41 @@ const processCollectingPatients = async ({
         break;
       }
 
-      const iconButton = await row.$("td.iconCell button");
+      console.log(
+        `📡 fetch patient referralId=(${referralId}) API responses...`
+      );
+      const patientData = await getPatientReferralDataFromAPI(page, referralId);
 
-      if (!iconButton) {
-        console.log("⚠️ No button found in this row, skipping...");
-        break;
-      }
+      const { patientDetailsError, patientInfoError, attchmentsError } =
+        patientData;
 
-      console.log(`📡 Monitoring referralId=(${referralId}) API responses...`);
-      const detailsApiDataPromise = collectReferralDetailsDateFromAPI({
-        page,
-        referralId,
-        useDefaultMessageIfNotFound: true,
-      });
-
-      await sleep(40 + Math.random() * 50);
-      await iconButton.click();
-
-      const logString = `details page for referralId=(${referralId})`;
-
-      const areWeInDetailsPage = await checkIfWeInDetailsPage(page, true);
-
-      if (!areWeInDetailsPage) {
-        const hasReachedMaxRetriesForDetailsPage =
-          checkDetailsPageRetry >= MAX_RETRIES;
-
-        if (hasReachedMaxRetriesForDetailsPage) {
-          await sendWhatsappMessage(phoneNumber, {
-            message: `❌ Tried ${checkDetailsPageRetry} times to enter the details page for referralId=(${referralId}) collection, but there is something wrong.`,
-          });
-          checkDetailsPageRetry = 0;
-          await goToHomePage(page);
-          // await sleep(2000 + Math.random() * 70);
-
-          break;
-        }
-
-        checkDetailsPageRetry += 1;
-        await goToHomePage(page);
-        await sleep(1000 + Math.random() * 70);
-        continue;
-      }
-
-      checkDetailsPageRetry = 0;
-
-      await makeKeyboardNoise(page);
-
-      await scrollDetailsPageSections({
-        cursor,
-        logString,
-        page,
-        sectionsIndices: [1, 2, 3],
-        scrollDelay: 180,
-      });
-
-      let detailsApiData;
-
-      try {
-        detailsApiData = await detailsApiDataPromise;
-      } catch (err) {
-        await goToHomePage(page);
-        console.error(
-          `❌ Failed collecting API data for referralId=${referralId}:`,
-          err.message
-        );
-        break;
-      }
-
-      const { patientName, specialty, apisError } = detailsApiData;
-
-      if (apisError) {
-        await goToHomePage(page);
+      if (patientDetailsError || patientInfoError || attchmentsError) {
         console.log(
           `❌ Error when colleting referralId=${referralId}, reason:`,
-          apisError
+          [patientDetailsError, patientInfoError, attchmentsError].join("__")
         );
         break;
       }
-
-      const attachmentData = await collectPatientAttachments({
-        page,
-        cursor,
-        patientName,
-        specialty,
-        referralId,
-      });
 
       const finalData = {
         referralId,
         ...getSaudiStartAndEndDate(referralDate),
-        ...detailsApiData,
-        files: attachmentData,
+        ...patientData,
       };
 
       await patientsStore.addPatients(finalData);
       processedCount++;
       console.log(`\n👉 Processed row ${processedCount} of ${rowsLength}`);
 
-      await goToHomePage(page);
-
-      await sleep(1000);
-
       await Promise.allSettled([
         generateAcceptancePdfLetters(browser, [finalData], true),
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
+      await sleep(4_000);
+
       if (processedCount >= rowsLength) {
-        // console.log(
-        //   `😴 Sleeping ${COOLDOWN_AFTER_BATCH / 1000}s after final patient...`
-        // );
-        // await sleep(COOLDOWN_AFTER_BATCH);
+        await sleep(3000 + Math.random() * 1000);
         break;
       }
     }

@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import puppeteer from "puppeteer";
+// import pkg from 'ghost-cursor';
 import cron from "node-cron";
 // import twilio from "twilio";
 import PatientStore from "./PatientStore.mjs";
@@ -29,7 +30,10 @@ import {
   generatedPdfsPathForRejection,
   screenshotsFolderDirectory,
 } from "./constants.mjs";
+// import sleep from "./sleep.mjs";
 // import fuckThem from "./fuckThem.mjs";
+
+// const { createCursor, installMouseHelper } = pkg
 
 const collectConfirmedPatient = false;
 
@@ -85,6 +89,7 @@ const collectConfirmedPatient = false;
       args: [
         "--start-maximized", // Open full screen like real users
         "--disable-blink-features=AutomationControlled", // Prevent `navigator.webdriver = true`
+        "--disable-blink-features",
         "--disable-infobars", // Hides “Chrome is being controlled”
         "--disable-extensions", // Prevents loading suspicious default extensions
         "--disable-default-apps", // Avoids noise from Chrome's default apps
@@ -177,6 +182,69 @@ const collectConfirmedPatient = false;
     await shutdownAllClients();
   }
 })();
+
+//         const page = await browser.newPage()
+
+//         const cursor = createCursor(page); // attach ghost cursor
+
+// await installMouseHelper(page); // Optional: visual mouse helper
+
+//     await page.goto(
+//   "https://szchenghuang.github.io/react-google-invisible-recaptcha",
+//     {
+//       waitUntil: "domcontentloaded",
+//     }
+//   );
+
+// await sleep(10_000);
+
+//     const firstGroup = await page.$('#container > div:nth-child(1)');
+
+// // Type into the input inside it
+// const input = await firstGroup.$('input[type="text"]');
+// await input.focus();
+// await page.keyboard.type('John Doe', { delay: 100 + Math.random() * 20 });
+
+// const button = await firstGroup.$('button');
+// await button.scrollIntoViewIfNeeded({ timeout: 2500 });
+// console.time("MOVE")
+
+// await cursor.click(button, {
+//   moveDelay: 300 + Math.random() * 120,
+//   moveSpeed: 9.5,
+//   randomizeMoveDelay: true,
+//   hesitate: 90 + Math.random() * 50,
+//   waitForClick: 90 + Math.random() * 50
+// });
+// console.timeEnd("MOVE")
+
+//     return
+
+//       const box = await button.boundingBox();
+
+//           const startPoint = {
+//   x: box.x - 90 + Math.random() * 12,
+//   y: box.y - 100 + Math.random() * 12,
+// };
+
+//       const jitteredPoint = {
+//   x: box.x + 2 + Math.random() * 4,
+//   y: box.y + 2 + Math.random() * 4,
+// };
+
+// await humanMouseMove({
+//   maxSteps: 20,
+//   start: startPoint,
+//   end: jitteredPoint,
+//   moveTime: 300,
+//   page
+// })
+
+// await button.hover();
+// await button.focus();
+// await sleep(60 + Math.random() * 40);
+// await page.keyboard.press('Enter');
+// await button.click({ delay: 90 + Math.random() * 50 })
 
 // function runSafe(fn) {
 //   return async (...args) => {
@@ -664,59 +732,6 @@ const collectConfirmedPatient = false;
 //                 "status": null
 //             }
 //         ]
-//     },
-//     "statusCode": "Success",
-//     "errorMessage": null
-// }
-
-// "message": "A waiting period of 15 minutes shall pass before an action can be performed. There is 12 minute(s) and 25 second(s) remaining.",
-// "canUpdate": false,
-
-// {
-//     "data": {
-//         "requestDate": "2025-07-08T20:56:14",
-//         "creationDate": "2025-07-08T18:00:15",
-//         "ihalatyReference": "31982357",
-//         "providerName": "TADAWI MEDICALhospital- khamis Mushayt",
-//         "longitude": null,
-//         "latitude": null,
-//         "providerCode": "H523742",
-//         "providerZoneCode": "15",
-//         "providerCityCode": null,
-//         "providerRegionCode": null,
-//         "providerZone": "Asir",
-//         "referralCause": "Bed Unavailable",
-//         "requestedBedType": "Neonatal Intensive Care Unit (NICU)",
-//         "claimType": null,
-//         "doctor": null,
-//         "estimationCost": 0,
-//         "category": "HP",
-//         "sourceProvider": "Maternity and Children Hospital Abha",
-//         "referralTypeCode": "2",
-//         "refType": "Emergency",
-//         "requiredSpecialtyCode": "630",
-//         "er": false,
-//         "specialtyCode": "630",
-//         "specialty": "Neonatology",
-//         "mobileNumber": null,
-//         "claimReference": null,
-//         "lengthOfStay": 0,
-//         "referralCauseDetails": {
-//             "id": 1237,
-//             "note": "NICU",
-//             "isPublic": true,
-//             "isActive": true,
-//             "owner": null,
-//             "canDelete": null
-//         },
-//         "referralAdditionalInformation": null,
-//         "status": "P",
-//         "canUpdate": false,
-//         "requiredSpecialty": "Neonatology",
-//         "message": "A waiting period of 15 minutes shall pass before an action can be performed. There is 12 minute(s) and 25 second(s) remaining.",
-//         "isPrivate": false,
-//         "canTakeAction": true,
-//         "quotaExceededMessage": ""
 //     },
 //     "statusCode": "Success",
 //     "errorMessage": null
