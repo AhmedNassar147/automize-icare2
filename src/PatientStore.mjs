@@ -150,16 +150,17 @@ class PatientStore extends EventEmitter {
   }
 
   calculateCanStillProcessPatient(patient) {
-    const { caseUserWillBeSubmittedAtMS, caseActualWillBeSubmittedAtMS } =
-      patient;
-    const timeout =
-      caseUserWillBeSubmittedAtMS || caseActualWillBeSubmittedAtMS;
+    const { referralEndDateActionableAtMS } = patient;
 
-    if (!timeout) return false;
+    if (
+      typeof referralEndDateActionableAtMS !== "number" ||
+      !referralEndDateActionableAtMS
+    )
+      return false;
 
     const now = Date.now();
 
-    return now <= timeout;
+    return now < referralEndDateActionableAtMS;
   }
 
   canStillProcessPatient(referralId) {
@@ -183,19 +184,12 @@ class PatientStore extends EventEmitter {
     skipResetingPatient,
     isSuperAcceptance,
   }) {
-    const {
-      referralId,
-      caseUserWillBeSubmittedAtMS,
-      caseActualWillBeSubmittedAtMS,
-    } = patient;
+    const { referralId, referralEndDateActionableAtMS } = patient;
     const isAccepting = eventName === "patientAccepted";
 
-    const timeToInteractMS =
-      caseUserWillBeSubmittedAtMS || caseActualWillBeSubmittedAtMS;
-
-    if (typeof timeToInteractMS !== "number") {
+    if (typeof referralEndDateActionableAtMS !== "number") {
       return {
-        message: `Invalid = timeToInteractMS date: ${timeToInteractMS}`,
+        message: `Invalid = referralEndDateActionableAtMS date: ${referralEndDateActionableAtMS}`,
         success: false,
       };
     }
@@ -209,7 +203,7 @@ class PatientStore extends EventEmitter {
       };
     }
 
-    const timer = waitMinutesThenRun(timeToInteractMS, () => {
+    const timer = waitMinutesThenRun(referralEndDateActionableAtMS, () => {
       actionSet.delete(referralId);
       this.patientTimers.delete(referralId);
       this.emit(eventName, patient);

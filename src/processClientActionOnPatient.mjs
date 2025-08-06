@@ -98,7 +98,7 @@ const processClientActionOnPatient = async ({
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
 
-  const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+  const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,
     startingPageUrl: HOME_PAGE_URL,
@@ -189,7 +189,7 @@ const processClientActionOnPatient = async ({
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 84.75;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 83;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -296,6 +296,20 @@ const processClientActionOnPatient = async ({
       // const last_scroll = createTimeLabel("last_scroll");
       // console.time(last_scroll);
       await selectedButton.scrollIntoViewIfNeeded({ timeout: 2500 });
+      // await cursor.move(selectedButton);
+      // const box = await selectedButton.boundingBox();
+
+      // const jitteredPoint = {
+      //   x: box.x + 2 + Math.random() * 4,
+      //   y: box.y + 2 + Math.random() * 4,
+      // };
+      // await page.mouse.move(jitteredPoint.x, jitteredPoint.y, { steps: 8 });
+
+      // await selectedButton.hover();
+      // await selectedButton.focus();
+      // await sleep(60 + Math.random() * 40);
+      // await page.keyboard.press('Enter');
+
       // await page.keyboard.press("ArrowDown");
       // console.timeEnd(last_scroll);
 

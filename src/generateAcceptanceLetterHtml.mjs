@@ -30,15 +30,15 @@ const tadawiFileUrl = toBase64(tadawiLogo);
 
 const generateAcceptanceLetterHtml = ({
   nationalId,
+  nationality,
   patientName,
   requestDate: _requestDate,
   referralId,
   specialty,
   subSpecialty,
   sourceProvider,
-  nationality,
   mobileNumber,
-  bedType,
+  requestedBedType,
   isRejection,
 }) => {
   const [date] = _requestDate.split("T");
@@ -215,7 +215,7 @@ const generateAcceptanceLetterHtml = ({
         <td><strong>رقم الغرفة:</strong></td>
       </tr>
       <tr>
-        <td><strong>نوع السرير:</strong>${bedType}</td>
+        <td><strong>نوع السرير:</strong>${requestedBedType}</td>
         <td><strong>مدة الحجز:</strong> ٤٨ ساعة</td>
       </tr>
       <tr>

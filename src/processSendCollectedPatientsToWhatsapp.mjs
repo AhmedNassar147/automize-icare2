@@ -14,41 +14,39 @@ const processSendCollectedPatientsToWhatsapp =
     console.log("addedPatients started, posting patients to WhatsApp...");
 
     const formatPatient = ({
-      patientName,
-      requestDate,
-      mobileNumber,
       referralId,
+      patientName,
+      mobileNumber,
+      requestDate,
       nationality,
       nationalId,
-      refType: referralType,
+      referralType,
+      gender,
+      maritalStatus,
+      hijriDOB,
       specialty,
       subSpecialty,
       sourceProvider,
       providerZone,
-      files,
       referralCause,
-      caseReceivedAt,
-      caseActualWillBeSubmittedAt,
       caseAlertMessage,
-      caseUserAlertMessage,
-      caseUserWillBeSubmittedAt,
-      icds,
-      referralCauseDetails,
+      note,
+      referralEndDateActionablAt,
+      files,
     }) => {
-      const { note } = referralCauseDetails || {};
-
       const message =
         `🚨 *New Case Alert!* 🚨\n\n` +
-        `📥 *Received At:* 🟦 \`${caseReceivedAt}\`\n` +
-        `📤 *Manual action:* 🟥 \`${caseActualWillBeSubmittedAt}\`\n` +
-        `⏳ *Cutoff Time:* 🟧 \`${cutoffTime} seconds\`\n` +
-        `🕐 *actionable At:* 🟨 \`${caseUserWillBeSubmittedAt}\`\n\n` +
+        `🕐 *Actionable At*: ${referralEndDateActionablAt}\n\n` +
+        `🕐 *cutoffTime*: ${cutoffTime}s\n` +
         `────────────────────────\n\n` +
         `🔢 *Referral ID:* \`${referralId}\`\n` +
         `👤 *Name:* \`${patientName}\`\n` +
         `📱 *Mobile:* \`${mobileNumber || ""}\`\n` +
         `🌐 *Nationality:* \`${nationality || ""}\`\n` +
         `🆔 *National ID:* \`${nationalId}\`\n` +
+        `🧑‍⚕️ *Gender:* \`${gender || ""}\`\n` +
+        `❤️ *Marital Status:* \`${maritalStatus || ""}\`\n` +
+        `📅 *Hijri DOB:* \`${hijriDOB || ""}\`\n` +
         `🏷️ *Referral Type:* \`${referralType}\`\n` +
         `🩺 *Specialty:* \`${specialty || ""}\`\n` +
         `🔬 *Sub-Specialty:* \`${subSpecialty || ""}\`\n` +
@@ -56,14 +54,12 @@ const processSendCollectedPatientsToWhatsapp =
         `📍 *Zone:* \`${providerZone}\`\n` +
         `🗓️ *Requested At:* \`${requestDate}\`\n` +
         `📝 *Reason:* \`${referralCause}\`\n` +
-        `🧾 *CauseNote:* \`${note || ""}\`\n` +
-        `🧾 *ICDs:*\`${(icds || []).join("\n") || ""}\`\n\n` +
+        `🧾 *CauseNote:* \`${note || ""}\`\n\n` +
         `⚠️ *‼️ ATTENTION ‼️*\n\n` +
         `────────────────────────\n` +
-        `🧾 *Original Alert:* _${caseAlertMessage || ""}_\n\n` +
-        `💬 *User Alert:* _${caseUserAlertMessage}_\n\n` +
+        `🧾 _${caseAlertMessage || ""}_\n\n` +
         `📩 *Please review and reply to this message with:*\n\n` +
-        `${createConfirmationMessage()}`;
+        `${createConfirmationMessage()}\n`;
 
       return {
         message,

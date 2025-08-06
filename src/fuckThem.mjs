@@ -49,6 +49,14 @@ const openNewPageForSubmitSimulation = async (browser, sendWhatsappMessage) => {
 
   let token = "";
 
+  // (async () => {
+  //   const token = await grecaptcha.execute(
+  //     "6LeH_x8UAAAAAKKuaaod4GsENkTJTHdeQIm8l6y2",
+  //     { action: "submit" }
+  //   );
+  //   console.log(token);
+  // })();
+
   // try {
   //   token = await page.evaluate(async (siteKey) => {
   //     return await grecaptcha.execute(siteKey, { action: "submit" });

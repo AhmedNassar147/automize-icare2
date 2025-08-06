@@ -4,14 +4,12 @@
  *
  */
 import { createCursor } from "ghost-cursor";
-// import { performance } from "perf_hooks";
 import checkIfLoginPage from "./checkIfLoginPage.mjs";
 import humanType from "./humanType.mjs";
 import humanClick from "./humanClick.mjs";
 import sleep from "./sleep.mjs";
 import waitForHomeLink from "./waitForHomeLink.mjs";
 import gotToLoginPage from "./gotToLoginPage.mjs";
-// import clickButtonThatObservedByRecapctahaInvisbleV2 from "./clickButtonThatObservedByRecapctahaInvisbleV2.mjs";
 import shouldCloseAppWhenLogin from "./shouldCloseAppWhenLogin.mjs";
 import { homePageTableSelector } from "./constants.mjs";
 
@@ -96,6 +94,8 @@ const makeUserLoggedInOrOpenHomePage = async ({
           //   ).toFixed(2)} s`
           // );
           await humanClick(page, loginButtonSelector);
+          // await button.focus();
+          // await cursor.move(button);
 
           try {
             await page.waitForNavigation({

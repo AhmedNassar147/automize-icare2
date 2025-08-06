@@ -6,6 +6,7 @@
 import { CONFIRMATION_TYPES } from "./constants.mjs";
 
 const EMOJIS = {
+  SUPPER_ACCEPT: "✅ *Super Acceptence:*",
   ACCEPT: "✅ *Acceptence:*",
   REJECT: "❌ *Rejection:*",
   CANCEL: "↩️ *Cancellation:*",
