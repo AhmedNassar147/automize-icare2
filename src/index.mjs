@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import puppeteer from "puppeteer";
-// import pkg from 'ghost-cursor';
+// import pkg from "ghost-cursor";
 import cron from "node-cron";
 // import twilio from "twilio";
 import PatientStore from "./PatientStore.mjs";
@@ -33,7 +33,7 @@ import {
 // import sleep from "./sleep.mjs";
 // import fuckThem from "./fuckThem.mjs";
 
-// const { createCursor, installMouseHelper } = pkg
+// const { createCursor, installMouseHelper } = pkg;
 
 const collectConfirmedPatient = false;
 
@@ -96,16 +96,17 @@ const collectConfirmedPatient = false;
         "--no-first-run", // Skips Chrome welcome screen
         "--no-service-autorun", // Prevents autorun background tasks
         "--disable-accelerated-2d-canvas", // Stabilizes canvas fingerprint
-        "--disable-background-timer-throttling", // Accurate JS timers (bot checks use this)
-        "--disable-renderer-backgrounding", // Avoid throttling of background tabs
-        "--disable-backgrounding-occluded-windows", // Same as above
+        // "--disable-background-timer-throttling", // Accurate JS timers (bot checks use this)
+        // "--disable-renderer-backgrounding", // Avoid throttling of background tabs
+        // "--disable-backgrounding-occluded-windows", // Same as above
         "--disable-dev-shm-usage", // Stability; safe even if not needed
         "--enable-webgl", // WebGL is often checked
         "--disable-sync",
-        "--renderer-process-limit=1",
-        "--disable-prompt-on-repost",
         "--no-default-browser-check",
         "--font-cache-shared", // More consistent font rendering (Windows only)
+        // "--restore-last-session=false",
+        // "--renderer-process-limit=1",
+        // "--disable-prompt-on-repost",
       ],
     });
 
@@ -736,15 +737,6 @@ const collectConfirmedPatient = false;
 //     "statusCode": "Success",
 //     "errorMessage": null
 // }
-
-// Listen to console logs before any navigation
-// page.on("console", (msg) => {
-//   for (let i = 0; i < msg.args().length; ++i)
-//     msg
-//       .args()
-//       [i].jsonValue()
-//       .then((val) => console.log(`PAGE LOG[${i}]:`, val));
-// });
 
 // await page.evaluateOnNewDocument(() => {
 //   const suspiciousKeywords = [

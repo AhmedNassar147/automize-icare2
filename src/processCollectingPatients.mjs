@@ -24,17 +24,34 @@ const formateDateToString = (date) =>
     .format(date)
     .replace(",", "");
 
-const getSaudiStartAndEndDate = (referralDate) => {
+const getSaudiStartAndEndDate = (referralDate, caseAlertMessage) => {
+  const currentDate = new Date();
   const utcDate = new Date(referralDate);
 
   // Convert to Saudi time
-  const saStartDate = new Date(
+  let saStartDate = new Date(
     utcDate.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
   );
 
+  let leftMs = 15 * 60 * 1000;
+
+  const Min_15 = 15 * 60 * 1000;
+
+  if (saStartDate < new Date(currentDate - Min_15) && caseAlertMessage) {
+    const match = caseAlertMessage.match(
+      /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/
+    );
+
+    const minsLeft = parseInt(match?.[1], 10) ?? 0;
+    const secsLeft = parseInt(match?.[2], 10) ?? 0;
+
+    saStartDate = currentDate;
+    leftMs = (minsLeft * 60 + secsLeft) * 1000;
+  }
+
   // Clone for end date
   const saEndDate = new Date(saStartDate);
-  saEndDate.setMinutes(saEndDate.getMinutes() + 15);
+  saEndDate.setMilliseconds(saEndDate.getMilliseconds() + leftMs);
 
   const referralEndTimestamp = saEndDate.getTime();
   const timeWithUserReaction = estimatedTimeForProcessingAction + 3000;
@@ -96,8 +113,12 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
       );
       const patientData = await getPatientReferralDataFromAPI(page, referralId);
 
-      const { patientDetailsError, patientInfoError, attchmentsError } =
-        patientData;
+      const {
+        patientDetailsError,
+        patientInfoError,
+        attchmentsError,
+        caseAlertMessage,
+      } = patientData;
 
       if (patientDetailsError || patientInfoError || attchmentsError) {
         console.log(
@@ -109,7 +130,7 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
 
       const finalData = {
         referralId,
-        ...getSaudiStartAndEndDate(referralDate),
+        ...getSaudiStartAndEndDate(referralDate, caseAlertMessage),
         ...patientData,
       };
 
@@ -122,7 +143,7 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
-      await sleep(4_000);
+      await sleep(3_000);
 
       if (processedCount >= rowsLength) {
         await sleep(3000 + Math.random() * 1000);

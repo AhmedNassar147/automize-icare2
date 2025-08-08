@@ -267,14 +267,6 @@ const processClientActionOnPatient = async ({
         const fileInput = await page.$(
           '#upload-single-file input[type="file"]'
         );
-
-        // const browse_button = createTimeLabel("browse");
-        // console.time(browse_button);
-        // const browseButton = await page.$("#upload-single-file button");
-        // if (browseButton) {
-        //   await browseButton.hover();
-        // }
-        // console.timeEnd(browse_button);
         await fileInput.uploadFile(filePath);
       } catch (error) {
         const err = error?.message || String(error);
@@ -293,9 +285,20 @@ const processClientActionOnPatient = async ({
         ? referralButtons[0]
         : referralButtons[1];
 
+      await selectedButton.evaluate((el) => {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+
+      if (isSuperAcceptance) {
+        await sleep(15 + Math.random() * 25);
+        await selectedButton.focus();
+        await sleep(10 + Math.random() * 25);
+        await page.keyboard.press("Enter", { delay: 15 + Math.random() * 25 });
+      }
+
       // const last_scroll = createTimeLabel("last_scroll");
       // console.time(last_scroll);
-      await selectedButton.scrollIntoViewIfNeeded({ timeout: 2500 });
+      // await selectedButton.scrollIntoViewIfNeeded({ timeout: 2500 });
       // await cursor.move(selectedButton);
       // const box = await selectedButton.boundingBox();
 

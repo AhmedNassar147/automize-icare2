@@ -41,11 +41,11 @@ const selectAttachmentDropdownOption = async (
 
     // await sleep(10 * Math.random() * 10);
 
-    // await dropdownTrigger.click();
-    await Promise.allSettled([
-      dropdownTrigger.scrollIntoViewIfNeeded({ timeout: 2000 }),
-      dropdownTrigger.click(),
-    ]);
+    await dropdownTrigger.click();
+    // await Promise.allSettled([
+    //   dropdownTrigger.scrollIntoViewIfNeeded({ timeout: 2000 }),
+    //   dropdownTrigger.click(),
+    // ]);
   } catch (err) {
     console.log(
       "⚠️ Default click failed, falling back to humanClick.",
