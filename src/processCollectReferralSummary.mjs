@@ -85,7 +85,14 @@ const getWeeklyRange = () => {
   return { lastTuesday, thisMonday };
 };
 
-const filterReferralData = (data, startingReferralDate, weekly) => {
+const filterReferralData = async ({
+  page,
+  targetText,
+  startingReferralDate,
+  weekly,
+}) => {
+  const data = await getViewData(page, targetText);
+
   const { lastTuesday, thisMonday } = getWeeklyRange();
   const startDate = startingReferralDate
     ? new Date(startingReferralDate)
@@ -105,8 +112,8 @@ const filterReferralData = (data, startingReferralDate, weekly) => {
 };
 
 // const startingReferralDate = "2025-07-18T21:47:30";
-const startingReferralDate = undefined;
-const weekly = true; // Set to true if you want to filter by the last week
+const startingReferralDate = "2025-07-20T00:24:31";
+const weekly = false; // Set to true if you want to filter by the last week
 
 const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
   const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
@@ -120,17 +127,29 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
     return;
   }
 
-  const { ADMITTED } = PATIENT_SECTIONS_STATUS;
-  const admittedData = await getViewData(page, ADMITTED.targetText);
+  const { ADMITTED, DISCHARGED } = PATIENT_SECTIONS_STATUS;
 
-  const filtered = filterReferralData(
-    admittedData,
+  const admittedPatients = filterReferralData({
+    page,
+    targetText: ADMITTED.targetText,
     startingReferralDate,
-    weekly
-  );
+    weekly,
+  });
+
+  const dischargedPatients = filterReferralData({
+    page,
+    targetText: DISCHARGED.targetText,
+    startingReferralDate,
+    weekly,
+  });
 
   const unique = Array.from(
-    new Map(filtered.map((item) => [item["GMS Referral Id"], item])).values()
+    new Map(
+      [...admittedPatients, ...dischargedPatients].map((item) => [
+        item["GMS Referral Id"],
+        item,
+      ])
+    ).values()
   )
     .sort((a, b) => {
       const dateA = new Date(a["Referral Date"]);
