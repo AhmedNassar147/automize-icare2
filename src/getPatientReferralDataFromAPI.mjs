@@ -146,33 +146,45 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
           .filter((item) => !!(item.fileName && item.idAttachment))
           .map(async ({ fileName, idAttachment }) => {
             const downloadUrl = `${baseAPiUrl}/download-attachment/${idAttachment}`;
-            const fileRes = await fetch(downloadUrl);
 
-            if (!fileRes.ok) {
+            try {
+              const fileRes = await fetch(downloadUrl);
+
+              if (!fileRes.ok) {
+                return {
+                  fileName,
+                  downloadUrl,
+                  downloadError: `Failed with status ${fileRes.status}`,
+                };
+              }
+
+              const getSaveName = (name) =>
+                name ? name.replace(/[^a-z0-9_\-\.]/gi, "_") : "";
+
+              const blob = await fileRes.blob();
+
+              const arrayBuffer = await blob.arrayBuffer();
+              const base64 = arrayBufferToBase64(arrayBuffer);
+
+              const parts = (fileName || "").split(".");
+              const extension = parts.length > 1 ? parts.pop() : "pdf";
+              const name = parts.join(".");
+              const safeName = getSaveName(name);
+
+              return {
+                fileName: `${idReferral}_${getSaveName(
+                  _specialty
+                )}_${safeName}`,
+                extension: extension,
+                fileBase64: base64,
+              };
+            } catch (error) {
               return {
                 fileName,
-                downloadError: `Failed with status ${fileRes.status}`,
+                downloadUrl,
+                downloadError: `Failed with error ${error}`,
               };
             }
-
-            const getSaveName = (name) =>
-              name ? name.replace(/[^a-z0-9_\-\.]/gi, "_") : "";
-
-            const blob = await fileRes.blob();
-
-            const arrayBuffer = await blob.arrayBuffer();
-            const base64 = arrayBufferToBase64(arrayBuffer);
-
-            const parts = (fileName || "").split(".");
-            const extension = parts.length > 1 ? parts.pop() : "pdf";
-            const name = parts.join(".");
-            const safeName = getSaveName(name);
-
-            return {
-              fileName: `${idReferral}_${getSaveName(_specialty)}_${safeName}`,
-              extension: extension,
-              fileBase64: base64,
-            };
           });
 
         const files = await Promise.all(downloadTasks);
