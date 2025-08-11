@@ -89,21 +89,24 @@ const collectConfirmedPatient = false;
       args: [
         "--start-maximized", // Open full screen like real users
         "--disable-blink-features=AutomationControlled", // Prevent `navigator.webdriver = true`
-        "--disable-blink-features",
         "--disable-infobars", // Hides “Chrome is being controlled”
         "--disable-extensions", // Prevents loading suspicious default extensions
         "--disable-default-apps", // Avoids noise from Chrome's default apps
         "--no-first-run", // Skips Chrome welcome screen
         "--no-service-autorun", // Prevents autorun background tasks
-        "--disable-accelerated-2d-canvas", // Stabilizes canvas fingerprint
-        // "--disable-background-timer-throttling", // Accurate JS timers (bot checks use this)
-        // "--disable-renderer-backgrounding", // Avoid throttling of background tabs
-        // "--disable-backgrounding-occluded-windows", // Same as above
         "--disable-dev-shm-usage", // Stability; safe even if not needed
-        "--enable-webgl", // WebGL is often checked
         "--disable-sync",
         "--no-default-browser-check",
         "--font-cache-shared", // More consistent font rendering (Windows only)
+        "--enable-gpu",
+        "--use-gl=desktop",
+        "--enable-webgl", // WebGL is often checked
+        "--enable-webgl2",
+        // "--disable-blink-features",
+        // "--disable-accelerated-2d-canvas", // Stabilizes canvas fingerprint
+        // "--disable-background-timer-throttling", // Accurate JS timers (bot checks use this)
+        // "--disable-renderer-backgrounding", // Avoid throttling of background tabs
+        // "--disable-backgrounding-occluded-windows", // Same as above
         // "--restore-last-session=false",
         // "--renderer-process-limit=1",
         // "--disable-prompt-on-repost",

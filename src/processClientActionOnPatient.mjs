@@ -184,8 +184,8 @@ const processClientActionOnPatient = async ({
     console.log(`supper acceptance is running on patient ${referralId}`);
   }
 
-  const createTimeLabel = (label) =>
-    `${label}_${referralId}_${submissionButtonsRetry}`;
+  // const createTimeLabel = (label) =>
+  //   `${label}_${referralId}_${submissionButtonsRetry}`;
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
