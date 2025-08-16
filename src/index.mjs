@@ -69,6 +69,14 @@ const collectConfirmedPatient = false;
 // "--no-zygote", // disables forking process (less traceable)
 // "--enable-webgl",
 
+// "--disable-accelerated-2d-canvas", // Stabilizes canvas fingerprint
+// "--disable-background-timer-throttling", // Accurate JS timers (bot checks use this)
+// "--disable-renderer-backgrounding", // Avoid throttling of background tabs
+// "--disable-backgrounding-occluded-windows", // Same as above
+// "--restore-last-session=false",
+// "--renderer-process-limit=1",
+// "--disable-prompt-on-repost",
+
 (async () => {
   try {
     await Promise.all([
@@ -102,14 +110,9 @@ const collectConfirmedPatient = false;
         "--use-gl=desktop",
         "--enable-webgl", // WebGL is often checked
         "--enable-webgl2",
-        // "--disable-blink-features",
-        // "--disable-accelerated-2d-canvas", // Stabilizes canvas fingerprint
-        // "--disable-background-timer-throttling", // Accurate JS timers (bot checks use this)
-        // "--disable-renderer-backgrounding", // Avoid throttling of background tabs
-        // "--disable-backgrounding-occluded-windows", // Same as above
-        // "--restore-last-session=false",
-        // "--renderer-process-limit=1",
-        // "--disable-prompt-on-repost",
+        "--lang=en-US,en",
+        // "--metrics-recording-only",
+        // "--allow-running-insecure-content",
       ],
     });
 
@@ -135,6 +138,7 @@ const collectConfirmedPatient = false;
 
     cron.schedule(
       "59 23 * * 1",
+      // "59 23 * * 2",
       async () => {
         console.log(
           "[CRON] Starting referral summary job at",

@@ -80,10 +80,12 @@ const processSendCollectedPatientsToWhatsapp =
       );
       const hour = saTime.getHours();
 
-      if (hour >= 22 || hour <= 9) {
-        speakText("Please check your WhatsApp, there is a new patient");
-      }
-    } catch (error) {}
+      // if (hour >= 22 || hour <= 9) {
+      speakText("Please check your WhatsApp, there is a new patient");
+      // }
+    } catch (error) {
+      console.log("SOUND error", error.message);
+    }
   };
 
 export default processSendCollectedPatientsToWhatsapp;

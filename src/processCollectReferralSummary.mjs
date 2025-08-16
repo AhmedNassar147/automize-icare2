@@ -112,7 +112,7 @@ const filterReferralData = async ({
 };
 
 // const startingReferralDate = "2025-07-18T21:47:30";
-const startingReferralDate = "2025-07-20T00:24:31";
+const startingReferralDate = "2025-07-20T01:52:13";
 const weekly = false; // Set to true if you want to filter by the last week
 
 const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
@@ -129,14 +129,14 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
 
   const { ADMITTED, DISCHARGED } = PATIENT_SECTIONS_STATUS;
 
-  const admittedPatients = filterReferralData({
+  const admittedPatients = await filterReferralData({
     page,
     targetText: ADMITTED.targetText,
     startingReferralDate,
     weekly,
   });
 
-  const dischargedPatients = filterReferralData({
+  const dischargedPatients = await filterReferralData({
     page,
     targetText: DISCHARGED.targetText,
     startingReferralDate,

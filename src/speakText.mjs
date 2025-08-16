@@ -3,39 +3,33 @@
  * Helper: `speakText`.
  *
  */
-import { exec } from "child_process";
+import { spawn } from "child_process";
 
 const speakText = (text, times = 4, delayMs = 4200) => {
   let count = 0;
-
-  // Escape single quotes for PowerShell
-  const escapedText = text.replace(/'/g, "''");
+  const escapedText = text.replace(/'/g, "''").replace(/"/g, '""');
 
   const speak = () => {
     if (count >= times) return;
 
-    // const command =
-    //   `PowerShell -NoProfile -Command ` +
-    //   `"Add-Type -AssemblyName System.Speech; ` +
-    //   `$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer; ` +
-    //   `$speak.Speak('${escapedText}');"`;
-
-    const command =
-      `PowerShell -NoProfile -Command "` +
-      `Add-Type -AssemblyName System.Speech; ` +
-      `$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer; ` +
-      `$speak.SelectVoice('Microsoft Zira Desktop'); ` + // female voice
-      `$speak.Rate = 2; ` + // speaking speed
-      `$speak.Volume = 100; ` +
-      `$speak.Speak('${escapedText}');"`; // escaped string
-
-    exec(command, (err, stdout, stderr) => {
-      if (err) console.error("❌ Error from voice:", err);
-      if (stderr) console.error("⚠️ Stderr from voice:", stderr);
+    const ps = spawn("powershell", ["-NoProfile", "-Command", "-"], {
+      stdio: ["pipe", "inherit", "inherit"],
     });
 
-    count++;
-    setTimeout(speak, delayMs);
+    ps.stdin.write(`
+      Add-Type -AssemblyName System.Speech;
+      $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;
+      $speak.SelectVoice('Microsoft Zira Desktop');
+      $speak.Rate = 2;
+      $speak.Volume = 100;
+      $speak.Speak('${escapedText}');
+    `);
+    ps.stdin.end();
+
+    ps.on("exit", () => {
+      count++;
+      setTimeout(speak, delayMs);
+    });
   };
 
   speak();

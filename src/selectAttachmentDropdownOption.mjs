@@ -64,7 +64,7 @@ const selectAttachmentDropdownOption = async (
 
     const optionEl = await page.waitForSelector(selector, {
       timeout: 6500,
-      visible: true,
+      // visible: true,
     });
 
     await optionEl.click();

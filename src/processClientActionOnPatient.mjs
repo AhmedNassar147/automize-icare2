@@ -184,12 +184,12 @@ const processClientActionOnPatient = async ({
     console.log(`supper acceptance is running on patient ${referralId}`);
   }
 
-  // const createTimeLabel = (label) =>
-  //   `${label}_${referralId}_${submissionButtonsRetry}`;
+  const createTimeLabel = (label) =>
+    `${label}_${referralId}_${submissionButtonsRetry}`;
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 81.5;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 82;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -259,26 +259,26 @@ const processClientActionOnPatient = async ({
         actionName,
         isPageUsingStrictRecaptchaMode
       );
+
+      const fileInput = await page.$('#upload-single-file input[type="file"]');
+      await fileInput.uploadFile(filePath);
+
       // console.timeEnd(check_dropdown);
 
       // const upload = createTimeLabel("upload");
       // console.time(upload);
-      try {
-        const fileInput = await page.$(
-          '#upload-single-file input[type="file"]'
-        );
-        await fileInput.uploadFile(filePath);
-      } catch (error) {
-        const err = error?.message || String(error);
-        await sendErrorMessage(
-          `Error happens when uploading file \`${filePath}\`\n*catchError:*: ${err}`,
-          "file-upload-error",
-          buildDurationText(startTime, Date.now())
-        );
+      // try {
+      // } catch (error) {
+      //   const err = error?.message || String(error);
+      //   await sendErrorMessage(
+      //     `Error happens when uploading file \`${filePath}\`\n*catchError:*: ${err}`,
+      //     "file-upload-error",
+      //     buildDurationText(startTime, Date.now())
+      //   );
 
-        await closeCurrentPage(true);
-        break;
-      }
+      //   await closeCurrentPage(true);
+      //   break;
+      // }
       // console.timeEnd(upload);
 
       const selectedButton = isAcceptance
@@ -286,14 +286,16 @@ const processClientActionOnPatient = async ({
         : referralButtons[1];
 
       await selectedButton.evaluate((el) => {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.scrollIntoView({ behavior: "auto", block: "center" });
       });
 
+      // await selectedButton.evaluate(el => el.scrollIntoView({ behavior: "auto", block: "center" }));
+
       if (isSuperAcceptance) {
-        await sleep(15 + Math.random() * 25);
+        // await sleep(15 + Math.random() * 25);
         await selectedButton.focus();
-        await sleep(10 + Math.random() * 25);
-        await page.keyboard.press("Enter", { delay: 15 + Math.random() * 25 });
+        // await sleep(20 + Math.random() * 25);
+        // await page.keyboard.press("Enter");
       }
 
       // const last_scroll = createTimeLabel("last_scroll");

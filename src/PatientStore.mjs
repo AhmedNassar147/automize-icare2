@@ -207,7 +207,10 @@ class PatientStore extends EventEmitter {
     const timer = waitMinutesThenRun(referralEndDateActionableAtMS, () => {
       actionSet.delete(referralId);
       this.patientTimers.delete(referralId);
-      this.emit(eventName, patient);
+      this.emit(
+        eventName,
+        isAccepting ? { ...patient, isSuperAcceptance } : patient
+      );
     });
 
     actionSet.add(referralId);
