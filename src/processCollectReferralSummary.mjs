@@ -235,6 +235,7 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
   });
 
   insertPatients(allNewPatients);
+  console.log("allNewPatients Length", allNewPatients.length);
 
   await closePageSafely(page);
 };
