@@ -91,6 +91,7 @@ export const HOME_PAGE_URL = `${APP_URL}/Dashboard/Referral`;
 export const baseGlobMedAPiUrl = `${APP_URL}/referrals`;
 
 export const acceptanceApiUrl = `${baseGlobMedAPiUrl}/accept-referral`;
+export const rejectionApiUrl = `${baseGlobMedAPiUrl}/reject-referral`;
 
 export const globMedHeaders = {
   Accept: "application/json, text/plain, */*",

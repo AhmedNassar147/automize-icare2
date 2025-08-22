@@ -4,7 +4,7 @@
  *
  */
 import { unlink, writeFile, readFile } from "fs/promises";
-import { join, resolve } from "path";
+import { join, resolve, basename } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
 import goToHomePage from "./goToHomePage.mjs";
@@ -21,6 +21,7 @@ import {
   htmlFilesPath,
   acceptanceApiUrl,
   globMedHeaders,
+  rejectionApiUrl,
 } from "./constants.mjs";
 
 const MAX_RETRIES = 8;
@@ -83,11 +84,9 @@ const processClientActionOnPatient = async ({
 
   const logString = `details page referralId=(${referralId})`;
 
-  const acceptanceLetterFileName = `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`;
-
   const acceptanceFilePath = join(
     generatedPdfsPathForAcceptance,
-    acceptanceLetterFileName
+    `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
   );
 
   const rejectionFilePath = join(
@@ -243,12 +242,14 @@ const processClientActionOnPatient = async ({
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
 
+  const isSupperAcceptanceOrRejection = isSuperAcceptance || !isAcceptance;
+
   let superAcceptanaceData = {
-    apiUrl: acceptanceApiUrl,
+    apiUrl: isAcceptance ? acceptanceApiUrl : rejectionApiUrl,
     headers: globMedHeaders,
   };
 
-  if (isSuperAcceptance) {
+  if (isSupperAcceptanceOrRejection) {
     const [idProvider] = CLIENT_NAME.split("-");
 
     const fileBuffer = await readFile(filePath);
@@ -259,7 +260,7 @@ const processClientActionOnPatient = async ({
     superAcceptanaceData.body = {
       files: [
         {
-          fileName: acceptanceLetterFileName,
+          fileName: basename(filePath),
           fileData: fileData,
           fileExtension: 0,
           userCode: CLIENT_NAME,
@@ -313,7 +314,7 @@ const processClientActionOnPatient = async ({
 
       const referralButtons = await getSubmissionButtonsIfFound(page);
 
-      if (isSuperAcceptance) {
+      if (isSupperAcceptanceOrRejection) {
         const random = Math.random();
         await sleep(5 + random * 10);
         await page.mouse.move(50, 70 + random * 25);
