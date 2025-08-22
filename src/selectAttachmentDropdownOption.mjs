@@ -80,3 +80,22 @@ const selectAttachmentDropdownOption = async (
 };
 
 export default selectAttachmentDropdownOption;
+
+// const first = createTimeLabel("first");
+// console.time(first);
+// await page.keyboard.press("ArrowDown");
+// console.timeEnd(first);
+
+// const check_dropdown = createTimeLabel("check_dropdown");
+// console.time(check_dropdown);
+// const [hasOptionSelected, selectionError] =
+
+// if (!hasOptionSelected) {
+//   await sendErrorMessage(
+//     `We tried times to select ${actionName}, but couldn't find it.\n*selectionError:* ${selectionError}`,
+//     "list-item-not-found",
+//     buildDurationText(startTime, Date.now())
+//   );
+//   await closeCurrentPage(true);
+//   break;
+// }

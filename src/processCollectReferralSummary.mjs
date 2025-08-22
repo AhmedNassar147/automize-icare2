@@ -5,115 +5,48 @@
  */
 import ExcelJS from "exceljs";
 import { writeFile } from "fs/promises";
-import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-import sleep from "./sleep.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import {
-  PATIENT_SECTIONS_STATUS,
-  waitingPatientsFolderDirectory,
+  allPatientsStatement,
+  createPatientRowKey,
+  insertPatients,
+} from "./db.mjs";
+import {
   HOME_PAGE_URL,
+  generatedSummaryFolderPath,
+  globMedHeaders,
+  baseGlobMedAPiUrl,
 } from "./constants.mjs";
 
 const excelColumns = [
   { header: "order", key: "order", width: 20 },
-  { header: "Referral Date", key: "Referral Date", width: 33 },
-  { header: "GMS Referral Id", key: "GMS Referral Id", width: 27 },
-  { header: "MOH Referral Nb", key: "MOH Referral Nb", width: 27 },
-  { header: "Patient Name", key: "Patient Name", width: 40 },
-  { header: "National ID", key: "National ID", width: 28 },
-  { header: "Referral Type", key: "Referral Type", width: 28 },
-  { header: "Referral Reason", key: "Referral Reason", width: 30 },
-  { header: "Source Zone", key: "Source Zone", width: 30 },
-  { header: "Assigned Provider", key: "Assigned Provider", width: 40 },
+  { header: "Referral Date", key: "referralDate", width: 33 },
+  { header: "GMS Referral Id", key: "idReferral", width: 22 },
+  { header: "MOH Referral Nb", key: "ihalatyReference", width: 22 },
+  { header: "Patient Name", key: "adherentName", width: 40 },
+  { header: "National ID", key: "adherentNationalId", width: 28 },
+  { header: "Referral Type", key: "referralType", width: 20 },
+  { header: "Referral Reason", key: "referralReason", width: 30 },
+  { header: "Source Zone", key: "sourceZone", width: 25 },
+  { header: "Assigned Provider", key: "assignedProvider", width: 40 },
 ];
 
-const getViewData = async (page, targetText) => {
-  await searchForItemCountAndClickItIfFound(page, targetText, true);
-  await sleep(2000);
-
-  const data = await page.evaluate(() => {
-    const headers = Array.from(document.querySelectorAll("thead th")).map(
-      (th) => th.innerText.trim()
-    );
-
-    const rowElements = Array.from(document.querySelectorAll("tbody tr"));
-
-    return rowElements
-      .map((row) => {
-        const cells = Array.from(row.querySelectorAll("td"));
-        const rowData = {};
-
-        const hasData = cells.some(
-          (td) => td.innerText && td.innerText.trim() !== ""
-        );
-        if (!hasData) return null;
-
-        for (let i = 0; i < headers.length && i < cells.length; i++) {
-          if (headers[i]) {
-            rowData[headers[i]] = cells[i].innerText.trim();
-          }
-        }
-        return rowData;
-      })
-      .filter(Boolean);
-  });
-
-  return data;
+const globMedBodyData = {
+  pageSize: 50_000,
+  pageNumber: 1,
+  providerZone: [],
+  providerName: [],
+  specialtyCode: [],
+  referralTypeCode: [],
+  referralReasonCode: [],
+  genericSearch: "",
+  // startDate: "2025-08-01",
+  // endDate: "2025-08-30",
+  sortOrder: "asc",
 };
 
-const parseDate = (str) => {
-  const date = new Date(str);
-  return isNaN(date) ? null : date;
-};
-
-const getWeeklyRange = () => {
-  const today = new Date();
-  const day = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-
-  // Get last Tuesday
-  const lastTuesday = new Date(today);
-  const daysSinceTuesday = day >= 2 ? day - 2 : 7 - (2 - day); // 2 = Tuesday
-  lastTuesday.setDate(today.getDate() - daysSinceTuesday);
-  lastTuesday.setHours(0, 0, 0, 0);
-
-  // This week's Monday (after that Tuesday)
-  const thisMonday = new Date(lastTuesday);
-  thisMonday.setDate(lastTuesday.getDate() + 6);
-  thisMonday.setHours(23, 59, 59, 999);
-
-  return { lastTuesday, thisMonday };
-};
-
-const filterReferralData = async ({
-  page,
-  targetText,
-  startingReferralDate,
-  weekly,
-}) => {
-  const data = await getViewData(page, targetText);
-
-  const { lastTuesday, thisMonday } = getWeeklyRange();
-  const startDate = startingReferralDate
-    ? new Date(startingReferralDate)
-    : null;
-
-  return data.filter((item) => {
-    const referralDate = parseDate(item["Referral Date"]);
-    if (!referralDate) return false;
-
-    const afterStart = startDate ? referralDate >= startDate : true;
-    const inWeeklyRange = weekly
-      ? referralDate >= lastTuesday && referralDate <= thisMonday
-      : true;
-
-    return afterStart && inWeeklyRange;
-  });
-};
-
-// const startingReferralDate = "2025-07-18T21:47:30";
-const startingReferralDate = "2025-07-20T01:52:13";
-const weekly = false; // Set to true if you want to filter by the last week
+const categoryReferences = ["admitted", "discharged"];
 
 const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
   const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
@@ -127,33 +60,115 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
     return;
   }
 
-  const { ADMITTED, DISCHARGED } = PATIENT_SECTIONS_STATUS;
+  const tabsResults = await page.evaluate(
+    async ({
+      baseGlobMedAPiUrl,
+      globMedHeaders,
+      categoryReferences,
+      globMedBodyData,
+    }) => {
+      const responses = await Promise.allSettled(
+        categoryReferences.map(async (categoryReference) => {
+          try {
+            const res = await fetch(`${baseGlobMedAPiUrl}/listing`, {
+              method: "POST",
+              headers: globMedHeaders,
+              body: JSON.stringify({
+                ...globMedBodyData,
+                categoryReference,
+              }),
+            });
 
-  const admittedPatients = await filterReferralData({
-    page,
-    targetText: ADMITTED.targetText,
-    startingReferralDate,
-    weekly,
-  });
+            if (!res.ok) {
+              return {
+                success: false,
+                error: `Status ${res.status}`,
+                categoryReference,
+              };
+            }
 
-  const dischargedPatients = await filterReferralData({
-    page,
-    targetText: DISCHARGED.targetText,
-    startingReferralDate,
-    weekly,
-  });
+            const data = await res.json();
 
-  const unique = Array.from(
-    new Map(
-      [...admittedPatients, ...dischargedPatients].map((item) => [
-        item["GMS Referral Id"],
-        item,
-      ])
-    ).values()
-  )
+            const { data: response, errorMessage } = data;
+            const { result } = response || {};
+
+            return {
+              categoryReference,
+              success: true,
+              data: result || [],
+              error: errorMessage,
+            };
+          } catch (err) {
+            return {
+              success: false,
+              error: `Capture error: ${err.message}`,
+              categoryReference,
+            };
+          }
+        })
+      );
+
+      return responses.reduce(
+        (acc, result) => {
+          const { categoryReference, data, error } = result.value || {};
+          if (error || !data?.length) {
+            acc.errors.push(
+              `❌ ${categoryReference} request error: ${error || "NOT DATA"}`
+            );
+          } else {
+            acc.patients.push(
+              ...data.map((patient) => ({
+                ...patient,
+                tabName: categoryReference,
+                paid: 0,
+              }))
+            );
+          }
+
+          return acc;
+        },
+        {
+          patients: [],
+          errors: [],
+        }
+      );
+    },
+    {
+      categoryReferences,
+      globMedHeaders,
+      baseGlobMedAPiUrl,
+      globMedBodyData,
+    }
+  );
+
+  const { patients: apisPatients, errors } = tabsResults;
+
+  if (errors.length) {
+    errors.forEach((error) => console.error(error));
+    await closePageSafely(page);
+    return;
+  }
+
+  const allPatients = allPatientsStatement.all();
+  const allPatientKeys = allPatients.map(({ rowKey }) => rowKey);
+
+  const allNewPatients = apisPatients
+    .filter((patient) => {
+      const rowKey = createPatientRowKey(patient);
+      return !allPatientKeys.includes(rowKey);
+    })
+    .filter(Boolean);
+
+  if (!allNewPatients?.length) {
+    console.info("There is no new patients for past week");
+    await closePageSafely(page);
+    return;
+  }
+
+  const preparedPatients = allNewPatients
     .sort((a, b) => {
-      const dateA = new Date(a["Referral Date"]);
-      const dateB = new Date(b["Referral Date"]);
+      const dateA = new Date(a["referralDate"]);
+      const dateB = new Date(b["referralDate"]);
       return dateB - dateA;
     })
     .map((item, index) => ({
@@ -161,19 +176,33 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
       ...item,
     }));
 
-  const jsonData = JSON.stringify(unique, null, 2);
+  const dates = preparedPatients.map(
+    ({ referralDate }) => new Date(referralDate)
+  );
+
+  const [minDate, maxDate] = [
+    new Date(Math.min(...dates)),
+    new Date(Math.max(...dates)),
+  ].map((date) => {
+    const [splitedDate] = date.toISOString().split("T");
+    return splitedDate.split("-").reverse().join("_");
+  });
+
+  const fileTitle = `admitted-from-${minDate}-to-${maxDate}`;
+
+  const jsonData = JSON.stringify(preparedPatients, null, 2);
 
   await writeFile(
-    `${waitingPatientsFolderDirectory}/referrals.json`,
+    `${generatedSummaryFolderPath}/${fileTitle}.json`,
     jsonData,
     "utf8"
   );
 
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("referral summary");
+  const sheet = workbook.addWorksheet(fileTitle);
   sheet.columns = excelColumns;
 
-  unique.forEach((row) => sheet.addRow(row));
+  preparedPatients.forEach((row) => sheet.addRow(row));
 
   sheet.getRow(1).eachCell((cell) => {
     cell.font = {
@@ -198,15 +227,50 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
   await sendWhatsappMessage(process.env.CLIENT_WHATSAPP_NUMBER, {
     files: [
       {
-        fileName: "referral-summary",
+        fileName: fileTitle,
         fileBase64: buffer.toString("base64"),
         extension: "xlsx",
       },
     ],
   });
 
-  // await sleep(12_000);
+  insertPatients(allNewPatients);
+
   await closePageSafely(page);
 };
 
 export default processCollectReferralSummary;
+
+// Request URL
+// https://referralprogram.globemedsaudi.com/referrals/listing
+// Request Method
+// POST
+// Status Code
+// {
+//     "data": {
+//         "pageNumber": 1,
+//         "pageSize": 100,
+//         "totalNumberOfPages": 1,
+//         "totalNumberOfRecords": 1,
+//         "hasNext": false,
+//         "result": [
+//             {
+//                 "idReferral": 350844,
+//                 "ihalatyReference": "31950880",
+//                 "adherentId": "40562736",
+//                 "adherentName": " THANIYAH  ALQAHTANI",
+//                 "adherentNationalId": "1060650619",
+//                 "referralDate": "2025-06-23T22:28:06",
+//                 "referralType": "Emergency",
+//                 "referralReason": "Bed Unavailable",
+//                 "sourceZone": "Asir",
+//                 "sourceProvider": "",
+//                 "assignedProvider": "",
+//                 "disease": "",
+//                 "status": null
+//             }
+//         ]
+//     },
+//     "statusCode": "Success",
+//     "errorMessage": null
+// }

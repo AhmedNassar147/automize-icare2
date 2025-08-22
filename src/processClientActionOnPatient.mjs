@@ -3,27 +3,24 @@
  * Helper: `processClientActionOnPatient`.
  *
  */
-import { unlink, writeFile } from "fs/promises";
-// import { performance } from "perf_hooks";
+import { unlink, writeFile, readFile } from "fs/promises";
 import { join, resolve } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
-// import makeKeyboardNoise from "./makeKeyboardNoise.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-// import humanMouseMove from "./humanMouseMove.mjs";
 // import humanClick from "./humanClick.mjs";
-// import humanScrollToElement from "./humanScrollToElement.mjs";
-// import clickButtonThatObservedByRecapctahaInvisbleV2 from "./clickButtonThatObservedByRecapctahaInvisbleV2.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
   htmlFilesPath,
+  acceptanceApiUrl,
+  globMedHeaders,
 } from "./constants.mjs";
 
 const MAX_RETRIES = 8;
@@ -32,7 +29,7 @@ const buttonsSelector = "section.referral-button-container button";
 const getSubmissionButtonsIfFound = async (page) => {
   try {
     await page.waitForSelector(buttonsSelector, {
-      timeout: 1500,
+      timeout: 1100,
       // visible: true,
     });
 
@@ -70,9 +67,15 @@ const processClientActionOnPatient = async ({
 
   // console.time("🕒 prepare_user_action_start_time");
   const phoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
+  const CLIENT_NAME = process.env.CLIENT_NAME;
 
-  const { referralId, patientName, referralEndTimestamp, isSuperAcceptance } =
-    patient;
+  const {
+    referralId,
+    patientName,
+    referralEndTimestamp,
+    isSuperAcceptance,
+    providerName,
+  } = patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
 
@@ -80,9 +83,11 @@ const processClientActionOnPatient = async ({
 
   const logString = `details page referralId=(${referralId})`;
 
+  const acceptanceLetterFileName = `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`;
+
   const acceptanceFilePath = join(
     generatedPdfsPathForAcceptance,
-    `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
+    acceptanceLetterFileName
   );
 
   const rejectionFilePath = join(
@@ -177,19 +182,107 @@ const processClientActionOnPatient = async ({
     return;
   }
 
+  const handleOnSubmitDone = async ({
+    startTime,
+    isAutoAccept,
+    errorMessage,
+    isDoneSuccessfully,
+  }) => {
+    const durationText = buildDurationText(startTime, Date.now());
+    console.log("durationText", durationText);
+
+    await sleep(isAutoAccept ? 1000 : 15_000);
+
+    patientsStore.forceReloadHomePage();
+
+    if (!isAutoAccept) {
+      await sleep(15_000);
+    }
+
+    const isDashboardPage = page
+      .url()
+      .toLowerCase()
+      .includes("dashboard/referral");
+
+    const _isDoneSuccessfully = isAutoAccept
+      ? isDoneSuccessfully
+      : isDashboardPage;
+
+    if (!_isDoneSuccessfully) {
+      await sendErrorMessage(
+        isAutoAccept
+          ? errorMessage
+          : "app didn't redirect to home after submission",
+        `no-home-redirect-action-${actionName}`,
+        durationText
+      );
+
+      await closeCurrentPage(!isDashboardPage);
+      return;
+    }
+
+    await sendSuccessMessage(durationText);
+
+    const deletionResponse = await patientsStore.removePatientByReferralId(
+      referralId
+    );
+
+    await Promise.allSettled([
+      checkPathExists(acceptanceFilePath).then(
+        (exists) => exists && unlink(acceptanceFilePath)
+      ),
+      checkPathExists(rejectionFilePath).then(
+        (exists) => exists && unlink(rejectionFilePath)
+      ),
+    ]);
+
+    console.log(deletionResponse?.message);
+    await closeCurrentPage(!isDashboardPage);
+  };
+
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
 
+  let superAcceptanaceData = {
+    apiUrl: acceptanceApiUrl,
+    headers: globMedHeaders,
+  };
+
   if (isSuperAcceptance) {
+    const [idProvider] = CLIENT_NAME.split("-");
+
+    const fileBuffer = await readFile(filePath);
+
+    // convert to Base64
+    const fileData = fileBuffer.toString("base64");
+
+    superAcceptanaceData.body = {
+      files: [
+        {
+          fileName: acceptanceLetterFileName,
+          fileData: fileData,
+          fileExtension: 0,
+          userCode: CLIENT_NAME,
+          idAttachmentType: Math.floor(Math.random() * 90) + 10,
+          languageCode: 1,
+        },
+      ],
+      referralId,
+      idProvider,
+      providerName,
+      notes: [],
+      origin: "portal",
+    };
+
     console.log(`supper acceptance is running on patient ${referralId}`);
   }
 
-  const createTimeLabel = (label) =>
-    `${label}_${referralId}_${submissionButtonsRetry}`;
+  // const createTimeLabel = (label) =>
+  //   `${label}_${referralId}_${submissionButtonsRetry}`;
 
   // console.timeEnd("🕒 prepare_user_action_start_time");
 
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 82;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 83.5;
 
   if (remainingTimeMS > 0) {
     console.log("remainingTimeMS to execute action: ", remainingTimeMS);
@@ -216,15 +309,106 @@ const processClientActionOnPatient = async ({
         }
       }
 
-      // const iconButtonClickLabel = createTimeLabel("click_eye");
-      // console.time(iconButtonClickLabel);
       await iconButton.click();
-      // console.timeEnd(iconButtonClickLabel);
 
-      // const timmingLabel = createTimeLabel("buttons_check");
-      // console.time(timmingLabel);
       const referralButtons = await getSubmissionButtonsIfFound(page);
-      // console.timeEnd(timmingLabel);
+
+      if (isSuperAcceptance) {
+        const random = Math.random();
+        await sleep(5 + random * 10);
+        await page.mouse.move(50, 70 + random * 25);
+        await sleep(8 + random * 10);
+        await page.keyboard.press(random < 0.3 ? "ArrowLeft" : "ArrowDown");
+        await sleep(10 + Math.random() * 10);
+        await page.mouse.wheel({ deltaY: 75 + Math.random() * 50 });
+        await sleep(7 + Math.random() * 8);
+        await page.keyboard.press(random < 0.4 ? "ArrowDown" : "ArrowUp");
+
+        const apiResult = await page.evaluate(
+          async ({ apiUrl, body, headers }) => {
+            const _grecaptcha = window.grecaptcha || grecaptcha;
+
+            // Wait until grecaptcha is ready, then execute
+            const { token, execError } = await new Promise((resolve) => {
+              try {
+                _grecaptcha.ready(async () => {
+                  try {
+                    const t = await _grecaptcha.execute();
+                    resolve({ token: t });
+                  } catch (err) {
+                    resolve({ execError: err });
+                  }
+                });
+              } catch (err) {
+                resolve({ execError: err });
+              }
+            });
+
+            const _body = JSON.stringify({
+              ...body,
+              token,
+            });
+
+            if (!token || execError) {
+              await _grecaptcha.reset();
+              return {
+                error: `Failed to get token: ${execError || "empty token"}`,
+                success: false,
+                _body,
+              };
+            }
+
+            try {
+              const response = await fetch(apiUrl, {
+                headers,
+                method: "POST",
+                body: _body,
+              });
+
+              if (!response.ok) {
+                await _grecaptcha.reset();
+
+                return {
+                  success: false,
+                  error: `Status ${response.status}`,
+                  _body,
+                };
+              }
+
+              // {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null}
+              const responseJson = await response.json();
+              const { errorMessage, statusCode } = responseJson;
+              const isSuccess = statusCode === "Success" && !errorMessage;
+              await _grecaptcha.reset();
+
+              return {
+                error: errorMessage || "",
+                success: isSuccess,
+                _body,
+              };
+            } catch (error) {
+              await _grecaptcha.reset();
+              return {
+                error: `Error: ${error}`,
+                success: false,
+                _body,
+              };
+            }
+          },
+          superAcceptanaceData
+        );
+
+        const { error, success, _body } = apiResult;
+
+        await handleOnSubmitDone({
+          errorMessage: error,
+          isAutoAccept: true,
+          isDoneSuccessfully: success,
+          startTime,
+        });
+        console.log(`BODY sent on patient ${referralId}`, _body);
+        break;
+      }
 
       if (!referralButtons) {
         const hasReachedMaxRetriesForSubmission =
@@ -246,14 +430,6 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
-      // const first = createTimeLabel("first");
-      // console.time(first);
-      // await page.keyboard.press("ArrowDown");
-      // console.timeEnd(first);
-
-      // const check_dropdown = createTimeLabel("check_dropdown");
-      // console.time(check_dropdown);
-      // const [hasOptionSelected, selectionError] =
       await selectAttachmentDropdownOption(
         page,
         actionName,
@@ -263,24 +439,6 @@ const processClientActionOnPatient = async ({
       const fileInput = await page.$('#upload-single-file input[type="file"]');
       await fileInput.uploadFile(filePath);
 
-      // console.timeEnd(check_dropdown);
-
-      // const upload = createTimeLabel("upload");
-      // console.time(upload);
-      // try {
-      // } catch (error) {
-      //   const err = error?.message || String(error);
-      //   await sendErrorMessage(
-      //     `Error happens when uploading file \`${filePath}\`\n*catchError:*: ${err}`,
-      //     "file-upload-error",
-      //     buildDurationText(startTime, Date.now())
-      //   );
-
-      //   await closeCurrentPage(true);
-      //   break;
-      // }
-      // console.timeEnd(upload);
-
       const selectedButton = isAcceptance
         ? referralButtons[0]
         : referralButtons[1];
@@ -289,8 +447,6 @@ const processClientActionOnPatient = async ({
         el.scrollIntoView({ behavior: "auto", block: "center" });
       });
 
-      // await selectedButton.evaluate(el => el.scrollIntoView({ behavior: "auto", block: "center" }));
-
       if (isSuperAcceptance) {
         // await sleep(15 + Math.random() * 25);
         await selectedButton.focus();
@@ -298,73 +454,9 @@ const processClientActionOnPatient = async ({
         // await page.keyboard.press("Enter");
       }
 
-      // const last_scroll = createTimeLabel("last_scroll");
-      // console.time(last_scroll);
-      // await selectedButton.scrollIntoViewIfNeeded({ timeout: 2500 });
-      // await cursor.move(selectedButton);
-      // const box = await selectedButton.boundingBox();
-
-      // const jitteredPoint = {
-      //   x: box.x + 2 + Math.random() * 4,
-      //   y: box.y + 2 + Math.random() * 4,
-      // };
-      // await page.mouse.move(jitteredPoint.x, jitteredPoint.y, { steps: 8 });
-
-      // await selectedButton.hover();
-      // await selectedButton.focus();
-      // await sleep(60 + Math.random() * 40);
-      // await page.keyboard.press('Enter');
-
-      // await page.keyboard.press("ArrowDown");
-      // console.timeEnd(last_scroll);
-
-      // const submit_start_time = performance.now();
-      // await clickButtonThatObservedByRecapctahaInvisbleV2(
-      //   cursor,
-      //   selectedButton
-      // );
-      // console.log(buildDurationText(submit_start_time, performance.now()));
-      const durationText = buildDurationText(startTime, Date.now());
-      console.log("durationText", durationText);
-
-      await sleep(29_000);
-
-      patientsStore.forceReloadHomePage();
-
-      const currentPageUrl = page.url();
-
-      const isRequestDone = currentPageUrl
-        .toLowerCase()
-        .includes("dashboard/referral");
-
-      if (!isRequestDone) {
-        await sendErrorMessage(
-          "app didn't redirect to home after submission",
-          `no-home-redirect-action-${actionName}`,
-          durationText
-        );
-
-        await closeCurrentPage(false);
-        break;
-      }
-
-      await sendSuccessMessage(durationText);
-
-      const deletionResponse = await patientsStore.removePatientByReferralId(
-        referralId
-      );
-
-      await Promise.allSettled([
-        checkPathExists(acceptanceFilePath).then(
-          (exists) => exists && unlink(acceptanceFilePath)
-        ),
-        checkPathExists(rejectionFilePath).then(
-          (exists) => exists && unlink(rejectionFilePath)
-        ),
-      ]);
-
-      console.log(deletionResponse?.message);
-      await closeCurrentPage(false);
+      await handleOnSubmitDone({
+        startTime,
+      });
       break;
     } catch (error) {
       try {
@@ -389,6 +481,8 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
+
+// await selectedButton.evaluate(el => el.scrollIntoView({ behavior: "auto", block: "center" }));
 
 // const endpoint = isAcceptance
 //   ? "referrals/accept-referral"
@@ -418,32 +512,6 @@ export default processClientActionOnPatient;
 //     "token": "03AFcWeA6KvJt8crrG-xFTkxh7BY-8zVhPJ8pBmKCTutfRNHH1wPm9QIGbTGMWbvqEa9Oo8j1J-ol302tV0BITsKfHz-gekmpagz-P5Q12OySN2SxbNqE2zMSMx3hXTVOlYWRbeaBdBJ8HeExm8itEA0E9hqEStXssBRnBkpGemgdbGKTzXLp-PK7ebJlJ2dtYOB7gwZY1IZ7n2s6LmVvXWwdQKFMJp4HOI6oPgVfHfLE53amanpNEhZufCgq-OfsIaTPFsJE5ZVI8rmGxUpFvu-VES0Z1nMcVn9NoZnr3-DiSyi30xyHYDffZ99724MA6Q7K6_-wmDghIw0bdnLRDut-b9kprqzWsRrZmWgtVRyMM462mHP7Nb3luDNHVjQIWT8wTkUJbD4dDBYx1ArsQzlvRnAcklGJ_sM6EA9JWjuhsl5KMZ4-asdjlSnWaAyWsmGLzdY6luepgdicjkERg5anQpyy9WISfpoMP4MVfO_zWGM0E7B0Ujl1WRw7NfwNdnpLqyfsFAq5nUCLUgMYGSdRUcVq4ZfNA4VT9IugVd-kIHpzzRlOEpUYulyHYvSN0Z_1Bdk0vhvJNfDMeE3RCiEtQoECFX5xFDZ7yKtTSwMddAtUBFSuUGWPR6gIs4DsEnKQaCCk9JVQEvSBnUSEgp8lKCkvxGCEzBEM-RgKyGzdg-ShSW4YpJKjSlDbR9sxw_qLX00Es1xO6hkXQqF_nnlqcO42MkUulmsNqNYZeNmtK3OcYsPb8q7EDhbomxTLABdgytaOZ7WfKjwdYDy5IkmiNNaVVVTRI-oLJFbH-3_uUcW_PoID25DwRP0nNfkbzln4ur4K1LyrUpatzdxBjOS-BQjmZJ6Ubs5-m16O3uonC2Gnx-uLbcJWZUJgslqNy47VYaJANnuDRvqnZNtINmV_44sbYMQ4Uo5dYoDR3qroo_q065548kaI3Dg4wB8Y7zUH4zMLkfdbOQcb-BykIfI-U0fxebQc86jkhcjRJ2vcx2iQ4okQKN-6a4uavkx_Y51Oj5Rbcgrc8PPUbHhZGvbs9Dgo_t0qBrwUS-CW2UO19xVfPn-9d-7fSPDXFVaG6ClZE8XAMjUu_-j9NWE_72jtJCASLZe5dnPG9OJ5QUVbhEWotgdLM7e9BvYKCK_rzNisqz82CSxp8hV1KgwaVRRyfvnA8J2MXEnkm4ISlNHI6d_gQ5I6VrtQrUzjsSilmgYtMcH4UZBFBHmalTCgqFgpzL8yEdfadOFE8Lk1yiWmvSFHCY_pXja2_8-EfxN0CqELdY-ITzSmZ7W4T70s6-c48UFuQMIWTuoNQ8MhCYZfqjuRHt30skEq28muippw7lu5U1LcCnatue-UkoDzM9tz2LxdUx8PvEui8gRmohi2bZlNrTGrklN-cVM7760SxbVoYHQljfvaWFUfji01ElPmfiRdrnPDmua3Rnu_ksU09aq6KHGSmsXER6-pKSls6ERcMOEULPInzqabuimnpan69vaL7Zdzjv-wglRQ_1qpweLinjVf5sq4kxW0MdDcYXRPy0O7YcAyZbbEMZtTRan5bgqaz-hUQAf1LBF6DxgYzVh9Xtgqq9fDOflGEBYYUDUCG_4r4Lv3Oi2OempukTS_5-E8MzJVEnCEu7-nOliulDZHiUcoJGDRRkdvIYsTsS-TS0mtClGZ7O3hdVjHdTaND5UvhunOmNQIkpCAbD8ik2z9RcmQokp1gwKkkFOrWWDJ0uS01X8mL_KV4h6HlIjMW45e8WPBIQTS5iKjKSC1hy2DztYf1gs6LUmaUXx5at8hHheG9Xstd6YuvcTF4YH4L-uXHdwdRh9JN_s3JbHnVwvS-vKOf-TvU8UmTUk8ySK6429I_9u3LVlhneBlwCvCaVU0AfKEhJscAo6ffWpNnFKSr6sWZZezcU3N_NQj2OL15v0H54AXCoPhe2g5_fSC-OwrsOFCnOLHfdNPwx3D4MtYubnWRr2J46vhmYubUQtLesaFL5UHaPMWsIvkcZjc-79IYoRLTOZZRFLKPBf86078rIv8KK-SJXqMhJfWNj_MzQNKM4SojtLRWXQ_XSaC2QZ9hvbAYSUJEVooxGHsf8I20j5speTkL4ypPtix6ztKWeU4XiYVizbe50Hy6gP5eW75H_ruVsCXNpLnPmgCtUw8po__3ppwl4AtXqT0BOFuyzHvl1HYy",
 //     "origin": "portal"
 // }
-
-// if (!hasOptionSelected) {
-//   await sendErrorMessage(
-//     `We tried times to select ${actionName}, but couldn't find it.\n*selectionError:* ${selectionError}`,
-//     "list-item-not-found",
-//     buildDurationText(startTime, Date.now())
-//   );
-//   await closeCurrentPage(true);
-//   break;
-// }
-// console.timeEnd("check_dropdown")
-
-// try {
-//   const html = await page.content();
-//   await writeFile(`${htmlFilesPath}/details_page.html`, html);
-// } catch (error) {
-//   console.log("couldn't get details page html", error.message)
-// }
-
-// const sectionEl = await scrollDetailsPageSections({
-//   page,
-//   cursor,
-//   logString,
-//   // sectionsIndices: [1, 2],
-//   sectionsIndices: [2],
-// });
 
 // if (!sectionEl) {
 //   await sendErrorMessage(
@@ -476,60 +544,49 @@ export default processClientActionOnPatient;
 //   continue;
 // }
 
-// console.time("🕒 click-upper-item");
-// await searchForItemCountAndClickItIfFound(
-//   page,
-//   "Confirmed Referrals",
-//   true
-// );
-// console.timeEnd("🕒 click-upper-item");
+// const last_scroll = createTimeLabel("last_scroll");
+// console.time(last_scroll);
+// await selectedButton.scrollIntoViewIfNeeded({ timeout: 2500 });
+// await cursor.move(selectedButton);
+// const box = await selectedButton.boundingBox();
 
-// const responsePromise = page.waitForResponse(
-//         (res) =>
-//           res.url().toLowerCase().includes(endpoint) &&
-//           res.request().method() === "POST" &&
-//           res.status() >= 200 &&
-//           res.status() < 300,
-//         { timeout: 40_000 }
-//       );
+// const jitteredPoint = {
+//   x: box.x + 2 + Math.random() * 4,
+//   y: box.y + 2 + Math.random() * 4,
+// };
+// await page.mouse.move(jitteredPoint.x, jitteredPoint.y, { steps: 8 });
 
-// let errorMessage = "No response";
-// let apiCatchError = "";
-// let statusCode = "Unknown";
+// await selectedButton.hover();
+// await selectedButton.focus();
+// await sleep(60 + Math.random() * 40);
+// await page.keyboard.press('Enter');
 
+// await page.keyboard.press("ArrowDown");
+// console.timeEnd(last_scroll);
+
+// const submit_start_time = performance.now();
+
+// console.timeEnd(check_dropdown);
+
+// const upload = createTimeLabel("upload");
+// console.time(upload);
 // try {
-//   const response = await responsePromise;
-//   const headersRaw = response.headers();
-
-//   const headers = Object.fromEntries(
-//     Object.entries(headersRaw).map(([k, v]) => [k.toLowerCase(), v])
+// } catch (error) {
+//   const err = error?.message || String(error);
+//   await sendErrorMessage(
+//     `Error happens when uploading file \`${filePath}\`\n*catchError:*: ${err}`,
+//     "file-upload-error",
+//     buildDurationText(startTime, Date.now())
 //   );
 
-//   const contentType = headers["content-type"] || "";
-
-//   if (contentType.includes("json")) {
-//     const json = await response.json();
-//     statusCode = json?.statusCode ?? "Unknown";
-//     errorMessage = json?.errorMessage ?? "No errorMessage";
-//   } else {
-//     const text = await response.text();
-//     try {
-//       const parsedText = JSON.parse(text);
-//       statusCode = parsedText?.statusCode ?? "Unknown";
-//       errorMessage = parsedText?.errorMessage ?? "No errorMessage";
-//     } catch (error) {
-//       const err = error?.message || String(error);
-
-//       errorMessage = `Non-JSON response: ${text}`;
-//       apiCatchError = `Tried to parse non-JSON response: ${err}`;
-//     }
-//   }
-// } catch (err) {
-//   const _err = err?.message || String(err);
-
-//   apiCatchError = _err;
-//   console.log(
-//     `🛑 Error during submission API call ${actionName} of ${referralId}:`,
-//     _err
-//   );
+//   await closeCurrentPage(true);
+//   break;
 // }
+// console.timeEnd(upload);
+
+// const iconButtonClickLabel = createTimeLabel("click_eye");
+// console.time(iconButtonClickLabel);
+// console.timeEnd(iconButtonClickLabel);
+// const timmingLabel = createTimeLabel("buttons_check");
+// console.time(timmingLabel);
+// console.timeEnd(timmingLabel);

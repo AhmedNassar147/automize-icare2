@@ -5,7 +5,7 @@
  */
 import { spawn } from "child_process";
 
-const speakText = (text, times = 4, delayMs = 4200) => {
+const speakText = (text, times = 8, delayMs = 4200) => {
   let count = 0;
   const escapedText = text.replace(/'/g, "''").replace(/"/g, '""');
 

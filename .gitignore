@@ -7,3 +7,4 @@
 /.wwebjs_cache
 /.env
 /fingerprint.json
+/patients.db

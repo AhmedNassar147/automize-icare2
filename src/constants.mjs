@@ -9,6 +9,7 @@ export const screenshotsFolderDirectory = `${cwd}/screenshots`;
 export const waitingPatientsFolderDirectory = `${cwd}/results/waiting-patients`;
 export const generatedPdfsPathForAcceptance = `${cwd}/results/generated-acceptance-pdf`;
 export const generatedPdfsPathForRejection = `${cwd}/results/generated-rejection-pdf`;
+export const generatedSummaryFolderPath = `${cwd}/results/summary`;
 export const htmlFilesPath = `${cwd}/results/html`;
 export const COLLECTD_PATIENTS_FILE_NAME = "collectedPatients";
 export const COLLECTD_PATIENTS_FULL_FILE_PATH = `${waitingPatientsFolderDirectory}/${COLLECTD_PATIENTS_FILE_NAME}.json`;
@@ -85,5 +86,18 @@ export const SECTIONS_IN_DETAILS_PAGE = [
 export const dashboardLinkSelector = 'a[href="/dashboard/referral"]';
 
 export const APP_URL = "https://referralprogram.globemedsaudi.com";
-export const HOME_PAGE_URL =
-  "https://referralprogram.globemedsaudi.com/Dashboard/Referral";
+export const HOME_PAGE_URL = `${APP_URL}/Dashboard/Referral`;
+
+export const baseGlobMedAPiUrl = `${APP_URL}/referrals`;
+
+export const acceptanceApiUrl = `${baseGlobMedAPiUrl}/accept-referral`;
+
+export const globMedHeaders = {
+  Accept: "application/json, text/plain, */*",
+  "Content-Type": "application/json",
+  "Accept-Language": "en-US,en;q=0.9",
+  "X-CSRF": "1",
+  // Referer: "https://referralprogram.globemedsaudi.com/referral/details",
+  // Origin: APP_URL,
+  // Host: "referralprogram.globemedsaudi.com",
+};

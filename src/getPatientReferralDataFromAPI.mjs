@@ -3,33 +3,38 @@
  * Helper: `getPatientReferralDataFromAPI`.
  *
  */
-const headers = {
-  Accept: "application/json, text/plain, */*",
-  "Content-Type": "application/json",
-  "Accept-Language": "en-US,en;q=0.9",
-  "X-CSRF": "1",
-  // Referer: "https://referralprogram.globemedsaudi.com/referral/details",
-  Origin: "https://referralprogram.globemedsaudi.com",
-  Host: "referralprogram.globemedsaudi.com",
-};
-
-const baseAPiUrl = "https://referralprogram.globemedsaudi.com/referrals";
+import { globMedHeaders, baseGlobMedAPiUrl } from "./constants.mjs";
 
 const urls = [
-  `${baseAPiUrl}/attachments`,
-  `${baseAPiUrl}/patient-info`,
-  `${baseAPiUrl}/details`,
+  `${baseGlobMedAPiUrl}/attachments`,
+  `${baseGlobMedAPiUrl}/patient-info`,
+  `${baseGlobMedAPiUrl}/details`,
 ];
+
+// const globMedHeaders = {
+//   Accept: "application/json, text/plain, */*",
+//   "Content-Type": "application/json",
+//   "Accept-Language": "en-US,en;q=0.9",
+//   "X-CSRF": "1",
+// };
+
+// const responsex = await fetch("https://referralprogram.globemedsaudi.com/referrals/patient-info", {
+//                 method: "POST",
+//               headers: globMedHeaders,
+//               body: JSON.stringify({ idReferral: "352923" }),
+// })
+
+// const datax = await responsex.json();
 
 const getPatientReferralDataFromAPI = async (page, idReferral) => {
   const results = await page.evaluate(
-    async ({ urls, headers, idReferral, baseAPiUrl }) => {
+    async ({ urls, globMedHeaders, idReferral, baseGlobMedAPiUrl }) => {
       const responses = await Promise.all(
         urls.map(async (url) => {
           try {
             const res = await fetch(url, {
               method: "POST",
-              headers,
+              headers: globMedHeaders,
               body: JSON.stringify({ idReferral }),
             });
 
@@ -74,6 +79,7 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         refType,
         providerZone,
         providerName,
+        providerCode,
         message,
         quotaExceededMessage,
         referralCauseDetails,
@@ -115,6 +121,7 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         sourceProvider,
         providerZone,
         providerName,
+        providerCode,
         requestDate,
         requestedBedType,
         referralCause,
@@ -145,13 +152,14 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         const downloadTasks = attachmentList
           .filter((item) => !!(item.fileName && item.idAttachment))
           .map(async ({ fileName, idAttachment }) => {
-            const downloadUrl = `${baseAPiUrl}/download-attachment/${idAttachment}`;
+            const downloadUrl = `${baseGlobMedAPiUrl}/download-attachment/${idAttachment}`;
 
             try {
               const fileRes = await fetch(downloadUrl);
 
               if (!fileRes.ok) {
                 return {
+                  idAttachment,
                   fileName,
                   downloadUrl,
                   downloadError: `Failed with status ${fileRes.status}`,
@@ -177,6 +185,7 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
                 )}_${safeName}`,
                 extension: extension,
                 fileBase64: base64,
+                idAttachment,
               };
             } catch (error) {
               return {
@@ -187,14 +196,14 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
             }
           });
 
-        const files = await Promise.all(downloadTasks);
+        const files = await Promise.allSettled(downloadTasks);
 
-        finalData.files = files;
+        finalData.files = files.map((item) => item.value).filter(Boolean);
       }
 
       return finalData;
     },
-    { urls, headers, idReferral, baseAPiUrl }
+    { urls, globMedHeaders, idReferral, baseGlobMedAPiUrl }
   );
 
   return results;

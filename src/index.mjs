@@ -29,7 +29,9 @@ import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
   screenshotsFolderDirectory,
+  generatedSummaryFolderPath,
 } from "./constants.mjs";
+
 // import sleep from "./sleep.mjs";
 // import fuckThem from "./fuckThem.mjs";
 
@@ -85,6 +87,7 @@ const collectConfirmedPatient = false;
       generateFolderIfNotExisting(generatedPdfsPathForAcceptance),
       generateFolderIfNotExisting(generatedPdfsPathForRejection),
       generateFolderIfNotExisting(htmlFilesPath),
+      generateFolderIfNotExisting(generatedSummaryFolderPath),
     ]);
 
     const browser = await puppeteer.launch({
@@ -101,7 +104,7 @@ const collectConfirmedPatient = false;
         "--disable-extensions", // Prevents loading suspicious default extensions
         "--disable-default-apps", // Avoids noise from Chrome's default apps
         "--no-first-run", // Skips Chrome welcome screen
-        "--no-service-autorun", // Prevents autorun background tasks
+        // "--no-service-autorun", // Prevents autorun background tasks
         "--disable-dev-shm-usage", // Stability; safe even if not needed
         "--disable-sync",
         "--no-default-browser-check",
@@ -711,40 +714,6 @@ const collectConfirmedPatient = false;
 //   }
 // );
 
-// Request URL
-// https://referralprogram.globemedsaudi.com/referrals/listing
-// Request Method
-// POST
-// Status Code
-// {
-//     "data": {
-//         "pageNumber": 1,
-//         "pageSize": 100,
-//         "totalNumberOfPages": 1,
-//         "totalNumberOfRecords": 1,
-//         "hasNext": false,
-//         "result": [
-//             {
-//                 "idReferral": 350844,
-//                 "ihalatyReference": "31950880",
-//                 "adherentId": "40562736",
-//                 "adherentName": " THANIYAH  ALQAHTANI",
-//                 "adherentNationalId": "1060650619",
-//                 "referralDate": "2025-06-23T22:28:06",
-//                 "referralType": "Emergency",
-//                 "referralReason": "Bed Unavailable",
-//                 "sourceZone": "Asir",
-//                 "sourceProvider": "",
-//                 "assignedProvider": "",
-//                 "disease": "",
-//                 "status": null
-//             }
-//         ]
-//     },
-//     "statusCode": "Success",
-//     "errorMessage": null
-// }
-
 // await page.evaluateOnNewDocument(() => {
 //   const suspiciousKeywords = [
 //     "puppeteer",
@@ -1157,186 +1126,3 @@ const collectConfirmedPatient = false;
 
 // for selecting acctepance and rejection
 // div role="presentation" id="menu-" class="MuiPopover-root MuiMenu-root MuiModal-root css-1sucic7"><div aria-hidden="true" class="MuiBackdrop-root MuiBackdrop-invisible MuiModal-backdrop css-esi9ax" style="opacity: 1; transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1);"></div><div tabindex="0" data-testid="sentinelStart"></div><div class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation8 MuiPopover-paper MuiMenu-paper MuiMenu-paper css-4v31z5" tabindex="-1" style="opacity: 1; transform: none; min-width: 150px; transition: opacity 229ms cubic-bezier(0.4, 0, 0.2, 1), transform 153ms cubic-bezier(0.4, 0, 0.2, 1); top: 130px; left: 310px; transform-origin: 75px 0px;"><ul class="MuiList-root MuiList-padding MuiMenu-list css-r8u8y9" role="listbox" tabindex="-1" aria-labelledby=":r8:-label" id=":r9:"><li class="MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters MuiMenuItem-root MuiMenuItem-gutters css-i76njs" tabindex="0" role="option" aria-selected="false" data-value="[object Object]">Acceptance<span class="MuiTouchRipple-root css-w0pj6f"></span></li><li class="MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters MuiMenuItem-root MuiMenuItem-gutters css-i76njs" tabindex="-1" role="option" aria-selected="false" data-value="[object Object]">Rejection<span class="MuiTouchRipple-root css-w0pj6f"></span></li></ul></div><div tabindex="0" data-testid="sentinelEnd"></div></div>
-
-// called after accept
-// Request URL
-// {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null}
-// https://referralprogram.globemedsaudi.com/referrals/accept-referral
-// Request Method
-// POST
-// Status Code
-// 200 Ok
-
-// ----------------------
-
-// loginpage link https://identityserver.globemedsaudi.com
-// https://referralprogram.globemedsaudi.com/referral/details
-// after login
-
-// Request URL
-// https://referralprogram.globemedsaudi.com/referrals/dashboard-counter
-// Request Method
-// GET
-// Status Code
-// 200 OK
-
-// {
-//     "data": [
-//         {
-//             "categoryReference": "pending",
-//             "category": "Pending Referrals",
-//             "nbReferrals": 0,
-//             "icon": "access_time"
-//         },
-//         {
-//             "categoryReference": "accepted",
-//             "category": "Accepted Referrals",
-//             "nbReferrals": 0,
-//             "icon": "done"
-//         },
-//         {
-//             "categoryReference": "confirmed",
-//             "category": "Confirmed Referrals",
-//             "nbReferrals": 0,
-//             "icon": "done_all"
-//         },
-//         {
-//             "categoryReference": "admitted",
-//             "category": "Admitted Requests",
-//             "nbReferrals": 0,
-//             "icon": "local_hospital"
-//         },
-//         {
-//             "categoryReference": "discharged",
-//             "category": "Discharged Requests",
-//             "nbReferrals": 0,
-//             "icon": "exit_to_app"
-//         },
-//         {
-//             "categoryReference": "declined",
-//             "category": "Declined Requests",
-//             "nbReferrals": 0,
-//             "icon": "block"
-//         }
-//     ],
-//     "statusCode": "Success",
-//     "errorMessage": null
-// }
-
-// Request URL
-// https://referralprogram.globemedsaudi.com/referrals/listing
-// Request Method
-// POST
-// Status Code
-
-// {
-//     "data": {
-//         "pageNumber": 1,
-//         "pageSize": 100,
-//         "totalNumberOfPages": 0,
-//         "totalNumberOfRecords": 0,
-//         "hasNext": false,
-//         "tableHeaders": [
-//             {
-//                 "id": "referralDate",
-//                 "label": "Referral Date",
-//                 "sortingId": "Referraldate"
-//             },
-//             {
-//                 "id": "idReferral",
-//                 "label": "GMS Referral Id",
-//                 "sortingId": "Id"
-//             },
-//             {
-//                 "id": "ihalatyReference",
-//                 "label": "MOH Referral Nb",
-//                 "sortingId": "Idihalaty"
-//             },
-//             {
-//                 "id": "adherentName",
-//                 "label": "Patient Name",
-//                 "sortingId": "IdpatientNavigation.Firstname"
-//             },
-//             {
-//                 "id": "adherentNationalId",
-//                 "label": "National ID",
-//                 "sortingId": "IdpatientNavigation.Nationalid"
-//             },
-//             {
-//                 "id": "referralType",
-//                 "label": "Referral Type",
-//                 "sortingId": "IdreferraltypeNavigation.Description"
-//             },
-//             {
-//                 "id": "referralReason",
-//                 "label": "Referral Reason",
-//                 "sortingId": "IdreferralreasonNavigation.Description"
-//             },
-//             {
-//                 "id": "sourceZone",
-//                 "label": "Source Zone",
-//                 "sortingId": "SourceproviderNavigation.Providerzone"
-//             }
-//         ],
-//         "result": []
-//     },
-//     "statusCode": "Success",
-//     "errorMessage": null
-// }
-
-// https://referralprogram.globemedsaudi.com/referrals/listing
-
-// {
-//     "data": {
-//         "pageNumber": 1,
-//         "pageSize": 100,
-//         "totalNumberOfPages": 0,
-//         "totalNumberOfRecords": 0,
-//         "hasNext": false,
-//         "tableHeaders": [
-//             {
-//                 "id": "referralDate",
-//                 "label": "Referral Date",
-//                 "sortingId": "Referraldate"
-//             },
-//             {
-//                 "id": "idReferral",
-//                 "label": "GMS Referral Id",
-//                 "sortingId": "Id"
-//             },
-//             {
-//                 "id": "ihalatyReference",
-//                 "label": "MOH Referral Nb",
-//                 "sortingId": "Idihalaty"
-//             },
-//             {
-//                 "id": "adherentName",
-//                 "label": "Patient Name",
-//                 "sortingId": "IdpatientNavigation.Firstname"
-//             },
-//             {
-//                 "id": "adherentNationalId",
-//                 "label": "National ID",
-//                 "sortingId": "IdpatientNavigation.Nationalid"
-//             },
-//             {
-//                 "id": "referralType",
-//                 "label": "Referral Type",
-//                 "sortingId": "IdreferraltypeNavigation.Description"
-//             },
-//             {
-//                 "id": "referralReason",
-//                 "label": "Referral Reason",
-//                 "sortingId": "IdreferralreasonNavigation.Description"
-//             },
-//             {
-//                 "id": "sourceZone",
-//                 "label": "Source Zone",
-//                 "sortingId": "SourceproviderNavigation.Providerzone"
-//             }
-//         ],
-//         "result": []
-//     },
-//     "statusCode": "Success",
-//     "errorMessage": null
-// }
