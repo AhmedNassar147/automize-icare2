@@ -40,7 +40,7 @@ const getPatientStatement = db.prepare(
   `SELECT * FROM patients WHERE rowKey = ?`
 );
 
-export const createPatientRowKey = (patient) => {
+const createPatientRowKey = (patient) => {
   const { idReferral, adherentNationalId, adherentId } = patient;
 
   return `${idReferral}-${adherentNationalId || adherentId}`;

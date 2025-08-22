@@ -6,6 +6,7 @@
 import ExcelJS from "exceljs";
 import { writeFile } from "fs/promises";
 import closePageSafely from "./closePageSafely.mjs";
+import sleep from "./sleep.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import {
   allPatientsStatement,
@@ -20,16 +21,16 @@ import {
 } from "./constants.mjs";
 
 const excelColumns = [
-  { header: "order", key: "order", width: 20 },
-  { header: "Referral Date", key: "referralDate", width: 33 },
-  { header: "GMS Referral Id", key: "idReferral", width: 22 },
-  { header: "MOH Referral Nb", key: "ihalatyReference", width: 22 },
-  { header: "Patient Name", key: "adherentName", width: 40 },
-  { header: "National ID", key: "adherentNationalId", width: 28 },
+  { header: "order", key: "order", width: 12 },
+  { header: "Referral Date", key: "referralDate", width: 24 },
+  { header: "GMS Referral Id", key: "idReferral", width: 20 },
+  { header: "MOH Referral Nb", key: "ihalatyReference", width: 20 },
+  { header: "Patient Name", key: "adherentName", width: 37 },
+  { header: "National ID", key: "adherentNationalId", width: 20 },
   { header: "Referral Type", key: "referralType", width: 20 },
-  { header: "Referral Reason", key: "referralReason", width: 30 },
-  { header: "Source Zone", key: "sourceZone", width: 25 },
-  { header: "Assigned Provider", key: "assignedProvider", width: 40 },
+  { header: "Referral Reason", key: "referralReason", width: 28 },
+  { header: "Source Zone", key: "sourceZone", width: 15 },
+  { header: "Assigned Provider", key: "assignedProvider", width: 52 },
 ];
 
 const globMedBodyData = {
@@ -49,6 +50,7 @@ const globMedBodyData = {
 const categoryReferences = ["admitted", "discharged"];
 
 const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
+  await sleep(90_000); // we wait for 1.5 minutes in case of new login
   const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,
@@ -210,14 +212,22 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
       size: 14,
       bold: true,
     };
+    cell.alignment = {
+      horizontal: "center",
+      vertical: "middle", // optional, to center vertically too
+    };
   });
 
   sheet.eachRow((row) => {
     row.eachCell((cell) => {
       cell.font = {
         name: "Arial",
-        size: 13,
+        size: 12,
         bold: false,
+      };
+      cell.alignment = {
+        horizontal: "center",
+        vertical: "middle", // optional, to center vertically too
       };
     });
   });
@@ -235,7 +245,7 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
   });
 
   insertPatients(allNewPatients);
-  console.log("allNewPatients Length", allNewPatients.length);
+  console.log("all new patients length", allNewPatients.length);
 
   await closePageSafely(page);
 };
