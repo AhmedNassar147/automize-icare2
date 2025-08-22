@@ -321,102 +321,102 @@ const processClientActionOnPatient = async ({
 
       const referralButtons = await getSubmissionButtonsIfFound(page);
 
-      if (isSupperAcceptanceOrRejection) {
-        const random = Math.random();
-        await sleep(5 + random * 10);
-        await page.mouse.move(50, 70 + random * 25);
-        await sleep(8 + random * 10);
-        await page.keyboard.press(random < 0.3 ? "ArrowLeft" : "ArrowDown");
-        await sleep(10 + Math.random() * 10);
-        await page.mouse.wheel({ deltaY: 75 + Math.random() * 50 });
-        await sleep(7 + Math.random() * 8);
-        await page.keyboard.press(random < 0.4 ? "ArrowDown" : "ArrowUp");
+      // if (isSupperAcceptanceOrRejection) {
+      //   const random = Math.random();
+      //   await sleep(5 + random * 10);
+      //   await page.mouse.move(50, 70 + random * 25);
+      //   await sleep(8 + random * 10);
+      //   await page.keyboard.press(random < 0.3 ? "ArrowLeft" : "ArrowDown");
+      //   await sleep(10 + Math.random() * 10);
+      //   await page.mouse.wheel({ deltaY: 75 + Math.random() * 50 });
+      //   await sleep(7 + Math.random() * 8);
+      //   await page.keyboard.press(random < 0.4 ? "ArrowDown" : "ArrowUp");
 
-        const apiResult = await page.evaluate(
-          async ({ apiUrl, body, headers }) => {
-            const _grecaptcha = window.grecaptcha || grecaptcha;
+      //   const apiResult = await page.evaluate(
+      //     async ({ apiUrl, body, headers }) => {
+      //       const _grecaptcha = window.grecaptcha || grecaptcha;
 
-            // Wait until grecaptcha is ready, then execute
-            const { token, execError } = await new Promise((resolve) => {
-              try {
-                _grecaptcha.ready(async () => {
-                  try {
-                    const t = await _grecaptcha.execute();
-                    resolve({ token: t });
-                  } catch (err) {
-                    resolve({ execError: err });
-                  }
-                });
-              } catch (err) {
-                resolve({ execError: err });
-              }
-            });
+      //       // Wait until grecaptcha is ready, then execute
+      //       const { token, execError } = await new Promise((resolve) => {
+      //         try {
+      //           _grecaptcha.ready(async () => {
+      //             try {
+      //               const t = await _grecaptcha.execute();
+      //               resolve({ token: t });
+      //             } catch (err) {
+      //               resolve({ execError: err });
+      //             }
+      //           });
+      //         } catch (err) {
+      //           resolve({ execError: err });
+      //         }
+      //       });
 
-            const _body = JSON.stringify({
-              ...body,
-              token,
-            });
+      //       const _body = JSON.stringify({
+      //         ...body,
+      //         token,
+      //       });
 
-            if (!token || execError) {
-              await _grecaptcha.reset();
-              return {
-                error: `Failed to get token: ${execError || "empty token"}`,
-                success: false,
-                _body,
-              };
-            }
+      //       if (!token || execError) {
+      //         await _grecaptcha.reset();
+      //         return {
+      //           error: `Failed to get token: ${execError || "empty token"}`,
+      //           success: false,
+      //           _body,
+      //         };
+      //       }
 
-            try {
-              const response = await fetch(apiUrl, {
-                headers,
-                method: "POST",
-                body: _body,
-              });
+      //       try {
+      //         const response = await fetch(apiUrl, {
+      //           headers,
+      //           method: "POST",
+      //           body: _body,
+      //         });
 
-              if (!response.ok) {
-                await _grecaptcha.reset();
+      //         if (!response.ok) {
+      //           await _grecaptcha.reset();
 
-                return {
-                  success: false,
-                  error: `Status ${response.status}`,
-                  _body,
-                };
-              }
+      //           return {
+      //             success: false,
+      //             error: `Status ${response.status}`,
+      //             _body,
+      //           };
+      //         }
 
-              // {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null}
-              const responseJson = await response.json();
-              const { errorMessage, statusCode } = responseJson;
-              const isSuccess = statusCode === "Success" && !errorMessage;
-              await _grecaptcha.reset();
+      //         // {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null}
+      //         const responseJson = await response.json();
+      //         const { errorMessage, statusCode } = responseJson;
+      //         const isSuccess = statusCode === "Success" && !errorMessage;
+      //         await _grecaptcha.reset();
 
-              return {
-                error: errorMessage || "",
-                success: isSuccess,
-                _body,
-              };
-            } catch (error) {
-              await _grecaptcha.reset();
-              return {
-                error: `Error: ${error}`,
-                success: false,
-                _body,
-              };
-            }
-          },
-          superAcceptanaceData
-        );
+      //         return {
+      //           error: errorMessage || "",
+      //           success: isSuccess,
+      //           _body,
+      //         };
+      //       } catch (error) {
+      //         await _grecaptcha.reset();
+      //         return {
+      //           error: `Error: ${error}`,
+      //           success: false,
+      //           _body,
+      //         };
+      //       }
+      //     },
+      //     superAcceptanaceData
+      //   );
 
-        const { error, success, _body } = apiResult;
+      //   const { error, success, _body } = apiResult;
 
-        await handleOnSubmitDone({
-          errorMessage: error,
-          isAutoAccept: true,
-          isDoneSuccessfully: success,
-          startTime,
-        });
-        console.log(`BODY sent on patient ${referralId}`, _body);
-        break;
-      }
+      //   await handleOnSubmitDone({
+      //     errorMessage: error,
+      //     isAutoAccept: true,
+      //     isDoneSuccessfully: success,
+      //     startTime,
+      //   });
+      //   console.log(`BODY sent on patient ${referralId}`, _body);
+      //   break;
+      // }
 
       if (!referralButtons) {
         const hasReachedMaxRetriesForSubmission =
