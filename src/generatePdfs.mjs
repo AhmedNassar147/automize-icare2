@@ -3,9 +3,11 @@
  * Helper: `generateAcceptancePdfLetters`.
  *
  */
+import { unlink } from "fs/promises";
 import os from "os";
 import pLimit from "p-limit";
 import generateAcceptanceLetterHtml from "./generateAcceptanceLetterHtml.mjs";
+import compressPdf from "./compressPdf.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -36,14 +38,17 @@ const generateAcceptancePdfLetters = async (
 
       const { referralId } = patient;
 
-      const fielName = `${isAcceptance ? ACCEPT : REJECT}-${referralId}`;
+      const fileName = `${isAcceptance ? ACCEPT : REJECT}-${referralId}`;
 
       const folderPath = isAcceptance
         ? generatedPdfsPathForAcceptance
         : generatedPdfsPathForRejection;
 
+      const rawPdfPath = `${folderPath}/${fileName}-raw.pdf`;
+      const finalPdfPath = `${folderPath}/${fileName}.pdf`;
+
       await page.pdf({
-        path: `${folderPath}/${fielName}.pdf`,
+        path: rawPdfPath,
         format: "A4",
         // Avoid printBackground: true unless absolutely necessary — it increases size significantly
         printBackground: false,
@@ -57,6 +62,10 @@ const generateAcceptancePdfLetters = async (
       });
 
       await page.close();
+
+      // 2. Compress the PDF
+      await compressPdf(rawPdfPath, finalPdfPath);
+      await unlink(rawPdfPath);
     })
   );
 

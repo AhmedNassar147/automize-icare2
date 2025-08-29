@@ -14,7 +14,7 @@ const goToHomePage = async (page) => {
   await humanClick(page, dashboardLinkSelector);
 
   await waitForHomeLink(page, timeout);
-  await sleep(40 + Math.random() * 50);
+  await sleep(12 + Math.random() * 20);
   await page.waitForSelector(homePageTableSelector, { timeout });
 
   return true;

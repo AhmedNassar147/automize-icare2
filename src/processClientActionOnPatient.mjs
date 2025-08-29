@@ -12,7 +12,6 @@ import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-// import humanClick from "./humanClick.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -30,7 +29,7 @@ const buttonsSelector = "section.referral-button-container button";
 const getSubmissionButtonsIfFound = async (page) => {
   try {
     await page.waitForSelector(buttonsSelector, {
-      timeout: 1100,
+      timeout: 850,
       // visible: true,
     });
 
@@ -242,48 +241,48 @@ const processClientActionOnPatient = async ({
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
 
-  const isSupperAcceptanceOrRejection = isSuperAcceptance || !isAcceptance;
+  // const isSupperAcceptanceOrRejection = isSuperAcceptance || !isAcceptance;
 
-  let superAcceptanaceData = {
-    apiUrl: isAcceptance ? acceptanceApiUrl : rejectionApiUrl,
-    headers: globMedHeaders,
-  };
+  // let superAcceptanaceData = {
+  //   apiUrl: isAcceptance ? acceptanceApiUrl : rejectionApiUrl,
+  //   headers: {...globMedHeaders, Accept: "text/plain"},
+  // };
 
-  if (isSupperAcceptanceOrRejection) {
-    const [idProvider] = CLIENT_NAME.split("-");
+  // if (isSupperAcceptanceOrRejection) {
+  //   const [idProvider] = CLIENT_NAME.split("-");
 
-    const fileBuffer = await readFile(filePath);
+  //   const fileBuffer = await readFile(filePath);
 
-    // convert to Base64
-    const fileData = fileBuffer.toString("base64");
-    superAcceptanaceData.body = {
-      files: [
-        {
-          fileName: basename(filePath),
-          fileData: fileData,
-          fileExtension: 0,
-          userCode: CLIENT_NAME,
-          // idAttachmentType: Math.floor(Math.random() * 90) + 10,
-          idAttachmentType: isAcceptance ? 14 : 21,
-          languageCode: 1,
-        },
-      ],
-      ...(!isAcceptance && {
-        rejectionReason: {
-          code: "3783",
-          description: "Specialist Dr Unavailable",
-          languageCode: 1,
-        },
-      }),
-      referralId,
-      providerName,
-      idProvider: isAcceptance ? idProvider : undefined,
-      notes: [],
-      origin: "portal",
-    };
+  //   // convert to Base64
+  //   const fileData = fileBuffer.toString("base64");
+  //   superAcceptanaceData.body = {
+  //     files: [
+  //       {
+  //         fileName: basename(filePath),
+  //         fileData: fileData,
+  //         fileExtension: 0,
+  //         userCode: CLIENT_NAME,
+  //         // idAttachmentType: Math.floor(Math.random() * 90) + 10,
+  //         idAttachmentType: isAcceptance ? 14 : 21,
+  //         languageCode: 1,
+  //       },
+  //     ],
+  //     ...(!isAcceptance && {
+  //       rejectionReason: {
+  //         code: "3783",
+  //         description: "Specialist Dr Unavailable",
+  //         languageCode: 1,
+  //       },
+  //     }),
+  //     referralId,
+  //     providerName,
+  //     idProvider: isAcceptance ? idProvider : undefined,
+  //     notes: [],
+  //     origin: "portal",
+  //   };
 
-    console.log(`supper acceptance is running on patient ${referralId}`);
-  }
+  //   console.log(`supper acceptance is running on patient ${referralId}`);
+  // }
 
   // const createTimeLabel = (label) =>
   //   `${label}_${referralId}_${submissionButtonsRetry}`;
@@ -324,7 +323,7 @@ const processClientActionOnPatient = async ({
       // if (isSupperAcceptanceOrRejection) {
       //   const random = Math.random();
       //   await sleep(5 + random * 10);
-      //   await page.mouse.move(50, 70 + random * 25);
+      //   await page.mouse.move(50, 70 + random * 30);
       //   await sleep(8 + random * 10);
       //   await page.keyboard.press(random < 0.3 ? "ArrowLeft" : "ArrowDown");
       //   await sleep(10 + Math.random() * 10);
@@ -333,7 +332,7 @@ const processClientActionOnPatient = async ({
       //   await page.keyboard.press(random < 0.4 ? "ArrowDown" : "ArrowUp");
 
       //   const apiResult = await page.evaluate(
-      //     async ({ apiUrl, body, headers }) => {
+      //     async ({ apiUrl, body, headers, actionType }) => {
       //       const _grecaptcha = window.grecaptcha || grecaptcha;
 
       //       // Wait until grecaptcha is ready, then execute
@@ -341,7 +340,10 @@ const processClientActionOnPatient = async ({
       //         try {
       //           _grecaptcha.ready(async () => {
       //             try {
-      //               const t = await _grecaptcha.execute();
+      // const t = await _grecaptcha.execute(
+      //     "6LcqgMcqAAAAALsWwhGQYrpDuMnke9RkJkdJnFte",
+      //     { action: undefined }
+      //   );
       //               resolve({ token: t });
       //             } catch (err) {
       //               resolve({ execError: err });
@@ -403,7 +405,7 @@ const processClientActionOnPatient = async ({
       //         };
       //       }
       //     },
-      //     superAcceptanaceData
+      //     {...superAcceptanaceData, actionType}
       //   );
 
       //   const { error, success, _body } = apiResult;
@@ -455,12 +457,12 @@ const processClientActionOnPatient = async ({
         el.scrollIntoView({ behavior: "auto", block: "center" });
       });
 
-      if (isSuperAcceptance) {
-        // await sleep(15 + Math.random() * 25);
-        await selectedButton.focus();
-        // await sleep(20 + Math.random() * 25);
-        // await page.keyboard.press("Enter");
-      }
+      // if (isSuperAcceptance) {
+      //   // await sleep(15 + Math.random() * 25);
+      //   await selectedButton.focus();
+      //   // await sleep(20 + Math.random() * 25);
+      //   // await page.keyboard.press("Enter");
+      // }
 
       await handleOnSubmitDone({
         startTime,
@@ -489,6 +491,10 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
+
+// ---------------------------
+
+// ----------------------
 
 // await selectedButton.evaluate(el => el.scrollIntoView({ behavior: "auto", block: "center" }));
 
