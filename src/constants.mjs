@@ -14,23 +14,36 @@ export const htmlFilesPath = `${cwd}/results/html`;
 export const COLLECTD_PATIENTS_FILE_NAME = "collectedPatients";
 export const COLLECTD_PATIENTS_FULL_FILE_PATH = `${waitingPatientsFolderDirectory}/${COLLECTD_PATIENTS_FILE_NAME}.json`;
 
+export const TABS_COLLECTION_TYPES = {
+  WAITING: "WAITING",
+  ACCEPTED: "ACCEPTED",
+  CONFIRMED: "CONFIRMED",
+  ADMITTED: "ADMITTED",
+  DISCHARGED: "DISCHARGED",
+};
+
 export const PATIENT_SECTIONS_STATUS = {
-  WAITING: {
+  [TABS_COLLECTION_TYPES.WAITING]: {
     targetText: "Pending Referrals",
     foundCountText: "waiting confirmation referrals",
     noCountText: "No waiting referrals found",
   },
-  CONFIRMED: {
+  [TABS_COLLECTION_TYPES.ACCEPTED]: {
+    targetText: "Accepted Referrals",
+    foundCountText: "Accepted referrals requests",
+    noCountText: "No Accepted referrals requests found",
+  },
+  [TABS_COLLECTION_TYPES.CONFIRMED]: {
     targetText: "Confirmed Referrals",
     foundCountText: "confirmed referrals requests",
     noCountText: "No confirmed referrals requests found",
   },
-  ADMITTED: {
+  [TABS_COLLECTION_TYPES.ADMITTED]: {
     targetText: "Admitted Requests",
     foundCountText: "Admitted referrals requests",
     noCountText: "No Admitted referrals found",
   },
-  DISCHARGED: {
+  [TABS_COLLECTION_TYPES.DISCHARGED]: {
     targetText: "Discharged Requests",
     foundCountText: "Discharged Requests requests",
     noCountText: "No Discharged Requests found",

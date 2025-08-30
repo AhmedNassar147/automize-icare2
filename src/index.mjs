@@ -30,14 +30,13 @@ import {
   generatedPdfsPathForRejection,
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
+  TABS_COLLECTION_TYPES,
 } from "./constants.mjs";
 
 // import sleep from "./sleep.mjs";
 // import fuckThem from "./fuckThem.mjs";
 
 // const { createCursor, installMouseHelper } = pkg;
-
-const collectConfirmedPatient = false;
 
 // const twilioClient = twilio(
 //   process.env.TWILIO_ACCOUNT_SID,
@@ -133,7 +132,7 @@ const collectConfirmedPatient = false;
 
     (async () =>
       await waitForWaitingCountWithInterval({
-        collectConfirmedPatient,
+        collectionTabType: TABS_COLLECTION_TYPES.WAITING,
         browser,
         patientsStore,
         sendWhatsappMessage,

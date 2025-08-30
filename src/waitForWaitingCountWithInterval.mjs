@@ -9,7 +9,10 @@ import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItI
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import goToHomePage from "./goToHomePage.mjs";
-import { PATIENT_SECTIONS_STATUS } from "./constants.mjs";
+import {
+  PATIENT_SECTIONS_STATUS,
+  TABS_COLLECTION_TYPES,
+} from "./constants.mjs";
 
 const INTERVAL = 62_000;
 const NOT_LOGGED_SLEEP_TIME = 25_000;
@@ -51,21 +54,17 @@ const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
 };
 
 const waitForWaitingCountWithInterval = async ({
-  collectConfirmedPatient = false,
+  collectionTabType,
   patientsStore,
   browser,
   sendWhatsappMessage,
 }) => {
   const { targetText, noCountText } =
-    PATIENT_SECTIONS_STATUS[collectConfirmedPatient ? "CONFIRMED" : "WAITING"];
+    PATIENT_SECTIONS_STATUS[collectionTabType];
 
   let page, cursor;
 
-  console.log(
-    `🌀 Loop running for ${
-      collectConfirmedPatient ? "CONFIRMED" : "WAITING"
-    } patients...`
-  );
+  console.log(`🌀 Loop running for ${collectionTabType} patients...`);
 
   if (!patientsStore.hasReloadListener()) {
     patientsStore.on("forceReloadHomePage", async () => {
@@ -145,7 +144,7 @@ const waitForWaitingCountWithInterval = async ({
       const { count } = await searchForItemCountAndClickItIfFound(
         page,
         targetText,
-        collectConfirmedPatient
+        collectionTabType !== TABS_COLLECTION_TYPES.WAITING
       );
 
       if (!count) {
