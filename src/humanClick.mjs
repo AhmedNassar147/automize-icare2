@@ -40,11 +40,16 @@ const humanClick = async (page, target, options = {}) => {
 
   let element = target;
   if (typeof target === "string") {
-    element = await page.$(target);
-    if (!element) {
-      console.log(`humanClick: Element ${target} not found`);
-      return;
+    try {
+      element = await page.$(target);
+    } catch (error) {
+      element = null;
     }
+  }
+
+  if (!element) {
+    console.log(`humanClick: Element ${target} not found`);
+    return;
   }
 
   const box = await element.boundingBox();

@@ -11,13 +11,17 @@ import sleep from "./sleep.mjs";
 const timeout = 7_000;
 
 const goToHomePage = async (page) => {
-  await humanClick(page, dashboardLinkSelector);
+  try {
+    await humanClick(page, dashboardLinkSelector);
+    await waitForHomeLink(page, timeout);
+    await sleep(20 + Math.random() * 20);
+    await page.waitForSelector(homePageTableSelector, { timeout });
 
-  await waitForHomeLink(page, timeout);
-  await sleep(12 + Math.random() * 20);
-  await page.waitForSelector(homePageTableSelector, { timeout });
-
-  return true;
+    return true;
+  } catch (error) {
+    console.error("Error when going to home page", error);
+    return false;
+  }
 };
 
 export default goToHomePage;

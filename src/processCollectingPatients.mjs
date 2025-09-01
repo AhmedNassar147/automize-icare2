@@ -85,9 +85,9 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
 
       const isThereNotNewPatients = processedCount >= rowsLength;
 
-      if (isThereNotNewPatients) {
+      if (isThereNotNewPatients || !rowsLength) {
         console.log("⏳ No more new patients found, exiting...");
-        await sleep(1500 + Math.random() * 100);
+        await sleep(1500 + Math.random() * 150);
         break;
       }
 
@@ -97,56 +97,60 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
         row
       );
 
+      console.log(`Progress: ${processedCount + 1}/${rowsLength}`);
+
       if (!referralId) {
         console.log(`⏩ didn't find referralId: ${referralId}`);
         break;
       }
 
       if (patientsStore.has(referralId)) {
-        console.log("⚠️ Patient already collected...");
-        await sleep(1000);
-        break;
-      }
-
-      console.log(
-        `📡 fetch patient referralId=(${referralId}) API responses...`
-      );
-      const patientData = await getPatientReferralDataFromAPI(page, referralId);
-
-      const {
-        patientDetailsError,
-        patientInfoError,
-        attchmentsError,
-        caseAlertMessage,
-      } = patientData;
-
-      if (patientDetailsError || patientInfoError || attchmentsError) {
+        console.log(`⚠️ Patient referralId=${referralId} already collected...`);
+        await sleep(3_000);
+      } else {
         console.log(
-          `❌ Error when colleting referralId=${referralId}, reason:`,
-          [patientDetailsError, patientInfoError, attchmentsError].join("__")
+          `📡 fetch patient referralId=(${referralId}) API responses...`
         );
-        break;
+        const patientData = await getPatientReferralDataFromAPI(
+          page,
+          referralId
+        );
+
+        const {
+          patientDetailsError,
+          patientInfoError,
+          attchmentsError,
+          caseAlertMessage,
+        } = patientData;
+
+        if (patientDetailsError || patientInfoError || attchmentsError) {
+          console.log(
+            `❌ Error when colleting referralId=${referralId}, reason:`,
+            [patientDetailsError, patientInfoError, attchmentsError].join("__")
+          );
+          break;
+        }
+
+        const finalData = {
+          referralId,
+          ...getSaudiStartAndEndDate(referralDate, caseAlertMessage),
+          ...patientData,
+        };
+
+        await patientsStore.addPatients(finalData);
+
+        await Promise.allSettled([
+          generateAcceptancePdfLetters(browser, [finalData], true),
+          generateAcceptancePdfLetters(browser, [finalData], false),
+        ]);
+
+        await sleep(3_000);
       }
 
-      const finalData = {
-        referralId,
-        ...getSaudiStartAndEndDate(referralDate, caseAlertMessage),
-        ...patientData,
-      };
-
-      await patientsStore.addPatients(finalData);
       processedCount++;
-      console.log(`\n👉 Processed row ${processedCount} of ${rowsLength}`);
-
-      await Promise.allSettled([
-        generateAcceptancePdfLetters(browser, [finalData], true),
-        generateAcceptancePdfLetters(browser, [finalData], false),
-      ]);
-
-      await sleep(3_000);
 
       if (processedCount >= rowsLength) {
-        await sleep(3000 + Math.random() * 1000);
+        console.log("✅ All rows processed.");
         break;
       }
     }
