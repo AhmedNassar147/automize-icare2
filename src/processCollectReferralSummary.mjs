@@ -190,12 +190,13 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
     return splitedDate.split("-").reverse().join("_");
   });
 
-  const fileTitle = `admitted-from-${minDate}-to-${maxDate}`;
+  const fileTitle = `from-${minDate}-to-${maxDate}`;
+  const fullFileTitle = `admitted-${fileTitle}`;
 
   const jsonData = JSON.stringify(preparedPatients, null, 2);
 
   await writeFile(
-    `${generatedSummaryFolderPath}/${fileTitle}.json`,
+    `${generatedSummaryFolderPath}/${fullFileTitle}.json`,
     jsonData,
     "utf8"
   );
@@ -237,7 +238,7 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
   await sendWhatsappMessage(process.env.CLIENT_WHATSAPP_NUMBER, {
     files: [
       {
-        fileName: fileTitle,
+        fileName: fullFileTitle,
         fileBase64: buffer.toString("base64"),
         extension: "xlsx",
       },
