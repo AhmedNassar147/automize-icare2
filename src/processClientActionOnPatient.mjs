@@ -4,8 +4,8 @@
  *
  */
 import { unlink, writeFile, readFile } from "fs/promises";
-import { join, resolve, basename } from "path";
-import collectHomePageTableRows from "./collectHomeTableRows.mjs";
+import { join, resolve /* basename */ } from "path";
+// import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
@@ -29,7 +29,7 @@ const buttonsSelector = "section.referral-button-container button";
 const getSubmissionButtonsIfFound = async (page) => {
   try {
     await page.waitForSelector(buttonsSelector, {
-      timeout: 850,
+      timeout: 800,
       // visible: true,
     });
 
@@ -160,25 +160,25 @@ const processClientActionOnPatient = async ({
     return;
   }
 
-  const referralIdRecordResult = await collectHomePageTableRows(
-    page,
-    referralId,
-    4000
-  );
+  // const referralIdRecordResult = await collectHomePageTableRows(
+  //   page,
+  //   referralId,
+  //   4000
+  // );
 
-  let { iconButton } = referralIdRecordResult || {};
+  // let { iconButton } = referralIdRecordResult || {};
 
-  if (!iconButton) {
-    console.log("referralIdRecordResult: ", referralIdRecordResult);
-    await sendErrorMessage(
-      "The Pending referrals table is empty or eye button not found.",
-      "no-patients-in-home-table",
-      buildDurationText(preparingStartTime, Date.now())
-    );
+  // if (!iconButton) {
+  //   console.log("referralIdRecordResult: ", referralIdRecordResult);
+  //   await sendErrorMessage(
+  //     "The Pending referrals table is empty or eye button not found.",
+  //     "no-patients-in-home-table",
+  //     buildDurationText(preparingStartTime, Date.now())
+  //   );
 
-    await closeCurrentPage(false);
-    return;
-  }
+  //   await closeCurrentPage(false);
+  //   return;
+  // }
 
   const handleOnSubmitDone = async ({
     startTime,
@@ -300,125 +300,34 @@ const processClientActionOnPatient = async ({
     const startTime = Date.now();
 
     try {
-      if (submissionButtonsRetry || checkDetailsPageRetry) {
-        console.log(
-          `referralId=${referralId}_RETURNED_TO_HOME_times_${
-            submissionButtonsRetry + checkDetailsPageRetry
-          }`
-        );
-        const referralIdRecordResultData = await collectHomePageTableRows(
-          page,
-          referralId
-        );
+      await page.evaluate(
+        ({ referralId }) => {
+          function generateKey(length = 8) {
+            const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+            let key = "";
+            for (let i = 0; i < length; i++) {
+              key += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return key;
+          }
 
-        if (referralIdRecordResultData?.iconButton) {
-          iconButton = referralIdRecordResultData?.iconButton;
-        }
-      }
-
-      await iconButton.click();
+          window.history.pushState(
+            {
+              usr: { idReferral: referralId, type: "Referral" },
+              key: generateKey(),
+              idx: window.history.state?.idx + 1 || 1,
+            },
+            "",
+            "/referral/details"
+          );
+          window.dispatchEvent(
+            new PopStateEvent("popstate", { state: window.history.state })
+          );
+        },
+        { referralId }
+      );
 
       const referralButtons = await getSubmissionButtonsIfFound(page);
-
-      // if (isSupperAcceptanceOrRejection) {
-      //   const random = Math.random();
-      //   await sleep(5 + random * 10);
-      //   await page.mouse.move(50, 70 + random * 30);
-      //   await sleep(8 + random * 10);
-      //   await page.keyboard.press(random < 0.3 ? "ArrowLeft" : "ArrowDown");
-      //   await sleep(10 + Math.random() * 10);
-      //   await page.mouse.wheel({ deltaY: 75 + Math.random() * 50 });
-      //   await sleep(7 + Math.random() * 8);
-      //   await page.keyboard.press(random < 0.4 ? "ArrowDown" : "ArrowUp");
-
-      //   const apiResult = await page.evaluate(
-      //     async ({ apiUrl, body, headers, actionType }) => {
-      //       const _grecaptcha = window.grecaptcha || grecaptcha;
-
-      //       // Wait until grecaptcha is ready, then execute
-      //       const { token, execError } = await new Promise((resolve) => {
-      //         try {
-      //           _grecaptcha.ready(async () => {
-      //             try {
-      // const t = await _grecaptcha.execute(
-      //     "6LcqgMcqAAAAALsWwhGQYrpDuMnke9RkJkdJnFte",
-      //     { action: undefined }
-      //   );
-      //               resolve({ token: t });
-      //             } catch (err) {
-      //               resolve({ execError: err });
-      //             }
-      //           });
-      //         } catch (err) {
-      //           resolve({ execError: err });
-      //         }
-      //       });
-
-      //       const _body = JSON.stringify({
-      //         ...body,
-      //         token,
-      //       });
-
-      //       if (!token || execError) {
-      //         await _grecaptcha.reset();
-      //         return {
-      //           error: `Failed to get token: ${execError || "empty token"}`,
-      //           success: false,
-      //           _body,
-      //         };
-      //       }
-
-      //       try {
-      //         const response = await fetch(apiUrl, {
-      //           headers,
-      //           method: "POST",
-      //           body: _body,
-      //         });
-
-      //         if (!response.ok) {
-      //           await _grecaptcha.reset();
-
-      //           return {
-      //             success: false,
-      //             error: `Status ${response.status}`,
-      //             _body,
-      //           };
-      //         }
-
-      //         // {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null}
-      //         const responseJson = await response.json();
-      //         const { errorMessage, statusCode } = responseJson;
-      //         const isSuccess = statusCode === "Success" && !errorMessage;
-      //         await _grecaptcha.reset();
-
-      //         return {
-      //           error: errorMessage || "",
-      //           success: isSuccess,
-      //           _body,
-      //         };
-      //       } catch (error) {
-      //         await _grecaptcha.reset();
-      //         return {
-      //           error: `Error: ${error}`,
-      //           success: false,
-      //           _body,
-      //         };
-      //       }
-      //     },
-      //     {...superAcceptanaceData, actionType}
-      //   );
-
-      //   const { error, success, _body } = apiResult;
-
-      //   await handleOnSubmitDone({
-      //     errorMessage: error,
-      //     isAutoAccept: true,
-      //     isDoneSuccessfully: success,
-      //     startTime,
-      //   });
-      //   console.log(`BODY sent on patient ${referralId}`, _body);
-      //   break;
-      // }
 
       if (!referralButtons) {
         const hasReachedMaxRetriesForSubmission =
@@ -627,3 +536,123 @@ export default processClientActionOnPatient;
 // const timmingLabel = createTimeLabel("buttons_check");
 // console.time(timmingLabel);
 // console.timeEnd(timmingLabel);
+
+// ----------------------------------------------------
+
+//   if (submissionButtonsRetry || checkDetailsPageRetry) {
+//     console.log(
+//       `referralId=${referralId}_RETURNED_TO_HOME_times_${
+//         submissionButtonsRetry + checkDetailsPageRetry
+//       }`
+//     );
+//     const referralIdRecordResultData = await collectHomePageTableRows(
+//       page,
+//       referralId
+//     );
+
+//     if (referralIdRecordResultData?.iconButton) {
+//       iconButton = referralIdRecordResultData?.iconButton;
+//     }
+//   }
+
+//   await iconButton.click();
+
+// if (isSupperAcceptanceOrRejection) {
+//   const random = Math.random();
+//   await sleep(5 + random * 10);
+//   await page.mouse.move(50, 70 + random * 30);
+//   await sleep(8 + random * 10);
+//   await page.keyboard.press(random < 0.3 ? "ArrowLeft" : "ArrowDown");
+//   await sleep(10 + Math.random() * 10);
+//   await page.mouse.wheel({ deltaY: 75 + Math.random() * 50 });
+//   await sleep(7 + Math.random() * 8);
+//   await page.keyboard.press(random < 0.4 ? "ArrowDown" : "ArrowUp");
+
+//   const apiResult = await page.evaluate(
+//     async ({ apiUrl, body, headers, actionType }) => {
+//       const _grecaptcha = window.grecaptcha || grecaptcha;
+
+//       // Wait until grecaptcha is ready, then execute
+//       const { token, execError } = await new Promise((resolve) => {
+//         try {
+//           _grecaptcha.ready(async () => {
+//             try {
+// const t = await _grecaptcha.execute(
+//     "6LcqgMcqAAAAALsWwhGQYrpDuMnke9RkJkdJnFte",
+//     { action: undefined }
+//   );
+//               resolve({ token: t });
+//             } catch (err) {
+//               resolve({ execError: err });
+//             }
+//           });
+//         } catch (err) {
+//           resolve({ execError: err });
+//         }
+//       });
+
+//       const _body = JSON.stringify({
+//         ...body,
+//         token,
+//       });
+
+//       if (!token || execError) {
+//         await _grecaptcha.reset();
+//         return {
+//           error: `Failed to get token: ${execError || "empty token"}`,
+//           success: false,
+//           _body,
+//         };
+//       }
+
+//       try {
+//         const response = await fetch(apiUrl, {
+//           headers,
+//           method: "POST",
+//           body: _body,
+//         });
+
+//         if (!response.ok) {
+//           await _grecaptcha.reset();
+
+//           return {
+//             success: false,
+//             error: `Status ${response.status}`,
+//             _body,
+//           };
+//         }
+
+//         // {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null}
+//         const responseJson = await response.json();
+//         const { errorMessage, statusCode } = responseJson;
+//         const isSuccess = statusCode === "Success" && !errorMessage;
+//         await _grecaptcha.reset();
+
+//         return {
+//           error: errorMessage || "",
+//           success: isSuccess,
+//           _body,
+//         };
+//       } catch (error) {
+//         await _grecaptcha.reset();
+//         return {
+//           error: `Error: ${error}`,
+//           success: false,
+//           _body,
+//         };
+//       }
+//     },
+//     {...superAcceptanaceData, actionType}
+//   );
+
+//   const { error, success, _body } = apiResult;
+
+//   await handleOnSubmitDone({
+//     errorMessage: error,
+//     isAutoAccept: true,
+//     isDoneSuccessfully: success,
+//     startTime,
+//   });
+//   console.log(`BODY sent on patient ${referralId}`, _body);
+//   break;
+// }

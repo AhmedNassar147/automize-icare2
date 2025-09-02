@@ -148,6 +148,7 @@ const waitForWaitingCountWithInterval = async ({
       );
 
       if (!count) {
+        await sleep(10_000 + Math.random() * 1000);
         const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(
           page,
           `${noCountText}, `
