@@ -75,85 +75,78 @@ const getSaudiStartAndEndDate = (referralDate, caseAlertMessage) => {
 
 const processCollectingPatients = async ({ browser, patientsStore, page }) => {
   try {
-    let processedCount = 0;
+    // Collect rows once (instead of inside while loop)
+    const rows = await collectHomePageTableRows(page);
 
-    while (true) {
-      // 🔁 Always re-fetch rows after page changes
-      const rows = await collectHomePageTableRows(page);
+    const rowsLength = rows?.length ?? 0;
 
-      const rowsLength = rows.length;
+    if (!rowsLength) {
+      await sleep(4_000);
+      console.log("⏳ No patients found, exiting...");
+      return;
+    }
 
-      const isThereNotNewPatients = processedCount >= rowsLength;
+    console.log(`📋 Found ${rowsLength} rows to process.`);
 
-      if (isThereNotNewPatients || !rowsLength) {
-        console.log("⏳ No more new patients found, exiting...");
-        await sleep(1500 + Math.random() * 150);
-        break;
-      }
+    let index = 0;
 
-      const row = rows[processedCount];
-
+    for (const row of rows) {
+      index++;
       const { referralId, referralDate } = await getReferralIdBasedTableRow(
         row
       );
 
-      console.log(`Progress: ${processedCount + 1}/${rowsLength}`);
+      console.log(`Progress: ${index}/${rowsLength}`);
 
       if (!referralId) {
         console.log(`⏩ didn't find referralId: ${referralId}`);
-        break;
+        continue;
       }
 
       if (patientsStore.has(referralId)) {
         console.log(`⚠️ Patient referralId=${referralId} already collected...`);
         await sleep(3_000);
-      } else {
-        console.log(
-          `📡 fetch patient referralId=(${referralId}) API responses...`
-        );
-        const patientData = await getPatientReferralDataFromAPI(
-          page,
-          referralId
-        );
-
-        const {
-          patientDetailsError,
-          patientInfoError,
-          attchmentsError,
-          caseAlertMessage,
-        } = patientData;
-
-        if (patientDetailsError || patientInfoError || attchmentsError) {
-          console.log(
-            `❌ Error when colleting referralId=${referralId}, reason:`,
-            [patientDetailsError, patientInfoError, attchmentsError].join("__")
-          );
-          break;
-        }
-
-        const finalData = {
-          referralId,
-          ...getSaudiStartAndEndDate(referralDate, caseAlertMessage),
-          ...patientData,
-        };
-
-        await patientsStore.addPatients(finalData);
-
-        await Promise.allSettled([
-          generateAcceptancePdfLetters(browser, [finalData], true),
-          generateAcceptancePdfLetters(browser, [finalData], false),
-        ]);
-
-        await sleep(3_000);
+        continue;
       }
 
-      processedCount++;
+      console.log(
+        `📡 fetch patient referralId=(${referralId}) API responses...`
+      );
 
-      if (processedCount >= rowsLength) {
-        console.log("✅ All rows processed.");
+      const patientData = await getPatientReferralDataFromAPI(page, referralId);
+      const {
+        patientDetailsError,
+        patientInfoError,
+        attchmentsError,
+        caseAlertMessage,
+      } = patientData;
+
+      if (patientDetailsError || patientInfoError || attchmentsError) {
+        console.log(
+          `❌ Error when collecting referralId=${referralId}, reason:`,
+          [patientDetailsError, patientInfoError, attchmentsError].join("__")
+        );
         break;
       }
+
+      const finalData = {
+        referralId,
+        ...getSaudiStartAndEndDate(referralDate, caseAlertMessage),
+        ...patientData,
+      };
+
+      await patientsStore.addPatients(finalData);
+
+      await Promise.allSettled([
+        generateAcceptancePdfLetters(browser, [finalData], true),
+        generateAcceptancePdfLetters(browser, [finalData], false),
+      ]);
+
+      await sleep(3_000 + Math.random() * 2_000);
     }
+
+    await sleep(5_000 + Math.random() * 2_000);
+    console.log("✅ Finished processing all rows.");
   } catch (err) {
     console.error("🛑 Fatal error during collecting patients:", err.message);
   }
