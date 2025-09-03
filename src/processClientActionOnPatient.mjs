@@ -4,7 +4,7 @@
  *
  */
 import { unlink, writeFile, readFile } from "fs/promises";
-import { join, resolve /* basename */ } from "path";
+import { join, resolve, basename } from "path";
 // import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
 import goToHomePage from "./goToHomePage.mjs";
@@ -160,25 +160,25 @@ const processClientActionOnPatient = async ({
     return;
   }
 
-  // const referralIdRecordResult = await collectHomePageTableRows(
-  //   page,
-  //   referralId,
-  //   4000
-  // );
+  const referralIdRecordResult = await collectHomePageTableRows(
+    page,
+    referralId,
+    4000
+  );
 
-  // let { iconButton } = referralIdRecordResult || {};
+  let { iconButton } = referralIdRecordResult || {};
 
-  // if (!iconButton) {
-  //   console.log("referralIdRecordResult: ", referralIdRecordResult);
-  //   await sendErrorMessage(
-  //     "The Pending referrals table is empty or eye button not found.",
-  //     "no-patients-in-home-table",
-  //     buildDurationText(preparingStartTime, Date.now())
-  //   );
+  if (!iconButton) {
+    console.log("referralIdRecordResult: ", referralIdRecordResult);
+    await sendErrorMessage(
+      "The Pending referrals table is empty or eye button not found.",
+      "no-patients-in-home-table",
+      buildDurationText(preparingStartTime, Date.now())
+    );
 
-  //   await closeCurrentPage(false);
-  //   return;
-  // }
+    await closeCurrentPage(false);
+    return;
+  }
 
   const handleOnSubmitDone = async ({
     startTime,
@@ -300,32 +300,7 @@ const processClientActionOnPatient = async ({
     const startTime = Date.now();
 
     try {
-      await page.evaluate(
-        ({ referralId }) => {
-          function generateKey(length = 8) {
-            const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-            let key = "";
-            for (let i = 0; i < length; i++) {
-              key += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return key;
-          }
-
-          window.history.pushState(
-            {
-              usr: { idReferral: referralId, type: "Referral" },
-              key: generateKey(),
-              idx: window.history.state?.idx + 1 || 1,
-            },
-            "",
-            "/referral/details"
-          );
-          window.dispatchEvent(
-            new PopStateEvent("popstate", { state: window.history.state })
-          );
-        },
-        { referralId }
-      );
+      await iconButton.click();
 
       const referralButtons = await getSubmissionButtonsIfFound(page);
 
@@ -365,13 +340,6 @@ const processClientActionOnPatient = async ({
       await selectedButton.evaluate((el) => {
         el.scrollIntoView({ behavior: "auto", block: "center" });
       });
-
-      // if (isSuperAcceptance) {
-      //   // await sleep(15 + Math.random() * 25);
-      //   await selectedButton.focus();
-      //   // await sleep(20 + Math.random() * 25);
-      //   // await page.keyboard.press("Enter");
-      // }
 
       await handleOnSubmitDone({
         startTime,
@@ -655,4 +623,38 @@ export default processClientActionOnPatient;
 //   });
 //   console.log(`BODY sent on patient ${referralId}`, _body);
 //   break;
+// }
+
+// await page.evaluate(
+//   ({ referralId }) => {
+//     function generateKey(length = 8) {
+//       const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+//       let key = "";
+//       for (let i = 0; i < length; i++) {
+//         key += chars.charAt(Math.floor(Math.random() * chars.length));
+//       }
+//       return key;
+//     }
+
+//     window.history.pushState(
+//       {
+//         usr: { idReferral: referralId, type: "Referral" },
+//         key: generateKey(),
+//         idx: window.history.state?.idx + 1 || 1,
+//       },
+//       "",
+//       "/referral/details"
+//     );
+//     window.dispatchEvent(
+//       new PopStateEvent("popstate", { state: window.history.state })
+//     );
+//   },
+//   { referralId }
+// );
+
+// if (isSuperAcceptance) {
+//   // await sleep(15 + Math.random() * 25);
+//   await selectedButton.focus();
+//   // await sleep(20 + Math.random() * 25);
+//   // await page.keyboard.press("Enter");
 // }

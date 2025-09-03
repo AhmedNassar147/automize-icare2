@@ -8,7 +8,7 @@ import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs
 import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-import goToHomePage from "./goToHomePage.mjs";
+// import goToHomePage from "./goToHomePage.mjs";
 import {
   PATIENT_SECTIONS_STATUS,
   TABS_COLLECTION_TYPES,
@@ -70,18 +70,17 @@ const waitForWaitingCountWithInterval = async ({
     patientsStore.on("forceReloadHomePage", async () => {
       console.log("📢 Received forceReloadHomePage event");
       if (page) {
-        const currentPageUrl = page.url();
+        // const currentPageUrl = page.url();
 
-        const isHomePage = currentPageUrl
-          .toLowerCase()
-          .includes("dashboard/referral");
+        // const isHomePage = currentPageUrl
+        //   .toLowerCase()
+        //   .includes("dashboard/referral");
 
-        if (!isHomePage) {
-          await sleep(6_000);
-        }
+        // if (!isHomePage) {
+        //   await sleep(6_000);
+        // }
 
         try {
-          await goToHomePage(page);
           await page.reload({ waitUntil: "domcontentloaded" });
           console.log("🔄 Page reloaded successfully from event.");
         } catch (err) {
