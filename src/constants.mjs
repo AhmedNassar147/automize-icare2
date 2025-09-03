@@ -96,7 +96,7 @@ export const SECTIONS_IN_DETAILS_PAGE = [
   "Procedure",
 ];
 
-export const dashboardLinkSelector = 'a[href="/dashboard/referral"]';
+export const dashboardLinkSelector = 'a[href="/dashboard/referral"] button';
 
 export const APP_URL = "https://referralprogram.globemedsaudi.com";
 export const HOME_PAGE_URL = `${APP_URL}/Dashboard/Referral`;
