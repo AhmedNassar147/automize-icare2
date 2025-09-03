@@ -7,7 +7,7 @@ import humanClick from "./humanClick.mjs";
 import { dashboardLinkSelector, homePageTableSelector } from "./constants.mjs";
 import sleep from "./sleep.mjs";
 
-const timeout = 5_000;
+const timeout = 7_000;
 
 const goToHomePage = async (page) => {
   try {
