@@ -5,7 +5,7 @@
  */
 import { unlink, writeFile, readFile } from "fs/promises";
 import { join, resolve, basename } from "path";
-// import collectHomePageTableRows from "./collectHomeTableRows.mjs";
+import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import checkPathExists from "./checkPathExists.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
