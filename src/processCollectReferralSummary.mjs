@@ -6,7 +6,6 @@
 import ExcelJS from "exceljs";
 import { writeFile } from "fs/promises";
 import closePageSafely from "./closePageSafely.mjs";
-import sleep from "./sleep.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import {
   allPatientsStatement,
@@ -50,7 +49,6 @@ const globMedBodyData = {
 const categoryReferences = ["admitted", "discharged"];
 
 const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
-  await sleep(90_000); // we wait for 1.5 minutes in case of new login
   const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,

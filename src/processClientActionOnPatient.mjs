@@ -300,6 +300,22 @@ const processClientActionOnPatient = async ({
     const startTime = Date.now();
 
     try {
+      if (submissionButtonsRetry || checkDetailsPageRetry) {
+        console.log(
+          `referralId=${referralId}_RETURNED_TO_HOME_times_${
+            submissionButtonsRetry + checkDetailsPageRetry
+          }`
+        );
+        const referralIdRecordResultData = await collectHomePageTableRows(
+          page,
+          referralId
+        );
+
+        if (referralIdRecordResultData?.iconButton) {
+          iconButton = referralIdRecordResultData?.iconButton;
+        }
+      }
+
       await iconButton.click();
 
       const referralButtons = await getSubmissionButtonsIfFound(page);
@@ -506,22 +522,6 @@ export default processClientActionOnPatient;
 // console.timeEnd(timmingLabel);
 
 // ----------------------------------------------------
-
-//   if (submissionButtonsRetry || checkDetailsPageRetry) {
-//     console.log(
-//       `referralId=${referralId}_RETURNED_TO_HOME_times_${
-//         submissionButtonsRetry + checkDetailsPageRetry
-//       }`
-//     );
-//     const referralIdRecordResultData = await collectHomePageTableRows(
-//       page,
-//       referralId
-//     );
-
-//     if (referralIdRecordResultData?.iconButton) {
-//       iconButton = referralIdRecordResultData?.iconButton;
-//     }
-//   }
 
 //   await iconButton.click();
 
