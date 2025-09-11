@@ -292,7 +292,6 @@ const processClientActionOnPatient = async ({
   const remainingTimeMS = referralEndTimestamp - Date.now() - 83.5;
 
   if (remainingTimeMS > 0) {
-    console.log("remainingTimeMS to execute action: ", remainingTimeMS);
     await sleep(remainingTimeMS);
   }
 
@@ -301,11 +300,11 @@ const processClientActionOnPatient = async ({
 
     try {
       if (submissionButtonsRetry || checkDetailsPageRetry) {
-        console.log(
-          `referralId=${referralId}_RETURNED_TO_HOME_times_${
-            submissionButtonsRetry + checkDetailsPageRetry
-          }`
-        );
+        // console.log(
+        //   `referralId=${referralId}_RETURNED_TO_HOME_times_${
+        //     submissionButtonsRetry + checkDetailsPageRetry
+        //   }`
+        // );
         const referralIdRecordResultData = await collectHomePageTableRows(
           page,
           referralId

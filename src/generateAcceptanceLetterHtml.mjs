@@ -17,16 +17,17 @@ const ministryLogo = path.resolve(
 );
 
 const ehalaLogo = path.resolve(__dirname, "../images/ehala-compressed.png");
-const tadawiLogo = path.resolve(__dirname, "../images/tadawi.jpeg");
+const providerLogo = path.resolve(__dirname, "../images/logo.jpeg");
 
 const toBase64 = (imgPath) =>
   `data:image/png;base64,${fs.readFileSync(imgPath, { encoding: "base64" })}`;
 
 const ministryFileUrl = toBase64(ministryLogo);
 const ehalaFileUrl = toBase64(ehalaLogo);
-const tadawiFileUrl = toBase64(tadawiLogo);
+const providerFileUrl = toBase64(providerLogo);
 
-// Requested Bed Type = ICU
+const { CLIENT_IN_PDF_NAME, CLIENT_MANAGER_NAME, CLIENT_MANAGER_PHONE } =
+  process.env;
 
 const generateAcceptanceLetterHtml = ({
   nationalId,
@@ -241,9 +242,9 @@ const generateAcceptanceLetterHtml = ({
     <div class="footer">
       <p>وتقبلوا تحياتنا</p>
       <div style="position: relative; width: 100%; min-height: 100px;">
-        <img src="${tadawiFileUrl}" alt="TADAWI Logo" style="height: 100px; width: 100px; position: absolute; left: 0; top: 40%; transform: translateY(-40%);" />
+        <img src="${providerFileUrl}" alt="Logo" style="height: 100px; width: 100px; position: absolute; left: 0; top: 40%; transform: translateY(-40%);" />
         <div style="text-align: center;">
-          <strong>TADAWI MEDICAL HOSPITAL</strong>
+          <strong>${CLIENT_IN_PDF_NAME}</strong>
         </div>
       </div>
     </div>
@@ -267,8 +268,8 @@ const generateAcceptanceLetterHtml = ({
         }
       <div class="notes-footer">
         <div>${requestDate}<br>التاريخ</div>
-        <div>AMER</div>
-        <div>0569157706<br>تلفون قسم التنسيق</div>
+        <div>${CLIENT_MANAGER_NAME}</div>
+        <div>${CLIENT_MANAGER_PHONE}<br>تلفون قسم التنسيق</div>
       </div>
     </div>
   </div>
