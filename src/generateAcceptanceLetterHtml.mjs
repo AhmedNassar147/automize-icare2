@@ -26,9 +26,6 @@ const ministryFileUrl = toBase64(ministryLogo);
 const ehalaFileUrl = toBase64(ehalaLogo);
 const providerFileUrl = toBase64(providerLogo);
 
-const { CLIENT_IN_PDF_NAME, CLIENT_MANAGER_NAME, CLIENT_MANAGER_PHONE } =
-  process.env;
-
 const generateAcceptanceLetterHtml = ({
   nationalId,
   nationality,
@@ -41,6 +38,9 @@ const generateAcceptanceLetterHtml = ({
   mobileNumber,
   requestedBedType,
   isRejection,
+  clientInPdf,
+  clientMangerName,
+  clientManagerPhone,
 }) => {
   const [date] = _requestDate.split("T");
   const [year, month, day] = date.split("-");
@@ -244,7 +244,7 @@ const generateAcceptanceLetterHtml = ({
       <div style="position: relative; width: 100%; min-height: 100px;">
         <img src="${providerFileUrl}" alt="Logo" style="height: 100px; width: 100px; position: absolute; left: 0; top: 40%; transform: translateY(-40%);" />
         <div style="text-align: center;">
-          <strong>${CLIENT_IN_PDF_NAME}</strong>
+          <strong>${clientInPdf}</strong>
         </div>
       </div>
     </div>
@@ -268,8 +268,8 @@ const generateAcceptanceLetterHtml = ({
         }
       <div class="notes-footer">
         <div>${requestDate}<br>التاريخ</div>
-        <div>${CLIENT_MANAGER_NAME}</div>
-        <div>${CLIENT_MANAGER_PHONE}<br>تلفون قسم التنسيق</div>
+        <div>${clientMangerName}</div>
+        <div>${clientManagerPhone}<br>تلفون قسم التنسيق</div>
       </div>
     </div>
   </div>

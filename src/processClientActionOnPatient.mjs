@@ -18,9 +18,9 @@ import {
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
   htmlFilesPath,
-  acceptanceApiUrl,
-  globMedHeaders,
-  rejectionApiUrl,
+  // acceptanceApiUrl,
+  // globMedHeaders,
+  // rejectionApiUrl,
 } from "./constants.mjs";
 
 const MAX_RETRIES = 8;
@@ -29,7 +29,7 @@ const buttonsSelector = "section.referral-button-container button";
 const getSubmissionButtonsIfFound = async (page) => {
   try {
     await page.waitForSelector(buttonsSelector, {
-      timeout: 800,
+      timeout: 870,
       // visible: true,
     });
 

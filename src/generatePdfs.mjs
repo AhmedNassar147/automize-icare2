@@ -21,6 +21,9 @@ const generateAcceptancePdfLetters = async (
   patientsArray,
   isAcceptance
 ) => {
+  const { CLIENT_IN_PDF_NAME, CLIENT_MANAGER_NAME, CLIENT_MANAGER_PHONE } =
+    process.env;
+
   const cpuCount = os.cpus().length; // Get the number of CPU cores
 
   const limit = pLimit(Math.min(4, cpuCount)); // Max 3 concurrent tabs
@@ -31,6 +34,9 @@ const generateAcceptancePdfLetters = async (
       const html = generateAcceptanceLetterHtml({
         ...patient,
         isRejection: !isAcceptance,
+        clientInPdf: CLIENT_IN_PDF_NAME || "",
+        clientMangerName: CLIENT_MANAGER_NAME || "",
+        clientManagerPhone: CLIENT_MANAGER_PHONE || "",
       }); // Assume you already have this
       await page.setContent(html, { waitUntil: "domcontentloaded" });
 
