@@ -459,7 +459,9 @@ const processClientActionOnPatient = async ({
               "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
             );
 
-            await humanClick(page, titleButton);
+            if (titleButton) {
+              await humanClick(page, titleButton);
+            }
           }
 
           await sleep(rand(8, 15));
