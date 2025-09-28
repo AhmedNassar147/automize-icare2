@@ -285,7 +285,7 @@ const processClientActionOnPatient = async ({
   let checkDetailsPageRetry = 0;
 
   if (!isSupperAcceptanceOrRejection) {
-    const remainingTimeMS = referralEndTimestamp - Date.now() - 82.5;
+    const remainingTimeMS = referralEndTimestamp - Date.now() - 80;
 
     if (remainingTimeMS > 0) {
       await sleep(remainingTimeMS);
