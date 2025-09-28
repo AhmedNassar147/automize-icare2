@@ -97,7 +97,7 @@ const humanClick = async (page, target, options = {}) => {
     await sleep(5 + Math.random() * 8);
   }
 
-  await element.hover();
+  await element?.hover();
   await sleep(hoverTime);
   await sleep(hesitateTime);
 

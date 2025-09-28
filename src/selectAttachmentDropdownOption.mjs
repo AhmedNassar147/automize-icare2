@@ -7,13 +7,8 @@ import { writeFile } from "fs/promises";
 import humanClick from "./humanClick.mjs";
 import { htmlFilesPath } from "./constants.mjs";
 
-const selectAttachmentDropdownOption = async (
-  page,
-  option,
-  isPageUsingStrictRecaptchaMode,
-  sectionEl
-) => {
-  const mainObject = sectionEl || page;
+const selectAttachmentDropdownOption = async (page, option) => {
+  const mainObject = page;
 
   // const normalized = option.trim().toLowerCase();
 

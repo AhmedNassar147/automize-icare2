@@ -18,31 +18,33 @@ import {
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
   htmlFilesPath,
-  // acceptanceApiUrl,
-  // globMedHeaders,
-  // rejectionApiUrl,
+  acceptanceApiUrl,
+  globMedHeaders,
+  rejectionApiUrl,
 } from "./constants.mjs";
+import humanClick from "./humanClick.mjs";
+import humanMouseMove from "./humanMouseMove.mjs";
 
 const MAX_RETRIES = 8;
 const buttonsSelector = "section.referral-button-container button";
 
-const getSubmissionButtonsIfFound = async (page) => {
-  try {
-    await page.waitForSelector(buttonsSelector, {
-      timeout: 870,
-      // visible: true,
-    });
+// const getSubmissionButtonsIfFound = async (page) => {
+//   try {
+//     await page.waitForSelector(buttonsSelector, {
+//       timeout: 870,
+//       // visible: true,
+//     });
 
-    const buttons = await page.$$(buttonsSelector);
+//     const buttons = await page.$$(buttonsSelector);
 
-    if (buttons.length < 2) return false;
+//     if (buttons.length < 2) return false;
 
-    return buttons;
-  } catch (err) {
-    console.log("❌ Failed to get submission buttons:", err.message);
-    return false;
-  }
-};
+//     return buttons;
+//   } catch (err) {
+//     console.log("❌ Failed to get submission buttons:", err.message);
+//     return false;
+//   }
+// };
 
 const buildDurationText = (startTime, endTime) => {
   const executionDurationMs = endTime - startTime;
@@ -54,7 +56,7 @@ const buildDurationText = (startTime, endTime) => {
   return durationText;
 };
 
-const isPageUsingStrictRecaptchaMode = true;
+const rand = (min, max) => min + Math.random() * (max - min);
 
 const processClientActionOnPatient = async ({
   browser,
@@ -225,81 +227,78 @@ const processClientActionOnPatient = async ({
       referralId
     );
 
-    await Promise.allSettled([
-      checkPathExists(acceptanceFilePath).then(
-        (exists) => exists && unlink(acceptanceFilePath)
-      ),
-      checkPathExists(rejectionFilePath).then(
-        (exists) => exists && unlink(rejectionFilePath)
-      ),
-    ]);
+    // await Promise.allSettled([
+    //   checkPathExists(acceptanceFilePath).then(
+    //     (exists) => exists && unlink(acceptanceFilePath)
+    //   ),
+    //   checkPathExists(rejectionFilePath).then(
+    //     (exists) => exists && unlink(rejectionFilePath)
+    //   ),
+    // ]);
 
     console.log(deletionResponse?.message);
     await closeCurrentPage(!isDashboardPage);
   };
 
+  const isSupperAcceptanceOrRejection = isSuperAcceptance;
+  // const isSupperAcceptanceOrRejection = isSuperAcceptance || !isAcceptance;
+
+  let superAcceptanaceData = {
+    apiUrl: isAcceptance ? acceptanceApiUrl : rejectionApiUrl,
+    headers: { ...globMedHeaders, Accept: "text/plain" },
+  };
+
+  if (isSupperAcceptanceOrRejection) {
+    const [idProvider] = CLIENT_NAME.split("-");
+
+    const fileBuffer = await readFile(filePath);
+
+    // convert to Base64
+    const fileData = fileBuffer.toString("base64");
+    superAcceptanaceData.body = {
+      files: [
+        {
+          fileName: basename(filePath),
+          fileData: fileData,
+          fileExtension: 0,
+          userCode: CLIENT_NAME,
+          idAttachmentType: isAcceptance ? 14 : 21,
+          languageCode: 1,
+        },
+      ],
+      ...(!isAcceptance && {
+        rejectionReason: {
+          code: "3783",
+          description: "Specialist Dr Unavailable",
+          languageCode: 1,
+        },
+      }),
+      referralId,
+      providerName,
+      idProvider: isAcceptance ? idProvider : undefined,
+      notes: [],
+      origin: "portal",
+    };
+  }
+
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
 
-  // const isSupperAcceptanceOrRejection = isSuperAcceptance || !isAcceptance;
+  if (!isSupperAcceptanceOrRejection) {
+    const remainingTimeMS = referralEndTimestamp - Date.now() - 82.5;
 
-  // let superAcceptanaceData = {
-  //   apiUrl: isAcceptance ? acceptanceApiUrl : rejectionApiUrl,
-  //   headers: {...globMedHeaders, Accept: "text/plain"},
-  // };
-
-  // if (isSupperAcceptanceOrRejection) {
-  //   const [idProvider] = CLIENT_NAME.split("-");
-
-  //   const fileBuffer = await readFile(filePath);
-
-  //   // convert to Base64
-  //   const fileData = fileBuffer.toString("base64");
-  //   superAcceptanaceData.body = {
-  //     files: [
-  //       {
-  //         fileName: basename(filePath),
-  //         fileData: fileData,
-  //         fileExtension: 0,
-  //         userCode: CLIENT_NAME,
-  //         // idAttachmentType: Math.floor(Math.random() * 90) + 10,
-  //         idAttachmentType: isAcceptance ? 14 : 21,
-  //         languageCode: 1,
-  //       },
-  //     ],
-  //     ...(!isAcceptance && {
-  //       rejectionReason: {
-  //         code: "3783",
-  //         description: "Specialist Dr Unavailable",
-  //         languageCode: 1,
-  //       },
-  //     }),
-  //     referralId,
-  //     providerName,
-  //     idProvider: isAcceptance ? idProvider : undefined,
-  //     notes: [],
-  //     origin: "portal",
-  //   };
-
-  //   console.log(`supper acceptance is running on patient ${referralId}`);
-  // }
-
-  // const createTimeLabel = (label) =>
-  //   `${label}_${referralId}_${submissionButtonsRetry}`;
-
-  // console.timeEnd("🕒 prepare_user_action_start_time");
-
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 83.5;
-
-  if (remainingTimeMS > 0) {
-    await sleep(remainingTimeMS);
+    if (remainingTimeMS > 0) {
+      await sleep(remainingTimeMS);
+    }
   }
 
   while (true) {
     const startTime = Date.now();
-
     try {
-      if (submissionButtonsRetry || checkDetailsPageRetry) {
+      if (
+        !isSupperAcceptanceOrRejection &&
+        (submissionButtonsRetry || checkDetailsPageRetry)
+      ) {
         // console.log(
         //   `referralId=${referralId}_RETURNED_TO_HOME_times_${
         //     submissionButtonsRetry + checkDetailsPageRetry
@@ -316,6 +315,261 @@ const processClientActionOnPatient = async ({
       }
 
       await iconButton.click();
+
+      if (isSupperAcceptanceOrRejection) {
+        console.log(
+          "superAcceptanaceData",
+          JSON.stringify(superAcceptanaceData, null, 2)
+        );
+
+        await sleep(70 + Math.random() * 40);
+
+        const sections = await page.$$(
+          "section.collapsible-container.MuiBox-root"
+        );
+
+        let prevIdx = -1;
+
+        const pickNextIndex = () => {
+          if (!sections.length) return 0;
+
+          let j;
+          do {
+            j = Math.floor(Math.random() * sections.length);
+          } while (sections.length > 1 && j === prevIdx);
+          prevIdx = j;
+          return j;
+        };
+
+        const SAFETY_MS = 80;
+        const innerLoopStartTime = Date.now();
+        const remainingTimeMS = Math.max(
+          0,
+          referralEndTimestamp - innerLoopStartTime
+        );
+
+        let firstLoopStarted = false;
+
+        console.time("SUPER_LOOP_TIME");
+        while (Date.now() - innerLoopStartTime < remainingTimeMS - SAFETY_MS) {
+          if (firstLoopStarted) {
+            const r = Math.random();
+            if (r < 0.4) {
+              await page.keyboard.down("Shift");
+              await page.keyboard.press(
+                Math.random() < 0.5 ? "ArrowUp" : "ArrowDown",
+                { delay: 20 + Math.floor(Math.random() * 30) }
+              );
+              await page.keyboard.up("Shift");
+            } else {
+              await page.keyboard.press(
+                Math.random() < 0.5 ? "ArrowUp" : "ArrowDown",
+                { delay: 20 + Math.floor(Math.random() * 30) }
+              );
+            }
+            await sleep(rand(5, 10));
+          }
+
+          // small jitter move using native mouse for variety
+          const jitteredPointX =
+            (firstLoopStarted ? 182 + Math.random() * 15 : 122) +
+            Math.random() * 4;
+          const jitteredPointY =
+            (firstLoopStarted ? 260 + Math.random() * 15 : 202) +
+            Math.random() * 4;
+
+          await page.mouse.move(jitteredPointX, jitteredPointY, { steps: 9 });
+          await sleep(rand(8, 12));
+
+          await page.mouse.wheel({ deltaY: 75 + Math.random() * 60 });
+          await sleep(rand(9, 15));
+
+          if (Math.random() < 0.35) {
+            await page.mouse.wheel({ deltaY: 20 + Math.random() * 50 });
+            await sleep(rand(4, 8));
+          }
+
+          const random = Math.random();
+          // random arrow direction with slight keypress delay
+          const key =
+            random < 0.33
+              ? "ArrowLeft"
+              : random < 0.66
+              ? "ArrowUp"
+              : "ArrowDown";
+
+          await page.keyboard.press(key, { delay: Math.floor(rand(15, 40)) });
+
+          await sleep(rand(10, 15));
+
+          const idx = pickNextIndex();
+
+          if (idx === 0 && Math.random() < 0.4) {
+            await page.keyboard.press("ArrowDown", {
+              delay: Math.floor(rand(10, 30)),
+            });
+          }
+
+          const section = sections[idx];
+
+          // bring the chosen section into view
+
+          if (section) {
+            try {
+              await section.evaluate?.((el) =>
+                el.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                  inline: "nearest",
+                })
+              );
+            } catch {}
+
+            // move inside this section (center-ish with a little jitter)
+            try {
+              const box = await section.boundingBox();
+              if (box) {
+                const cx = box.x + box.width * 0.5 + rand(-8, 8);
+                const cy = box.y + box.height * 0.5 + rand(-8, 8);
+
+                await humanMouseMove({
+                  page,
+                  maxSteps: 17,
+                  moveTime: 550,
+                  start: {
+                    x: cx - Math.random() * 40,
+                    y: cy - Math.random() * 40,
+                  },
+                  end: {
+                    x: cx,
+                    y: cy,
+                  },
+                });
+              } else {
+                // fallback jitter if no box
+                await page.mouse.move(
+                  150 + Math.random() * 4,
+                  240 + Math.random() * 4,
+                  { steps: 9 }
+                );
+              }
+            } catch {}
+            await sleep(rand(8, 15));
+            const titleButton = section.$(
+              "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
+            );
+
+            await humanClick(page, titleButton);
+          }
+
+          await sleep(rand(8, 15));
+          const rnd = Math.random();
+
+          await page.keyboard.press(
+            rnd < 0.25 ? "Tab" : rnd < 0.55 ? "ArrowDown" : "Enter", // Enter only 50% of the time in the 2nd branch -> overall 25%
+            { delay: Math.floor(rand(12, 28)) }
+          );
+
+          await sleep(rand(6, 15));
+
+          if (idx < 3 && Math.random() < 0.65) {
+            await selectAttachmentDropdownOption(page, actionName);
+          }
+
+          // pacing
+          firstLoopStarted = true;
+          await sleep(rand(30, 60));
+        }
+        console.timeEnd("SUPER_LOOP_TIME");
+
+        // console.time("SUPER_LOOP_CLICK");
+        // finish with a body click (ghost-like: move then click after a short hesitation)
+        // const bodyElement = await page.$("body");
+        // await humanClick(page, bodyElement);
+        // console.timeEnd("SUPER_LOOP_CLICK");
+
+        const apiResult = await page.evaluate(
+          async ({ apiUrl, body, headers }) => {
+            const _grecaptcha = window.grecaptcha || grecaptcha;
+
+            const safeReset = async () => {
+              try {
+                if (_grecaptcha && typeof _grecaptcha.reset === "function")
+                  await _grecaptcha.reset();
+              } catch {}
+            };
+
+            let token = null,
+              execError = null;
+            if (
+              _grecaptcha &&
+              typeof _grecaptcha.ready === "function" &&
+              typeof _grecaptcha.execute === "function"
+            ) {
+              try {
+                await new Promise((resolve) => _grecaptcha.ready(resolve));
+                token = await _grecaptcha.execute(
+                  "6LcqgMcqAAAAALsWwhGQYrpDuMnke9RkJkdJnFte",
+                  { action: undefined }
+                );
+              } catch (err) {
+                execError = err;
+              }
+            } else {
+              execError = "grecaptcha not available on page";
+            }
+
+            const _body = JSON.stringify({ ...body, token });
+
+            if (!token || execError) {
+              await safeReset();
+              return {
+                error: `Failed to get grecaptcha token: ${
+                  execError || "empty token"
+                }`,
+                success: false,
+                _body,
+              };
+            }
+
+            try {
+              const response = await fetch(apiUrl, {
+                headers,
+                method: "POST",
+                body: _body,
+              });
+              if (!response.ok) {
+                await safeReset();
+                return {
+                  success: false,
+                  error: `Status ${response?.status}`,
+                  _body,
+                };
+              }
+              const responseJson = await response.json();
+              const { errorMessage, statusCode } = responseJson || {};
+              const isSuccess = statusCode === "Success" && !errorMessage;
+              await safeReset();
+              return { error: errorMessage || "", success: !!isSuccess, _body };
+            } catch (error) {
+              await safeReset();
+              return { error: `Error: ${error}`, success: false, _body };
+            }
+          },
+          superAcceptanaceData
+        );
+
+        const { error, success, _body } = apiResult;
+
+        await handleOnSubmitDone({
+          errorMessage: error,
+          isAutoAccept: true,
+          isDoneSuccessfully: success,
+          startTime,
+        });
+        console.log(`BODY sent on patient ${referralId}`, _body);
+        break;
+      }
 
       const referralButtons = await getSubmissionButtonsIfFound(page);
 
@@ -339,11 +593,7 @@ const processClientActionOnPatient = async ({
         continue;
       }
 
-      await selectAttachmentDropdownOption(
-        page,
-        actionName,
-        isPageUsingStrictRecaptchaMode
-      );
+      await selectAttachmentDropdownOption(page, actionName);
 
       const fileInput = await page.$('#upload-single-file input[type="file"]');
       await fileInput.uploadFile(filePath);
@@ -453,32 +703,6 @@ export default processClientActionOnPatient;
 //   break;
 // }
 
-// if (!areWeInDetailsPage) {
-//   const hasReachedMaxRetriesForDetailsPage =
-//     checkDetailsPageRetry >= MAX_RETRIES;
-
-//   if (hasReachedMaxRetriesForDetailsPage) {
-//     await sendErrorMessage(
-//       `Tried ${checkDetailsPageRetry} times to enter the details page, but there is something wrong.`,
-//       "enter-details-page-failed-reachedMax",
-//       buildDurationText(startTime, Date.now())
-//     );
-
-//     await closeCurrentPage(false);
-//     break;
-//   }
-
-//   await goToHomePage(page, cursor);
-//   checkDetailsPageRetry += 1;
-//   continue;
-// }
-
-// const last_scroll = createTimeLabel("last_scroll");
-// console.time(last_scroll);
-// await selectedButton.scrollIntoViewIfNeeded({ timeout: 2500 });
-// await cursor.move(selectedButton);
-// const box = await selectedButton.boundingBox();
-
 // const jitteredPoint = {
 //   x: box.x + 2 + Math.random() * 4,
 //   y: box.y + 2 + Math.random() * 4,
@@ -513,16 +737,11 @@ export default processClientActionOnPatient;
 // }
 // console.timeEnd(upload);
 
-// const iconButtonClickLabel = createTimeLabel("click_eye");
-// console.time(iconButtonClickLabel);
-// console.timeEnd(iconButtonClickLabel);
-// const timmingLabel = createTimeLabel("buttons_check");
-// console.time(timmingLabel);
-// console.timeEnd(timmingLabel);
-
 // ----------------------------------------------------
+// const createTimeLabel = (label) =>
+//   `${label}_${referralId}_${submissionButtonsRetry}`;
 
-//   await iconButton.click();
+// console.timeEnd("🕒 prepare_user_action_start_time");
 
 // if (isSupperAcceptanceOrRejection) {
 //   const random = Math.random();
@@ -534,95 +753,6 @@ export default processClientActionOnPatient;
 //   await page.mouse.wheel({ deltaY: 75 + Math.random() * 50 });
 //   await sleep(7 + Math.random() * 8);
 //   await page.keyboard.press(random < 0.4 ? "ArrowDown" : "ArrowUp");
-
-//   const apiResult = await page.evaluate(
-//     async ({ apiUrl, body, headers, actionType }) => {
-//       const _grecaptcha = window.grecaptcha || grecaptcha;
-
-//       // Wait until grecaptcha is ready, then execute
-//       const { token, execError } = await new Promise((resolve) => {
-//         try {
-//           _grecaptcha.ready(async () => {
-//             try {
-// const t = await _grecaptcha.execute(
-//     "6LcqgMcqAAAAALsWwhGQYrpDuMnke9RkJkdJnFte",
-//     { action: undefined }
-//   );
-//               resolve({ token: t });
-//             } catch (err) {
-//               resolve({ execError: err });
-//             }
-//           });
-//         } catch (err) {
-//           resolve({ execError: err });
-//         }
-//       });
-
-//       const _body = JSON.stringify({
-//         ...body,
-//         token,
-//       });
-
-//       if (!token || execError) {
-//         await _grecaptcha.reset();
-//         return {
-//           error: `Failed to get token: ${execError || "empty token"}`,
-//           success: false,
-//           _body,
-//         };
-//       }
-
-//       try {
-//         const response = await fetch(apiUrl, {
-//           headers,
-//           method: "POST",
-//           body: _body,
-//         });
-
-//         if (!response.ok) {
-//           await _grecaptcha.reset();
-
-//           return {
-//             success: false,
-//             error: `Status ${response.status}`,
-//             _body,
-//           };
-//         }
-
-//         // {"data":{"isSuccessful":true},"statusCode":"Success","errorMessage":null}
-//         const responseJson = await response.json();
-//         const { errorMessage, statusCode } = responseJson;
-//         const isSuccess = statusCode === "Success" && !errorMessage;
-//         await _grecaptcha.reset();
-
-//         return {
-//           error: errorMessage || "",
-//           success: isSuccess,
-//           _body,
-//         };
-//       } catch (error) {
-//         await _grecaptcha.reset();
-//         return {
-//           error: `Error: ${error}`,
-//           success: false,
-//           _body,
-//         };
-//       }
-//     },
-//     {...superAcceptanaceData, actionType}
-//   );
-
-//   const { error, success, _body } = apiResult;
-
-//   await handleOnSubmitDone({
-//     errorMessage: error,
-//     isAutoAccept: true,
-//     isDoneSuccessfully: success,
-//     startTime,
-//   });
-//   console.log(`BODY sent on patient ${referralId}`, _body);
-//   break;
-// }
 
 // await page.evaluate(
 //   ({ referralId }) => {
@@ -650,10 +780,3 @@ export default processClientActionOnPatient;
 //   },
 //   { referralId }
 // );
-
-// if (isSuperAcceptance) {
-//   // await sleep(15 + Math.random() * 25);
-//   await selectedButton.focus();
-//   // await sleep(20 + Math.random() * 25);
-//   // await page.keyboard.press("Enter");
-// }

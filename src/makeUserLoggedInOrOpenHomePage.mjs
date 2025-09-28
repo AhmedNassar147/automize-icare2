@@ -45,7 +45,26 @@ const makeUserLoggedInOrOpenHomePage = async ({
   let cursor =
     _cursor && currentPage
       ? _cursor
-      : createCursor(page, { x: 280, y: 400 }, true);
+      : createCursor(
+          page,
+          { x: 180 + Math.random(), y: 250 + Math.random() * 20 },
+          true
+        );
+
+  // const abc = createCursor(
+  //   page,
+  //   { x: 180 + Math.random(), y: 250 + Math.random() * 20 },
+  //   true
+  // );
+
+  // abc.moveTo(
+  //   { x: 10, y: 20 },
+  //   {
+  //     moveSpeed,
+  //   }
+  // );
+
+  // abc.move();
 
   let retries = 0;
 
@@ -77,7 +96,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
       if (!hasEnteredStartingPage) {
         const isLoginPage = await checkIfLoginPage(page);
 
-        console.log("isLoginPage", isLoginPage);
+        // console.log("isLoginPage", isLoginPage);
 
         if (isLoginPage) {
           await humanType(page, cursor, "#Input_Username", userName);
