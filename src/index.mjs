@@ -139,8 +139,8 @@ import {
       }))();
 
     cron.schedule(
-      "59 23 * * 1",
-      // "59 23 * * 2",
+      // "59 23 * * 1",
+      process.env.SUMMARY_REPORT_GENERATED_AT,
       async () => {
         console.log(
           "[CRON] Starting referral summary job at",
