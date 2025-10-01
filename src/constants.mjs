@@ -13,6 +13,7 @@ export const generatedSummaryFolderPath = `${cwd}/results/summary`;
 export const htmlFilesPath = `${cwd}/results/html`;
 export const COLLECTD_PATIENTS_FILE_NAME = "collectedPatients";
 export const COLLECTD_PATIENTS_FULL_FILE_PATH = `${waitingPatientsFolderDirectory}/${COLLECTD_PATIENTS_FILE_NAME}.json`;
+export const SUPPER_ACCEPTACNE_RESULTS_FILE_PATH = `${cwd}/results/supper_acceptance_results.json`;
 
 export const TABS_COLLECTION_TYPES = {
   WAITING: "WAITING",

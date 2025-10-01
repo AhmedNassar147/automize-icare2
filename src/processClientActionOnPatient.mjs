@@ -3,10 +3,11 @@
  * Helper: `processClientActionOnPatient`.
  *
  */
+import { path } from "ghost-cursor";
 import { unlink, writeFile, readFile } from "fs/promises";
 import { join, resolve, basename } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
-import checkPathExists from "./checkPathExists.mjs";
+// import checkPathExists from "./checkPathExists.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
@@ -22,29 +23,139 @@ import {
   globMedHeaders,
   rejectionApiUrl,
 } from "./constants.mjs";
-import humanClick from "./humanClick.mjs";
-import humanMouseMove from "./humanMouseMove.mjs";
+import updateSuperAcceptanceApiData from "./updateSuperAcceptanceApiData.mjs";
+// import humanClick from "./humanClick.mjs";
+// import humanMouseMove from "./humanMouseMove.mjs";
 
 const MAX_RETRIES = 8;
 const buttonsSelector = "section.referral-button-container button";
+const browserButtonSelector =
+  "button.MuiTypography-root.MuiTypography-body2.MuiLink-root.MuiLink-underlineAlways.MuiLink-button";
 
-// const getSubmissionButtonsIfFound = async (page) => {
-//   try {
-//     await page.waitForSelector(buttonsSelector, {
-//       timeout: 870,
-//       // visible: true,
-//     });
+const playMovementOnSection = async ({
+  page,
+  section,
+  cursor,
+  scrollIntoViewSection,
+  playInitialKeyboardVerticalArrows,
+  onBeforeClickingSection,
+  skipClickingSectionCollapsibleButton,
+}) => {
+  if (playInitialKeyboardVerticalArrows) {
+    await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown", {
+      delay: 50 + Math.floor(Math.random() * 30),
+    });
 
-//     const buttons = await page.$$(buttonsSelector);
+    await sleep(110 + Math.random() * 40); // [110 - 150] ms
 
-//     if (buttons.length < 2) return false;
+    await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown", {
+      delay: 50 + Math.floor(Math.random() * 30),
+    });
 
-//     return buttons;
-//   } catch (err) {
-//     console.log("❌ Failed to get submission buttons:", err.message);
-//     return false;
-//   }
-// };
+    await sleep(150 + Math.random() * 40); // [110 - 150] ms
+  }
+
+  let sectionBox = await section.boundingBox();
+
+  if (!sectionBox) {
+    // element is not visible/attached; try to scroll into view and re-measure
+    await section.evaluate((el) =>
+      el.scrollIntoView({ block: "center", inline: "center" })
+    );
+    await sleep(120);
+
+    sectionBox = await section.boundingBox();
+  }
+
+  const cx = sectionBox.x + sectionBox.width * 0.5 + rand(-8, 8);
+  const cy = sectionBox.y + sectionBox.height * 0.5 + rand(-8, 8);
+
+  const movementRoutes = path(
+    cursor.getLocation(),
+    {
+      x: cx + 90 + Math.random() * 100,
+      y: cy + 100 + Math.random() * 90,
+    },
+    {
+      moveSpeed: 0.86 + Math.random() * 0.9,
+    }
+  );
+
+  await cursor.moveTo(movementRoutes, {
+    moveSpeed: 0.86 + Math.random() * 0.9,
+    randomizeMoveDelay: true,
+  });
+
+  await sleep(90 + Math.random() * 40); // [110 - 150] ms
+
+  const sectionCollapsibleButton = await getSectionCollapsibleButton(section);
+
+  await cursor.move(sectionCollapsibleButton, {
+    moveSpeed: 0.86 + Math.random() * 0.6,
+    randomizeMoveDelay: true,
+  });
+
+  if (!skipClickingSectionCollapsibleButton) {
+    await cursor.click(sectionCollapsibleButton, {
+      hesitate: 120 + Math.random() * 60,
+      waitForClick: 110 + Math.random() * 50,
+      moveSpeed: 0.83 + Math.random() * 0.6,
+      randomizeMoveDelay: true,
+      maxTries: 4,
+      overshootThreshold: 500,
+    });
+  }
+
+  await sleep(110 + Math.random() * 50); // [110 - 160] ms
+
+  if (onBeforeClickingSection) {
+    await sleep(120 + Math.random() * 100);
+    await onBeforeClickingSection();
+  }
+
+  if (Math.random() < 0.7) {
+    await sleep(90 + Math.random() * 90); // [90 - 180] ms
+    await cursor.click(section, {
+      hesitate: 120 + Math.random() * 60,
+      waitForClick: 110 + Math.random() * 50,
+    });
+
+    await sleep(130 + Math.random() * 90); // [130 - 210] ms
+  }
+
+  if (scrollIntoViewSection) {
+    await cursor.scrollIntoView(scrollIntoViewSection, {
+      scrollDelay: 100 + Math.random() * 150,
+      scrollSpeed: 82 + Math.random() * 12,
+      inViewportMargin: 25,
+    });
+  }
+
+  await sleep(170 + Math.random() * 150); // [150 - 300] ms
+};
+
+const getSubmissionButtonsIfFound = async (page) => {
+  try {
+    await page.waitForSelector(buttonsSelector, {
+      timeout: 870,
+      // visible: true,
+    });
+
+    const buttons = await page.$$(buttonsSelector);
+
+    if (buttons.length < 2) return false;
+
+    return buttons;
+  } catch (err) {
+    console.log("❌ Failed to get submission buttons:", err.message);
+    return false;
+  }
+};
+
+const getSectionCollapsibleButton = async (section) =>
+  await section?.$?.(
+    "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
+  );
 
 const buildDurationText = (startTime, endTime) => {
   const executionDurationMs = endTime - startTime;
@@ -103,7 +214,7 @@ const processClientActionOnPatient = async ({
 🆔 Referral: *${referralId}*
 👤 Name: _${patientName}_\n`;
 
-  const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+  const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,
     startingPageUrl: HOME_PAGE_URL,
@@ -317,178 +428,132 @@ const processClientActionOnPatient = async ({
       await iconButton.click();
 
       if (isSupperAcceptanceOrRejection) {
-        console.log(
-          "superAcceptanaceData",
-          JSON.stringify(superAcceptanaceData, null, 2)
+        console.time("🕒 super_acceptance_score_time");
+
+        await updateSuperAcceptanceApiData(referralId, superAcceptanaceData);
+
+        await sleep(90 + Math.random() * 70); // [90 - 160] ms
+
+        const currentCursorLocation = cursor.getLocation();
+
+        const initialMovementRoutes = path(
+          currentCursorLocation,
+          {
+            x: currentCursorLocation.x + 80 + Math.random() * 100,
+            y: currentCursorLocation.y + 90 + Math.random() * 100,
+          },
+          {
+            moveSpeed: 0.83 + Math.random() * 0.6,
+          }
         );
 
-        await sleep(70 + Math.random() * 40);
+        await cursor.moveTo(initialMovementRoutes, {
+          moveSpeed: 0.83 + Math.random() * 0.6,
+          randomizeMoveDelay: true,
+        });
 
+        await sleep(90 + Math.random() * 40); // [90 - 130] ms
         const sections = await page.$$(
           "section.collapsible-container.MuiBox-root"
         );
 
-        let prevIdx = -1;
+        const [patientInfoSection, patientDetailsSection, uploadSection] =
+          sections;
 
-        const pickNextIndex = () => {
-          if (!sections.length) return 0;
+        await playMovementOnSection({
+          section: patientInfoSection,
+          cursor,
+          scrollIntoViewSection: patientDetailsSection,
+        });
 
-          let j;
-          do {
-            j = Math.floor(Math.random() * sections.length);
-          } while (sections.length > 1 && j === prevIdx);
-          prevIdx = j;
-          return j;
-        };
+        await playMovementOnSection({
+          section: patientDetailsSection,
+          cursor,
+          playInitialKeyboardVerticalArrows: true,
+          scrollIntoViewSection: uploadSection,
+          skipClickingSectionCollapsibleButton: Math.random() < 0.4,
+        });
 
-        const SAFETY_MS = 80;
-        const innerLoopStartTime = Date.now();
-        const remainingTimeMS = Math.max(
-          0,
-          referralEndTimestamp - innerLoopStartTime
-        );
+        await playMovementOnSection({
+          section: uploadSection,
+          cursor,
+          skipClickingSectionCollapsibleButton: true,
+          onBeforeClickingSection: async () => {
+            await sleep(50 + Math.random() * 70);
+            await selectAttachmentDropdownOption(page, actionName);
 
-        let firstLoopStarted = false;
-
-        console.time("SUPER_LOOP_TIME");
-        while (Date.now() - innerLoopStartTime < remainingTimeMS - SAFETY_MS) {
-          if (firstLoopStarted) {
-            const r = Math.random();
-            if (r < 0.4) {
-              await page.keyboard.down("Shift");
-              await page.keyboard.press(
-                Math.random() < 0.5 ? "ArrowUp" : "ArrowDown",
-                { delay: 20 + Math.floor(Math.random() * 30) }
-              );
-              await page.keyboard.up("Shift");
-            } else {
-              await page.keyboard.press(
-                Math.random() < 0.5 ? "ArrowUp" : "ArrowDown",
-                { delay: 20 + Math.floor(Math.random() * 30) }
-              );
-            }
-            await sleep(rand(5, 10));
-          }
-
-          // small jitter move using native mouse for variety
-          const jitteredPointX =
-            (firstLoopStarted ? 182 + Math.random() * 15 : 122) +
-            Math.random() * 4;
-          const jitteredPointY =
-            (firstLoopStarted ? 260 + Math.random() * 15 : 202) +
-            Math.random() * 4;
-
-          await page.mouse.move(jitteredPointX, jitteredPointY, { steps: 9 });
-          await sleep(rand(8, 12));
-
-          await page.mouse.wheel({ deltaY: 75 + Math.random() * 60 });
-          await sleep(rand(9, 15));
-
-          if (Math.random() < 0.35) {
-            await page.mouse.wheel({ deltaY: 20 + Math.random() * 50 });
-            await sleep(rand(4, 8));
-          }
-
-          const random = Math.random();
-          // random arrow direction with slight keypress delay
-          const key =
-            random < 0.33
-              ? "ArrowLeft"
-              : random < 0.66
-              ? "ArrowUp"
-              : "ArrowDown";
-
-          await page.keyboard.press(key, { delay: Math.floor(rand(15, 40)) });
-
-          await sleep(rand(10, 15));
-
-          const idx = pickNextIndex();
-
-          if (idx === 0 && Math.random() < 0.4) {
-            await page.keyboard.press("ArrowDown", {
-              delay: Math.floor(rand(10, 30)),
-            });
-          }
-
-          const section = sections[idx];
-
-          // bring the chosen section into view
-
-          if (section) {
-            try {
-              await section.evaluate?.((el) =>
-                el.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                  inline: "nearest",
-                })
-              );
-            } catch {}
-
-            // move inside this section (center-ish with a little jitter)
-            try {
-              const box = await section.boundingBox();
-              if (box) {
-                const cx = box.x + box.width * 0.5 + rand(-8, 8);
-                const cy = box.y + box.height * 0.5 + rand(-8, 8);
-
-                await humanMouseMove({
-                  page,
-                  maxSteps: 17,
-                  moveTime: 550,
-                  start: {
-                    x: cx - Math.random() * 40,
-                    y: cy - Math.random() * 40,
-                  },
-                  end: {
-                    x: cx,
-                    y: cy,
-                  },
+            if (Math.random() < 0.56) {
+              const browserButton = await page.$(browserButtonSelector);
+              if (browserButton) {
+                await browserButton.evaluate((el) =>
+                  el.scrollIntoView({ block: "center", inline: "center" })
+                );
+                await cursor.move(browserButton, {
+                  moveSpeed: 0.9 + Math.random() * 0.5,
+                  randomizeMoveDelay: true,
                 });
+                await sleep(250); // let :hover styles apply
               } else {
-                // fallback jitter if no box
-                await page.mouse.move(
-                  150 + Math.random() * 4,
-                  240 + Math.random() * 4,
-                  { steps: 9 }
+                console.warn(
+                  "Browse button not found by selector:",
+                  browserButtonSelector
                 );
               }
-            } catch {}
-            await sleep(rand(8, 15));
-            const titleButton = section.$(
-              "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
-            );
-
-            if (titleButton) {
-              await humanClick(page, titleButton);
             }
-          }
+            await sleep(50 + Math.random() * 100);
+          },
+        });
 
-          await sleep(rand(8, 15));
-          const rnd = Math.random();
-
+        if (Math.random() < 0.68) {
+          await cursor.toggleRandomMove(true);
+        } else {
           await page.keyboard.press(
-            rnd < 0.25 ? "Tab" : rnd < 0.55 ? "ArrowDown" : "Enter", // Enter only 50% of the time in the 2nd branch -> overall 25%
-            { delay: Math.floor(rand(12, 28)) }
+            Math.random() < 0.5 ? "ArrowUp" : "ArrowDown",
+            { delay: 50 + Math.floor(Math.random() * 30) }
           );
 
-          await sleep(rand(6, 15));
+          await sleep(120 + Math.random() * 40); // [120 - 160] ms
 
-          if (idx < 3 && Math.random() < 0.65) {
-            await selectAttachmentDropdownOption(page, actionName);
-          }
-
-          // pacing
-          firstLoopStarted = true;
-          await sleep(rand(30, 60));
+          await page.keyboard.press(
+            Math.random() < 0.65 ? "ArrowUp" : "ArrowDown",
+            { delay: 50 + Math.floor(Math.random() * 30) }
+          );
         }
-        console.timeEnd("SUPER_LOOP_TIME");
 
-        // console.time("SUPER_LOOP_CLICK");
-        // finish with a body click (ghost-like: move then click after a short hesitation)
-        // const bodyElement = await page.$("body");
-        // await humanClick(page, bodyElement);
-        // console.timeEnd("SUPER_LOOP_CLICK");
+        await sleep(200 + Math.random() * 60); // [200 - 260] ms
+
+        const currentShownSectionPlacement =
+          Math.random() < 0.4 ? "bottom" : "top";
+
+        await cursor.scrollTo(currentShownSectionPlacement, {
+          scrollDelay: 100 + Math.random() * 150,
+          scrollSpeed: 82 + Math.random() * 12,
+        });
+
+        await sleep(250 + Math.random() * 60); // [250 - 310] ms
+        console.timeEnd("🕒 super_acceptance_score_time");
+
+        const remainingTimeMS = referralEndTimestamp - Date.now() - 70;
+
+        console.log("super_acceptance_left_time", remainingTimeMS);
+
+        if (remainingTimeMS > 0) {
+          await sleep(remainingTimeMS);
+        }
+
+        const currentShownSection =
+          currentShownSectionPlacement === "top"
+            ? patientInfoSection
+            : sections[sections.length - 1];
+
+        const buttonToClick = await currentShownSection.$(
+          "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
+        );
+
+        await cursor.click(buttonToClick, {
+          hesitate: 110 + Math.random() * 60,
+          waitForClick: 110 + Math.random() * 50,
+        });
 
         const apiResult = await page.evaluate(
           async ({ apiUrl, body, headers }) => {
@@ -525,12 +590,16 @@ const processClientActionOnPatient = async ({
 
             if (!token || execError) {
               await safeReset();
+              const err = `Failed to get grecaptcha token: ${
+                execError || "empty token"
+              }`;
               return {
-                error: `Failed to get grecaptcha token: ${
-                  execError || "empty token"
-                }`,
+                error: err,
                 success: false,
-                _body,
+                apiData: {
+                  recaptchaToken: token,
+                  err,
+                },
               };
             }
 
@@ -542,26 +611,52 @@ const processClientActionOnPatient = async ({
               });
               if (!response.ok) {
                 await safeReset();
+                const responseText = await response.text();
                 return {
                   success: false,
                   error: `Status ${response?.status}`,
-                  _body,
+                  apiData: {
+                    recaptchaToken: token,
+                    responseJson: responseText,
+                  },
                 };
               }
               const responseJson = await response.json();
               const { errorMessage, statusCode } = responseJson || {};
               const isSuccess = statusCode === "Success" && !errorMessage;
               await safeReset();
-              return { error: errorMessage || "", success: !!isSuccess, _body };
+
+              return {
+                error: errorMessage || "",
+                success: !!isSuccess,
+                _body,
+                apiData: {
+                  recaptchaToken: token,
+                  responseJson,
+                },
+              };
             } catch (error) {
               await safeReset();
-              return { error: `Error: ${error}`, success: false, _body };
+              return {
+                error: `Error: ${error}`,
+                success: false,
+                _body,
+                apiData: {
+                  recaptchaToken: token,
+                  responseJson: error.toString(),
+                },
+              };
             }
           },
           superAcceptanaceData
         );
 
-        const { error, success, _body } = apiResult;
+        const { error, success, apiData } = apiResult;
+        await updateSuperAcceptanceApiData(
+          referralId,
+          superAcceptanaceData,
+          apiData
+        );
 
         await handleOnSubmitDone({
           errorMessage: error,
@@ -569,7 +664,6 @@ const processClientActionOnPatient = async ({
           isDoneSuccessfully: success,
           startTime,
         });
-        console.log(`BODY sent on patient ${referralId}`, _body);
         break;
       }
 
@@ -782,3 +876,173 @@ export default processClientActionOnPatient;
 //   },
 //   { referralId }
 // );
+
+// let prevIdx = -1;
+
+// const pickNextIndex = () => {
+//   if (!sections.length) return 0;
+
+//   let j;
+//   do {
+//     j = Math.floor(Math.random() * sections.length);
+//   } while (sections.length > 1 && j === prevIdx);
+//   prevIdx = j;
+//   return j;
+// };
+
+// const SAFETY_MS = 80;
+// const innerLoopStartTime = Date.now();
+// const remainingTimeMS = Math.max(
+//   0,
+//   referralEndTimestamp - innerLoopStartTime
+// );
+
+// await cursor.moveTo({});
+
+// console.time("SUPER_LOOP_TIME");
+// let buttonToClick;
+// while (Date.now() - innerLoopStartTime < remainingTimeMS - SAFETY_MS) {
+//   if (firstLoopStarted) {
+//     const r = Math.random();
+//     if (r < 0.4) {
+//       await page.keyboard.down("Shift");
+//       await page.keyboard.press(
+//         Math.random() < 0.5 ? "ArrowUp" : "ArrowDown",
+//         { delay: 35 + Math.floor(Math.random() * 30) }
+//       );
+//       await page.keyboard.up("Shift");
+//     } else {
+//       await page.keyboard.press(
+//         Math.random() < 0.5 ? "ArrowUp" : "ArrowDown",
+//         { delay: 35 + Math.floor(Math.random() * 30) }
+//       );
+//     }
+//     await sleep(rand(8, 20));
+
+//     if (Math.random() < 0.7) {
+//       const idx = pickNextIndex();
+//       const section = sections[idx];
+//       if (section) {
+//         await sleep(rand(20, 40));
+//         try {
+//           await section.evaluate?.((el) =>
+//             el.scrollIntoView({
+//               behavior: "smooth",
+//               block: "center",
+//               inline: "nearest",
+//             })
+//           );
+//         } catch {}
+//       }
+//     }
+//   }
+
+//   // small jitter move using native mouse for variety
+//   const jitteredPointX =
+//     (firstLoopStarted ? 182 + Math.random() * 15 : 122) +
+//     Math.random() * 4;
+//   const jitteredPointY =
+//     (firstLoopStarted ? 260 + Math.random() * 15 : 202) +
+//     Math.random() * 4;
+
+//   await page.mouse.move(jitteredPointX, jitteredPointY, { steps: 9 });
+//   await sleep(rand(10, 20));
+
+//   await page.mouse.wheel({ deltaY: 75 + Math.random() * 60 });
+//   await sleep(rand(12, 30));
+
+//   if (Math.random() < 0.6) {
+//     await page.mouse.wheel({ deltaY: 20 + Math.random() * 50 });
+//     await sleep(rand(18, 35));
+//   }
+
+//   const random = Math.random();
+//   // random arrow direction with slight keypress delay
+//   const key =
+//     random < 0.33
+//       ? "ArrowLeft"
+//       : random < 0.66
+//       ? "ArrowUp"
+//       : "ArrowDown";
+
+//   await page.keyboard.press(key, { delay: Math.floor(rand(15, 40)) });
+
+//   await sleep(rand(10, 22));
+
+//   const idx = pickNextIndex();
+
+//   if (idx === 0 && Math.random() < 0.4) {
+//     await page.keyboard.press("ArrowDown", {
+//       delay: Math.floor(rand(15, 30)),
+//     });
+//   }
+
+//   const section = sections[idx];
+
+//   // bring the chosen section into view
+
+//   if (section) {
+//     try {
+//       await section.evaluate?.((el) =>
+//         el.scrollIntoView({
+//           behavior: "smooth",
+//           block: "center",
+//           inline: "nearest",
+//         })
+//       );
+//     } catch {}
+
+//     // move inside this section (center-ish with a little jitter)
+//     try {
+//       const box = await section.boundingBox();
+//       if (box) {
+//         const cx = box.x + box.width * 0.5 + rand(-8, 8);
+//         const cy = box.y + box.height * 0.5 + rand(-8, 8);
+
+//         await humanMouseMove({
+//           page,
+//           maxSteps: 22,
+//           moveTime: 650,
+//           start: {
+//             x: cx - Math.random() * 80,
+//             y: cy - Math.random() * 80,
+//           },
+//           end: {
+//             x: cx,
+//             y: cy,
+//           },
+//         });
+//       } else {
+//         // fallback jitter if no box
+//         await page.mouse.move(
+//           150 + Math.random() * 50,
+//           240 + Math.random() * 50,
+//           { steps: 15 }
+//         );
+//       }
+//     } catch {}
+//     await sleep(rand(20, 45));
+//     buttonToClick = section.$(
+//       "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
+//     );
+//   }
+
+//   await sleep(rand(8, 15));
+//   const rnd = Math.random();
+
+//   await page.keyboard.press(
+//     rnd < 0.25 ? "Tab" : rnd < 0.55 ? "ArrowDown" : "Enter", // Enter only 50% of the time in the 2nd branch -> overall 25%
+//     { delay: Math.floor(rand(12, 28)) }
+//   );
+
+//   await sleep(rand(6, 15));
+
+//   if (idx < 3 && Math.random() < 0.65) {
+//     await sleep(rand(80, 150));
+//     await selectAttachmentDropdownOption(page, actionName);
+//   }
+
+//   // pacing
+//   firstLoopStarted = true;
+//   await sleep(rand(30, 90));
+// }

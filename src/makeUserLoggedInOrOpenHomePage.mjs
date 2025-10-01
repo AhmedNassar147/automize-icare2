@@ -48,7 +48,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
       : createCursor(
           page,
           { x: 180 + Math.random(), y: 250 + Math.random() * 20 },
-          true
+          false
         );
 
   // const abc = createCursor(
