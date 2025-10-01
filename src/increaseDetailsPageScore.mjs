@@ -21,14 +21,6 @@ import closePageSafely from "./closePageSafely.mjs";
 const { [TABS_COLLECTION_TYPES.CONFIRMED]: confirmedStatusInfo } =
   PATIENT_SECTIONS_STATUS;
 
-const shuffle = (array) => {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-};
-
 const increaseDetailsPageScore = async (browser) => {
   const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
