@@ -19,13 +19,13 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
   actionName,
   isUploadFormOn,
 }) => {
-  await sleep(270 + Math.random() * 100); // [270 - 370] ms
+  await sleep(300 + Math.random() * 100); // [300 - 400] ms
 
-  if (Math.random() < 0.65) {
-    await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown");
+  // if (Math.random() < 0.65) {
+  //   await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown");
 
-    await sleep(130 + Math.random() * 60); // [130 - 190] ms
-  }
+  //   await sleep(130 + Math.random() * 60); // [130 - 190] ms
+  // }
 
   const currentCursorLocation = cursor.getLocation();
 
