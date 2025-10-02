@@ -19,7 +19,7 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
   actionName,
   isUploadFormOn,
 }) => {
-  await sleep(300 + Math.random() * 100); // [300 - 400] ms
+  await sleep(600 + Math.random() * 150); // [600 - 750] ms
 
   // if (Math.random() < 0.65) {
   //   await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown");
@@ -40,7 +40,7 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
   });
 
   await sleep(180 + Math.random() * 80); // [180 - 260] ms
-  const sections = await page.$$("section.collapsible-container.MuiBox-root");
+  const sections = await page.$$("section.collapsible-container");
 
   const [
     patientInfoSection,
