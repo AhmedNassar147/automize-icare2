@@ -36,12 +36,10 @@ const increaseDetailsPageScore = async (browser) => {
 
   await searchForItemCountAndClickItIfFound(page, targetText, true);
 
-  const rows = await collectHomePageTableRows(page);
+  const rows = await collectHomePageTableRows(page, undefined, 6000);
 
-  const [firstItem] = shuffle(rows);
-
-  const { iconButton } = firstItem || {};
-
+  const [firstRow] = shuffle(rows).filter(Boolean);
+  const iconButton = await firstRow.$("td.iconCell button");
   await iconButton.click();
 
   console.time("super_acceptance_time");
@@ -66,6 +64,7 @@ export default async (browser) => {
   while (range > 0) {
     try {
       await increaseDetailsPageScore(browser);
+      await sleep(1000);
     } catch (error) {
       console.log("Error in increaseDetailsPageScore:", error);
       break;

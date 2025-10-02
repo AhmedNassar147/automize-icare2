@@ -8,6 +8,7 @@ import sleep from "./sleep.mjs";
 import playMovementOnSection from "./playMovementOnSection.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import { dashboardLinkSelector } from "./constants.mjs";
+import shuffle from "./shuffle.mjs";
 
 const browserButtonSelector =
   "button.MuiTypography-root.MuiTypography-body2.MuiLink-root.MuiLink-underlineAlways.MuiLink-button";
@@ -49,15 +50,17 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
     proceduresSection,
   ] = sections.filter(Boolean);
 
+  console.log("playing section 1");
   await playMovementOnSection({
     page,
     section: patientInfoSection,
     cursor,
-    skipClickingSectionCollapsibleButton: Math.random() < 0.45,
+    // skipClickingSectionCollapsibleButton: Math.random() < 0.45,
     useArrowDownAtEnd: true,
     playItemsSelectionAndMovements: Math.random() < 0.75,
   });
 
+  // console.log("playing section 2")
   await playMovementOnSection({
     page,
     playInitialKeyboardVerticalArrows: true,
@@ -65,104 +68,89 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
     scrollIntoViewSection: true,
     cursor,
     playItemsSelectionAndMovements: true,
-    skipClickingSectionCollapsibleButton: Math.random() < 0.4,
+    // skipClickingSectionCollapsibleButton: Math.random() < 0.4,
   });
 
-  if (Math.random() < 0.6) {
+  const isDashboardLinkedHovered = Math.random() < 0.6;
+  if (isDashboardLinkedHovered) {
+    console.log("playing dashboard link");
     await cursor.move(dashboardLinkSelector);
-    await sleep(50 + Math.random() * 100); // [50 - 150] ms
+    await sleep(200 + Math.random() * 100); // [200 - 300] ms
   }
 
+  console.log("playing section 3");
   await playMovementOnSection({
     page,
     section: uploadSection,
     cursor,
     scrollIntoViewSection: true,
     skipClickingSectionCollapsibleButton: true,
-    onBeforeClickingSection: async () => {
-      await selectAttachmentDropdownOption(page, actionName);
+    // onBeforeClickingSection: async () => {
+    //   await selectAttachmentDropdownOption(page, actionName);
 
-      if (Math.random() < 0.56) {
-        const browserButton = await page.$(browserButtonSelector);
-        if (browserButton) {
-          await browserButton.evaluate((el) =>
-            el.scrollIntoView({
-              block: "center",
-              inline: "center",
-            })
-          );
-          await cursor.move(browserButton, {
-            moveSpeed: 0.9 + Math.random() * 0.5,
-            randomizeMoveDelay: true,
-          });
-        } else {
-          console.warn(
-            "Browse button not found by selector:",
-            browserButtonSelector
-          );
-        }
-      }
+    //   if (Math.random() < 0.56) {
+    //     const browserButton = await page.$(browserButtonSelector);
+    //     if (browserButton) {
+    //       await cursor.move(browserButton);
+    //     } else {
+    //       console.warn(
+    //         "Browse button not found by selector:",
+    //         browserButtonSelector
+    //       );
+    //     }
+    //   }
 
-      await sleep(250); // let :hover styles apply
-    },
+    //   await sleep(250); // let :hover styles apply
+    // },
   });
 
-  if (Math.random() < 0.72) {
-    await cursor.scrollIntoView(proceduresSection, {
-      scrollSpeed: 85 + Math.random() * 12,
-      scrollDelay: 80 + Math.random() * 150,
-      inViewportMargin: 20,
-    });
+  const isScrolledDown = Math.random() < 0.72;
 
-    await sleep(150 + Math.random() * 60); // [150 - 260] ms
-  }
+  if (isScrolledDown) {
+    await proceduresSection.evaluate((el) =>
+      el.scrollIntoView({
+        block: "center",
+        inline: "center",
+        behavior: "smooth",
+      })
+    );
 
-  if (Math.random() < 0.68) {
-    await cursor.toggleRandomMove(true);
-  } else {
-    await page.keyboard.press(Math.random() < 0.5 ? "ArrowUp" : "ArrowDown", {
-      delay: 50 + Math.floor(Math.random() * 30),
-    });
+    await sleep(150 + Math.random() * 150); // [150 - 300] ms
 
-    await sleep(120 + Math.random() * 40); // [120 - 160] ms
-
-    await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown", {
+    await page.keyboard.press("ArrowDown", {
       delay: 50 + Math.floor(Math.random() * 30),
     });
   }
 
+  await sleep(150 + Math.random() * 150); // [150 - 300] ms
+
+  await cursor.toggleRandomMove(true);
   await sleep(200 + Math.random() * 60); // [200 - 260] ms
 
-  if (Math.random() < 0.75) {
+  if (!isDashboardLinkedHovered) {
     await cursor.move(dashboardLinkSelector);
-    await sleep(70 + Math.random() * 70); // [70 - 140] ms
+    await sleep(200 + Math.random() * 100); // [200 - 300] ms
   }
 
-  const currentShownSectionPlacement = Math.random() < 0.4 ? "bottom" : "top";
+  const [randomSection] = shuffle(sections);
 
-  await cursor.scrollIntoView(currentShownSectionPlacement, {
-    scrollSpeed: 88 + Math.random() * 12,
-    scrollDelay: 80 + Math.random() * 150,
-    inViewportMargin: 20,
-  });
+  await randomSection.evaluate((el) =>
+    el.scrollIntoView({
+      block: "end",
+      behavior: "smooth",
+    })
+  );
 
-  await sleep(250 + Math.random() * 60); // [250 - 310] ms
+  await sleep(160 + Math.random() * 80); // [160 - 240] ms
 
-  const currentShownSection =
-    currentShownSectionPlacement === "top"
-      ? patientInfoSection
-      : sections[sections.length - 1];
-
-  const buttonToClick = await currentShownSection.$(
+  const buttonToClick = await randomSection.$(
     "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
   );
 
   await cursor.click(buttonToClick, {
-    hesitate: 110 + Math.random() * 60,
-    waitForClick: 110 + Math.random() * 50,
+    hesitate: 95 + Math.random() * 60,
+    waitForClick: 95 + Math.random() * 50,
   });
-
-  return currentShownSectionPlacement;
 };
 
 export default helpIncreaseDetailsPageRecaptchaScore;
