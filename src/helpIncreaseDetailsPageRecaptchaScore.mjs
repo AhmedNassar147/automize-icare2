@@ -124,30 +124,41 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
       moveDelay: 90 + Math.floor(Math.random() * 140),
       randomizeMoveDelay: true,
     });
-    await sleep(200 + Math.random() * 100); // [200 - 300] ms
+    await sleep(250 + Math.random() * 100); // [200 - 300] ms
   }
 
   const [randomSection] = shuffle(sections).filter(Boolean);
 
-  const _randomSection =
+  let _randomSection =
     randomSection ||
     patientInfoSection ||
     patientDetailsSection ||
     uploadSection ||
     proceduresSection;
 
-  await _randomSection.evaluate((el) =>
-    el.scrollIntoView({
-      block: "center",
-      behavior: "smooth",
-    })
-  );
+  if (!_randomSection) {
+    const newSections = await page.$$("section.collapsible-container");
+    _randomSection = shuffle(newSections)
+      .filter(Boolean)
+      .find((item) => !!item);
+  }
 
-  await sleep(250 + Math.random() * 100); // [250 - 350] ms
+  let buttonToClick;
 
-  const buttonToClick = await _randomSection.$(
-    "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
-  );
+  if (_randomSection) {
+    await _randomSection.evaluate((el) =>
+      el.scrollIntoView({
+        block: "center",
+        behavior: "smooth",
+      })
+    );
+
+    await sleep(250 + Math.random() * 100); // [250 - 350] ms
+
+    buttonToClick = await _randomSection.$(
+      "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
+    );
+  }
 
   return buttonToClick;
 };

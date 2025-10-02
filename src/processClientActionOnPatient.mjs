@@ -341,10 +341,12 @@ const processClientActionOnPatient = async ({
           await sleep(remainingTimeMS);
         }
 
-        await cursor.click(buttonToClick, {
-          hesitate: 110 + Math.random() * 60,
-          waitForClick: 100 + Math.random() * 60,
-        });
+        if (buttonToClick) {
+          await cursor.click(buttonToClick, {
+            hesitate: 110 + Math.random() * 60,
+            waitForClick: 100 + Math.random() * 60,
+          });
+        }
 
         const apiResult = await page.evaluate(
           async ({ apiUrl, body, headers }) => {
