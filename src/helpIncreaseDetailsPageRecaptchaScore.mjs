@@ -71,7 +71,6 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
     await sleep(200 + Math.random() * 100); // [200 - 300] ms
   }
 
-  console.log("playing section 3");
   await playMovementOnSection({
     page,
     section: uploadSection,
@@ -129,11 +128,13 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
   }
 
   const [randomSection] = shuffle(sections).filter(Boolean);
+
   const _randomSection =
     randomSection ||
     patientInfoSection ||
     patientDetailsSection ||
-    uploadSection;
+    uploadSection ||
+    proceduresSection;
 
   await _randomSection.evaluate((el) =>
     el.scrollIntoView({
