@@ -17,15 +17,14 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
   page,
   cursor,
   actionName,
+  isUploadFormOn,
 }) => {
-  await sleep(90 + Math.random() * 70); // [90 - 160] ms
+  await sleep(270 + Math.random() * 100); // [270 - 370] ms
 
   if (Math.random() < 0.65) {
-    await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown", {
-      delay: 50 + Math.floor(Math.random() * 30),
-    });
+    await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown");
 
-    await sleep(110 + Math.random() * 40); // [110 - 150] ms
+    await sleep(130 + Math.random() * 60); // [130 - 190] ms
   }
 
   const currentCursorLocation = cursor.getLocation();
@@ -40,7 +39,7 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
     randomizeMoveDelay: true,
   });
 
-  await sleep(110 + Math.random() * 80); // [110 - 190] ms
+  await sleep(180 + Math.random() * 80); // [180 - 260] ms
   const sections = await page.$$("section.collapsible-container.MuiBox-root");
 
   const [
@@ -50,31 +49,25 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
     proceduresSection,
   ] = sections.filter(Boolean);
 
-  console.log("playing section 1");
   await playMovementOnSection({
     page,
-    section: patientInfoSection,
     cursor,
-    // skipClickingSectionCollapsibleButton: Math.random() < 0.45,
-    useArrowDownAtEnd: true,
-    playItemsSelectionAndMovements: Math.random() < 0.75,
+    section: patientInfoSection,
   });
 
-  // console.log("playing section 2")
   await playMovementOnSection({
     page,
-    playInitialKeyboardVerticalArrows: true,
-    section: patientDetailsSection,
-    scrollIntoViewSection: true,
     cursor,
-    playItemsSelectionAndMovements: true,
-    // skipClickingSectionCollapsibleButton: Math.random() < 0.4,
+    section: patientDetailsSection,
   });
 
   const isDashboardLinkedHovered = Math.random() < 0.6;
   if (isDashboardLinkedHovered) {
-    console.log("playing dashboard link");
-    await cursor.move(dashboardLinkSelector);
+    await cursor.move(dashboardLinkSelector, {
+      moveSpeed: 1 + Math.random() * 0.5,
+      moveDelay: 90 + Math.floor(Math.random() * 140),
+      randomizeMoveDelay: true,
+    });
     await sleep(200 + Math.random() * 100); // [200 - 300] ms
   }
 
@@ -83,74 +76,79 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
     page,
     section: uploadSection,
     cursor,
-    scrollIntoViewSection: true,
-    skipClickingSectionCollapsibleButton: true,
-    // onBeforeClickingSection: async () => {
-    //   await selectAttachmentDropdownOption(page, actionName);
+    playInitialKeyboardVerticalArrows: Math.random() > 0.6,
+    onBeforeClickingSection: async () => {
+      if (isUploadFormOn) {
+        await selectAttachmentDropdownOption(page, actionName);
 
-    //   if (Math.random() < 0.56) {
-    //     const browserButton = await page.$(browserButtonSelector);
-    //     if (browserButton) {
-    //       await cursor.move(browserButton);
-    //     } else {
-    //       console.warn(
-    //         "Browse button not found by selector:",
-    //         browserButtonSelector
-    //       );
-    //     }
-    //   }
+        if (Math.random() < 0.56) {
+          const browserButton = await page.$(browserButtonSelector);
+          if (browserButton) {
+            await cursor.move(browserButton);
+          } else {
+            console.warn(
+              "Browse button not found by selector:",
+              browserButtonSelector
+            );
+          }
+        }
 
-    //   await sleep(250); // let :hover styles apply
-    // },
+        await sleep(200); // let :hover styles apply
+      }
+    },
   });
 
-  const isScrolledDown = Math.random() < 0.72;
-
-  if (isScrolledDown) {
+  if (Math.random() < 0.72 && proceduresSection) {
     await proceduresSection.evaluate((el) =>
       el.scrollIntoView({
-        block: "center",
-        inline: "center",
+        block: Math.random() < 0.65 ? "end" : "center",
         behavior: "smooth",
       })
     );
 
-    await sleep(150 + Math.random() * 150); // [150 - 300] ms
-
-    await page.keyboard.press("ArrowDown", {
-      delay: 50 + Math.floor(Math.random() * 30),
-    });
+    await sleep(180 + Math.random() * 150); // [180 - 300] ms
   }
 
-  await sleep(150 + Math.random() * 150); // [150 - 300] ms
+  if (Math.random() < 0.6) {
+    await page.keyboard.press("ArrowDown");
+    await sleep(50 + Math.random() * 100);
+  }
+
+  await sleep(180 + Math.random() * 150); // [150 - 300] ms
 
   await cursor.toggleRandomMove(true);
   await sleep(200 + Math.random() * 60); // [200 - 260] ms
 
-  if (!isDashboardLinkedHovered) {
-    await cursor.move(dashboardLinkSelector);
+  if (!isDashboardLinkedHovered && Math.random() > 0.8) {
+    await cursor.move(dashboardLinkSelector, {
+      moveSpeed: 1 + Math.random() * 0.5,
+      moveDelay: 90 + Math.floor(Math.random() * 140),
+      randomizeMoveDelay: true,
+    });
     await sleep(200 + Math.random() * 100); // [200 - 300] ms
   }
 
-  const [randomSection] = shuffle(sections);
+  const [randomSection] = shuffle(sections).filter(Boolean);
+  const _randomSection =
+    randomSection ||
+    patientInfoSection ||
+    patientDetailsSection ||
+    uploadSection;
 
-  await randomSection.evaluate((el) =>
+  await _randomSection.evaluate((el) =>
     el.scrollIntoView({
-      block: "end",
+      block: "center",
       behavior: "smooth",
     })
   );
 
-  await sleep(160 + Math.random() * 80); // [160 - 240] ms
+  await sleep(250 + Math.random() * 100); // [250 - 350] ms
 
-  const buttonToClick = await randomSection.$(
+  const buttonToClick = await _randomSection.$(
     "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
   );
 
-  await cursor.click(buttonToClick, {
-    hesitate: 95 + Math.random() * 60,
-    waitForClick: 95 + Math.random() * 50,
-  });
+  return buttonToClick;
 };
 
 export default helpIncreaseDetailsPageRecaptchaScore;

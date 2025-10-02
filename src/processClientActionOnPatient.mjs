@@ -322,34 +322,28 @@ const processClientActionOnPatient = async ({
 
         await updateSuperAcceptanceApiData(referralId, superAcceptanaceData);
 
-        const currentShownSectionPlacement =
-          await helpIncreaseDetailsPageRecaptchaScore({
-            page,
-            cursor,
-            actionName,
-          });
+        const buttonToClick = await helpIncreaseDetailsPageRecaptchaScore({
+          page,
+          cursor,
+          actionName,
+          isUploadFormOn: true,
+        });
         console.timeEnd("🕒 super_acceptance_score_time");
 
         const remainingTimeMS = referralEndTimestamp - Date.now() - 70;
 
-        console.log("super_acceptance_left_time", remainingTimeMS);
+        console.log(
+          `super_acceptance_left_time_${referralId}`,
+          remainingTimeMS
+        );
 
         if (remainingTimeMS > 0) {
           await sleep(remainingTimeMS);
         }
 
-        const currentShownSection =
-          currentShownSectionPlacement === "top"
-            ? patientInfoSection
-            : sections[sections.length - 1];
-
-        const buttonToClick = await currentShownSection.$(
-          "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
-        );
-
         await cursor.click(buttonToClick, {
           hesitate: 110 + Math.random() * 60,
-          waitForClick: 110 + Math.random() * 50,
+          waitForClick: 100 + Math.random() * 60,
         });
 
         const apiResult = await page.evaluate(

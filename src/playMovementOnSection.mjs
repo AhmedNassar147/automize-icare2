@@ -5,7 +5,7 @@
  */
 import { path } from "ghost-cursor";
 import sleep from "./sleep.mjs";
-import shuffle from "./shuffle.mjs";
+// import shuffle from "./shuffle.mjs";
 
 const rand = (min, max) => min + Math.random() * (max - min);
 
@@ -71,29 +71,32 @@ const playMovementOnSection = async ({
   page,
   section,
   cursor,
-  scrollIntoViewSection,
-  playInitialKeyboardVerticalArrows,
   onBeforeClickingSection,
+  playInitialKeyboardVerticalArrows,
   skipClickingSectionCollapsibleButton,
   useArrowDownAtEnd,
   playItemsSelectionAndMovements,
 }) => {
-  if (playInitialKeyboardVerticalArrows) {
-    await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown", {
-      delay: 50 + Math.floor(Math.random() * 30),
-    });
+  // if (playInitialKeyboardVerticalArrows) {
+  //   await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown", {
+  //     delay: 50 + Math.floor(Math.random() * 30),
+  //   });
+  // }
 
-    await sleep(100 + Math.random() * 50); // [100 - 150] ms
+  await sleep(120 + Math.random() * 50); // [100 - 150] ms
+
+  if (!section) {
+    return;
   }
 
   await section.evaluate((el) =>
     el.scrollIntoView({
-      block: "center",
+      block: Math.random() < 0.65 ? "end" : "center",
       behavior: "smooth",
     })
   );
 
-  await sleep(120 + Math.random() * 40); // [120 - 160] ms
+  await sleep(180 + Math.random() * 60); // [170 - 230] ms
   const sectionBox = await section.boundingBox();
 
   const cx = sectionBox.x + sectionBox.width * 0.5 + rand(-8, 8);
@@ -113,11 +116,11 @@ const playMovementOnSection = async ({
 
   console.timeEnd("routes");
 
-  let titleElement;
+  // let titleElement;
 
   if (Math.random() < 0.6) {
     console.time("move title");
-    titleElement = await section.$("h2.section-title");
+    // titleElement = await section.$("h2.section-title");
     await cursor.toggleRandomMove(true);
     console.timeEnd("move title");
   }
@@ -137,7 +140,7 @@ const playMovementOnSection = async ({
   // // }
 
   if (onBeforeClickingSection) {
-    await sleep(170 + Math.random() * 100); // [170 - 270] ms
+    await sleep(180 + Math.random() * 100); // [170 - 270] ms
     await onBeforeClickingSection();
   } else {
     await sleep(170 + Math.random() * 110); // [130 - 110] ms
@@ -146,16 +149,10 @@ const playMovementOnSection = async ({
   if (Math.random() < 0.65) {
     console.time("CLICK2");
     await cursor.click(section, {
-      hesitate: 90 + Math.random() * 65,
-      waitForClick: 90 + Math.random() * 60,
+      hesitate: 100 + Math.random() * 70,
+      waitForClick: 100 + Math.random() * 60,
     });
     console.timeEnd("CLICK2");
-  }
-
-  if (useArrowDownAtEnd) {
-    await page.keyboard.press("ArrowDown", {
-      delay: 50 + Math.floor(Math.random() * 30),
-    });
   }
 
   await sleep(150 + Math.random() * 150); // [150 - 300] ms

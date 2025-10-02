@@ -54,8 +54,8 @@ export const PATIENT_SECTIONS_STATUS = {
 // the user will review patient till the 13 minute of the counter
 // export const STOP_USER_ACTION_MINUTES = ALLOWED_MINUTES_TO_REVIEW_PATIENTS - 13;
 
-// 8 seconds for loading new pupteer page , js code execution, upload file and submit
-export const estimatedTimeForProcessingAction = 8_000;
+// 30 seconds for loading new pupteer page , js code execution, scroll, mouse movement, upload file and submit
+export const estimatedTimeForProcessingAction = 30_000;
 
 export const ALLOWED_MINUTES_TO_REVIEW_PATIENTS = 15;
 
