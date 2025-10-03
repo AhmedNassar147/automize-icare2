@@ -6,7 +6,7 @@
 import { unlink, writeFile, readFile } from "fs/promises";
 import { join, resolve, basename } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
-// import checkPathExists from "./checkPathExists.mjs";
+import checkPathExists from "./checkPathExists.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
@@ -367,6 +367,24 @@ const processClientActionOnPatient = async ({
               "MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary " +
               "MuiButton-sizeSmall MuiButton-containedSizeSmall";
 
+            // disabled styling
+            const disableButton = () => {
+              Object.assign(button.style, {
+                backgroundColor: "#e0e0e0",
+                color: "#9e9e9e",
+                padding: "8px 20px",
+                borderRadius: "4px",
+                border: "1px solid #bdbdbd",
+                cursor: "not-allowed",
+                fontSize: "14px",
+                fontWeight: "bold",
+                opacity: "0.7",
+              });
+              button.disabled = true;
+            };
+
+            disableButton();
+
             const timer = document.createElement("div");
             timer.id = "dynamic-countdown-timer";
 
@@ -374,20 +392,6 @@ const processClientActionOnPatient = async ({
               display: "flex",
               alignItems: "center",
             });
-
-            // disabled styling
-            Object.assign(button.style, {
-              backgroundColor: "#e0e0e0",
-              color: "#9e9e9e",
-              padding: "8px 20px",
-              borderRadius: "4px",
-              border: "1px solid #bdbdbd",
-              cursor: "not-allowed",
-              fontSize: "14px",
-              fontWeight: "bold",
-              opacity: "0.7",
-            });
-            button.disabled = true;
 
             container.appendChild(timer);
             container.appendChild(button);
@@ -436,6 +440,7 @@ const processClientActionOnPatient = async ({
               button.addEventListener(
                 "click",
                 async () => {
+                  disableButton();
                   const _grecaptcha = window.grecaptcha || grecaptcha;
 
                   let token = null,
