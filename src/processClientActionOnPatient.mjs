@@ -12,7 +12,6 @@ import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-import helpIncreaseDetailsPageRecaptchaScore from "./helpIncreaseDetailsPageRecaptchaScore.mjs";
 import updateSuperAcceptanceApiData from "./updateSuperAcceptanceApiData.mjs";
 import {
   USER_ACTION_TYPES,
@@ -23,6 +22,7 @@ import {
   acceptanceApiUrl,
   globMedHeaders,
   rejectionApiUrl,
+  estimatedTimeForProcessingAction,
 } from "./constants.mjs";
 
 // import humanClick from "./humanClick.mjs";
@@ -228,16 +228,15 @@ const processClientActionOnPatient = async ({
       referralId
     );
 
-    // await Promise.allSettled([
-    //   checkPathExists(acceptanceFilePath).then(
-    //     (exists) => exists && unlink(acceptanceFilePath)
-    //   ),
-    //   checkPathExists(rejectionFilePath).then(
-    //     (exists) => exists && unlink(rejectionFilePath)
-    //   ),
-    // ]);
+    await Promise.allSettled([
+      checkPathExists(acceptanceFilePath).then(
+        (exists) => exists && unlink(acceptanceFilePath)
+      ),
+      checkPathExists(rejectionFilePath).then(
+        (exists) => exists && unlink(rejectionFilePath)
+      ),
+    ]);
 
-    console.log(deletionResponse?.message);
     await closeCurrentPage(!isDashboardPage);
   };
 
@@ -318,145 +317,270 @@ const processClientActionOnPatient = async ({
       await iconButton.click();
 
       if (isSupperAcceptanceOrRejection) {
-        console.time("🕒 super_acceptance_score_time");
+        let apiResultResolver;
+        const apiCompleted = new Promise(
+          (resolve) => (apiResultResolver = resolve)
+        );
+
+        try {
+          await page.exposeFunction("getAcceptanceData", (result) => {
+            apiResultResolver?.(result);
+          });
+        } catch (e) {}
+
+        await sleep(3000 + Math.random() * 200);
 
         await updateSuperAcceptanceApiData(referralId, superAcceptanaceData);
 
-        const buttonToClick = await helpIncreaseDetailsPageRecaptchaScore({
-          page,
-          cursor,
-          actionName,
-          isUploadFormOn: true,
-        });
-        console.timeEnd("🕒 super_acceptance_score_time");
+        await page.evaluate(
+          ({ referralEndTimestamp, apiUrl, body, headers }) => {
+            function startCountdown(endTs, onTick, onDone) {
+              let timeoutId;
 
-        const remainingTimeMS = referralEndTimestamp - Date.now() - 70;
+              const tick = () => {
+                const remaining = Math.max(0, endTs - Date.now());
+                onTick?.(remaining);
 
-        console.log(
-          `super_acceptance_left_time_${referralId}`,
-          remainingTimeMS
+                if (remaining <= 0) {
+                  onDone?.();
+                  return;
+                }
+
+                const nextDelay = Math.min(1000, remaining); // never schedule past end
+                timeoutId = setTimeout(tick, nextDelay);
+              };
+
+              tick();
+              return () => clearTimeout(timeoutId); // canceller
+            }
+
+            const container = document.querySelector(
+              ".referral-button-container"
+            );
+
+            // create button + timer
+            const button = document.createElement("button");
+            button.id = "new-id-button-accept";
+            button.type = "button";
+            button.textContent = "Accept Referral";
+            button.className =
+              "MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary " +
+              "MuiButton-sizeSmall MuiButton-containedSizeSmall";
+
+            const timer = document.createElement("div");
+            timer.id = "dynamic-countdown-timer";
+
+            Object.assign(timer.style, {
+              display: "flex",
+              alignItems: "center",
+            });
+
+            // disabled styling
+            Object.assign(button.style, {
+              backgroundColor: "#e0e0e0",
+              color: "#9e9e9e",
+              padding: "8px 20px",
+              borderRadius: "4px",
+              border: "1px solid #bdbdbd",
+              cursor: "not-allowed",
+              fontSize: "14px",
+              fontWeight: "bold",
+              opacity: "0.7",
+            });
+            button.disabled = true;
+
+            container.appendChild(timer);
+            container.appendChild(button);
+
+            // format renderer (uses precise remainingMs each tick)
+            function renderTimer(remainingMs) {
+              const s = Math.floor(remainingMs / 1000);
+              const h = Math.floor(s / 3600);
+              const m = Math.floor((s % 3600) / 60);
+              const ss = s % 60;
+              const pretty =
+                h > 0
+                  ? `${h}h ${m}m ${ss}s`
+                  : m > 0
+                  ? `${m}m ${ss}s`
+                  : `${ss}s`;
+
+              const color =
+                remainingMs <= 1000
+                  ? "#f44336"
+                  : remainingMs <= 5000
+                  ? "#ff9800"
+                  : "#1976d2";
+
+              timer.innerHTML = `
+                <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#666;">
+                  <strong style="color:${color};">${pretty}</strong>
+                  <span>remaining</span>
+                </div>`;
+            }
+
+            // enable-action styling + click handler (runs once)
+            function enableButton() {
+              if (!button.disabled) return; // already enabled
+              Object.assign(button.style, {
+                backgroundColor: "#1976d2",
+                color: "#fff",
+                border: "none",
+                cursor: "pointer",
+                opacity: "1",
+                boxShadow:
+                  "0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12)",
+              });
+              button.disabled = false;
+
+              button.addEventListener(
+                "click",
+                async () => {
+                  const _grecaptcha = window.grecaptcha || grecaptcha;
+
+                  let token = null,
+                    execError = null;
+                  if (
+                    _grecaptcha &&
+                    typeof _grecaptcha.ready === "function" &&
+                    typeof _grecaptcha.execute === "function"
+                  ) {
+                    try {
+                      await new Promise((resolve) =>
+                        _grecaptcha.ready(resolve)
+                      );
+                      token = await _grecaptcha.execute(
+                        "6LcqgMcqAAAAALsWwhGQYrpDuMnke9RkJkdJnFte",
+                        { action: undefined }
+                      );
+                    } catch (err) {
+                      execError = err;
+                    }
+                  } else {
+                    execError = "grecaptcha not available on page";
+                  }
+
+                  const _body = JSON.stringify({ ...body, token });
+
+                  if (!token || execError) {
+                    await window.getAcceptanceData?.({
+                      error: `Failed to get grecaptcha token: ${
+                        execError || "empty token"
+                      }`,
+                      success: false,
+                      apiData: { recaptchaToken: token },
+                    });
+                    return;
+                  }
+
+                  try {
+                    const response = await fetch(apiUrl, {
+                      headers,
+                      method: "POST",
+                      body: _body,
+                    });
+                    if (!response.ok) {
+                      const responseText = await response.text();
+                      await window.getAcceptanceData?.({
+                        success: false,
+                        error: `Status ${response?.status} ${responseText}`,
+                        apiData: {
+                          recaptchaToken: token,
+                          responseJson: responseText,
+                        },
+                      });
+
+                      return;
+                    }
+                    const responseJson = await response.json();
+                    const { errorMessage, statusCode } = responseJson || {};
+                    const isSuccess = statusCode === "Success" && !errorMessage;
+
+                    await window.getAcceptanceData?.({
+                      error: errorMessage || "",
+                      success: isSuccess,
+                      _body,
+                      apiData: {
+                        recaptchaToken: token,
+                        responseJson,
+                      },
+                    });
+                  } catch (error) {
+                    await window.getAcceptanceData?.({
+                      error: `Error: ${error}`,
+                      success: false,
+                      _body,
+                      apiData: {
+                        recaptchaToken: token,
+                        responseJson: error.toString(),
+                      },
+                    });
+                  }
+                },
+                { once: true }
+              );
+
+              // also show “ready” message
+              timer.innerHTML = `
+                <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#4CAF50;font-weight:bold;">
+                  <span>Ready to accept!</span>
+                </div>`;
+            }
+
+            // start the countdown that never overshoots
+            startCountdown(
+              referralEndTimestamp,
+              (remainingMs) => renderTimer(remainingMs),
+              () => {
+                // reached (or passed) the exact deadline
+                renderTimer(0);
+                enableButton();
+              }
+            );
+
+            return { ok: true };
+          },
+          {
+            ...superAcceptanaceData,
+            referralEndTimestamp,
+          }
         );
 
-        if (remainingTimeMS > 0) {
-          await sleep(remainingTimeMS);
-        }
+        const result = await Promise.race([
+          apiCompleted, // resolves when window.getAcceptanceData is called
+          new Promise((res) =>
+            setTimeout(
+              () => res({ timeout: true }),
+              estimatedTimeForProcessingAction * 2
+            )
+          ),
+        ]);
 
-        if (buttonToClick) {
-          await cursor.click(buttonToClick, {
-            hesitate: 110 + Math.random() * 60,
-            waitForClick: 100 + Math.random() * 60,
+        if (result?.timeout) {
+          await updateSuperAcceptanceApiData(referralId, superAcceptanaceData, {
+            timeout: true,
+          });
+          await handleOnSubmitDone({
+            errorMessage: "timeout to click the button",
+            isAutoAccept: true,
+            isDoneSuccessfully: false,
+            startTime,
+          });
+        } else {
+          const { error, success, apiData } = result || {};
+          await updateSuperAcceptanceApiData(
+            referralId,
+            superAcceptanaceData,
+            apiData
+          );
+          await handleOnSubmitDone({
+            errorMessage: error,
+            isAutoAccept: true,
+            isDoneSuccessfully: success,
+            startTime,
           });
         }
 
-        const apiResult = await page.evaluate(
-          async ({ apiUrl, body, headers }) => {
-            const _grecaptcha = window.grecaptcha || grecaptcha;
-
-            const safeReset = async () => {
-              try {
-                if (_grecaptcha && typeof _grecaptcha.reset === "function")
-                  await _grecaptcha.reset();
-              } catch {}
-            };
-
-            let token = null,
-              execError = null;
-            if (
-              _grecaptcha &&
-              typeof _grecaptcha.ready === "function" &&
-              typeof _grecaptcha.execute === "function"
-            ) {
-              try {
-                await new Promise((resolve) => _grecaptcha.ready(resolve));
-                token = await _grecaptcha.execute(
-                  "6LcqgMcqAAAAALsWwhGQYrpDuMnke9RkJkdJnFte",
-                  { action: undefined }
-                );
-              } catch (err) {
-                execError = err;
-              }
-            } else {
-              execError = "grecaptcha not available on page";
-            }
-
-            const _body = JSON.stringify({ ...body, token });
-
-            if (!token || execError) {
-              await safeReset();
-              const err = `Failed to get grecaptcha token: ${
-                execError || "empty token"
-              }`;
-              return {
-                error: err,
-                success: false,
-                apiData: {
-                  recaptchaToken: token,
-                  err,
-                },
-              };
-            }
-
-            try {
-              const response = await fetch(apiUrl, {
-                headers,
-                method: "POST",
-                body: _body,
-              });
-              if (!response.ok) {
-                await safeReset();
-                const responseText = await response.text();
-                return {
-                  success: false,
-                  error: `Status ${response?.status}`,
-                  apiData: {
-                    recaptchaToken: token,
-                    responseJson: responseText,
-                  },
-                };
-              }
-              const responseJson = await response.json();
-              const { errorMessage, statusCode } = responseJson || {};
-              const isSuccess = statusCode === "Success" && !errorMessage;
-              await safeReset();
-
-              return {
-                error: errorMessage || "",
-                success: !!isSuccess,
-                _body,
-                apiData: {
-                  recaptchaToken: token,
-                  responseJson,
-                },
-              };
-            } catch (error) {
-              await safeReset();
-              return {
-                error: `Error: ${error}`,
-                success: false,
-                _body,
-                apiData: {
-                  recaptchaToken: token,
-                  responseJson: error.toString(),
-                },
-              };
-            }
-          },
-          superAcceptanaceData
-        );
-
-        const { error, success, apiData } = apiResult;
-        await updateSuperAcceptanceApiData(
-          referralId,
-          superAcceptanaceData,
-          apiData
-        );
-
-        await handleOnSubmitDone({
-          errorMessage: error,
-          isAutoAccept: true,
-          isDoneSuccessfully: success,
-          startTime,
-        });
         break;
       }
 
