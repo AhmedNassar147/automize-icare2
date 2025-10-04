@@ -576,6 +576,10 @@ const processClientActionOnPatient = async ({
                       });
                       if (!response.ok) {
                         const responseText = await response.text();
+                        try {
+                          if (typeof gre.reset === "function")
+                            await gre.reset(widgetId);
+                        } catch (e) {}
                         await report({
                           success: false,
                           error: `Status ${response?.status} ${responseText}`,
@@ -593,6 +597,11 @@ const processClientActionOnPatient = async ({
                       const { errorMessage, statusCode } = responseJson || {};
                       const isSuccess =
                         statusCode === "Success" && !errorMessage;
+
+                      try {
+                        if (typeof gre.reset === "function")
+                          await gre.reset(widgetId);
+                      } catch (e) {}
 
                       await report({
                         error: errorMessage || "",
