@@ -100,7 +100,7 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
 
       if (!referralId) {
         console.log(`⏩ didn't find referralId: ${referralId}`);
-        continue;
+        break;
       }
 
       if (patientsStore.has(referralId)) {
