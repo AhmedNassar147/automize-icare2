@@ -145,7 +145,6 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
       await sleep(3_000 + Math.random() * 2_000);
     }
 
-    await sleep(5_000 + Math.random() * 2_000);
     console.log("✅ Finished processing all rows.");
   } catch (err) {
     console.error("🛑 Fatal error during collecting patients:", err.message);

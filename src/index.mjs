@@ -11,7 +11,10 @@ import puppeteer from "puppeteer";
 import cron from "node-cron";
 // import twilio from "twilio";
 import PatientStore from "./PatientStore.mjs";
-import waitForWaitingCountWithInterval from "./waitForWaitingCountWithInterval.mjs";
+import waitForWaitingCountWithInterval, {
+  continueFetchingPatientsIfPaused,
+  pauseFetchingPatients,
+} from "./waitForWaitingCountWithInterval.mjs";
 import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
 import readJsonFile from "./readJsonFile.mjs";
 import sendMessageUsingWhatsapp, {
@@ -114,8 +117,9 @@ import {
         "--enable-webgl", // WebGL is often checked
         "--enable-webgl2",
         "--lang=en-US,en",
-        // "--metrics-recording-only",
-        // "--allow-running-insecure-content",
+        "--disable-background-timer-throttling",
+        "--disable-renderer-backgrounding",
+        "--disable-backgrounding-occluded-windows",
       ],
     });
 
@@ -124,7 +128,10 @@ import {
       true
     );
 
-    const patientsStore = new PatientStore(collectedPatients || []);
+    const patientsStore = new PatientStore(
+      collectedPatients || [],
+      pauseFetchingPatients
+    );
     await patientsStore.scheduleAllInitialPatients();
 
     await initializeClient(process.env.CLIENT_WHATSAPP_NUMBER, patientsStore);
@@ -175,6 +182,7 @@ import {
         patient,
         patientsStore,
         sendWhatsappMessage,
+        continueFetchingPatientsIfPaused,
       })
     );
 
@@ -185,6 +193,7 @@ import {
         patient,
         patientsStore,
         sendWhatsappMessage,
+        continueFetchingPatientsIfPaused,
       })
     );
   } catch (error) {

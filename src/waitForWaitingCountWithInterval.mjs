@@ -8,6 +8,11 @@ import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs
 import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import closePageSafely from "./closePageSafely.mjs";
+import {
+  pauseController,
+  pause,
+  continueIfPaused,
+} from "./PauseController.mjs";
 // import goToHomePage from "./goToHomePage.mjs";
 import {
   PATIENT_SECTIONS_STATUS,
@@ -19,36 +24,44 @@ const NOT_LOGGED_SLEEP_TIME = 25_000;
 
 const LOCKED_OUT_SLEEP_TIME = 4 * 10 * 60_000;
 
+const pausableSleep = async (ms) => {
+  await pauseController.waitIfPaused();
+  await sleep(ms);
+};
+
 const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
   try {
     const intervalTime = INTERVAL + Math.random() * 9000;
 
+    // 🔹 Check pause before waiting/reloading
+    await pauseController.waitIfPaused();
+
     if (!page || !page?.reload) {
-      await sleep(intervalTime);
+      await pausableSleep(intervalTime);
       console.log(
         `Will recreate page on next loop iteration, refreshing in ${
           intervalTime / 1000
         }s...`
       );
-
       return true;
     }
 
     console.log(`${logString}refreshing in ${intervalTime / 1000}s...`);
-    await sleep(intervalTime);
+    await pausableSleep(intervalTime);
+
+    // 🔹 Check pause right before reload (long operation)
+    await pauseController.waitIfPaused();
     await page.reload({ waitUntil: "domcontentloaded" });
   } catch (err) {
     console.error("🔁 Failed to reload page:", err.message);
-
     const intervalTime = INTERVAL + Math.random() * 11_000;
 
+    await pausableSleep(intervalTime);
     console.log(
       `Will recreate page on next loop iteration, refreshing in ${
         intervalTime / 1000
       }s...`
     );
-    await sleep(intervalTime);
-
     return true;
   }
 };
@@ -70,17 +83,9 @@ const waitForWaitingCountWithInterval = async ({
     patientsStore.on("forceReloadHomePage", async () => {
       console.log("📢 Received forceReloadHomePage event");
       if (page) {
-        // const currentPageUrl = page.url();
-
-        // const isHomePage = currentPageUrl
-        //   .toLowerCase()
-        //   .includes("dashboard/referral");
-
-        // if (!isHomePage) {
-        //   await sleep(6_000);
-        // }
-
         try {
+          // Respect pause even for manual reloads
+          await pauseController.waitIfPaused();
           await page.reload({ waitUntil: "domcontentloaded" });
           console.log("🔄 Page reloaded successfully from event.");
         } catch (err) {
@@ -94,6 +99,9 @@ const waitForWaitingCountWithInterval = async ({
 
   while (true) {
     try {
+      // 🔹 First checkpoint each iteration
+      await pauseController.waitIfPaused();
+
       const [newPage, newCursor, isLoggedIn, isErrorAboutLockedOut] =
         await makeUserLoggedInOrOpenHomePage({
           browser,
@@ -119,7 +127,7 @@ const waitForWaitingCountWithInterval = async ({
 
         await closePageSafely(page);
 
-        await sleep(LOCKED_OUT_SLEEP_TIME);
+        await pausableSleep(LOCKED_OUT_SLEEP_TIME);
         page = null;
         cursor = null;
         continue;
@@ -129,16 +137,20 @@ const waitForWaitingCountWithInterval = async ({
         console.log(
           `🔐 Not logged in, retrying in ${NOT_LOGGED_SLEEP_TIME / 1000}s...`
         );
-        await sleep(NOT_LOGGED_SLEEP_TIME);
+
+        await pausableSleep(NOT_LOGGED_SLEEP_TIME);
         continue;
       }
 
       if (!page) {
         console.log("Page is not initialized. Skipping reload...");
-        await sleep(NOT_LOGGED_SLEEP_TIME);
+        await pausableSleep(NOT_LOGGED_SLEEP_TIME);
         cursor = null;
         continue;
       }
+
+      // 🔹 Check pause before a possibly long DOM interaction
+      await pauseController.waitIfPaused();
 
       const { count } = await searchForItemCountAndClickItIfFound(
         page,
@@ -147,7 +159,7 @@ const waitForWaitingCountWithInterval = async ({
       );
 
       if (!count) {
-        await sleep(10_000 + Math.random() * 1000);
+        await pausableSleep(10_000 + Math.random() * 1000);
         const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(
           page,
           `${noCountText}, `
@@ -163,6 +175,9 @@ const waitForWaitingCountWithInterval = async ({
       console.log(
         `🧐 ${count} patient(s) found. Checking at ${new Date().toLocaleTimeString()}`
       );
+
+      // 🔹 Pause-gate before processing
+      await pauseController.waitIfPaused();
 
       await processCollectingPatients({
         browser,
@@ -185,3 +200,7 @@ const waitForWaitingCountWithInterval = async ({
 };
 
 export default waitForWaitingCountWithInterval;
+export {
+  pause as pauseFetchingPatients,
+  continueIfPaused as continueFetchingPatientsIfPaused,
+};

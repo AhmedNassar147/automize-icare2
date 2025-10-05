@@ -30,13 +30,14 @@ async function safeWritePatientData(data, retries = 3, delay = 200) {
 }
 
 class PatientStore extends EventEmitter {
-  constructor(initialPatients = []) {
+  constructor(initialPatients = [], pauseFetchingPatients) {
     super();
     this.patientsById = new Map();
     this.goingPatientsToBeAccepted = new Set();
     this.goingPatientsToBeRejected = new Set();
     this.patientTimers = new Map();
     this.cachedPatientsArray = null;
+    this.pauseFetchingPatients = pauseFetchingPatients;
 
     for (const patient of initialPatients) {
       if (!patient) continue;
@@ -205,6 +206,7 @@ class PatientStore extends EventEmitter {
     }
 
     const timer = waitMinutesThenRun(referralEndDateActionableAtMS, () => {
+      this.pauseFetchingPatients?.();
       actionSet.delete(referralId);
       this.patientTimers.delete(referralId);
       this.emit(
