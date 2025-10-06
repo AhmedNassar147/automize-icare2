@@ -78,9 +78,9 @@ const playMovementOnSection = async ({
   playItemsSelectionAndMovements,
 }) => {
   // if (playInitialKeyboardVerticalArrows) {
-  //   await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown", {
-  //     delay: 50 + Math.floor(Math.random() * 30),
-  //   });
+  // await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown", {
+  //   delay: 50 + Math.floor(Math.random() * 30),
+  // });
   // }
 
   await sleep(120 + Math.random() * 50); // [100 - 150] ms
@@ -102,7 +102,6 @@ const playMovementOnSection = async ({
   const cx = sectionBox.x + sectionBox.width * 0.5 + rand(-8, 8);
   const cy = sectionBox.y + sectionBox.height * 0.5 + rand(-8, 8);
 
-  console.time("routes");
   const movementRoutes = path(cursor.getLocation(), {
     x: cx + 90 + Math.random() * 110,
     y: cy + 80 + Math.random() * 100,
@@ -113,8 +112,6 @@ const playMovementOnSection = async ({
     moveDelay: 90 + Math.floor(Math.random() * 140),
     randomizeMoveDelay: true,
   });
-
-  console.timeEnd("routes");
 
   // let titleElement;
 
@@ -139,6 +136,12 @@ const playMovementOnSection = async ({
   // //   console.timeEnd("CLICK")
   // // }
 
+  if (Math.random() < 0.6) {
+    await page.keyboard.press(Math.random() < 0.65 ? "ArrowUp" : "ArrowDown", {
+      delay: 50 + Math.floor(Math.random() * 30),
+    });
+  }
+
   if (onBeforeClickingSection) {
     await sleep(180 + Math.random() * 100); // [170 - 270] ms
     await onBeforeClickingSection();
@@ -147,6 +150,8 @@ const playMovementOnSection = async ({
   }
 
   if (Math.random() < 0.65) {
+    await cursor.toggleRandomMove(true);
+
     console.time("CLICK2");
     await cursor.click(section, {
       hesitate: 100 + Math.random() * 70,

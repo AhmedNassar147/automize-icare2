@@ -19,6 +19,7 @@ import {
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
   htmlFilesPath,
+  dashboardLinkSelector,
   // acceptanceApiUrl,
   // globMedHeaders,
   // rejectionApiUrl,
@@ -34,13 +35,13 @@ const buttonsSelector = "section.referral-button-container button";
 const getSubmissionButtonsIfFound = async (page) => {
   try {
     await page.waitForSelector(buttonsSelector, {
-      timeout: 870,
+      timeout: 800,
       // visible: true,
     });
 
     const buttons = await page.$$(buttonsSelector);
 
-    if (buttons.length < 2) return false;
+    if (buttons?.length < 2) return false;
 
     return buttons;
   } catch (err) {
@@ -247,8 +248,9 @@ const processClientActionOnPatient = async ({
 
   let submissionButtonsRetry = 0;
   let checkDetailsPageRetry = 0;
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 83;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 83.5;
 
+  console.log("remainingTimeMS", remainingTimeMS);
   if (remainingTimeMS > 0) {
     await sleep(remainingTimeMS);
   }
@@ -260,14 +262,10 @@ const processClientActionOnPatient = async ({
         !isSupperAcceptanceOrRejection &&
         (submissionButtonsRetry || checkDetailsPageRetry)
       ) {
-        // console.log(
-        //   `referralId=${referralId}_RETURNED_TO_HOME_times_${
-        //     submissionButtonsRetry + checkDetailsPageRetry
-        //   }`
-        // );
         const referralIdRecordResultData = await collectHomePageTableRows(
           page,
-          referralId
+          referralId,
+          4000
         );
 
         if (referralIdRecordResultData?.iconButton) {
@@ -295,7 +293,8 @@ const processClientActionOnPatient = async ({
         }
 
         submissionButtonsRetry += 1;
-        await goToHomePage(page);
+        await page.click(dashboardLinkSelector);
+        await sleep(200 + Math.random() * 50);
         continue;
       }
 
@@ -304,9 +303,7 @@ const processClientActionOnPatient = async ({
       const fileInput = await page.$('#upload-single-file input[type="file"]');
       await fileInput.uploadFile(filePath);
 
-      const selectedButton = isAcceptance
-        ? referralButtons[0]
-        : referralButtons[1];
+      const selectedButton = referralButtons[isAcceptance ? 0 : 1];
 
       await selectedButton.evaluate((el) => {
         el.scrollIntoView({ behavior: "auto", block: "center" });

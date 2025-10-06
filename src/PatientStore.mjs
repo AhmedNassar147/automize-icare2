@@ -38,6 +38,7 @@ class PatientStore extends EventEmitter {
     this.patientTimers = new Map();
     this.cachedPatientsArray = null;
     this.pauseFetchingPatients = pauseFetchingPatients;
+    this.scoreTourStarted = false;
 
     for (const patient of initialPatients) {
       if (!patient) continue;
@@ -318,6 +319,22 @@ class PatientStore extends EventEmitter {
 
   forceReloadHomePage() {
     this.emit("forceReloadHomePage", true);
+  }
+
+  startScoreTour() {
+    if (!this.scoreTourStarted) {
+      this.scoreTourStarted = true;
+      this.emit("startScoreTour");
+    }
+  }
+
+  endScoreTour() {
+    this.scoreTourStarted = false;
+    this.removeListener("startScoreTour");
+  }
+
+  isScoreTourAlreadyStarted() {
+    return this.scoreTourStarted;
   }
 
   toJSON() {

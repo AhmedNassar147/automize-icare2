@@ -47,10 +47,11 @@ const increaseDetailsPageScore = async (browser) => {
     page,
     cursor,
     actionName: Math.random() < 0.5 ? "Rejection" : "Acceptance",
+    isUploadFormOn: false,
   });
   console.timeEnd("super_acceptance_time");
 
-  await sleep(150 + Math.random() * 100);
+  await sleep(200 + Math.random() * 100);
   await goToHomePage(page);
   await sleep(100 + Math.random() * 100);
   await closePageSafely(page);
@@ -58,13 +59,19 @@ const increaseDetailsPageScore = async (browser) => {
 
 // export default increaseDetailsPageScore;
 
-export default async (browser) => {
+export default async (
+  browser,
+  pauseFetchingPatients,
+  continueFetchingPatientsIfPaused,
+  onDone
+) => {
+  pauseFetchingPatients();
   let range = 4;
 
   while (range > 0) {
     try {
       await increaseDetailsPageScore(browser);
-      await sleep(1000);
+      await sleep(5000 + Math.random() * 4000);
     } catch (error) {
       console.log("Error in increaseDetailsPageScore:", error);
       break;
@@ -72,4 +79,7 @@ export default async (browser) => {
       range -= 1;
     }
   }
+
+  continueFetchingPatientsIfPaused();
+  onDone();
 };

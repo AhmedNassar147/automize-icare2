@@ -24,7 +24,7 @@ import sendMessageUsingWhatsapp, {
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processClientActionOnPatient from "./processClientActionOnPatient.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
-// import increaseDetailsPageScore from "./increaseDetailsPageScore.mjs";
+import increaseDetailsPageScore from "./increaseDetailsPageScore.mjs";
 import {
   waitingPatientsFolderDirectory,
   COLLECTD_PATIENTS_FULL_FILE_PATH,
@@ -166,9 +166,16 @@ import {
       }
     );
 
-    // (async () => {
-    //   await increaseDetailsPageScore(browser);
-    // })();
+    patientsStore.on(
+      "startScoreTour",
+      async () =>
+        await increaseDetailsPageScore(
+          browser,
+          pauseFetchingPatients,
+          continueFetchingPatientsIfPaused,
+          patientsStore.endScoreTour
+        )
+    );
 
     patientsStore.on(
       "patientsAdded",

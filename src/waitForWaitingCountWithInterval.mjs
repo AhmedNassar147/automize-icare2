@@ -108,6 +108,8 @@ const waitForWaitingCountWithInterval = async ({
           cursor,
           currentPage: page,
           sendWhatsappMessage,
+          showScoreButton: !patientsStore.isScoreTourAlreadyStarted(),
+          onClickScoreButton: patientsStore.startScoreTour,
         });
 
       page = newPage;

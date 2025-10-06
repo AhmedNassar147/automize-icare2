@@ -92,7 +92,7 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
           }
         }
 
-        await sleep(200); // let :hover styles apply
+        await sleep(200 + Math.random() * 60); // let :hover styles apply
       }
     },
   });
@@ -110,7 +110,7 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
 
   if (Math.random() < 0.6) {
     await page.keyboard.press("ArrowDown");
-    await sleep(50 + Math.random() * 100);
+    await sleep(80 + Math.random() * 100);
   }
 
   await sleep(180 + Math.random() * 150); // [150 - 300] ms
@@ -153,7 +153,7 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
       })
     );
 
-    await sleep(250 + Math.random() * 100); // [250 - 350] ms
+    await sleep(250 + Math.random() * 200); // [250 - 450] ms
 
     buttonToClick = await _randomSection.$(
       "button.MuiButtonBase-root.MuiIconButton-root.MuiIconButton-sizeMedium"
