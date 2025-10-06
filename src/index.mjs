@@ -167,7 +167,7 @@ import {
     );
 
     patientsStore.on(
-      "startScoreTour",
+      "scoreTourStarted",
       async () =>
         await increaseDetailsPageScore(
           browser,

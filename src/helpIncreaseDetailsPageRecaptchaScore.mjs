@@ -9,6 +9,7 @@ import playMovementOnSection from "./playMovementOnSection.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import { dashboardLinkSelector } from "./constants.mjs";
 import shuffle from "./shuffle.mjs";
+import humanTab from "./humanTab.mjs";
 
 const browserButtonSelector =
   "button.MuiTypography-root.MuiTypography-body2.MuiLink-root.MuiLink-underlineAlways.MuiLink-button";
@@ -55,11 +56,15 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
     section: patientInfoSection,
   });
 
-  await playMovementOnSection({
-    page,
-    cursor,
-    section: patientDetailsSection,
-  });
+  const shouldPlaySection2 = Math.random() < 0.66;
+
+  if (shouldPlaySection2) {
+    await playMovementOnSection({
+      page,
+      cursor,
+      section: patientDetailsSection,
+    });
+  }
 
   const isDashboardLinkedHovered = Math.random() < 0.6;
   if (isDashboardLinkedHovered) {
@@ -93,6 +98,17 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
         }
 
         await sleep(200 + Math.random() * 60); // let :hover styles apply
+      } else {
+        await humanTab(page, {
+          minTabs: 2,
+          maxTabs: 4,
+          base: 160 + Math.random() * 120,
+          jitter: 50,
+          backtrackChance: 0.2,
+          longPauseChance: 0.12,
+        });
+
+        await sleep(200 + Math.random() * 60); // let :hover styles apply
       }
     },
   });
@@ -106,6 +122,14 @@ const helpIncreaseDetailsPageRecaptchaScore = async ({
     );
 
     await sleep(180 + Math.random() * 150); // [180 - 300] ms
+  }
+
+  if (!shouldPlaySection2) {
+    await playMovementOnSection({
+      page,
+      cursor,
+      section: patientDetailsSection,
+    });
   }
 
   if (Math.random() < 0.6) {

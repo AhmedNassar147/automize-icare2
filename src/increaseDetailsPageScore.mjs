@@ -53,7 +53,7 @@ const increaseDetailsPageScore = async (browser) => {
 
   await sleep(200 + Math.random() * 100);
   await goToHomePage(page);
-  await sleep(100 + Math.random() * 100);
+  await sleep(150 + Math.random() * 100);
   await closePageSafely(page);
 };
 
@@ -71,7 +71,7 @@ export default async (
   while (range > 0) {
     try {
       await increaseDetailsPageScore(browser);
-      await sleep(5000 + Math.random() * 4000);
+      await sleep(6000 + Math.random() * 6000);
     } catch (error) {
       console.log("Error in increaseDetailsPageScore:", error);
       break;

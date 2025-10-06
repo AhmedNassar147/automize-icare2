@@ -324,13 +324,13 @@ class PatientStore extends EventEmitter {
   startScoreTour() {
     if (!this.scoreTourStarted) {
       this.scoreTourStarted = true;
-      this.emit("startScoreTour");
+      this.emit("scoreTourStarted");
     }
   }
 
   endScoreTour() {
     this.scoreTourStarted = false;
-    this.removeListener("startScoreTour");
+    this.removeAllListeners("scoreTourStarted");
   }
 
   isScoreTourAlreadyStarted() {
