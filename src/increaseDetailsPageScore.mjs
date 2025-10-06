@@ -71,7 +71,7 @@ export default async (
   while (range > 0) {
     try {
       await increaseDetailsPageScore(browser);
-      await sleep(6000 + Math.random() * 6000);
+      await sleep(7000 + Math.random() * 6000);
     } catch (error) {
       console.log("Error in increaseDetailsPageScore:", error);
       break;
