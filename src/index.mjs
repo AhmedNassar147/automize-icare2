@@ -173,7 +173,7 @@ import {
           browser,
           pauseFetchingPatients,
           continueFetchingPatientsIfPaused,
-          patientsStore.endScoreTour
+          () => patientsStore.endScoreTour()
         )
     );
 
