@@ -118,10 +118,19 @@ export const globMedHeaders = {
 };
 
 export const BLOCK_PATHS = new Set([
+  // https://referralprogram.globemedsaudi.com/referrals/icds
   "/referrals/icds",
+  // https://referralprogram.globemedsaudi.com/providers/zones?languageCode=1
   "/providers/zones",
+  // https://referralprogram.globemedsaudi.com/cases/specialty?codeLanguage=2
   "/cases/specialty",
+  // https://referralprogram.globemedsaudi.com/referrals/cpts
   "/referrals/cpts",
+  // https://referralprogram.globemedsaudi.com/referrals/attachments
+  // "/referrals/attachments",
+  // https://referralprogram.globemedsaudi.com/referrals/patient-info
+  "/referrals/patient-info",
 ]);
 
+// https://referralprogram.globemedsaudi.com/referrals/358375/notes
 export const NOTES_PATH_RE = /^\/referrals\/[^/]+\/notes$/; // /referrals/358358/notes
