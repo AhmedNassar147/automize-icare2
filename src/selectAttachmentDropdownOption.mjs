@@ -30,22 +30,9 @@ const selectAttachmentDropdownOption = async (page, option) => {
 
   // Step 2: Try to click (fast), fallback to humanClick if needed
   try {
-    // await dropdownTrigger
-    //   .scrollIntoViewIfNeeded({ timeout: 3000 })
-    //   .catch(() => {});
-
-    // await sleep(10 * Math.random() * 10);
-
     await dropdownTrigger.click();
-    // await Promise.allSettled([
-    //   dropdownTrigger.scrollIntoViewIfNeeded({ timeout: 2000 }),
-    //   dropdownTrigger.click(),
-    // ]);
   } catch (err) {
-    console.log(
-      "⚠️ Default click failed, falling back to humanClick.",
-      err.message
-    );
+    console.log(err.message);
     await humanClick(page, dropdownTrigger, {
       mode: "fast",
     });
@@ -75,22 +62,3 @@ const selectAttachmentDropdownOption = async (page, option) => {
 };
 
 export default selectAttachmentDropdownOption;
-
-// const first = createTimeLabel("first");
-// console.time(first);
-// await page.keyboard.press("ArrowDown");
-// console.timeEnd(first);
-
-// const check_dropdown = createTimeLabel("check_dropdown");
-// console.time(check_dropdown);
-// const [hasOptionSelected, selectionError] =
-
-// if (!hasOptionSelected) {
-//   await sendErrorMessage(
-//     `We tried times to select ${actionName}, but couldn't find it.\n*selectionError:* ${selectionError}`,
-//     "list-item-not-found",
-//     buildDurationText(startTime, Date.now())
-//   );
-//   await closeCurrentPage(true);
-//   break;
-// }
