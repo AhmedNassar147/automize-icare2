@@ -123,6 +123,32 @@ import {
       ],
     });
 
+    // https://referralprogram.globemedsaudi.com/referrals/icds
+    // https://referralprogram.globemedsaudi.com/referrals/358358/notes
+    // https://referralprogram.globemedsaudi.com/providers/zones?languageCode=1
+    // https://referralprogram.globemedsaudi.com/cases/specialty?codeLanguage=2
+    // https://referralprogram.globemedsaudi.com/referrals/cpts
+
+    // https://referralprogram.globemedsaudi.com/referrals/attachment-types?languageCode=1
+    //     {
+    //     "data": [
+    //         {
+    //             "id": 14,
+    //             "code": "14",
+    //             "languageCode": "1",
+    //             "description": "Acceptance"
+    //         },
+    //         {
+    //             "id": 21,
+    //             "code": "21",
+    //             "languageCode": "1",
+    //             "description": "Rejection"
+    //         }
+    //     ],
+    //     "statusCode": "Success",
+    //     "errorMessage": null
+    // }
+
     const collectedPatients = await readJsonFile(
       COLLECTD_PATIENTS_FULL_FILE_PATH,
       true

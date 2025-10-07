@@ -116,3 +116,12 @@ export const globMedHeaders = {
   // Origin: APP_URL,
   // Host: "referralprogram.globemedsaudi.com",
 };
+
+export const BLOCK_PATHS = new Set([
+  "/referrals/icds",
+  "/providers/zones",
+  "/cases/specialty",
+  "/referrals/cpts",
+]);
+
+export const NOTES_PATH_RE = /^\/referrals\/[^/]+\/notes$/; // /referrals/358358/notes

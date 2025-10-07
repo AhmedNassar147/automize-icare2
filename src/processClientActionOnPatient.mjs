@@ -20,6 +20,8 @@ import {
   HOME_PAGE_URL,
   htmlFilesPath,
   dashboardLinkSelector,
+  BLOCK_PATHS,
+  NOTES_PATH_RE,
   // acceptanceApiUrl,
   // globMedHeaders,
   // rejectionApiUrl,
@@ -35,7 +37,7 @@ const buttonsSelector = "section.referral-button-container button";
 const getSubmissionButtonsIfFound = async (page) => {
   try {
     await page.waitForSelector(buttonsSelector, {
-      timeout: 800,
+      timeout: 650,
       // visible: true,
     });
 
@@ -244,96 +246,103 @@ const processClientActionOnPatient = async ({
     await closeCurrentPage(!isDashboardPage);
   };
 
-  const isSupperAcceptanceOrRejection = isSuperAcceptance;
+  const ensureNoiseBlocking = () => {};
 
-  let submissionButtonsRetry = 0;
-  let checkDetailsPageRetry = 0;
+  // const isSupperAcceptanceOrRejection = isSuperAcceptance;
+
   const remainingTimeMS = referralEndTimestamp - Date.now() - 83.5;
 
   console.log("remainingTimeMS", remainingTimeMS);
+
+  await page.setRequestInterception(true);
+  page.on("request", (req) => {
+    const urlStr = req.url();
+
+    let url;
+    try {
+      url = new URL(urlStr);
+    } catch (error) {
+      console.log("ERROR when parsing url", urlStr);
+      return req.continue();
+    }
+
+    try {
+      const urlPath = url.pathname;
+      const isBlockMatch =
+        BLOCK_PATHS.has(urlPath) || NOTES_PATH_RE.test(urlPath);
+
+      if (isBlockMatch) {
+        try {
+          return req.abort();
+        } catch {
+          return;
+        }
+      }
+    } catch (error) {}
+
+    try {
+      return req.continue();
+    } catch {
+      return;
+    }
+  });
+
   if (remainingTimeMS > 0) {
     await sleep(remainingTimeMS);
   }
 
-  while (true) {
-    const startTime = Date.now();
-    try {
-      if (
-        !isSupperAcceptanceOrRejection &&
-        (submissionButtonsRetry || checkDetailsPageRetry)
-      ) {
-        const referralIdRecordResultData = await collectHomePageTableRows(
-          page,
-          referralId,
-          4000
-        );
+  const startTime = Date.now();
 
-        if (referralIdRecordResultData?.iconButton) {
-          iconButton = referralIdRecordResultData?.iconButton;
-        }
+  try {
+    await iconButton.click();
+
+    let referralButtons;
+
+    while (!referralButtons) {
+      referralButtons = await getSubmissionButtonsIfFound(page);
+
+      if (referralButtons) {
+        break;
       }
 
-      await iconButton.click();
-
-      const referralButtons = await getSubmissionButtonsIfFound(page);
-
-      if (!referralButtons) {
-        const hasReachedMaxRetriesForSubmission =
-          submissionButtonsRetry >= MAX_RETRIES;
-
-        if (hasReachedMaxRetriesForSubmission) {
-          await sendErrorMessage(
-            `Tried ${submissionButtonsRetry} times to find the submission buttons, but none were found.`,
-            "submission-buttons-not-found-reachedMax",
-            buildDurationText(startTime, Date.now())
-          );
-
-          await closeCurrentPage(true);
-          break;
-        }
-
-        submissionButtonsRetry += 1;
-        await page.click(dashboardLinkSelector);
-        await sleep(200 + Math.random() * 50);
-        continue;
-      }
-
-      await selectAttachmentDropdownOption(page, actionName);
-
-      const fileInput = await page.$('#upload-single-file input[type="file"]');
-      await fileInput.uploadFile(filePath);
-
-      const selectedButton = referralButtons[isAcceptance ? 0 : 1];
-
-      await selectedButton.evaluate((el) => {
-        el.scrollIntoView({ behavior: "auto", block: "center" });
-      });
-
-      await handleOnSubmitDone({
-        startTime,
-      });
-      break;
-    } catch (error) {
-      try {
-        const html = await page.content();
-        await writeFile(`${htmlFilesPath}/details_page_catch_error.html`, html);
-      } catch (error) {
-        console.log("couldn't get details page html", error.message);
-      }
-
-      const _err = error?.message || String(error);
-
-      console.log(`🛑 Error during ${actionName} of ${referralId}:`, _err);
-      await sendErrorMessage(
-        `Error: ${_err}`,
-        `catch-error-${actionName}-error`,
-        buildDurationText(startTime, Date.now())
-      );
-      await closeCurrentPage(false);
-      break;
-    } finally {
-      continueFetchingPatientsIfPaused();
+      await sleep(120 + Math.random() * 60);
+      await page.reload({ waitUntil: "domcontentloaded", timeout: 3000 });
+      continue;
     }
+
+    await selectAttachmentDropdownOption(page, actionName);
+
+    const fileInput = await page.$('#upload-single-file input[type="file"]');
+    await fileInput.uploadFile(filePath);
+
+    const selectedButton = referralButtons[isAcceptance ? 0 : 1];
+
+    await selectedButton.evaluate((el) => {
+      el.scrollIntoView({ behavior: "auto", block: "center" });
+    });
+
+    await handleOnSubmitDone({
+      startTime,
+    });
+  } catch (error) {
+    try {
+      const html = await page.content();
+      await writeFile(`${htmlFilesPath}/details_page_catch_error.html`, html);
+    } catch (error) {
+      console.log("couldn't get details page html", error.message);
+    }
+
+    const _err = error?.message || String(error);
+
+    console.log(`🛑 Error during ${actionName} of ${referralId}:`, _err);
+    await sendErrorMessage(
+      `Error: ${_err}`,
+      `catch-error-${actionName}-error`,
+      buildDurationText(startTime, Date.now())
+    );
+    await closeCurrentPage(false);
+  } finally {
+    continueFetchingPatientsIfPaused();
   }
 };
 
