@@ -94,21 +94,7 @@ const rewriteReferralDetails = async (page) => {
 
   client.on("Fetch.requestPaused", onPaused);
 
-  page.once("close", async () => {
-    try {
-      await client.send("Fetch.disable");
-    } catch {}
-    try {
-      await client.send("Network.setCacheDisabled", { cacheDisabled: false });
-    } catch {}
-    try {
-      await client.send("Network.disable");
-    } catch {}
-    client.off("Fetch.requestPaused", onPaused);
-  });
-
-  // disposer
-  return async () => {
+  const disposerHandler = async () => {
     try {
       await client.send("Fetch.disable");
     } catch {}
@@ -120,6 +106,10 @@ const rewriteReferralDetails = async (page) => {
     } catch {}
     client.off("Fetch.requestPaused", onPaused);
   };
+
+  page.once("close", disposerHandler);
+
+  return disposerHandler;
 };
 
 export default rewriteReferralDetails;
