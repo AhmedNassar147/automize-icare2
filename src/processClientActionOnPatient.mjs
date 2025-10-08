@@ -11,11 +11,12 @@ import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-import ensureNoiseBlocking from "./ensureNoiseBlocking.mjs";
+// import ensureNoiseBlocking from "./ensureNoiseBlocking.mjs";
 import buildDurationText from "./buildDurationText.mjs";
 import getSubmissionButtonsIfFound from "./getSubmissionButtonsIfFound.mjs";
 import handleAfterSubmitDone from "./handleAfterSubmitDone.mjs";
 import createDetailsPageWhatsappHandlers from "./createDetailsPageWhatsappHandlers.mjs";
+import rewriteReferralDetails from "./rewriteReferralDetails.mjs";
 
 // import updateSuperAcceptanceApiData from "./updateSuperAcceptanceApiData.mjs";
 import {
@@ -132,8 +133,8 @@ const processClientActionOnPatient = async ({
 
   // const isSupperAcceptanceOrRejection = isSuperAcceptance;
 
-  await ensureNoiseBlocking(page);
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 83.5;
+  await rewriteReferralDetails(page);
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 79;
 
   console.log("remainingTimeMS", remainingTimeMS);
 

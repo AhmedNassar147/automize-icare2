@@ -3,7 +3,6 @@
  * Helper: `increaseDetailsPageScore`.
  *
  */
-
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
@@ -17,7 +16,6 @@ import {
 } from "./constants.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-import rewriteReferralDetails from "./rewriteReferralDetails.mjs";
 
 const { [TABS_COLLECTION_TYPES.CONFIRMED]: confirmedStatusInfo } =
   PATIENT_SECTIONS_STATUS;
@@ -41,10 +39,7 @@ const increaseDetailsPageScore = async (browser) => {
 
   const [firstRow] = shuffle(rows).filter(Boolean);
   const iconButton = await firstRow.$("td.iconCell button");
-  await rewriteReferralDetails(page);
   await iconButton.click();
-
-  return;
 
   console.time("super_acceptance_time");
   await helpIncreaseDetailsPageRecaptchaScore({
@@ -72,20 +67,17 @@ export default async (
   pauseFetchingPatients();
   let range = 4;
 
-  // while (range > 0) {
-  //   try {
-  //     await increaseDetailsPageScore(browser);
-  //     await sleep(7000 + Math.random() * 6000);
-  //   } catch (error) {
-  //     console.log("Error in increaseDetailsPageScore:", error);
-  //     break;
-  //   } finally {
-  //     range -= 1;
-  //   }
-  // }
-
-  await increaseDetailsPageScore(browser);
-  await sleep(8000 + Math.random() * 8000);
+  while (range > 0) {
+    try {
+      await increaseDetailsPageScore(browser);
+      await sleep(7000 + Math.random() * 6000);
+    } catch (error) {
+      console.log("Error in increaseDetailsPageScore:", error);
+      break;
+    } finally {
+      range -= 1;
+    }
+  }
 
   continueFetchingPatientsIfPaused();
   onDone();
