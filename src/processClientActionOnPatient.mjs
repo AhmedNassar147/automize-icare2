@@ -156,7 +156,6 @@ const processClientActionOnPatient = async ({
       }
 
       await page.click(dashboardLinkSelector);
-      await sleep(120 + Math.random() * 60);
       const newReferralIdRecordResult = await collectHomePageTableRows(
         page,
         referralId,

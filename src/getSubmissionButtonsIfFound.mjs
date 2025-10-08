@@ -8,7 +8,7 @@ const buttonsSelector = "section.referral-button-container button";
 const getSubmissionButtonsIfFound = async (page) => {
   try {
     await page.waitForSelector(buttonsSelector, {
-      timeout: 600,
+      timeout: 650,
       // visible: true,
     });
 
