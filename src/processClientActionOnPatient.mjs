@@ -134,7 +134,7 @@ const processClientActionOnPatient = async ({
   // const isSupperAcceptanceOrRejection = isSuperAcceptance;
 
   await rewriteReferralDetails(page);
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 88;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 87;
 
   console.log("remainingTimeMS", remainingTimeMS);
 
