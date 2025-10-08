@@ -22,6 +22,7 @@ const handleAfterSubmitDone = async ({
   sendSuccessMessage,
   acceptanceFilePath,
   rejectionFilePath,
+  referralId,
 }) => {
   const durationText = buildDurationText(startTime, Date.now());
   console.log("durationText", durationText);

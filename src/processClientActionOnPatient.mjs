@@ -160,7 +160,7 @@ const processClientActionOnPatient = async ({
       const newReferralIdRecordResult = await collectHomePageTableRows(
         page,
         referralId,
-        6000
+        3000
       );
 
       if (newReferralIdRecordResult.iconButton) {
@@ -170,7 +170,7 @@ const processClientActionOnPatient = async ({
         const newReferralIdRecordResultX = await collectHomePageTableRows(
           page,
           referralId,
-          6000
+          4000
         );
 
         await newReferralIdRecordResultX.iconButton.click();
@@ -200,6 +200,7 @@ const processClientActionOnPatient = async ({
       actionName,
       acceptanceFilePath,
       rejectionFilePath,
+      referralId,
     });
   } catch (error) {
     try {
