@@ -24,6 +24,8 @@ import {
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
   htmlFilesPath,
+  dashboardLinkSelector,
+  homePageTableSelector,
   // acceptanceApiUrl,
   // globMedHeaders,
   // rejectionApiUrl,
@@ -153,10 +155,27 @@ const processClientActionOnPatient = async ({
         break;
       }
 
+      await page.click(dashboardLinkSelector);
       await sleep(120 + Math.random() * 60);
-      await page.reload({ waitUntil: "domcontentloaded", timeout: 2000 });
-      await sleep(60 + Math.random() * 60);
-      continue;
+      const newReferralIdRecordResult = await collectHomePageTableRows(
+        page,
+        referralId,
+        6000
+      );
+
+      if (newReferralIdRecordResult.iconButton) {
+        await newReferralIdRecordResult.iconButton.click();
+        continue;
+      } else {
+        const newReferralIdRecordResultX = await collectHomePageTableRows(
+          page,
+          referralId,
+          6000
+        );
+
+        await newReferralIdRecordResultX.iconButton.click();
+        continue;
+      }
     }
 
     await selectAttachmentDropdownOption(page, actionName);
