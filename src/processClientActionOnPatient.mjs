@@ -124,7 +124,7 @@ const processClientActionOnPatient = async ({
   }
 
   await rewriteReferralDetails(page);
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 950;
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 940;
 
   if (remainingTimeMS > 0) {
     await sleep(remainingTimeMS);
