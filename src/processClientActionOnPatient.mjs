@@ -166,17 +166,6 @@ const processClientActionOnPatient = async ({
       }
     }
 
-    await selectAttachmentDropdownOption(page, actionName);
-
-    const fileInput = await page.$('#upload-single-file input[type="file"]');
-    await fileInput.uploadFile(filePath);
-
-    const selectedButton = referralButtons[isAcceptance ? 0 : 1];
-
-    await selectedButton.evaluate((el) => {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-
     const notificationUpdateFiresAtMs = referralEndTimestamp - 95;
 
     await page.evaluate(
@@ -215,6 +204,17 @@ const processClientActionOnPatient = async ({
         notificationCount,
       }
     );
+
+    await selectAttachmentDropdownOption(page, actionName);
+
+    const fileInput = await page.$('#upload-single-file input[type="file"]');
+    await fileInput.uploadFile(filePath);
+
+    const selectedButton = referralButtons[isAcceptance ? 0 : 1];
+
+    await selectedButton.evaluate((el) => {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
 
     await handleAfterSubmitDone({
       page,
