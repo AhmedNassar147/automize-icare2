@@ -3,20 +3,16 @@
  * Helper: `generateAcceptanceLetterHtml`.
  *
  */
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import fs from "fs";
 
-// To support __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const ministryLogo = path.resolve(
-  __dirname,
-  "../images/ministry-compressed.png"
-);
+const ministryLogo = path.resolve(__dirname, "../images/ministr.png");
+const ehalaLogo = path.resolve(__dirname, "../images/ehala.png");
 
-const ehalaLogo = path.resolve(__dirname, "../images/ehala-compressed.png");
 const providerLogo = path.resolve(__dirname, "../images/logo.jpeg");
 
 const toBase64 = (imgPath) =>
@@ -46,6 +42,8 @@ const generateAcceptanceLetterHtml = ({
   const [year, month, day] = date.split("-");
   const requestDate = `${day}/${month}/${year}`;
 
+  const showLetterFinalFooter = !!(clientMangerName || clientManagerPhone);
+
   return `
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -53,7 +51,6 @@ const generateAcceptanceLetterHtml = ({
   <meta charset="UTF-8">
   <title>${isRejection ? "نموذج رفض الإحالة" : "نموذج الإحالة"}</title>
   <style>
-    /* same styles as before */
     body {
       margin: 0;
       padding: 15px;
@@ -227,26 +224,29 @@ const generateAcceptanceLetterHtml = ({
       }
     </table>
 
-    <p>سعادة مدير مستشفى / <strong>${sourceProvider}</strong> المحترم</p>
-    <p>السلام عليكم ورحمة الله وبركاته،</p>
-    <p>إشارة لإحالة رقم <strong>${referralId}</strong> بتاريخ <strong>${requestDate}</strong> بشأن المريض الموضحة بياناته أعلاه،</p>
-    <p>
-      ${
-        isRejection
-          ? `نفيد سعادتكم بأنه لم يتم قبول المريض بسبب عدم توفر سرير في الوقت الحالي.`
-          : `نفيد سعادتكم بأنه تم قبول المريض حسب ما هو موضح بمعلومات الحجز أعلاه.`
-      }
-      <br>يرجى اتخاذ كافة الإجراءات اللازمة لأمانة المريض مع مراعاة النقاط المذكورة أعلاه.
-    </p>
+    <div style="display: flex; justify-content: space-between;">
+      <div>
+        <p>سعادة مدير مستشفى / <strong>${sourceProvider}</strong> المحترم</p>
+        <p>السلام عليكم ورحمة الله وبركاته،</p>
+        <p>إشارة لإحالة رقم <strong>${referralId}</strong> بتاريخ <strong>${requestDate}</strong> بشأن المريض الموضحة بياناته أعلاه،</p>
+        <p>
+          ${
+            isRejection
+              ? `نفيد سعادتكم بأنه لم يتم قبول المريض بسبب عدم توفر سرير في الوقت الحالي.`
+              : `نفيد سعادتكم بأنه تم قبول المريض حسب ما هو موضح بمعلومات الحجز أعلاه.`
+          }
+          <br>يرجى اتخاذ كافة الإجراءات اللازمة لأمانة المريض مع مراعاة النقاط المذكورة أعلاه.
+        </p>
+      </div>
+
+      <img src="${providerFileUrl}" alt="Logo" style="height: 150px; width: 150px;" />
+    </div>
 
     <div class="footer">
       <p>وتقبلوا تحياتنا</p>
-      <div style="position: relative; width: 100%; min-height: 100px;">
-        <img src="${providerFileUrl}" alt="Logo" style="height: 100px; width: 100px; position: absolute; left: 0; top: 40%; transform: translateY(-40%);" />
         <div style="text-align: center;">
           <strong>${clientInPdf}</strong>
         </div>
-      </div>
     </div>
 
     <div class="notes-section">
@@ -266,11 +266,17 @@ const generateAcceptanceLetterHtml = ({
           </div>
       `
         }
-      <div class="notes-footer">
-        <div>${requestDate}<br>التاريخ</div>
-        <div>${clientMangerName}</div>
-        <div>${clientManagerPhone}<br>تلفون قسم التنسيق</div>
-      </div>
+        ${
+          showLetterFinalFooter
+            ? `
+          <div class="notes-footer">
+            <div>${requestDate}<br>التاريخ</div>
+            <div>${clientMangerName || ""}</div>
+            <div>${clientManagerPhone || ""}<br>تلفون قسم التنسيق</div>
+          </div>
+          `
+            : ""
+        }
     </div>
   </div>
 </body>

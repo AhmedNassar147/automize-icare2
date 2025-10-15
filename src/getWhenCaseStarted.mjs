@@ -3,10 +3,8 @@
  * Helper: `getWhenCaseStarted`.
  *
  */
-import {
-  // EFFECTIVE_REVIEW_DURATION_MS,
-  estimatedTimeForProcessingAction,
-} from "./constants.mjs";
+
+export const estimatedTimeForProcessingAction = 8_000;
 
 const formatMsToMinutesSeconds = (ms) => {
   const totalSeconds = Math.floor(ms / 1000);

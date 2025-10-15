@@ -5,9 +5,6 @@
  */
 import speakText from "./speakText.mjs";
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
-import { estimatedTimeForProcessingAction } from "./constants.mjs";
-
-const cutoffTime = estimatedTimeForProcessingAction / 1000;
 
 const processSendCollectedPatientsToWhatsapp =
   (sendWhatsappMessage) => async (addedPatients) => {
@@ -33,11 +30,25 @@ const processSendCollectedPatientsToWhatsapp =
       note,
       referralEndDateActionablAt,
       files,
+      cutoffTimeMs,
+      notificationCount,
     }) => {
+      let label = `0 s`;
+
+      if (cutoffTimeMs) {
+        const nf = new Intl.NumberFormat(undefined, {
+          minimumFractionDigits: 3,
+          maximumFractionDigits: 3,
+        });
+
+        label = `${nf.format(cutoffTimeMs / 1000)} s`; // e.g., "6.125 s"
+      }
+
       const message =
         `🚨 *New Case Alert!* 🚨\n\n` +
         `🕐 *Actionable At*: ${referralEndDateActionablAt}\n` +
-        `🕐 *cutoffTime*: ${cutoffTime}s\n` +
+        `🕐 *cutoffTime*: ${label}\n` +
+        `🔔 *billCount*: ${notificationCount}\n` +
         `────────────────────────\n\n` +
         `🔢 *Referral ID:* \`${referralId}\`\n` +
         `👤 *Name:* \`${patientName}\`\n` +
@@ -73,15 +84,17 @@ const processSendCollectedPatientsToWhatsapp =
     );
 
     try {
-      const now = new Date();
+      // const now = new Date();
 
-      const saTime = new Date(
-        now.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
-      );
-      const hour = saTime.getHours();
+      // const saTime = new Date(
+      //   now.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
+      // );
+      // const hour = saTime.getHours();
 
       // if (hour >= 22 || hour <= 9) {
-      speakText("Please check your WhatsApp, there is a new patient");
+      await speakText({
+        text: "Check your WhatsApp, there is a new patient",
+      });
       // }
     } catch (error) {
       console.log("SOUND error", error.message);

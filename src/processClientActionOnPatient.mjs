@@ -17,8 +17,6 @@ import getSubmissionButtonsIfFound from "./getSubmissionButtonsIfFound.mjs";
 import handleAfterSubmitDone from "./handleAfterSubmitDone.mjs";
 import createDetailsPageWhatsappHandlers from "./createDetailsPageWhatsappHandlers.mjs";
 import rewriteReferralDetails from "./rewriteReferralDetails.mjs";
-
-// import updateSuperAcceptanceApiData from "./updateSuperAcceptanceApiData.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -26,15 +24,7 @@ import {
   HOME_PAGE_URL,
   htmlFilesPath,
   dashboardLinkSelector,
-  homePageTableSelector,
-  // acceptanceApiUrl,
-  // globMedHeaders,
-  // rejectionApiUrl,
-  // estimatedTimeForProcessingAction,
 } from "./constants.mjs";
-
-// import humanClick from "./humanClick.mjs";
-// import humanMouseMove from "./humanMouseMove.mjs";
 
 const processClientActionOnPatient = async ({
   browser,
@@ -52,7 +42,9 @@ const processClientActionOnPatient = async ({
     referralId,
     patientName,
     referralEndTimestamp,
-    isSuperAcceptance,
+    // isSuperAcceptance,
+    // cutoffTimeMs,
+    // notificationCount,
     // providerName,
   } = patient;
 
@@ -76,7 +68,7 @@ const processClientActionOnPatient = async ({
     isAcceptance ? acceptanceFilePath : rejectionFilePath
   );
 
-  const [page, cursor, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+  const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,
     startingPageUrl: HOME_PAGE_URL,
@@ -114,7 +106,7 @@ const processClientActionOnPatient = async ({
   const referralIdRecordResult = await collectHomePageTableRows(
     page,
     referralId,
-    4000
+    5000
   );
 
   let { iconButton } = referralIdRecordResult || {};
@@ -131,12 +123,8 @@ const processClientActionOnPatient = async ({
     return;
   }
 
-  // const isSupperAcceptanceOrRejection = isSuperAcceptance;
-
   await rewriteReferralDetails(page);
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 87;
-
-  console.log("remainingTimeMS", remainingTimeMS);
+  const remainingTimeMS = referralEndTimestamp - Date.now() - 950;
 
   if (remainingTimeMS > 0) {
     await sleep(remainingTimeMS);
@@ -186,7 +174,7 @@ const processClientActionOnPatient = async ({
     const selectedButton = referralButtons[isAcceptance ? 0 : 1];
 
     await selectedButton.evaluate((el) => {
-      el.scrollIntoView({ behavior: "auto", block: "center" });
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
     });
 
     await handleAfterSubmitDone({
@@ -225,3 +213,103 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
+
+// const notificationUpdateFiresAtMs = referralEndTimestamp - 85;
+
+// // const notificationUpdateFiresAtMs = Date.now() + 0.2 * 1000 * 60;
+// // const notificationCount = "9";
+
+// await page.evaluate(
+//   ({ notificationUpdateFiresAtMs, notificationCount }) => {
+//     function startCountdown(endTs, onTick, onDone) {
+//       let id;
+//       const tick = () => {
+//         const remaining = Math.max(0, endTs - Date.now());
+//         onTick && onTick(remaining);
+//         if (remaining <= 0) {
+//           onDone && onDone();
+//           return;
+//         }
+//         id = setTimeout(tick, Math.min(1000, remaining));
+//       };
+//       tick();
+//       return () => clearTimeout(id);
+//     }
+
+//     startCountdown(
+//       notificationUpdateFiresAtMs,
+//       () => null,
+//       () => {
+//         const badge = document.querySelector(
+//           ".MuiBadge-badge.MuiBadge-standard"
+//         );
+//         if (!badge) return;
+
+//         badge.textContent = String(notificationCount);
+//         badge.classList.remove("MuiBadge-invisible");
+//       }
+//     );
+//   },
+//   {
+//     notificationUpdateFiresAtMs,
+//     notificationCount,
+//   }
+// );
+
+// https://referralprogram.globemedsaudi.com/referrals/listing
+// {"pageSize":100,"pageNumber":1,"categoryReference":"pending","providerZone":[],"providerName":[],"specialtyCode":[],"referralTypeCode":[],"referralReasonCode":[],"genericSearch":"","sortOrder":"asc"}
+
+// {
+//     "data": {
+//         "pageNumber": 1,
+//         "pageSize": 100,
+//         "totalNumberOfPages": 0,
+//         "totalNumberOfRecords": 0,
+//         "hasNext": false,
+//         "tableHeaders": [
+//             {
+//                 "id": "referralDate",
+//                 "label": "Referral Date",
+//                 "sortingId": "Referraldate"
+//             },
+//             {
+//                 "id": "idReferral",
+//                 "label": "GMS Referral Id",
+//                 "sortingId": "Id"
+//             },
+//             {
+//                 "id": "ihalatyReference",
+//                 "label": "MOH Referral Nb",
+//                 "sortingId": "Idihalaty"
+//             },
+//             {
+//                 "id": "adherentName",
+//                 "label": "Patient Name",
+//                 "sortingId": "IdpatientNavigation.Firstname"
+//             },
+//             {
+//                 "id": "adherentNationalId",
+//                 "label": "National ID",
+//                 "sortingId": "IdpatientNavigation.Nationalid"
+//             },
+//             {
+//                 "id": "referralType",
+//                 "label": "Referral Type",
+//                 "sortingId": "IdreferraltypeNavigation.Description"
+//             },
+//             {
+//                 "id": "referralReason",
+//                 "label": "Referral Reason",
+//                 "sortingId": "IdreferralreasonNavigation.Description"
+//             },
+//             {
+//                 "id": "sourceZone",
+//                 "label": "Source Zone",
+//                 "sortingId": "SourceproviderNavigation.Providerzone"
+//             }
+//         ],
+//         "result": []
+//     },
+//     "statusCode": "Success",
+//     "errorMessage": null
+// }

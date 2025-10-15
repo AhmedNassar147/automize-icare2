@@ -5,34 +5,48 @@
  */
 import { spawn } from "child_process";
 
-const speakText = (text, times = 8, delayMs = 4200) => {
-  let count = 0;
-  const escapedText = text.replace(/'/g, "''").replace(/"/g, '""');
+const speakText = ({
+  text,
+  times = 7,
+  delayMs = 4000,
+  rate = 2,
+  useMaleVoice,
+}) =>
+  new Promise((resolve, reject) => {
+    const voice = useMaleVoice
+      ? "Microsoft David Desktop"
+      : "Microsoft Zira Desktop";
 
-  const speak = () => {
-    if (count >= times) return;
+    let count = 0;
+    const escapedText = text.replace(/'/g, "''").replace(/"/g, '""');
 
-    const ps = spawn("powershell", ["-NoProfile", "-Command", "-"], {
-      stdio: ["pipe", "inherit", "inherit"],
-    });
+    const speak = () => {
+      if (count >= times) return resolve();
 
-    ps.stdin.write(`
-      Add-Type -AssemblyName System.Speech;
-      $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;
-      $speak.SelectVoice('Microsoft Zira Desktop');
-      $speak.Rate = 2;
-      $speak.Volume = 100;
-      $speak.Speak('${escapedText}');
-    `);
-    ps.stdin.end();
+      const ps = spawn("powershell", ["-NoProfile", "-Command", "-"], {
+        stdio: ["pipe", "inherit", "inherit"],
+      });
 
-    ps.on("exit", () => {
-      count++;
-      setTimeout(speak, delayMs);
-    });
-  };
+      ps.stdin.write(`
+        Add-Type -AssemblyName System.Speech;
+        $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;
+        $speak.SelectVoice('${voice}');
+        $speak.Rate = ${rate};
+        $speak.Volume = 100;
+        $speak.Speak('${escapedText}');
+      `);
+      ps.stdin.end();
 
-  speak();
-};
+      ps.on("error", reject);
+      ps.on("exit", () => {
+        count++;
+        if (delayMs) {
+          setTimeout(speak, delayMs);
+        }
+      });
+    };
+
+    speak();
+  });
 
 export default speakText;

@@ -8,7 +8,24 @@ import sleep from "./sleep.mjs";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
-import { estimatedTimeForProcessingAction } from "./constants.mjs";
+
+function randomInt6500to10000() {
+  const min = 6500;
+  const max = 10000; // inclusive
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pickRandomNotificationCount() {
+  const rangeOptions = (min, max, step = 5) =>
+    Array.from(
+      { length: Math.floor((max - min) / step) + 1 },
+      (_, i) => min + i * step
+    );
+
+  const list = rangeOptions(10, 80, 5);
+
+  return list[Math.floor(Math.random() * list.length)];
+}
 
 const formateDateToString = (date) =>
   new Intl.DateTimeFormat("en-GB", {
@@ -24,7 +41,11 @@ const formateDateToString = (date) =>
     .format(date)
     .replace(",", "");
 
-const getSaudiStartAndEndDate = (referralDate, caseAlertMessage) => {
+const getSaudiStartAndEndDate = (
+  referralDate,
+  caseAlertMessage,
+  cutoffTimeMs
+) => {
   const currentDate = new Date();
   const utcDate = new Date(referralDate);
 
@@ -54,14 +75,16 @@ const getSaudiStartAndEndDate = (referralDate, caseAlertMessage) => {
   saEndDate.setMilliseconds(saEndDate.getMilliseconds() + leftMs);
 
   const referralEndTimestamp = saEndDate.getTime();
-  const timeWithUserReaction = estimatedTimeForProcessingAction + 3000;
+  const timeWithUserReaction = cutoffTimeMs + 3000;
 
-  const referralEndDateActionableAtMS =
-    referralEndTimestamp > timeWithUserReaction
-      ? referralEndTimestamp - estimatedTimeForProcessingAction
-      : referralEndTimestamp;
+  const shouldCutoffTime = referralEndTimestamp > timeWithUserReaction;
+
+  const referralEndDateActionableAtMS = shouldCutoffTime
+    ? referralEndTimestamp - cutoffTimeMs
+    : referralEndTimestamp;
 
   return {
+    cutoffTimeMs: shouldCutoffTime ? cutoffTimeMs : 0,
     referralDate,
     referralStartDate: formateDateToString(saStartDate),
     referralEndDate: formateDateToString(saEndDate),
@@ -129,9 +152,17 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
         break;
       }
 
+      const cutoffTimeMs = randomInt6500to10000();
+      const notificationCount = pickRandomNotificationCount();
+
       const finalData = {
         referralId,
-        ...getSaudiStartAndEndDate(referralDate, caseAlertMessage),
+        ...getSaudiStartAndEndDate(
+          referralDate,
+          caseAlertMessage,
+          cutoffTimeMs
+        ),
+        notificationCount,
         ...patientData,
       };
 
