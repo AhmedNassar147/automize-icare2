@@ -177,14 +177,14 @@ const processClientActionOnPatient = async ({
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     });
 
+    //1- Countdown in Node.js
     const notificationUpdateFiresAtMs = referralEndTimestamp - 100;
-    // Countdown in Node.js
     const delay = Math.max(0, notificationUpdateFiresAtMs - Date.now());
     if (delay > 0) {
       await sleep(delay);
     }
 
-    // Inject update to run on next user interaction
+    //2- Inject update to run on next user interaction
     await page.evaluate((notificationCount) => {
       const triggerUpdate = () => {
         const badge = document.querySelector(
@@ -200,6 +200,7 @@ const processClientActionOnPatient = async ({
         document.removeEventListener("keydown", triggerUpdate);
       };
 
+      // Attach to user events
       document.addEventListener("mousemove", triggerUpdate, { once: true });
       document.addEventListener("click", triggerUpdate, { once: true });
       document.addEventListener("keydown", triggerUpdate, { once: true });
