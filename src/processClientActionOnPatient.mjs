@@ -124,11 +124,11 @@ const processClientActionOnPatient = async ({
   }
 
   await rewriteReferralDetails(page);
-  const remainingTimeMS = referralEndTimestamp - Date.now() - 940;
+  // const remainingTimeMS = referralEndTimestamp - Date.now() - 940;
 
-  if (remainingTimeMS > 0) {
-    await sleep(remainingTimeMS);
-  }
+  // if (remainingTimeMS > 0) {
+  //   await sleep(remainingTimeMS);
+  // }
 
   const startTime = Date.now();
 
@@ -177,7 +177,7 @@ const processClientActionOnPatient = async ({
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     });
 
-    const notificationUpdateFiresAtMs = referralEndTimestamp - 80;
+    const notificationUpdateFiresAtMs = referralEndTimestamp - 95;
 
     await page.evaluate(
       ({ notificationUpdateFiresAtMs, notificationCount }) => {
