@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const ministryLogo = path.resolve(__dirname, "../images/ministr.png");
+const ministryLogo = path.resolve(__dirname, "../images/ministry.png");
 const ehalaLogo = path.resolve(__dirname, "../images/ehala.png");
 
 const providerLogo = path.resolve(__dirname, "../images/logo.jpeg");
