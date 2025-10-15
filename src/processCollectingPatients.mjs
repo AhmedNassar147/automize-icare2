@@ -10,8 +10,8 @@ import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 
 function randomInt6500to10000() {
-  const min = 6500;
-  const max = 10000; // inclusive
+  const min = 10000;
+  const max = 15500; // inclusive
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
