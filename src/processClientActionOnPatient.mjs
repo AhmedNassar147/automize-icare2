@@ -44,7 +44,7 @@ const processClientActionOnPatient = async ({
     referralEndTimestamp,
     // isSuperAcceptance,
     // cutoffTimeMs,
-    // notificationCount,
+    notificationCount,
     // providerName,
   } = patient;
 
@@ -177,6 +177,45 @@ const processClientActionOnPatient = async ({
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     });
 
+    const notificationUpdateFiresAtMs = referralEndTimestamp - 80;
+
+    await page.evaluate(
+      ({ notificationUpdateFiresAtMs, notificationCount }) => {
+        function startCountdown(endTs, onTick, onDone) {
+          let id;
+          const tick = () => {
+            const remaining = Math.max(0, endTs - Date.now());
+            onTick && onTick(remaining);
+            if (remaining <= 0) {
+              onDone && onDone();
+              return;
+            }
+            id = setTimeout(tick, Math.min(1000, remaining));
+          };
+          tick();
+          return () => clearTimeout(id);
+        }
+
+        startCountdown(
+          notificationUpdateFiresAtMs,
+          () => null,
+          () => {
+            const badge = document.querySelector(
+              ".MuiBadge-badge.MuiBadge-standard"
+            );
+            if (!badge) return;
+
+            badge.textContent = String(notificationCount);
+            badge.classList.remove("MuiBadge-invisible");
+          }
+        );
+      },
+      {
+        notificationUpdateFiresAtMs,
+        notificationCount,
+      }
+    );
+
     await handleAfterSubmitDone({
       page,
       startTime,
@@ -214,47 +253,8 @@ const processClientActionOnPatient = async ({
 
 export default processClientActionOnPatient;
 
-// const notificationUpdateFiresAtMs = referralEndTimestamp - 85;
-
 // // const notificationUpdateFiresAtMs = Date.now() + 0.2 * 1000 * 60;
 // // const notificationCount = "9";
-
-// await page.evaluate(
-//   ({ notificationUpdateFiresAtMs, notificationCount }) => {
-//     function startCountdown(endTs, onTick, onDone) {
-//       let id;
-//       const tick = () => {
-//         const remaining = Math.max(0, endTs - Date.now());
-//         onTick && onTick(remaining);
-//         if (remaining <= 0) {
-//           onDone && onDone();
-//           return;
-//         }
-//         id = setTimeout(tick, Math.min(1000, remaining));
-//       };
-//       tick();
-//       return () => clearTimeout(id);
-//     }
-
-//     startCountdown(
-//       notificationUpdateFiresAtMs,
-//       () => null,
-//       () => {
-//         const badge = document.querySelector(
-//           ".MuiBadge-badge.MuiBadge-standard"
-//         );
-//         if (!badge) return;
-
-//         badge.textContent = String(notificationCount);
-//         badge.classList.remove("MuiBadge-invisible");
-//       }
-//     );
-//   },
-//   {
-//     notificationUpdateFiresAtMs,
-//     notificationCount,
-//   }
-// );
 
 // https://referralprogram.globemedsaudi.com/referrals/listing
 // {"pageSize":100,"pageNumber":1,"categoryReference":"pending","providerZone":[],"providerName":[],"specialtyCode":[],"referralTypeCode":[],"referralReasonCode":[],"genericSearch":"","sortOrder":"asc"}
