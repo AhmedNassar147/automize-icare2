@@ -166,46 +166,6 @@ const processClientActionOnPatient = async ({
       }
     }
 
-    // 15
-    const notificationUpdateFiresAtMs = referralEndTimestamp - 80;
-
-    await page.evaluate(
-      ({ notificationUpdateFiresAtMs, notificationCount }) => {
-        function startCountdown(endTs, onTick, onDone) {
-          let id;
-          const tick = () => {
-            const remaining = Math.max(0, endTs - Date.now());
-            onTick && onTick(remaining);
-            if (remaining <= 0) {
-              onDone && onDone();
-              return;
-            }
-            id = setTimeout(tick, Math.min(1000, remaining));
-          };
-          tick();
-          return () => clearTimeout(id);
-        }
-
-        startCountdown(
-          notificationUpdateFiresAtMs,
-          () => null,
-          () => {
-            const badge = document.querySelector(
-              ".MuiBadge-badge.MuiBadge-standard"
-            );
-            if (!badge) return;
-
-            badge.textContent = String(notificationCount);
-            badge.classList.remove("MuiBadge-invisible");
-          }
-        );
-      },
-      {
-        notificationUpdateFiresAtMs,
-        notificationCount,
-      }
-    );
-
     await selectAttachmentDropdownOption(page, actionName);
 
     const fileInput = await page.$('#upload-single-file input[type="file"]');
@@ -216,6 +176,34 @@ const processClientActionOnPatient = async ({
     await selectedButton.evaluate((el) => {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     });
+
+    const notificationUpdateFiresAtMs = referralEndTimestamp - 100;
+    // Countdown in Node.js
+    const delay = Math.max(0, notificationUpdateFiresAtMs - Date.now());
+    if (delay > 0) {
+      await sleep(delay);
+    }
+
+    // Inject update to run on next user interaction
+    await page.evaluate((notificationCount) => {
+      const triggerUpdate = () => {
+        const badge = document.querySelector(
+          ".MuiBadge-badge.MuiBadge-standard"
+        );
+        if (badge) {
+          badge.textContent = String(notificationCount);
+          badge.classList.remove("MuiBadge-invisible");
+        }
+        // Clean up after first trigger
+        document.removeEventListener("mousemove", triggerUpdate);
+        document.removeEventListener("click", triggerUpdate);
+        document.removeEventListener("keydown", triggerUpdate);
+      };
+
+      document.addEventListener("mousemove", triggerUpdate, { once: true });
+      document.addEventListener("click", triggerUpdate, { once: true });
+      document.addEventListener("keydown", triggerUpdate, { once: true });
+    }, notificationCount);
 
     await handleAfterSubmitDone({
       page,
