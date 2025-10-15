@@ -166,7 +166,8 @@ const processClientActionOnPatient = async ({
       }
     }
 
-    const notificationUpdateFiresAtMs = referralEndTimestamp - 95;
+    // 15
+    const notificationUpdateFiresAtMs = referralEndTimestamp - 80;
 
     await page.evaluate(
       ({ notificationUpdateFiresAtMs, notificationCount }) => {
