@@ -9,13 +9,20 @@ import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 
-const generateRandomInt = (min = 9000, max = 13000, step = 1000) => {
-  const start = Math.ceil(min / step);
-  const end = Math.floor(max / step);
-  if (end < start) throw new Error("No multiples in range");
-  const k = Math.floor(Math.random() * (end - start + 1)) + start;
-  return k * step;
-};
+// const generateRandomInt = (min = 9000, max = 13000, step = 1000) => {
+//   const start = Math.ceil(min / step);
+//   const end = Math.floor(max / step);
+//   if (end < start) throw new Error("No multiples in range");
+//   const k = Math.floor(Math.random() * (end - start + 1)) + start;
+//   return k * step;
+// };
+
+function generateRandomMs(min = 9500, max = 14400) {
+  if (min > max) [min, max] = [max, min]; // swap if reversed
+  min = Math.floor(min);
+  max = Math.floor(max); // ms as integers
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 const formateDateToString = (date) =>
   new Intl.DateTimeFormat("en-GB", {
@@ -149,7 +156,7 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
         break;
       }
 
-      const cutoffTimeMs = generateRandomInt();
+      const cutoffTimeMs = generateRandomMs();
 
       const finalData = {
         referralId,
