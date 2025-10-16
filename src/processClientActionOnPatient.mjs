@@ -196,12 +196,18 @@ const processClientActionOnPatient = async ({
         }
         // Clean up after first trigger
         document.removeEventListener("mousemove", triggerUpdate);
+        document.removeEventListener("mousedown", triggerUpdate);
+        document.removeEventListener("touchstart", triggerUpdate);
+        document.removeEventListener("pointerdown", triggerUpdate);
         document.removeEventListener("click", triggerUpdate);
         document.removeEventListener("keydown", triggerUpdate);
       };
 
       // Attach to user events
       document.addEventListener("mousemove", triggerUpdate, { once: true });
+      document.addEventListener("mousedown", triggerUpdate, { once: true });
+      document.addEventListener("touchstart", triggerUpdate, { once: true });
+      document.addEventListener("pointerdown", triggerUpdate, { once: true });
       document.addEventListener("click", triggerUpdate, { once: true });
       document.addEventListener("keydown", triggerUpdate, { once: true });
     }, notificationCount);
