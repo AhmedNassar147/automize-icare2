@@ -31,7 +31,6 @@ const processSendCollectedPatientsToWhatsapp =
       referralEndDateActionablAt,
       files,
       cutoffTimeMs,
-      notificationCount,
     }) => {
       let label = `0 s`;
 
@@ -48,7 +47,7 @@ const processSendCollectedPatientsToWhatsapp =
         `🚨 *New Case Alert!* 🚨\n\n` +
         `🕐 *Actionable At*: ${referralEndDateActionablAt}\n` +
         `🕐 *cutoffTime*: ${label}\n` +
-        `🔔 *billCount*: ${notificationCount}\n` +
+        // `🔔 *billCount*: ${notificationCount}\n` +
         `────────────────────────\n\n` +
         `🔢 *Referral ID:* \`${referralId}\`\n` +
         `👤 *Name:* \`${patientName}\`\n` +

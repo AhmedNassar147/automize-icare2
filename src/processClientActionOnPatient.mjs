@@ -11,12 +11,12 @@ import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
-// import ensureNoiseBlocking from "./ensureNoiseBlocking.mjs";
 import buildDurationText from "./buildDurationText.mjs";
 import getSubmissionButtonsIfFound from "./getSubmissionButtonsIfFound.mjs";
 import handleAfterSubmitDone from "./handleAfterSubmitDone.mjs";
 import createDetailsPageWhatsappHandlers from "./createDetailsPageWhatsappHandlers.mjs";
 import rewriteReferralDetails from "./rewriteReferralDetails.mjs";
+import speakText from "./speakText.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -38,15 +38,7 @@ const processClientActionOnPatient = async ({
 
   // const CLIENT_NAME = process.env.CLIENT_NAME;
 
-  const {
-    referralId,
-    patientName,
-    referralEndTimestamp,
-    // isSuperAcceptance,
-    // cutoffTimeMs,
-    notificationCount,
-    // providerName,
-  } = patient;
+  const { referralId, patientName, referralEndTimestamp } = patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
 
@@ -124,11 +116,6 @@ const processClientActionOnPatient = async ({
   }
 
   await rewriteReferralDetails(page);
-  // const remainingTimeMS = referralEndTimestamp - Date.now() - 940;
-
-  // if (remainingTimeMS > 0) {
-  //   await sleep(remainingTimeMS);
-  // }
 
   const startTime = Date.now();
 
@@ -177,40 +164,19 @@ const processClientActionOnPatient = async ({
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     });
 
-    //1- Countdown in Node.js
-    const notificationUpdateFiresAtMs = referralEndTimestamp - 100;
-    const delay = Math.max(0, notificationUpdateFiresAtMs - Date.now());
+    const minReferralEndTimestamp = referralEndTimestamp - 120;
+    const delay = Math.max(0, minReferralEndTimestamp - Date.now());
     if (delay > 0) {
       await sleep(delay);
     }
 
-    //2- Inject update to run on next user interaction
-    await page.evaluate((notificationCount) => {
-      const triggerUpdate = () => {
-        const badge = document.querySelector(
-          ".MuiBadge-badge.MuiBadge-standard"
-        );
-        if (badge) {
-          badge.textContent = String(notificationCount);
-          badge.classList.remove("MuiBadge-invisible");
-        }
-        // Clean up after first trigger
-        document.removeEventListener("mousemove", triggerUpdate);
-        document.removeEventListener("mousedown", triggerUpdate);
-        document.removeEventListener("touchstart", triggerUpdate);
-        document.removeEventListener("pointerdown", triggerUpdate);
-        document.removeEventListener("click", triggerUpdate);
-        document.removeEventListener("keydown", triggerUpdate);
-      };
-
-      // Attach to user events
-      document.addEventListener("mousemove", triggerUpdate, { once: true });
-      document.addEventListener("mousedown", triggerUpdate, { once: true });
-      document.addEventListener("touchstart", triggerUpdate, { once: true });
-      document.addEventListener("pointerdown", triggerUpdate, { once: true });
-      document.addEventListener("click", triggerUpdate, { once: true });
-      document.addEventListener("keydown", triggerUpdate, { once: true });
-    }, notificationCount);
+    await speakText({
+      text: "Go Go Go Go",
+      delayMs: 0,
+      rate: 3,
+      useMaleVoice: true,
+      volume: 100,
+    });
 
     await handleAfterSubmitDone({
       page,
@@ -248,9 +214,6 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
-
-// // const notificationUpdateFiresAtMs = Date.now() + 0.2 * 1000 * 60;
-// // const notificationCount = "9";
 
 // https://referralprogram.globemedsaudi.com/referrals/listing
 // {"pageSize":100,"pageNumber":1,"categoryReference":"pending","providerZone":[],"providerName":[],"specialtyCode":[],"referralTypeCode":[],"referralReasonCode":[],"genericSearch":"","sortOrder":"asc"}

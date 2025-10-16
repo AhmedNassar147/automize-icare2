@@ -9,23 +9,13 @@ import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 
-function randomInt6500to10000() {
-  const min = 9200;
-  const max = 14000; // inclusive
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function pickRandomNotificationCount() {
-  const rangeOptions = (min, max, step = 5) =>
-    Array.from(
-      { length: Math.floor((max - min) / step) + 1 },
-      (_, i) => min + i * step
-    );
-
-  const list = rangeOptions(10, 80, 5);
-
-  return list[Math.floor(Math.random() * list.length)];
-}
+const generateRandomInt = (min = 9000, max = 13000, step = 1000) => {
+  const start = Math.ceil(min / step);
+  const end = Math.floor(max / step);
+  if (end < start) throw new Error("No multiples in range");
+  const k = Math.floor(Math.random() * (end - start + 1)) + start;
+  return k * step;
+};
 
 const formateDateToString = (date) =>
   new Intl.DateTimeFormat("en-GB", {
@@ -41,11 +31,13 @@ const formateDateToString = (date) =>
     .format(date)
     .replace(",", "");
 
-const getSaudiStartAndEndDate = (
+const getSaudiStartAndEndDate = ({
   referralDate,
   caseAlertMessage,
-  cutoffTimeMs
-) => {
+  cutoffTimeMs,
+  detailsAPiFiresAtMS,
+  detailsAPiServerResponseTimeMS,
+}) => {
   const currentDate = new Date();
   const utcDate = new Date(referralDate);
 
@@ -66,8 +58,11 @@ const getSaudiStartAndEndDate = (
     const minsLeft = parseInt(match?.[1], 10) ?? 0;
     const secsLeft = parseInt(match?.[2], 10) ?? 0;
 
-    saStartDate = currentDate;
     leftMs = (minsLeft * 60 + secsLeft) * 1000;
+
+    saStartDate = new Date(
+      detailsAPiFiresAtMS - detailsAPiServerResponseTimeMS - leftMs
+    );
   }
 
   // Clone for end date
@@ -75,7 +70,7 @@ const getSaudiStartAndEndDate = (
   saEndDate.setMilliseconds(saEndDate.getMilliseconds() + leftMs);
 
   const referralEndTimestamp = saEndDate.getTime();
-  const timeWithUserReaction = cutoffTimeMs + 3000;
+  const timeWithUserReaction = cutoffTimeMs + 2000;
 
   const shouldCutoffTime = referralEndTimestamp > timeWithUserReaction;
 
@@ -142,6 +137,8 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
         patientInfoError,
         attchmentsError,
         caseAlertMessage,
+        detailsAPiFiresAtMS,
+        detailsAPiServerResponseTimeMS,
       } = patientData;
 
       if (patientDetailsError || patientInfoError || attchmentsError) {
@@ -152,17 +149,17 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
         break;
       }
 
-      const cutoffTimeMs = randomInt6500to10000();
-      const notificationCount = pickRandomNotificationCount();
+      const cutoffTimeMs = generateRandomInt();
 
       const finalData = {
         referralId,
-        ...getSaudiStartAndEndDate(
+        ...getSaudiStartAndEndDate({
           referralDate,
+          detailsAPiServerResponseTimeMS,
+          detailsAPiFiresAtMS,
           caseAlertMessage,
-          cutoffTimeMs
-        ),
-        notificationCount,
+          cutoffTimeMs,
+        }),
         ...patientData,
       };
 

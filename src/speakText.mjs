@@ -11,6 +11,7 @@ const speakText = ({
   delayMs = 4000,
   rate = 2,
   useMaleVoice,
+  volume = 94,
 }) =>
   new Promise((resolve, reject) => {
     const voice = useMaleVoice
@@ -32,7 +33,7 @@ const speakText = ({
         $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;
         $speak.SelectVoice('${voice}');
         $speak.Rate = ${rate};
-        $speak.Volume = 100;
+        $speak.Volume = ${volume};
         $speak.Speak('${escapedText}');
       `);
       ps.stdin.end();

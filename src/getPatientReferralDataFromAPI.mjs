@@ -31,6 +31,7 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
     async ({ urls, globMedHeaders, idReferral, baseGlobMedAPiUrl }) => {
       const responses = await Promise.all(
         urls.map(async (url) => {
+          const apiFiresAtMS = new Date().getTime();
           try {
             const res = await fetch(url, {
               method: "POST",
@@ -38,8 +39,13 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
               body: JSON.stringify({ idReferral }),
             });
 
+            const finishedDateMS = new Date().getTime();
+            const serverResponseTimeMS = (finishedDateMS - apiFiresAtMS) / 2;
+
             if (!res.ok) {
               return {
+                apiFiresAtMS,
+                serverResponseTimeMS,
                 success: false,
                 error: `Status ${res.status}`,
               };
@@ -47,11 +53,20 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
 
             const data = await res.json();
 
-            return { success: true, data: data?.data };
+            return {
+              success: true,
+              data: data?.data,
+              apiFiresAtMS,
+              serverResponseTimeMS,
+            };
           } catch (err) {
+            const finishedDateMS = new Date().getTime();
+
             return {
               success: false,
               error: err.message,
+              apiFiresAtMS,
+              serverResponseTimeMS: (finishedDateMS - apiFiresAtMS) / 2,
             };
           }
         })
@@ -60,7 +75,12 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
       const [attachmentResponse, patientInfoResponse, detailsResponse] =
         responses;
 
-      const { data: detailsData, error: patientDetailsError } = detailsResponse;
+      const {
+        data: detailsData,
+        error: patientDetailsError,
+        apiFiresAtMS,
+        serverResponseTimeMS,
+      } = detailsResponse;
 
       const { data: patientInfo, error: patientInfoError } =
         patientInfoResponse || {};
@@ -127,6 +147,8 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         referralCause,
         referralType: refType,
         note: note,
+        detailsAPiFiresAtMS: apiFiresAtMS,
+        detailsAPiServerResponseTimeMS: serverResponseTimeMS,
         caseAlertMessage: message,
         quotaExceededMessage,
         patientDetailsError,
