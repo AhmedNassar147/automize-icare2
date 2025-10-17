@@ -91,15 +91,15 @@ const makeUserLoggedInOrOpenHomePage = async ({
         if (isLoginPage) {
           await page.focus("#Input_Username");
           await page.keyboard.type(userName, {
-            delay: 80 + Math.random() * 20,
+            delay: 100 + Math.random() * 20,
           });
 
           await page.focus("#Input_Password");
           await page.keyboard.type(password, {
-            delay: 80 + Math.random() * 20,
+            delay: 100 + Math.random() * 20,
           });
 
-          await sleep(100 + Math.random() * 100);
+          await sleep(120 + Math.random() * 100);
           await page.click(loginButtonSelector);
 
           // await humanType(page, cursor, "", userName);
