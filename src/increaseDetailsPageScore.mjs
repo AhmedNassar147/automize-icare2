@@ -37,7 +37,7 @@ const increaseDetailsPageScore = async (browser) => {
 
   const rows = await collectHomePageTableRows(page, undefined, 6000);
 
-  const [firstRow] = shuffle(rows).filter(Boolean);
+  const [firstRow] = rows.filter(Boolean);
   const iconButton = await firstRow.$("td.iconCell button");
 
   const selector = "section.referral-button-container";
@@ -78,7 +78,7 @@ const increaseDetailsPageScore = async (browser) => {
   // });
   // console.timeEnd("super_acceptance_time");
 
-  await sleep(8000 + Math.random() * 2000);
+  await sleep(10000 + Math.random() * 2000);
   await goToHomePage(page);
   await sleep(150 + Math.random() * 100);
   await closePageSafely(page);
