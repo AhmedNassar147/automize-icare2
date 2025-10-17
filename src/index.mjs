@@ -209,7 +209,10 @@ import {
 
     patientsStore.on(
       "patientsAdded",
-      processSendCollectedPatientsToWhatsapp(sendWhatsappMessage)
+      processSendCollectedPatientsToWhatsapp(
+        sendWhatsappMessage,
+        process.env.EXECLUDE_WHATSAPP_MSG_FOOTER === "Y"
+      )
     );
 
     patientsStore.on("patientAccepted", async (patient) =>

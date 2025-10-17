@@ -7,14 +7,11 @@ import speakText from "./speakText.mjs";
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
 
 const processSendCollectedPatientsToWhatsapp =
-  (sendWhatsappMessage) => async (addedPatients) => {
-    console.log("addedPatients started, posting patients to WhatsApp...");
-
+  (sendWhatsappMessage, execludeWhatsAppMsgFooter) => async (addedPatients) => {
     const formatPatient = ({
       referralId,
       patientName,
       mobileNumber,
-      requestDate,
       nationality,
       nationalId,
       referralType,
@@ -31,6 +28,7 @@ const processSendCollectedPatientsToWhatsapp =
       referralEndDateActionablAt,
       files,
       cutoffTimeMs,
+      // requestDate,
     }) => {
       let label = `0 s`;
 
@@ -43,7 +41,7 @@ const processSendCollectedPatientsToWhatsapp =
         label = `${nf.format(cutoffTimeMs / 1000)} s`; // e.g., "6.125 s"
       }
 
-      const message =
+      let message =
         `🚨 *New Case Alert!* 🚨\n\n` +
         `🕐 *Actionable At*: ${referralEndDateActionablAt}\n` +
         `🕐 *cutoffTime*: ${label}\n` +
@@ -62,14 +60,19 @@ const processSendCollectedPatientsToWhatsapp =
         `🔬 *Sub-Specialty:* \`${subSpecialty || ""}\`\n` +
         `🏥 *Provider:* \`${sourceProvider || ""}\`\n` +
         `📍 *Zone:* \`${providerZone}\`\n` +
-        `🗓️ *Requested At:* \`${requestDate}\`\n` +
+        // `🗓️ *Requested At:* \`${requestDate}\`\n` +
         `📝 *Reason:* \`${referralCause}\`\n` +
-        `🧾 *CauseNote:* \`${note || ""}\`\n\n` +
-        `⚠️ *‼️ ATTENTION ‼️*\n\n` +
-        `────────────────────────\n` +
-        `🧾 _${caseAlertMessage || ""}_\n\n` +
-        `📩 *Please review and reply to this message with:*\n\n` +
-        `${createConfirmationMessage()}\n`;
+        `🧾 *CauseNote:* \`${note || ""}\`\n`;
+
+      if (!execludeWhatsAppMsgFooter) {
+        message +=
+          `\n` +
+          `⚠️ *‼️ ATTENTION ‼️*\n\n` +
+          `────────────────────────\n` +
+          `🧾 _${caseAlertMessage || ""}_\n\n` +
+          `📩 *Please review and reply to this message with:*\n\n` +
+          `${createConfirmationMessage()}\n`;
+      }
 
       return {
         message,
