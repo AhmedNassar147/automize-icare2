@@ -9,7 +9,7 @@ import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 
-const generateRandomInt = (min = 8000, max = 14000, step = 1000) => {
+const generateRandomInt = (min = 12000, max = 15000, step = 1000) => {
   const start = Math.ceil(min / step);
   const end = Math.floor(max / step);
   if (end < start) throw new Error("No multiples in range");

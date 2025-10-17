@@ -118,7 +118,7 @@ const processClientActionOnPatient = async ({
 
   await rewriteReferralDetails(page);
 
-  const remaining = referralEndTimestamp - Date.now() - 700;
+  const remaining = referralEndTimestamp - Date.now() - 2500;
 
   if (remaining > 0) {
     await sleep(remaining);
@@ -160,12 +160,10 @@ const processClientActionOnPatient = async ({
       }
     }
 
-    console.time("took time to upload");
+    //  251.195ms
     await selectAttachmentDropdownOption(page, actionName);
-
     const fileInput = await page.$('#upload-single-file input[type="file"]');
     await fileInput.uploadFile(filePath);
-    console.timeEnd("took time to upload");
 
     const selectedButton = referralButtons[isAcceptance ? 0 : 1];
 
@@ -175,16 +173,18 @@ const processClientActionOnPatient = async ({
         block: "center",
       });
     });
-    console.log(
-      "took time to scroll from startTime",
-      buildDurationText(startTime, Date.now())
-    );
-    console.log("took time to Left", referralEndTimestamp - Date.now());
+    // 🕒 *Took*: `0.64 seconds`
+    // console.log(
+    //   "took time to scroll from startTime",
+    //   buildDurationText(startTime, Date.now())
+    // );
 
-    console.log(
-      "took time to full scroll preparingStartTime",
-      buildDurationText(preparingStartTime, Date.now())
-    );
+    // console.log("took time to Left", referralEndTimestamp - Date.now()); // 47
+
+    // console.log(
+    //   "took time to full scroll preparingStartTime",
+    //   buildDurationText(preparingStartTime, Date.now())
+    // ); 🕒 *Took*: `8.94 seconds`
 
     await handleAfterSubmitDone({
       page,
