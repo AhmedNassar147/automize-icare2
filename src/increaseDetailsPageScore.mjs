@@ -40,38 +40,12 @@ const increaseDetailsPageScore = async (browser) => {
   const [firstRow] = shuffle(rows).filter(Boolean);
   const iconButton = await firstRow.$("td.iconCell button");
 
-  // preconditions
   const selector = "section.referral-button-container";
-  const prevUrl = page.url();
 
-  // prepare listeners BEFORE the click
-  const navPromise = page
-    .waitForNavigation({ waitUntil: "domcontentloaded", timeout: 45_000 })
-    .catch(() => null);
-
-  const urlChangePromise = page
-    .waitForFunction(
-      (oldUrl) => location.href !== oldUrl,
-      { timeout: 45_000 },
-      prevUrl
-    )
-    .catch(() => null);
-
-  // click (may navigate)
   const t0 = Date.now();
   await iconButton.click();
 
-  // resolve where we ended up
-  let targetPage = await Promise.race([
-    navPromise.then(() => page).catch(() => null), // same page hard nav
-    urlChangePromise.then(() => page).catch(() => null), // SPA soft nav
-  ]);
-
-  // If none fired (rare), fall back to current page
-  targetPage = targetPage || page;
-
-  // now wait for your anchor to actually be visible (with a tiny dwell for stability)
-  await targetPage.waitForFunction(
+  await page.waitForFunction(
     (sel, dwellMs) => {
       const el = document.querySelector(sel);
       if (!el) {
@@ -85,7 +59,7 @@ const increaseDetailsPageScore = async (browser) => {
         return false;
       }
       if (window.__seenAt == null) window.__seenAt = performance.now();
-      return performance.now() - window.__seenAt >= dwellMs;
+      return performance.now() - window.__seenAt >= dwellMs; // must stay visible
     },
     { timeout: 45_000 },
     selector,
@@ -104,7 +78,7 @@ const increaseDetailsPageScore = async (browser) => {
   // });
   // console.timeEnd("super_acceptance_time");
 
-  await sleep(800 + Math.random() * 100);
+  await sleep(8000 + Math.random() * 2000);
   await goToHomePage(page);
   await sleep(150 + Math.random() * 100);
   await closePageSafely(page);
@@ -124,7 +98,7 @@ export default async (
   while (range > 0) {
     try {
       await increaseDetailsPageScore(browser);
-      await sleep(7000 + Math.random() * 6000);
+      await sleep(14000 + Math.random() * 6000);
     } catch (error) {
       console.log("Error in increaseDetailsPageScore:", error);
       break;
