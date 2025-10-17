@@ -118,15 +118,27 @@ const processClientActionOnPatient = async ({
 
   await rewriteReferralDetails(page);
 
-  const remaining = referralEndTimestamp - Date.now() - 2500;
+  const remainingFromNow = referralEndTimestamp - Date.now();
+  let allowedToSubmit = 2500;
+
+  if (remainingFromNow < allowedToSubmit) {
+    allowedToSubmit = remainingFromNow > 600 ? remainingFromNow - 600 : 300;
+  }
+
+  const remaining = remainingFromNow - allowedToSubmit;
 
   if (remaining > 0) {
+    console.log({
+      remaining,
+      allowedToSubmit,
+    });
     await sleep(remaining);
   }
 
   const startTime = Date.now();
 
   try {
+    console.time("super_acceptance_time");
     await iconButton.click();
 
     let referralButtons;
@@ -173,6 +185,7 @@ const processClientActionOnPatient = async ({
         block: "center",
       });
     });
+    console.timeEnd("super_acceptance_time");
     // 🕒 *Took*: `0.64 seconds`
     // console.log(
     //   "took time to scroll from startTime",
