@@ -170,6 +170,8 @@ const processClientActionOnPatient = async ({
 
     const minReferralEndTimestamp = referralEndTimestamp - 120;
     const delay = Math.max(0, minReferralEndTimestamp - Date.now());
+    console.log("took time to delay", delay);
+
     if (delay > 0) {
       await sleep(delay);
     }
@@ -180,6 +182,7 @@ const processClientActionOnPatient = async ({
       rate: 3,
       useMaleVoice: true,
       volume: 100,
+      times: 1,
     });
 
     await handleAfterSubmitDone({
