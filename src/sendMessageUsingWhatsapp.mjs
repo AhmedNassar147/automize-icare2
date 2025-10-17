@@ -152,6 +152,7 @@ export const initializeClient = async (
     client.on("message", async (message) => {
       try {
         const { from, body } = message || {};
+        // console.log("message", message)
 
         console.log(
           `📨 [${number}] Incoming message from: ${from} — "${body}"`
@@ -163,7 +164,15 @@ export const initializeClient = async (
           return;
         }
 
-        if (from !== chatId) {
+        let isAuthorizedSender = from === chatId;
+
+        if (!isAuthorizedSender) {
+          const contact = await message.getContact(); // resolves @lid → contact
+          const senderWid = contact.id?._serialized;
+          isAuthorizedSender = senderWid === chatId;
+        }
+
+        if (!isAuthorizedSender) {
           console.warn(
             `⛔ [${number}] Message ignored — not from expected chatId.`
           );
