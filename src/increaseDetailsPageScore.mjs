@@ -49,10 +49,6 @@ const increaseDetailsPageScore = async (browser) => {
     .waitForNavigation({ waitUntil: "domcontentloaded", timeout: 45_000 })
     .catch(() => null);
 
-  const popupPromise = page
-    .waitForEvent("popup", { timeout: 45_000 })
-    .catch(() => null);
-
   const urlChangePromise = page
     .waitForFunction(
       (oldUrl) => location.href !== oldUrl,
@@ -67,7 +63,6 @@ const increaseDetailsPageScore = async (browser) => {
 
   // resolve where we ended up
   let targetPage = await Promise.race([
-    popupPromise.then((p) => p).catch(() => null), // new tab/window
     navPromise.then(() => page).catch(() => null), // same page hard nav
     urlChangePromise.then(() => page).catch(() => null), // SPA soft nav
   ]);
