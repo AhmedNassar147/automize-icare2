@@ -151,28 +151,26 @@ export const initializeClient = async (
 
     client.on("message", async (message) => {
       try {
-        const { from, body } = message || {};
-        // console.log("message", message)
+        const { from: _from, body } = message || {};
+
+        if (!_from || !body) {
+          console.warn(`⚠️ [${number}] Message missing 'from' or 'body'.`);
+          return;
+        }
+
+        let from = _from;
+
+        if (_from.includes("@lid")) {
+          const contact = await message.getContact(); // resolves @lid → contact
+          from = contact.id?._serialized;
+        }
 
         console.log(
           `📨 [${number}] Incoming message from: ${from} — "${body}"`
         );
         console.log(`🎯 [${number}] Expected chatId: ${chatId}`);
 
-        if (!from || !body) {
-          console.warn(`⚠️ [${number}] Message missing 'from' or 'body'.`);
-          return;
-        }
-
-        let isAuthorizedSender = from === chatId;
-
-        if (!isAuthorizedSender) {
-          const contact = await message.getContact(); // resolves @lid → contact
-          const senderWid = contact.id?._serialized;
-          isAuthorizedSender = senderWid === chatId;
-        }
-
-        if (!isAuthorizedSender) {
+        if (from !== chatId) {
           console.warn(
             `⛔ [${number}] Message ignored — not from expected chatId.`
           );
