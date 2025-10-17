@@ -175,6 +175,7 @@ const processClientActionOnPatient = async ({
       await sleep(delay);
     }
 
+    console.time("took time to speek");
     await speakText({
       text: "Go Go Go Go",
       delayMs: 0,
@@ -183,6 +184,7 @@ const processClientActionOnPatient = async ({
       volume: 100,
       times: 1,
     });
+    console.timeEnd("took time to speek");
 
     console.log("took time to delay", delay);
 
