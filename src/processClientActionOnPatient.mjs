@@ -25,7 +25,6 @@ import {
   htmlFilesPath,
   dashboardLinkSelector,
 } from "./constants.mjs";
-import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 
 const processClientActionOnPatient = async ({
   browser,
@@ -97,10 +96,6 @@ const processClientActionOnPatient = async ({
     return;
   }
 
-  console.time("search");
-  await searchForItemCountAndClickItIfFound(page, "Confirmed Referrals", true);
-  console.timeEnd("search");
-
   const referralIdRecordResult = await collectHomePageTableRows(
     page,
     referralId,
@@ -123,7 +118,7 @@ const processClientActionOnPatient = async ({
 
   await rewriteReferralDetails(page);
 
-  const remaining = referralEndTimestamp - 1400;
+  const remaining = referralEndTimestamp - Date.now() - 900;
 
   if (remaining > 0) {
     await sleep(remaining);
@@ -165,63 +160,45 @@ const processClientActionOnPatient = async ({
       }
     }
 
+    console.time("took time to upload");
     await selectAttachmentDropdownOption(page, actionName);
 
     const fileInput = await page.$('#upload-single-file input[type="file"]');
     await fileInput.uploadFile(filePath);
+    console.timeEnd("took time to upload");
 
     const selectedButton = referralButtons[isAcceptance ? 0 : 1];
 
     await selectedButton.evaluate((el) => {
       el.scrollIntoView({
-        behavior: Math.random() < 0.65 ? "auto" : "smooth",
+        behavior: "auto",
         block: "center",
       });
     });
     console.log(
-      "took time to scroll",
+      "took time to scroll from startTime",
       buildDurationText(startTime, Date.now())
     );
-    console.log("took time to Left", Date.now() - referralEndTimestamp);
+    console.log("took time to Left", referralEndTimestamp - Date.now());
 
     console.log(
-      "took time to full scroll",
+      "took time to full scroll preparingStartTime",
       buildDurationText(preparingStartTime, Date.now())
     );
 
-    // const minReferralEndTimestamp = referralEndTimestamp - 120;
-    // const delay = Math.max(0, minReferralEndTimestamp - Date.now());
-
-    // if (delay > 0) {
-    //   await sleep(delay);
-    // }
-
-    // console.time("took time to speek");
-    // speakText({
-    //   text: "Go Go Go Go",
-    //   delayMs: 0,
-    //   rate: 3,
-    //   useMaleVoice: true,
-    //   volume: 100,
-    //   times: 1,
-    // });
-    // console.timeEnd("took time to speek");
-
-    // console.log("took time to delay", delay);
-
-    // await handleAfterSubmitDone({
-    //   page,
-    //   startTime,
-    //   continueFetchingPatientsIfPaused,
-    //   patientsStore,
-    //   sendErrorMessage,
-    //   sendSuccessMessage,
-    //   closeCurrentPage,
-    //   actionName,
-    //   acceptanceFilePath,
-    //   rejectionFilePath,
-    //   referralId,
-    // });
+    await handleAfterSubmitDone({
+      page,
+      startTime,
+      continueFetchingPatientsIfPaused,
+      patientsStore,
+      sendErrorMessage,
+      sendSuccessMessage,
+      closeCurrentPage,
+      actionName,
+      acceptanceFilePath,
+      rejectionFilePath,
+      referralId,
+    });
   } catch (error) {
     try {
       const html = await page.content();

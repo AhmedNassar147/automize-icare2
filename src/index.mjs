@@ -123,6 +123,36 @@ import {
       ],
     });
 
+    // const _collectedPatients = collectedPatients.map((item, index) => {
+    //   if (!index) {
+    //     const _referralEndTimestamp = Date.now() + 1 * 60_000;
+
+    //     return {
+    //       ...item,
+    //       referralEndTimestamp: _referralEndTimestamp,
+    //       referralEndDateActionableAtMS: _referralEndTimestamp - 10_000,
+    //     };
+    //   }
+
+    //   return item;
+    // });
+
+    // import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
+    // console.time("search");
+    // await searchForItemCountAndClickItIfFound(
+    //   page,
+    //   "Confirmed Referrals",
+    //   true
+    // );
+    // console.timeEnd("search");
+
+    // const minReferralEndTimestamp = referralEndTimestamp - 120;
+    // const delay = Math.max(0, minReferralEndTimestamp - Date.now());
+
+    // if (delay > 0) {
+    //   await sleep(delay);
+    // }
+
     const collectedPatients = await readJsonFile(
       COLLECTD_PATIENTS_FULL_FILE_PATH,
       true
