@@ -5,8 +5,8 @@
  */
 import { createCursor } from "ghost-cursor";
 import checkIfLoginPage from "./checkIfLoginPage.mjs";
-import humanType from "./humanType.mjs";
-import humanClick from "./humanClick.mjs";
+// import humanType from "./humanType.mjs";
+// import humanClick from "./humanClick.mjs";
 import sleep from "./sleep.mjs";
 import waitForHomeLink from "./waitForHomeLink.mjs";
 import gotToLoginPage from "./gotToLoginPage.mjs";
@@ -39,19 +39,24 @@ const makeUserLoggedInOrOpenHomePage = async ({
   startingPageUrl,
   showScoreButton,
   onClickScoreButton,
+  noCursor,
 }) => {
   const userName = process.env.CLIENT_NAME;
   const password = process.env.CLIENT_PASSWORD;
 
   let page = currentPage || (await browser.newPage());
-  let cursor =
-    _cursor && currentPage
-      ? _cursor
-      : createCursor(
-          page,
-          { x: 180 + Math.random(), y: 250 + Math.random() * 20 },
-          false
-        );
+  let cursor;
+
+  if (!noCursor) {
+    cursor =
+      _cursor && currentPage
+        ? _cursor
+        : createCursor(
+            page,
+            { x: 180 + Math.random(), y: 250 + Math.random() * 20 },
+            false
+          );
+  }
 
   let retries = 0;
 
@@ -83,11 +88,13 @@ const makeUserLoggedInOrOpenHomePage = async ({
       if (!hasEnteredStartingPage) {
         const isLoginPage = await checkIfLoginPage(page);
 
-        // console.log("isLoginPage", isLoginPage);
-
         if (isLoginPage) {
-          await humanType(page, cursor, "#Input_Username", userName);
-          await humanType(page, cursor, "#Input_Password", password);
+          await page.type("#Input_Username", userName);
+          await page.type("#Input_Password", password);
+          await page.click(loginButtonSelector);
+
+          // await humanType(page, cursor, "", userName);
+          // await humanType(page, cursor, "#Input_Password", password);
 
           // const button = await page.$(loginButtonSelector);
           // const submit_start_time = performance.now();
@@ -99,9 +106,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
           //     1000
           //   ).toFixed(2)} s`
           // );
-          await humanClick(page, loginButtonSelector);
-          // await button.focus();
-          // await cursor.move(button);
+          // await humanClick(page, loginButtonSelector);
 
           try {
             await page.waitForNavigation({
@@ -137,8 +142,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
       const isHomeLoaded =
         hasEnteredStartingPage || (await checkHomePageFullyLoaded(page));
-
-      console.log("isHomeLoaded", isHomeLoaded);
 
       if (isHomeLoaded) {
         console.log(`✅ User ${userName} is in home page.`);

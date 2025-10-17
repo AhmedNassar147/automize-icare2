@@ -140,7 +140,7 @@ import {
 
     (async () =>
       await waitForWaitingCountWithInterval({
-        collectionTabType: TABS_COLLECTION_TYPES.WAITING,
+        collectionTabType: TABS_COLLECTION_TYPES.CONFIRMED,
         browser,
         patientsStore,
         sendWhatsappMessage,

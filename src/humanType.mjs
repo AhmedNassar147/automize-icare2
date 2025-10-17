@@ -10,7 +10,7 @@ const humanType = async (page, cursor, selector, text) => {
   try {
     const elementHandle = await page.$(selector);
 
-    const moveDelay = 25 + Math.random() * 30;
+    const moveDelay = 20 + Math.random() * 20;
 
     await cursor.click(elementHandle, {
       clickCount: 1,
@@ -20,10 +20,10 @@ const humanType = async (page, cursor, selector, text) => {
       radius: 4,
     });
 
-    const baseTypingDelay = 100 + Math.random() * 70; // 50–120ms per key
+    const baseTypingDelay = 80 + Math.random() * 50; // 50–120ms per key
 
     await page.keyboard.type(text, { delay: baseTypingDelay });
-    await sleep(60 + Math.random());
+    await sleep(30 + Math.random());
   } catch (error) {
     console.log(`❌ humanType error for selector "${selector}":`, error);
   }

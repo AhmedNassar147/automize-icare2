@@ -25,6 +25,7 @@ import {
   htmlFilesPath,
   dashboardLinkSelector,
 } from "./constants.mjs";
+import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 
 const processClientActionOnPatient = async ({
   browser,
@@ -64,6 +65,7 @@ const processClientActionOnPatient = async ({
     browser,
     sendWhatsappMessage,
     startingPageUrl: HOME_PAGE_URL,
+    noCursor: true,
   });
 
   const { sendErrorMessage, sendSuccessMessage } =
@@ -95,6 +97,10 @@ const processClientActionOnPatient = async ({
     return;
   }
 
+  console.time("search");
+  await searchForItemCountAndClickItIfFound(page, "Confirmed Referrals", true);
+  console.timeEnd("search");
+
   const referralIdRecordResult = await collectHomePageTableRows(
     page,
     referralId,
@@ -117,7 +123,7 @@ const processClientActionOnPatient = async ({
 
   await rewriteReferralDetails(page);
 
-  const remaining = referralEndTimestamp - 985;
+  const remaining = referralEndTimestamp - 1400;
 
   if (remaining > 0) {
     await sleep(remaining);
@@ -174,6 +180,12 @@ const processClientActionOnPatient = async ({
     });
     console.log(
       "took time to scroll",
+      buildDurationText(startTime, Date.now())
+    );
+    console.log("took time to Left", Date.now() - referralEndTimestamp);
+
+    console.log(
+      "took time to full scroll",
       buildDurationText(preparingStartTime, Date.now())
     );
 
@@ -197,19 +209,19 @@ const processClientActionOnPatient = async ({
 
     // console.log("took time to delay", delay);
 
-    await handleAfterSubmitDone({
-      page,
-      startTime,
-      continueFetchingPatientsIfPaused,
-      patientsStore,
-      sendErrorMessage,
-      sendSuccessMessage,
-      closeCurrentPage,
-      actionName,
-      acceptanceFilePath,
-      rejectionFilePath,
-      referralId,
-    });
+    // await handleAfterSubmitDone({
+    //   page,
+    //   startTime,
+    //   continueFetchingPatientsIfPaused,
+    //   patientsStore,
+    //   sendErrorMessage,
+    //   sendSuccessMessage,
+    //   closeCurrentPage,
+    //   actionName,
+    //   acceptanceFilePath,
+    //   rejectionFilePath,
+    //   referralId,
+    // });
   } catch (error) {
     try {
       const html = await page.content();

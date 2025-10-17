@@ -62,7 +62,7 @@ const rewriteReferralDetails = async (page) => {
 
     // Your mutation
     if (json?.data) {
-      if (typeof json.data.status === "string") json.data.status = "P";
+      json.data.status = "P";
       json.data.canUpdate = true;
       json.data.canTakeAction = true;
     }

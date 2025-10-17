@@ -6,7 +6,7 @@
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
-// import helpIncreaseDetailsPageRecaptchaScore from "./helpIncreaseDetailsPageRecaptchaScore.mjs";
+import helpIncreaseDetailsPageRecaptchaScore from "./helpIncreaseDetailsPageRecaptchaScore.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import shuffle from "./shuffle.mjs";
 import {
@@ -37,54 +37,24 @@ const increaseDetailsPageScore = async (browser) => {
 
   const rows = await collectHomePageTableRows(page, undefined, 6000);
 
-  const [firstRow] = rows.filter(Boolean);
+  const [firstRow] = shuffle(rows).filter(Boolean);
   const iconButton = await firstRow.$("td.iconCell button");
-
-  const selector = "section.referral-button-container";
-
-  const t0 = Date.now();
   await iconButton.click();
 
-  await page.waitForFunction(
-    (sel, dwellMs) => {
-      const el = document.querySelector(sel);
-      if (!el) {
-        window.__seenAt = undefined;
-        return false;
-      }
-      const r = el.getBoundingClientRect();
-      const visible = r.width > 0 && r.height > 0;
-      if (!visible) {
-        window.__seenAt = undefined;
-        return false;
-      }
-      if (window.__seenAt == null) window.__seenAt = performance.now();
-      return performance.now() - window.__seenAt >= dwellMs; // must stay visible
-    },
-    { timeout: 45_000 },
-    selector,
-    200
-  );
+  console.time("super_acceptance_time");
+  await helpIncreaseDetailsPageRecaptchaScore({
+    page,
+    cursor,
+    actionName: Math.random() < 0.5 ? "Rejection" : "Acceptance",
+    isUploadFormOn: false,
+  });
+  console.timeEnd("super_acceptance_time");
 
-  const elapsedMs = Date.now() - t0;
-  console.log("elapsedMs", elapsedMs);
-
-  // console.time("super_acceptance_time");
-  // await helpIncreaseDetailsPageRecaptchaScore({
-  //   page,
-  //   cursor,
-  //   actionName: Math.random() < 0.5 ? "Rejection" : "Acceptance",
-  //   isUploadFormOn: false,
-  // });
-  // console.timeEnd("super_acceptance_time");
-
-  await sleep(10000 + Math.random() * 2000);
+  await sleep(200 + Math.random() * 100);
   await goToHomePage(page);
   await sleep(150 + Math.random() * 100);
   await closePageSafely(page);
 };
-
-// export default increaseDetailsPageScore;
 
 export default async (
   browser,
@@ -98,7 +68,7 @@ export default async (
   while (range > 0) {
     try {
       await increaseDetailsPageScore(browser);
-      await sleep(14000 + Math.random() * 6000);
+      await sleep(7000 + Math.random() * 6000);
     } catch (error) {
       console.log("Error in increaseDetailsPageScore:", error);
       break;
