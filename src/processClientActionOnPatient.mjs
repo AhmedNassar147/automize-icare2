@@ -163,6 +163,10 @@ const processClientActionOnPatient = async ({
     await selectedButton.evaluate((el) => {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     });
+    console.log(
+      "took time to scroll",
+      buildDurationText(preparingStartTime, Date.now())
+    );
 
     const minReferralEndTimestamp = referralEndTimestamp - 120;
     const delay = Math.max(0, minReferralEndTimestamp - Date.now());
