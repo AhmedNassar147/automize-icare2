@@ -91,7 +91,7 @@ const processSendCollectedPatientsToWhatsapp =
       // const hour = saTime.getHours();
 
       // if (hour >= 22 || hour <= 9) {
-      await speakText({
+      speakText({
         text: "Check your WhatsApp, there is a new patient",
       });
       // }

@@ -16,7 +16,7 @@ import getSubmissionButtonsIfFound from "./getSubmissionButtonsIfFound.mjs";
 import handleAfterSubmitDone from "./handleAfterSubmitDone.mjs";
 import createDetailsPageWhatsappHandlers from "./createDetailsPageWhatsappHandlers.mjs";
 import rewriteReferralDetails from "./rewriteReferralDetails.mjs";
-import speakText from "./speakText.mjs";
+// import speakText from "./speakText.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -117,6 +117,12 @@ const processClientActionOnPatient = async ({
 
   await rewriteReferralDetails(page);
 
+  const remaining = referralEndTimestamp - 985;
+
+  if (remaining > 0) {
+    await sleep(remaining);
+  }
+
   const startTime = Date.now();
 
   try {
@@ -161,32 +167,35 @@ const processClientActionOnPatient = async ({
     const selectedButton = referralButtons[isAcceptance ? 0 : 1];
 
     await selectedButton.evaluate((el) => {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.scrollIntoView({
+        behavior: Math.random() < 0.65 ? "auto" : "smooth",
+        block: "center",
+      });
     });
     console.log(
       "took time to scroll",
       buildDurationText(preparingStartTime, Date.now())
     );
 
-    const minReferralEndTimestamp = referralEndTimestamp - 120;
-    const delay = Math.max(0, minReferralEndTimestamp - Date.now());
+    // const minReferralEndTimestamp = referralEndTimestamp - 120;
+    // const delay = Math.max(0, minReferralEndTimestamp - Date.now());
 
-    if (delay > 0) {
-      await sleep(delay);
-    }
+    // if (delay > 0) {
+    //   await sleep(delay);
+    // }
 
-    console.time("took time to speek");
-    await speakText({
-      text: "Go Go Go Go",
-      delayMs: 0,
-      rate: 3,
-      useMaleVoice: true,
-      volume: 100,
-      times: 1,
-    });
-    console.timeEnd("took time to speek");
+    // console.time("took time to speek");
+    // speakText({
+    //   text: "Go Go Go Go",
+    //   delayMs: 0,
+    //   rate: 3,
+    //   useMaleVoice: true,
+    //   volume: 100,
+    //   times: 1,
+    // });
+    // console.timeEnd("took time to speek");
 
-    console.log("took time to delay", delay);
+    // console.log("took time to delay", delay);
 
     await handleAfterSubmitDone({
       page,

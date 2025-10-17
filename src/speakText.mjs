@@ -12,20 +12,36 @@ const speakText = ({
   rate = 2,
   useMaleVoice,
   volume = 94,
-}) =>
-  new Promise((resolve, reject) => {
-    const voice = useMaleVoice
-      ? "Microsoft David Desktop"
-      : "Microsoft Zira Desktop";
+}) => {
+  // // Input validation
+  // if (!text || typeof text !== "string") {
+  //   console.error("speakText: Invalid text provided");
+  //   return;
+  // }
 
-    let count = 0;
-    const escapedText = text.replace(/'/g, "''").replace(/"/g, '""');
+  // if (volume < 0 || volume > 100) {
+  //   console.warn("speakText: Volume should be between 0-100");
+  //   volume = Math.max(0, Math.min(100, volume)); // Clamp value
+  // }
 
-    const speak = () => {
-      if (count >= times) return resolve();
+  const voice = useMaleVoice
+    ? "Microsoft David Desktop"
+    : "Microsoft Zira Desktop";
 
+  let count = 0;
+  const escapedText = text.replace(/'/g, "''").replace(/"/g, '""');
+
+  const speak = () => {
+    if (count >= times) return;
+
+    try {
       const ps = spawn("powershell", ["-NoProfile", "-Command", "-"], {
         stdio: ["pipe", "inherit", "inherit"],
+      });
+
+      // Handle process errors
+      ps.on("error", (error) => {
+        console.error("speakText: PowerShell error:", error);
       });
 
       ps.stdin.write(`
@@ -38,16 +54,21 @@ const speakText = ({
       `);
       ps.stdin.end();
 
-      ps.on("error", reject);
-      ps.on("exit", () => {
+      ps.on("exit", (code) => {
+        if (code !== 0) {
+          console.error(`speakText: Process exited with code ${code}`);
+        }
         count++;
-        if (delayMs) {
+        if (count < times && delayMs > 0) {
           setTimeout(speak, delayMs);
         }
       });
-    };
+    } catch (error) {
+      console.error("speakText: Unexpected error:", error);
+    }
+  };
 
-    speak();
-  });
+  speak();
+};
 
 export default speakText;
