@@ -201,10 +201,6 @@ const processClientActionOnPatient = async ({
     const leftTime = referralEndTimestamp - Date.now();
     console.log("took time to Left", leftTime);
 
-    if (leftTime > 0) {
-      await sleep(leftTime);
-    }
-
     // console.log(
     //   "took time to full scroll preparingStartTime",
     //   buildDurationText(preparingStartTime, Date.now())
