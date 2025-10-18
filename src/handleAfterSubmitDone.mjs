@@ -10,35 +10,34 @@ import sleep from "./sleep.mjs";
 
 const waitForPath = async (
   page,
-  targetPath = "/dashboard/referral",
-  timeout = 65_000
+  targetPath = "dashboard/referral",
+  timeout = 3 * 60 * 1000
 ) => {
   const prevHref = await page.evaluate(() => location.href);
   const normalize = (s) => s.replace(/\/+$/, "").toLowerCase();
   const wanted = normalize(targetPath);
 
-  const hardP = page
-    .waitForNavigation({ waitUntil: "domcontentloaded", timeout })
-    .then(() => true)
-    .catch(() => false);
-
-  const spaP = page
-    .waitForFunction(
-      (prev, wantedPath) => {
-        const href = location.href;
-        if (href === prev) return false; // ensure it changed
-        const path = new URL(href).pathname.replace(/\/+$/, "").toLowerCase();
-        return path.endsWith(wantedPath);
-      },
-      { timeout },
-      prevHref,
-      wanted
-    )
-    .then(() => true)
-    .catch(() => false);
-
   // First signal that *something* happened
-  const first = await Promise.race([hardP, spaP]);
+  const first = await Promise.race([
+    page
+      .waitForNavigation({ waitUntil: "domcontentloaded", timeout })
+      .then(() => true)
+      .catch(() => false),
+    page
+      .waitForFunction(
+        (prev, wantedPath) => {
+          const href = location.href;
+          if (href === prev) return false; // ensure it changed
+          const path = new URL(href).pathname.replace(/\/+$/, "").toLowerCase();
+          return path.endsWith(wantedPath);
+        },
+        { timeout },
+        prevHref,
+        wanted
+      )
+      .then(() => true)
+      .catch(() => false),
+  ]);
 
   if (!first) return false; // both timed out or first to settle was a timeout
 
@@ -57,6 +56,7 @@ const handleAfterSubmitDone = async ({
   startTime,
   isAutoAccept,
   errorMessage,
+  leftTime,
   // isDoneSuccessfully,
   continueFetchingPatientsIfPaused,
   patientsStore,
@@ -71,14 +71,14 @@ const handleAfterSubmitDone = async ({
 }) => {
   continueFetchingPatientsIfPaused();
 
-  patientsStore.forceReloadHomePage();
+  const _isDoneSuccessfully = await waitForPath(page);
 
-  const targetPath = "/dashboard/referral";
-
-  const _isDoneSuccessfully = await waitForPath(page, targetPath);
-
-  const durationText = buildDurationText(startTime, Date.now());
+  const durationText = buildDurationText(
+    startTime,
+    Date.now() - (leftTime || 0)
+  );
   console.log("durationText", durationText);
+  patientsStore.forceReloadHomePage();
 
   if (!_isDoneSuccessfully) {
     await sendErrorMessage(
@@ -89,7 +89,7 @@ const handleAfterSubmitDone = async ({
       durationText
     );
 
-    await closeCurrentPage(!_isDoneSuccessfully);
+    await closeCurrentPage(true);
     return;
   }
 
@@ -106,7 +106,7 @@ const handleAfterSubmitDone = async ({
     ),
   ]);
 
-  await closeCurrentPage(!_isDoneSuccessfully);
+  await closeCurrentPage(true);
 };
 
 export default handleAfterSubmitDone;

@@ -123,7 +123,7 @@ const processClientActionOnPatient = async ({
   console.log("took time before remaining", Date.now() - preparingStartTime);
 
   const remainingFromNow = referralEndTimestamp - Date.now();
-  let allowedToSubmit = generateRandomMs(2200, 4800);
+  let allowedToSubmit = generateRandomMs(2200, 3800);
 
   if (remainingFromNow < allowedToSubmit) {
     allowedToSubmit = remainingFromNow > 600 ? remainingFromNow - 600 : 300;
@@ -209,6 +209,7 @@ const processClientActionOnPatient = async ({
     await handleAfterSubmitDone({
       page,
       startTime,
+      leftTime,
       continueFetchingPatientsIfPaused,
       patientsStore,
       sendErrorMessage,
