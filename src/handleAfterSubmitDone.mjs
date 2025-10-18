@@ -80,6 +80,8 @@ const handleAfterSubmitDone = async ({
   console.log("durationText", durationText);
   patientsStore.forceReloadHomePage();
 
+  await sleep(5000 + Math.random() * 2000);
+
   if (!_isDoneSuccessfully) {
     await sendErrorMessage(
       isAutoAccept
