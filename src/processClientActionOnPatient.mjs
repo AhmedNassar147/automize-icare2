@@ -16,6 +16,7 @@ import getSubmissionButtonsIfFound from "./getSubmissionButtonsIfFound.mjs";
 import handleAfterSubmitDone from "./handleAfterSubmitDone.mjs";
 import createDetailsPageWhatsappHandlers from "./createDetailsPageWhatsappHandlers.mjs";
 import rewriteReferralDetails from "./rewriteReferralDetails.mjs";
+import generateRandomMs from "./generateRandomMs.mjs";
 // import speakText from "./speakText.mjs";
 import {
   USER_ACTION_TYPES,
@@ -38,7 +39,8 @@ const processClientActionOnPatient = async ({
 
   // const CLIENT_NAME = process.env.CLIENT_NAME;
 
-  const { referralId, patientName, referralEndTimestamp } = patient;
+  const { referralId, patientName, referralEndTimestamp, cutoffTimeMs } =
+    patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
 
@@ -118,8 +120,10 @@ const processClientActionOnPatient = async ({
 
   await rewriteReferralDetails(page);
 
+  console.log("took time before remaining", Date.now() - preparingStartTime);
+
   const remainingFromNow = referralEndTimestamp - Date.now();
-  let allowedToSubmit = 2500;
+  let allowedToSubmit = generateRandomMs(2200, 4800);
 
   if (remainingFromNow < allowedToSubmit) {
     allowedToSubmit = remainingFromNow > 600 ? remainingFromNow - 600 : 300;
@@ -127,13 +131,20 @@ const processClientActionOnPatient = async ({
 
   const remaining = remainingFromNow - allowedToSubmit;
 
+  console.log({
+    remaining,
+    allowedToSubmit,
+    cutoffTimeMs,
+  });
+
   if (remaining > 0) {
-    console.log({
-      remaining,
-      allowedToSubmit,
-    });
     await sleep(remaining);
   }
+
+  console.log(
+    "took time to before visit",
+    buildDurationText(preparingStartTime, Date.now())
+  );
 
   const startTime = Date.now();
 
@@ -186,13 +197,13 @@ const processClientActionOnPatient = async ({
       });
     });
     console.timeEnd("super_acceptance_time");
-    // 🕒 *Took*: `0.64 seconds`
-    // console.log(
-    //   "took time to scroll from startTime",
-    //   buildDurationText(startTime, Date.now())
-    // );
 
-    // console.log("took time to Left", referralEndTimestamp - Date.now()); // 47
+    const leftTime = referralEndTimestamp - Date.now();
+    console.log("took time to Left", leftTime);
+
+    if (leftTime > 0) {
+      await sleep(leftTime);
+    }
 
     // console.log(
     //   "took time to full scroll preparingStartTime",
