@@ -10,46 +10,38 @@ import sleep from "./sleep.mjs";
 
 const waitForPath = async (
   page,
-  targetPath = "dashboard/referral",
-  timeout = 3 * 60 * 1000
+  targetPath = "/dashboard/referral",
+  timeout = 4 * 60 * 1000
 ) => {
-  const prevHref = await page.evaluate(() => location.href);
   const normalize = (s) => s.replace(/\/+$/, "").toLowerCase();
   const wanted = normalize(targetPath);
 
-  // First signal that *something* happened
-  const first = await Promise.race([
-    page
-      .waitForNavigation({ waitUntil: "domcontentloaded", timeout })
-      .then(() => true)
-      .catch(() => false),
-    page
-      .waitForFunction(
-        (prev, wantedPath) => {
-          const href = location.href;
-          if (href === prev) return false; // ensure it changed
-          const path = new URL(href).pathname.replace(/\/+$/, "").toLowerCase();
-          return path.endsWith(wantedPath);
-        },
-        { timeout },
-        prevHref,
-        wanted
-      )
-      .then(() => true)
-      .catch(() => false),
-  ]);
+  const hardP = page
+    .waitForNavigation({ waitUntil: "domcontentloaded", timeout })
+    .then(() => true)
+    .catch(() => false);
 
-  if (!first) return false; // both timed out or first to settle was a timeout
+  const spaP = page
+    .waitForFunction(
+      (wantedPath) => {
+        const path = new URL(location.href).pathname
+          .replace(/\/+$/, "")
+          .toLowerCase();
+        return path.endsWith(wantedPath);
+      },
+      { timeout },
+      wanted
+    )
+    .then(() => true)
+    .catch(() => false);
 
-  // Final verification of the actual URL/path (important!)
-  const ok = await page.evaluate((wantedPath) => {
-    const path = new URL(location.href).pathname
-      .replace(/\/+$/, "")
-      .toLowerCase();
-    return path.endsWith(wantedPath);
+  const first = await Promise.race([hardP, spaP]);
+  if (!first) return false;
+
+  return page.evaluate((wantedPath) => {
+    const p = new URL(location.href).pathname.replace(/\/+$/, "").toLowerCase();
+    return p.endsWith(wantedPath);
   }, wanted);
-
-  return !!ok;
 };
 
 const handleAfterSubmitDone = async ({
