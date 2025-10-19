@@ -49,9 +49,9 @@ const globMedBodyData = {
 const categoryReferences = ["admitted", "discharged"];
 
 const processCollectReferralSummary = async (
-  firstSummaryReportStartsAt,
   browser,
-  sendWhatsappMessage
+  sendWhatsappMessage,
+  firstSummaryReportStartsAt
 ) => {
   const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
@@ -64,6 +64,12 @@ const processCollectReferralSummary = async (
     return;
   }
 
+  const date = new Date();
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const endDate = `${yyyy}-${mm}-${dd}`;
+
   const tabsResults = await page.evaluate(
     async ({
       baseGlobMedAPiUrl,
@@ -71,6 +77,7 @@ const processCollectReferralSummary = async (
       categoryReferences,
       globMedBodyData,
       firstSummaryReportStartsAt,
+      endDate,
     }) => {
       const responses = await Promise.allSettled(
         categoryReferences.map(async (categoryReference) => {
@@ -82,6 +89,7 @@ const processCollectReferralSummary = async (
                 ...globMedBodyData,
                 categoryReference,
                 startDate: firstSummaryReportStartsAt || undefined,
+                endDate: firstSummaryReportStartsAt ? endDate : undefined,
               }),
             });
 
@@ -117,18 +125,20 @@ const processCollectReferralSummary = async (
       return responses.reduce(
         (acc, result) => {
           const { categoryReference, data, error } = result.value || {};
-          if (error || !data?.length) {
+          if (error) {
             acc.errors.push(
               `❌ ${categoryReference} request error: ${error || "NOT DATA"}`
             );
           } else {
-            acc.patients.push(
-              ...data.map((patient) => ({
-                ...patient,
-                tabName: categoryReference,
-                paid: 0,
-              }))
-            );
+            if (data?.length) {
+              acc.patients.push(
+                ...data.map((patient) => ({
+                  ...patient,
+                  tabName: categoryReference,
+                  paid: 0,
+                }))
+              );
+            }
           }
 
           return acc;
@@ -145,6 +155,7 @@ const processCollectReferralSummary = async (
       baseGlobMedAPiUrl,
       globMedBodyData,
       firstSummaryReportStartsAt,
+      endDate,
     }
   );
 
