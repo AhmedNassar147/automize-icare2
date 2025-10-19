@@ -122,7 +122,7 @@ const processClientActionOnPatient = async ({
 
   console.log("took time before remaining", Date.now() - preparingStartTime);
 
-  const allowedToSubmit = generateRandomMs(2700, 3800);
+  const allowedToSubmit = generateRandomMs(3800, 4400);
 
   const remaining = referralEndTimestamp - Date.now() - allowedToSubmit;
 
