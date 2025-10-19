@@ -122,14 +122,9 @@ const processClientActionOnPatient = async ({
 
   console.log("took time before remaining", Date.now() - preparingStartTime);
 
-  const remainingFromNow = referralEndTimestamp - Date.now();
-  let allowedToSubmit = generateRandomMs(2200, 3800);
+  const allowedToSubmit = generateRandomMs(2700, 3800);
 
-  if (remainingFromNow < allowedToSubmit) {
-    allowedToSubmit = remainingFromNow > 600 ? remainingFromNow - 600 : 300;
-  }
-
-  const remaining = remainingFromNow - allowedToSubmit;
+  const remaining = referralEndTimestamp - Date.now() - allowedToSubmit;
 
   console.log({
     remaining,
@@ -140,11 +135,6 @@ const processClientActionOnPatient = async ({
   if (remaining > 0) {
     await sleep(remaining);
   }
-
-  console.log(
-    "took time to before visit",
-    buildDurationText(preparingStartTime, Date.now())
-  );
 
   const startTime = Date.now();
 
@@ -200,11 +190,6 @@ const processClientActionOnPatient = async ({
 
     const leftTime = referralEndTimestamp - Date.now();
     console.log("took time to Left", leftTime);
-
-    // console.log(
-    //   "took time to full scroll preparingStartTime",
-    //   buildDurationText(preparingStartTime, Date.now())
-    // ); 🕒 *Took*: `8.94 seconds`
 
     await handleAfterSubmitDone({
       page,
