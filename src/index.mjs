@@ -195,9 +195,9 @@ import {
         );
         try {
           await processCollectReferralSummary(
-            FIRST_SUMMARY_REPORT_STARTS_AT,
             browser,
-            sendWhatsappMessage
+            sendWhatsappMessage,
+            FIRST_SUMMARY_REPORT_STARTS_AT
           );
           console.log("[CRON] Referral summary job completed successfully.");
         } catch (err) {
