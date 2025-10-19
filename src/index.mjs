@@ -83,6 +83,15 @@ import {
 // "--disable-prompt-on-repost",
 
 (async () => {
+  const {
+    CHROME_EXECUTABLE_PATH,
+    USER_PROFILE_PATH,
+    CLIENT_WHATSAPP_NUMBER,
+    SUMMARY_REPORT_GENERATED_AT,
+    EXECLUDE_WHATSAPP_MSG_FOOTER,
+    FIRST_SUMMARY_REPORT_STARTS_AT,
+  } = process.env;
+
   try {
     await Promise.all([
       generateFolderIfNotExisting(screenshotsFolderDirectory),
@@ -96,8 +105,8 @@ import {
     const browser = await puppeteer.launch({
       headless: false,
       defaultViewport: null,
-      executablePath: process.env.CHROME_EXECUTABLE_PATH,
-      userDataDir: process.env.USER_PROFILE_PATH,
+      executablePath: CHROME_EXECUTABLE_PATH,
+      userDataDir: USER_PROFILE_PATH,
       protocolTimeout: 120000,
       ignoreDefaultArgs: ["--enable-automation"],
       args: [
@@ -164,7 +173,7 @@ import {
     );
     await patientsStore.scheduleAllInitialPatients();
 
-    await initializeClient(process.env.CLIENT_WHATSAPP_NUMBER, patientsStore);
+    await initializeClient(CLIENT_WHATSAPP_NUMBER, patientsStore);
 
     const sendWhatsappMessage = sendMessageUsingWhatsapp(patientsStore);
 
@@ -178,14 +187,18 @@ import {
 
     cron.schedule(
       // "59 23 * * 1",
-      process.env.SUMMARY_REPORT_GENERATED_AT,
+      SUMMARY_REPORT_GENERATED_AT,
       async () => {
         console.log(
           "[CRON] Starting referral summary job at",
           new Date().toISOString()
         );
         try {
-          await processCollectReferralSummary(browser, sendWhatsappMessage);
+          await processCollectReferralSummary(
+            FIRST_SUMMARY_REPORT_STARTS_AT,
+            browser,
+            sendWhatsappMessage
+          );
           console.log("[CRON] Referral summary job completed successfully.");
         } catch (err) {
           console.error("[CRON] Referral summary job failed:", err.message);
@@ -211,7 +224,7 @@ import {
       "patientsAdded",
       processSendCollectedPatientsToWhatsapp(
         sendWhatsappMessage,
-        process.env.EXECLUDE_WHATSAPP_MSG_FOOTER === "Y"
+        EXECLUDE_WHATSAPP_MSG_FOOTER === "Y"
       )
     );
 

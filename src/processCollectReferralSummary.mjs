@@ -48,7 +48,11 @@ const globMedBodyData = {
 
 const categoryReferences = ["admitted", "discharged"];
 
-const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
+const processCollectReferralSummary = async (
+  firstSummaryReportStartsAt,
+  browser,
+  sendWhatsappMessage
+) => {
   const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
     sendWhatsappMessage,
@@ -66,6 +70,7 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
       globMedHeaders,
       categoryReferences,
       globMedBodyData,
+      firstSummaryReportStartsAt,
     }) => {
       const responses = await Promise.allSettled(
         categoryReferences.map(async (categoryReference) => {
@@ -76,6 +81,7 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
               body: JSON.stringify({
                 ...globMedBodyData,
                 categoryReference,
+                startDate: firstSummaryReportStartsAt || undefined,
               }),
             });
 
@@ -138,6 +144,7 @@ const processCollectReferralSummary = async (browser, sendWhatsappMessage) => {
       globMedHeaders,
       baseGlobMedAPiUrl,
       globMedBodyData,
+      firstSummaryReportStartsAt,
     }
   );
 
