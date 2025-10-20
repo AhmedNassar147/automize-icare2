@@ -6,7 +6,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import puppeteer from "puppeteer";
+// import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
 // import pkg from "ghost-cursor";
 import cron from "node-cron";
 // import twilio from "twilio";
@@ -37,10 +39,19 @@ import {
   TABS_COLLECTION_TYPES,
 } from "./constants.mjs";
 
-// import sleep from "./sleep.mjs";
-// import fuckThem from "./fuckThem.mjs";
+puppeteer.use(StealthPlugin());
 
-// const { createCursor, installMouseHelper } = pkg;
+const profiles = [
+  "Profile 4",
+  "Profile 5",
+  "Profile 6",
+  "Profile 7",
+  "Profile 8",
+  "Profile 9",
+];
+
+// Rotate randomly
+const currentProfile = profiles[Math.floor(Math.random() * profiles.length)];
 
 // const twilioClient = twilio(
 //   process.env.TWILIO_ACCOUNT_SID,
@@ -48,7 +59,6 @@ import {
 // );
 
 // const numbers = await twilioClient.incomingPhoneNumbers.list();
-
 // console.log("numbers", numbers);
 
 // const createCall = async () => {
@@ -60,27 +70,6 @@ import {
 
 //   console.log("Call initiated:", call.sid);
 // };
-
-// puppeteer.use(StealthPlugin());
-
-// "--no-sandbox", // avoid sandbox restrictions (detectable, but sometimes needed)
-// "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
-// "--disable-setuid-sandbox", // avoid sandboxing
-// "--disable-dev-shm-usage", // use /tmp instead of /dev/shm
-// "--disable-blink-features=AutomationControlled", // remove automation-controlled flag
-// "--disable-popup-blocking", // allows popups (some CAPTCHAs rely on this)
-// "--start-maximized", // mimics real user screen
-// "--enable-features=UserAgentClientHint",
-// "--no-zygote", // disables forking process (less traceable)
-// "--enable-webgl",
-
-// "--disable-accelerated-2d-canvas", // Stabilizes canvas fingerprint
-// "--disable-background-timer-throttling", // Accurate JS timers (bot checks use this)
-// "--disable-renderer-backgrounding", // Avoid throttling of background tabs
-// "--disable-backgrounding-occluded-windows", // Same as above
-// "--restore-last-session=false",
-// "--renderer-process-limit=1",
-// "--disable-prompt-on-repost",
 
 (async () => {
   const {
@@ -102,11 +91,15 @@ import {
       generateFolderIfNotExisting(generatedSummaryFolderPath),
     ]);
 
+    const profilePath = `${USER_PROFILE_PATH}/${currentProfile}`;
+
+    console.log("Using profile", profilePath);
+
     const browser = await puppeteer.launch({
       headless: false,
       defaultViewport: null,
       executablePath: CHROME_EXECUTABLE_PATH,
-      userDataDir: USER_PROFILE_PATH,
+      userDataDir: profilePath,
       protocolTimeout: 120000,
       ignoreDefaultArgs: ["--enable-automation"],
       args: [
@@ -129,6 +122,16 @@ import {
         "--disable-background-timer-throttling",
         "--disable-renderer-backgrounding",
         "--disable-backgrounding-occluded-windows",
+
+        // Enhanced stealth args
+        "--disable-features=TranslateUI",
+        "--disable-ipc-flooding-protection",
+        "--no-zygote",
+        "--disable-site-isolation-trials",
+        "--disable-back-forward-cache",
+        "--disable-component-extensions-with-background-pages",
+        "--disable-prerender-local-predictor",
+        "--disable-translate",
       ],
     });
 
