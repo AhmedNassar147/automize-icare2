@@ -161,7 +161,7 @@ const waitForWaitingCountWithInterval = async ({
       );
 
       if (!count) {
-        await pausableSleep(10_000 + Math.random() * 1000);
+        await pausableSleep(10_000 + Math.random() * 3_000);
         const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(
           page,
           `${noCountText}, `
