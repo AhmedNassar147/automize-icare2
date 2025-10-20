@@ -94,7 +94,7 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
     const rowsLength = rows?.length ?? 0;
 
     if (!rowsLength) {
-      await sleep(4_000);
+      await sleep(4_000 + Math.random() * 3_000);
       console.log("⏳ No patients found, exiting...");
       return;
     }
@@ -118,7 +118,7 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
 
       if (patientsStore.has(referralId)) {
         console.log(`⚠️ Patient referralId=${referralId} already collected...`);
-        await sleep(3_000);
+        await sleep(3_000 + Math.random() * 2_000);
         continue;
       }
 
@@ -170,7 +170,7 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
     }
 
     console.log("✅ Finished processing all rows.");
-    await sleep(3_000 + Math.random() * 4_000);
+    await sleep(4_000 + Math.random() * 4_000);
   } catch (err) {
     console.error("🛑 Fatal error during collecting patients:", err.message);
   }
