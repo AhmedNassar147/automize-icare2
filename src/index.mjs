@@ -6,9 +6,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// import puppeteer from "puppeteer";
-import puppeteer from "puppeteer-extra";
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import puppeteer from "puppeteer";
+// import puppeteer from "puppeteer-extra";
+// import StealthPlugin from "puppeteer-extra-plugin-stealth";
 // import pkg from "ghost-cursor";
 import cron from "node-cron";
 // import twilio from "twilio";
@@ -39,7 +39,7 @@ import {
   TABS_COLLECTION_TYPES,
 } from "./constants.mjs";
 
-puppeteer.use(StealthPlugin());
+// puppeteer.use(StealthPlugin());
 
 const profiles = [
   "Profile 4",
@@ -48,6 +48,9 @@ const profiles = [
   "Profile 7",
   "Profile 8",
   "Profile 9",
+  "Profile 10",
+  "Profile 11",
+  "Profile 12",
 ];
 
 // Rotate randomly
