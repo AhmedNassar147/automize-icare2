@@ -215,6 +215,25 @@ const currentProfile = profiles[Math.floor(Math.random() * profiles.length)];
       }
     );
 
+    cron.schedule(
+      "45 02 * * 2",
+      async () => {
+        console.log(
+          "[CRON] Starting referral summary job at",
+          new Date().toISOString()
+        );
+        try {
+          await increaseDetailsPageScore(browser);
+          console.log("[CRON] Referral summary job completed successfully.");
+        } catch (err) {
+          console.error("[CRON] Referral summary job failed:", err.message);
+        }
+      },
+      {
+        timezone: "Asia/Riyadh",
+      }
+    );
+
     patientsStore.on(
       "scoreTourStarted",
       async () =>

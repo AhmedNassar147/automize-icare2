@@ -9,6 +9,7 @@ import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItI
 import helpIncreaseDetailsPageRecaptchaScore from "./helpIncreaseDetailsPageRecaptchaScore.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import shuffle from "./shuffle.mjs";
+import waitForPath from "./waitForPath.mjs";
 import {
   HOME_PAGE_URL,
   PATIENT_SECTIONS_STATUS,
@@ -41,18 +42,22 @@ const increaseDetailsPageScore = async (browser) => {
   const iconButton = await firstRow.$("td.iconCell button");
   await iconButton.click();
 
-  console.time("super_acceptance_time");
-  await helpIncreaseDetailsPageRecaptchaScore({
-    page,
-    cursor,
-    actionName: Math.random() < 0.5 ? "Rejection" : "Acceptance",
-    isUploadFormOn: false,
-  });
-  console.timeEnd("super_acceptance_time");
+  const startTime = Date.now();
+  const _isDoneSuccessfully = await waitForPath(page);
 
-  await sleep(200 + Math.random() * 100);
+  console.log("TIME", Date.now() - startTime);
+
+  // console.time("super_acceptance_time");
+  // await helpIncreaseDetailsPageRecaptchaScore({
+  //   page,
+  //   cursor,
+  //   actionName: Math.random() < 0.5 ? "Rejection" : "Acceptance",
+  //   isUploadFormOn: false,
+  // });
+  // console.timeEnd("super_acceptance_time");
+
+  await sleep(15 * 60 * 1000);
   await goToHomePage(page);
-  await sleep(150 + Math.random() * 100);
   await closePageSafely(page);
 };
 
@@ -64,19 +69,19 @@ export default async (
 ) => {
   pauseFetchingPatients();
   let range = 4;
+  await increaseDetailsPageScore(browser);
 
-  while (range > 0) {
-    try {
-      await increaseDetailsPageScore(browser);
-      await sleep(7000 + Math.random() * 6000);
-    } catch (error) {
-      console.log("Error in increaseDetailsPageScore:", error);
-      break;
-    } finally {
-      range -= 1;
-    }
-  }
+  // while (range > 0) {
+  //   try {
+  //     await sleep(7000 + Math.random() * 6000);
+  //   } catch (error) {
+  //     console.log("Error in increaseDetailsPageScore:", error);
+  //     break;
+  //   } finally {
+  //     range -= 1;
+  //   }
+  // }
 
-  continueFetchingPatientsIfPaused();
-  onDone();
+  // continueFetchingPatientsIfPaused();
+  // onDone();
 };
