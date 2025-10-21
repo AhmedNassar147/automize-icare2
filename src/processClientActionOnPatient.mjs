@@ -52,6 +52,11 @@ function scheduleThresholdNudge(
   const delay = Math.max(0, remaining - thresholdMs);
   const jitter = (Math.random() * 2 - 1) * jitterMs;
   const whenMS = Math.max(0, delay + jitter);
+  console.log({
+    delay,
+    jitter,
+    whenMS,
+  });
   const timer = setTimeout(run, whenMS);
 
   const abortHandler = () => {
@@ -163,8 +168,8 @@ const processClientActionOnPatient = async ({
 
   const abort = new AbortController();
   const cancelNudge = scheduleThresholdNudge(referralEndTimestamp, {
-    thresholdMs: 200,
-    jitterMs: 100,
+    thresholdMs: 350,
+    jitterMs: 80,
     signal: abort.signal,
     onNudge: (timeLeftMs) => {
       speakText({
