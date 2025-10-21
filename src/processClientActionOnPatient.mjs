@@ -51,11 +51,13 @@ function scheduleThresholdNudge(
 
   const delay = Math.max(0, remaining - thresholdMs);
   const jitter = (Math.random() * 2 - 1) * jitterMs;
-  const timer = setTimeout(run, Math.max(0, delay + jitter));
+  const whenMS = Math.max(0, delay + jitter);
+  const timer = setTimeout(run, whenMS);
 
   const abortHandler = () => {
     clearTimeout(timer);
   };
+
   if (signal) signal.addEventListener("abort", abortHandler, { once: true });
 
   return () => {
@@ -157,26 +159,35 @@ const processClientActionOnPatient = async ({
 
   await rewriteReferralDetails(page);
 
-  // console.log("took time before remaining", Date.now() - preparingStartTime);
-
-  // const allowedToSubmit = generateRandomMs(3800, 4400);
-
-  // const remaining = referralEndTimestamp - Date.now() - allowedToSubmit;
-
-  // console.log({
-  //   remaining,
-  //   allowedToSubmit,
-  //   cutoffTimeMs,
-  // });
-
-  // if (remaining > 0) {
-  //   await sleep(remaining);
-  // }
-
   const startTime = Date.now();
 
+  const abort = new AbortController();
+  const cancelNudge = scheduleThresholdNudge(referralEndTimestamp, {
+    thresholdMs: 200,
+    jitterMs: 100,
+    signal: abort.signal,
+    onNudge: (timeLeftMs) => {
+      speakText({
+        text: "Go Go Go Go",
+        useMaleVoice: true,
+        delayMs: 0,
+        rate: 3,
+        volume: 100,
+        times: 1,
+      });
+
+      console.log(
+        "nudge @",
+        new Date(),
+        "for",
+        new Date(referralEndTimestamp - 200),
+        "left",
+        timeLeftMs
+      );
+    },
+  });
+
   try {
-    // console.time("super_acceptance_time");
     await iconButton.click();
 
     let referralButtons;
@@ -210,23 +221,6 @@ const processClientActionOnPatient = async ({
       }
     }
 
-    const abort = new AbortController();
-    scheduleThresholdNudge(referralEndTimestamp, {
-      thresholdMs: 400,
-      jitterMs: 100,
-      onNudge: () => {
-        speakText({
-          text: "Go Go Go Go",
-          useMaleVoice: true,
-          delayMs: 0,
-          rate: 3,
-          volume: 100,
-          times: 1,
-        });
-      },
-      signal: abort.signal,
-    });
-
     await handleAfterSubmitDone({
       page,
       startTime,
@@ -241,7 +235,6 @@ const processClientActionOnPatient = async ({
       rejectionFilePath,
       referralId,
     });
-    console.log("ENDS", Date.now() - startTime);
   } catch (error) {
     try {
       const html = await page.content();
@@ -260,11 +253,28 @@ const processClientActionOnPatient = async ({
     );
     await closeCurrentPage(false);
   } finally {
+    cancelNudge?.();
     continueFetchingPatientsIfPaused();
   }
 };
 
 export default processClientActionOnPatient;
+
+// console.log("took time before remaining", Date.now() - preparingStartTime);
+
+// const allowedToSubmit = generateRandomMs(3800, 4400);
+
+// const remaining = referralEndTimestamp - Date.now() - allowedToSubmit;
+
+// console.log({
+//   remaining,
+//   allowedToSubmit,
+//   cutoffTimeMs,
+// });
+
+// if (remaining > 0) {
+//   await sleep(remaining);
+// }
 
 // const remaining = referralEndTimestamp - Date.now() - 400;
 

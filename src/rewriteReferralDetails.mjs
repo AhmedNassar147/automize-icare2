@@ -1,4 +1,12 @@
+/*
+ *
+ * Helper: `rewriteReferralDetails`.
+ *
+ */
 import zlib from "zlib";
+
+const RECAPTCHA_RE =
+  /(^https?:\/\/(?:www\.)?google\.com\/recaptcha\/)|(^https?:\/\/www\.gstatic\.com\/recaptcha\/)/i;
 
 const rewriteReferralDetails = async (page) => {
   const client = await (page.createCDPSession?.() ||
@@ -6,7 +14,6 @@ const rewriteReferralDetails = async (page) => {
 
   await client.send("Network.enable");
   await client.send("Network.setCacheDisabled", { cacheDisabled: true });
-
   await client.send("Fetch.enable", {
     patterns: [
       {
@@ -18,9 +25,24 @@ const rewriteReferralDetails = async (page) => {
   });
 
   const onPaused = async (e) => {
-    const { requestId, request, responseStatusCode, responseHeaders } = e;
+    const {
+      requestId,
+      request,
+      responseStatusCode = 0,
+      responseHeaders = [],
+    } = e;
 
-    if ((request.method || "").toUpperCase() !== "POST") {
+    // Never touch reCAPTCHA or non-POSTs
+    if (
+      RECAPTCHA_RE.test(request.url) ||
+      (request.method || "").toUpperCase() !== "POST"
+    ) {
+      await client.send("Fetch.continueRequest", { requestId }).catch(() => {});
+      return;
+    }
+
+    // Only rewrite successful JSON responses
+    if (responseStatusCode < 200 || responseStatusCode >= 300) {
       await client.send("Fetch.continueRequest", { requestId }).catch(() => {});
       return;
     }
@@ -28,29 +50,35 @@ const rewriteReferralDetails = async (page) => {
     const bodyInfo = await client
       .send("Fetch.getResponseBody", { requestId })
       .catch(() => null);
-    if (!bodyInfo) {
+    if (!bodyInfo || !bodyInfo.body) {
       await client.send("Fetch.continueRequest", { requestId }).catch(() => {});
       return;
     }
 
-    let buf = bodyInfo.base64Encoded
-      ? Buffer.from(bodyInfo.body, "base64")
-      : Buffer.from(bodyInfo.body || "", "utf8");
-
+    // Decode body
     const hdr = new Map(
-      (responseHeaders || []).map((h) => [
-        (h.name || "").toLowerCase(),
-        h.value ?? "",
-      ])
+      responseHeaders.map((h) => [(h.name || "").toLowerCase(), h.value ?? ""])
     );
     const enc = (hdr.get("content-encoding") || "").toLowerCase();
+    const ctype = (hdr.get("content-type") || "").toLowerCase();
 
+    let buf = bodyInfo.base64Encoded
+      ? Buffer.from(bodyInfo.body, "base64")
+      : Buffer.from(bodyInfo.body, "utf8");
     try {
-      if (enc.includes("gzip")) buf = zlib.gunzipSync(buf);
-      else if (enc.includes("deflate")) buf = zlib.inflateSync(buf);
-      else if (enc.includes("br") && zlib.brotliDecompressSync)
+      if (enc.includes("br") && zlib.brotliDecompressSync)
         buf = zlib.brotliDecompressSync(buf);
-    } catch {}
+      else if (enc.includes("gzip")) buf = zlib.gunzipSync(buf);
+      else if (enc.includes("deflate")) buf = zlib.inflateSync(buf);
+    } catch {
+      await client.send("Fetch.continueRequest", { requestId }).catch(() => {});
+      return;
+    }
+
+    if (!ctype.includes("application/json")) {
+      await client.send("Fetch.continueRequest", { requestId }).catch(() => {});
+      return;
+    }
 
     let json;
     try {
@@ -60,18 +88,22 @@ const rewriteReferralDetails = async (page) => {
       return;
     }
 
-    // Your mutation
+    // ---- Your mutation ----
     if (json?.data) {
       json.data.status = "P";
       json.data.canUpdate = true;
       json.data.canTakeAction = true;
     }
+    // -----------------------
 
-    const out = JSON.stringify(json);
+    const out = Buffer.from(JSON.stringify(json), "utf8").toString("base64");
 
+    // Normalize headers
     hdr.delete("content-encoding");
     hdr.set("content-type", "application/json; charset=utf-8");
-    hdr.set("content-length", Buffer.byteLength(out, "utf8").toString());
+    hdr.delete("etag");
+    hdr.delete("last-modified");
+    // omit content-length; Chrome will set it based on body
 
     const responseHeadersOut = Array.from(hdr, ([name, value]) => ({
       name,
@@ -83,7 +115,7 @@ const rewriteReferralDetails = async (page) => {
         requestId,
         responseCode: responseStatusCode || 200,
         responseHeaders: responseHeadersOut,
-        body: Buffer.from(out, "utf8").toString("base64"),
+        body: out,
       })
       .catch(async () => {
         await client
@@ -107,7 +139,9 @@ const rewriteReferralDetails = async (page) => {
     client.off("Fetch.requestPaused", onPaused);
   };
 
+  // Clean up on close *and* when the session detaches
   page.once("close", disposerHandler);
+  client.once("Detached", disposerHandler);
 
   return disposerHandler;
 };
