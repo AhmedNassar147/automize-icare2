@@ -45,6 +45,15 @@ const makeUserLoggedInOrOpenHomePage = async ({
   const password = process.env.CLIENT_PASSWORD;
 
   let page = currentPage || (await browser.newPage());
+
+  if (!currentPage && page) {
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, "webdriver", {
+        get: () => false,
+      });
+    });
+  }
+
   let cursor;
 
   if (!noCursor) {

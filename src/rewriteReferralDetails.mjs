@@ -13,7 +13,7 @@ const rewriteReferralDetails = async (page) => {
     page.target().createCDPSession());
 
   await client.send("Network.enable");
-  await client.send("Network.setCacheDisabled", { cacheDisabled: true });
+  // await client.send("Network.setCacheDisabled", { cacheDisabled: true });
   await client.send("Fetch.enable", {
     patterns: [
       {
@@ -130,9 +130,9 @@ const rewriteReferralDetails = async (page) => {
     try {
       await client.send("Fetch.disable");
     } catch {}
-    try {
-      await client.send("Network.setCacheDisabled", { cacheDisabled: false });
-    } catch {}
+    // try {
+    //   await client.send("Network.setCacheDisabled", { cacheDisabled: false });
+    // } catch {}
     try {
       await client.send("Network.disable");
     } catch {}
@@ -141,7 +141,7 @@ const rewriteReferralDetails = async (page) => {
 
   // Clean up on close *and* when the session detaches
   page.once("close", disposerHandler);
-  client.once("Detached", disposerHandler);
+  // client.once("Detached", disposerHandler);
 
   return disposerHandler;
 };

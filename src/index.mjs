@@ -107,34 +107,33 @@ const currentProfile = profiles[Math.floor(Math.random() * profiles.length)];
       ignoreDefaultArgs: ["--enable-automation"],
       args: [
         "--start-maximized", // Open full screen like real users
-        "--disable-blink-features=AutomationControlled", // Prevent `navigator.webdriver = true`
-        "--disable-infobars", // Hides “Chrome is being controlled”
-        "--disable-extensions", // Prevents loading suspicious default extensions
-        "--disable-default-apps", // Avoids noise from Chrome's default apps
-        "--no-first-run", // Skips Chrome welcome screen
-        // "--no-service-autorun", // Prevents autorun background tasks
-        "--disable-dev-shm-usage", // Stability; safe even if not needed
-        "--disable-sync",
-        "--no-default-browser-check",
-        "--font-cache-shared", // More consistent font rendering (Windows only)
-        "--enable-gpu",
-        "--use-gl=desktop",
-        "--enable-webgl", // WebGL is often checked
-        "--enable-webgl2",
-        "--lang=en-US,en",
-        "--disable-background-timer-throttling",
-        "--disable-renderer-backgrounding",
-        "--disable-backgrounding-occluded-windows",
+        // "--disable-blink-features=AutomationControlled", // Prevent `navigator.webdriver = true`
+        // "--disable-extensions", // Prevents loading suspicious default extensions
+        // "--disable-dev-shm-usage", // Stability; safe even if not needed
+        // "--enable-gpu",
+        // "--use-gl=desktop",
+        // "--enable-webgl", // WebGL is often checked
+        // "--enable-webgl2",
 
         // Enhanced stealth args
-        "--disable-features=TranslateUI",
-        "--disable-ipc-flooding-protection",
-        "--no-zygote",
-        "--disable-site-isolation-trials",
-        "--disable-back-forward-cache",
-        "--disable-component-extensions-with-background-pages",
-        "--disable-prerender-local-predictor",
-        "--disable-translate",
+        // "--lang=en-US,en",
+        // "--disable-background-timer-throttling",
+        // "--disable-renderer-backgrounding",
+        // "--disable-backgrounding-occluded-windows",
+        // "--no-default-browser-check",
+        // "--disable-infobars", // Hides “Chrome is being controlled”
+        // "--no-first-run", // Skips Chrome welcome screen
+        // "--disable-default-apps", // Avoids noise from Chrome's default apps
+        // "--font-cache-shared", // More consistent font rendering (Windows only)
+        // "--disable-sync",
+        // "--disable-features=TranslateUI",
+        // "--disable-ipc-flooding-protection",
+        // "--no-zygote",
+        // "--disable-site-isolation-trials",
+        // "--disable-back-forward-cache",
+        // "--disable-component-extensions-with-background-pages",
+        // "--disable-prerender-local-predictor",
+        // "--disable-translate",
       ],
     });
 
