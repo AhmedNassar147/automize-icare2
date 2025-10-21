@@ -213,7 +213,7 @@ const processClientActionOnPatient = async ({
     const abort = new AbortController();
     scheduleThresholdNudge(referralEndTimestamp, {
       thresholdMs: 400,
-      jitterMs: 80,
+      jitterMs: 100,
       onNudge: () => {
         speakText({
           text: "Go Go Go Go",
