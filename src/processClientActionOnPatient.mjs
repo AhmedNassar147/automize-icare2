@@ -289,11 +289,11 @@ export default processClientActionOnPatient;
 // const leftTime = referralEndTimestamp - Date.now();
 // console.log("took time to Left", leftTime);
 
-const remaining = referralEndTimestamp - Date.now();
+// const remaining = referralEndTimestamp - Date.now();
 
-while (remaining > 400) {
-  sleep(remaining - 400);
-}
+// while (remaining > 400) {
+//   sleep(remaining - 400);
+// }
 
 // https://referralprogram.globemedsaudi.com/referrals/listing
 // {"pageSize":100,"pageNumber":1,"categoryReference":"pending","providerZone":[],"providerName":[],"specialtyCode":[],"referralTypeCode":[],"referralReasonCode":[],"genericSearch":"","sortOrder":"asc"}
