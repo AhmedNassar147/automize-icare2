@@ -216,7 +216,7 @@ const processClientActionOnPatient = async ({
       jitterMs: 80,
       onNudge: () => {
         speakText({
-          text: "Go Go Go",
+          text: "Go Go Go Go",
           useMaleVoice: true,
           delayMs: 0,
           rate: 3,
