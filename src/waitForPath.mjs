@@ -6,7 +6,7 @@
 const waitForPath = async (
   page,
   targetPath = "/dashboard/referral",
-  timeout = 15 * 60 * 1000
+  timeout = 5 * 60 * 1000
 ) => {
   const normalize = (s) => s.replace(/\/+$/, "").toLowerCase();
   const wanted = normalize(targetPath);

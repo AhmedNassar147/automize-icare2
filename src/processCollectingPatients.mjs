@@ -145,7 +145,7 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
       }
 
       // const cutoffTimeMs = generateRandomInt(10000, 15000);
-      const cutoffTimeMs = 12_000;
+      const cutoffTimeMs = 24_000;
 
       const finalData = {
         referralId,

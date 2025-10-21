@@ -7,7 +7,7 @@ import { writeFile /* unlink,  readFile */ } from "fs/promises";
 import { join, resolve /* basename*/ } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import goToHomePage from "./goToHomePage.mjs";
-import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
+// import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
@@ -16,8 +16,8 @@ import getSubmissionButtonsIfFound from "./getSubmissionButtonsIfFound.mjs";
 import handleAfterSubmitDone from "./handleAfterSubmitDone.mjs";
 import createDetailsPageWhatsappHandlers from "./createDetailsPageWhatsappHandlers.mjs";
 import rewriteReferralDetails from "./rewriteReferralDetails.mjs";
-import generateRandomMs from "./generateRandomMs.mjs";
-// import speakText from "./speakText.mjs";
+// import generateRandomMs from "./generateRandomMs.mjs";
+import speakText from "./speakText.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
@@ -26,6 +26,43 @@ import {
   htmlFilesPath,
   dashboardLinkSelector,
 } from "./constants.mjs";
+
+function scheduleThresholdNudge(
+  referralEndTimestamp,
+  {
+    thresholdMs = 400,
+    jitterMs = 80, // ±80ms jitter to avoid exact timing patterns
+    onNudge = () => {},
+    signal,
+  } = {}
+) {
+  const now = Date.now();
+  const remaining = referralEndTimestamp - now;
+
+  const run = () => {
+    if (signal?.aborted) return;
+    onNudge(Math.max(0, referralEndTimestamp - Date.now()));
+  };
+
+  if (remaining <= thresholdMs) {
+    run();
+    return () => {};
+  }
+
+  const delay = Math.max(0, remaining - thresholdMs);
+  const jitter = (Math.random() * 2 - 1) * jitterMs;
+  const timer = setTimeout(run, Math.max(0, delay + jitter));
+
+  const abortHandler = () => {
+    clearTimeout(timer);
+  };
+  if (signal) signal.addEventListener("abort", abortHandler, { once: true });
+
+  return () => {
+    clearTimeout(timer);
+    if (signal) signal.removeEventListener("abort", abortHandler);
+  };
+}
 
 const processClientActionOnPatient = async ({
   browser,
@@ -120,26 +157,26 @@ const processClientActionOnPatient = async ({
 
   await rewriteReferralDetails(page);
 
-  console.log("took time before remaining", Date.now() - preparingStartTime);
+  // console.log("took time before remaining", Date.now() - preparingStartTime);
 
-  const allowedToSubmit = generateRandomMs(3800, 4400);
+  // const allowedToSubmit = generateRandomMs(3800, 4400);
 
-  const remaining = referralEndTimestamp - Date.now() - allowedToSubmit;
+  // const remaining = referralEndTimestamp - Date.now() - allowedToSubmit;
 
-  console.log({
-    remaining,
-    allowedToSubmit,
-    cutoffTimeMs,
-  });
+  // console.log({
+  //   remaining,
+  //   allowedToSubmit,
+  //   cutoffTimeMs,
+  // });
 
-  if (remaining > 0) {
-    await sleep(remaining);
-  }
+  // if (remaining > 0) {
+  //   await sleep(remaining);
+  // }
 
   const startTime = Date.now();
 
   try {
-    console.time("super_acceptance_time");
+    // console.time("super_acceptance_time");
     await iconButton.click();
 
     let referralButtons;
@@ -173,28 +210,27 @@ const processClientActionOnPatient = async ({
       }
     }
 
-    //  251.195ms
-    await selectAttachmentDropdownOption(page, actionName);
-    const fileInput = await page.$('#upload-single-file input[type="file"]');
-    await fileInput.uploadFile(filePath);
-
-    const selectedButton = referralButtons[isAcceptance ? 0 : 1];
-
-    await selectedButton.evaluate((el) => {
-      el.scrollIntoView({
-        behavior: "auto",
-        block: "center",
-      });
+    const abort = new AbortController();
+    scheduleThresholdNudge(referralEndTimestamp, {
+      thresholdMs: 400,
+      jitterMs: 80,
+      onNudge: () => {
+        speakText({
+          text: "Go Go Go",
+          useMaleVoice: true,
+          delayMs: 0,
+          rate: 3,
+          volume: 100,
+          times: 1,
+        });
+      },
+      signal: abort.signal,
     });
-    console.timeEnd("super_acceptance_time");
-
-    const leftTime = referralEndTimestamp - Date.now();
-    console.log("took time to Left", leftTime);
 
     await handleAfterSubmitDone({
       page,
       startTime,
-      leftTime,
+      // leftTime,
       continueFetchingPatientsIfPaused,
       patientsStore,
       sendErrorMessage,
@@ -205,6 +241,7 @@ const processClientActionOnPatient = async ({
       rejectionFilePath,
       referralId,
     });
+    console.log("ENDS", Date.now() - startTime);
   } catch (error) {
     try {
       const html = await page.content();
@@ -228,6 +265,35 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
+
+// const remaining = referralEndTimestamp - Date.now() - 400;
+
+// if (remaining) {
+// }
+
+//  251.195ms
+// await selectAttachmentDropdownOption(page, actionName);
+// const fileInput = await page.$('#upload-single-file input[type="file"]');
+// await fileInput.uploadFile(filePath);
+
+// const selectedButton = referralButtons[isAcceptance ? 0 : 1];
+
+// await selectedButton.evaluate((el) => {
+//   el.scrollIntoView({
+//     behavior: "auto",
+//     block: "center",
+//   });
+// });
+// console.timeEnd("super_acceptance_time");
+
+// const leftTime = referralEndTimestamp - Date.now();
+// console.log("took time to Left", leftTime);
+
+const remaining = referralEndTimestamp - Date.now();
+
+while (remaining > 400) {
+  sleep(remaining - 400);
+}
 
 // https://referralprogram.globemedsaudi.com/referrals/listing
 // {"pageSize":100,"pageNumber":1,"categoryReference":"pending","providerZone":[],"providerName":[],"specialtyCode":[],"referralTypeCode":[],"referralReasonCode":[],"genericSearch":"","sortOrder":"asc"}

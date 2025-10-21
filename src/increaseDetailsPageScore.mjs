@@ -9,7 +9,6 @@ import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItI
 import helpIncreaseDetailsPageRecaptchaScore from "./helpIncreaseDetailsPageRecaptchaScore.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import shuffle from "./shuffle.mjs";
-import waitForPath from "./waitForPath.mjs";
 import {
   HOME_PAGE_URL,
   PATIENT_SECTIONS_STATUS,
@@ -42,21 +41,16 @@ const increaseDetailsPageScore = async (browser) => {
   const iconButton = await firstRow.$("td.iconCell button");
   await iconButton.click();
 
-  const startTime = Date.now();
-  const _isDoneSuccessfully = await waitForPath(page);
+  console.time("super_acceptance_time");
+  await helpIncreaseDetailsPageRecaptchaScore({
+    page,
+    cursor,
+    actionName: Math.random() < 0.5 ? "Rejection" : "Acceptance",
+    isUploadFormOn: false,
+  });
+  console.timeEnd("super_acceptance_time");
 
-  console.log("TIME", Date.now() - startTime);
-
-  // console.time("super_acceptance_time");
-  // await helpIncreaseDetailsPageRecaptchaScore({
-  //   page,
-  //   cursor,
-  //   actionName: Math.random() < 0.5 ? "Rejection" : "Acceptance",
-  //   isUploadFormOn: false,
-  // });
-  // console.timeEnd("super_acceptance_time");
-
-  await sleep(15 * 60 * 1000);
+  await sleep(12 * 1000 + Math.random() * 4000);
   await goToHomePage(page);
   await closePageSafely(page);
 };
@@ -69,19 +63,18 @@ export default async (
 ) => {
   pauseFetchingPatients();
   let range = 4;
-  await increaseDetailsPageScore(browser);
+  while (range > 0) {
+    try {
+      increaseDetailsPageScore(browser);
+      await sleep(7000 + Math.random() * 6000);
+    } catch (error) {
+      console.log("Error in increaseDetailsPageScore:", error);
+      break;
+    } finally {
+      range -= 1;
+    }
+  }
 
-  // while (range > 0) {
-  //   try {
-  //     await sleep(7000 + Math.random() * 6000);
-  //   } catch (error) {
-  //     console.log("Error in increaseDetailsPageScore:", error);
-  //     break;
-  //   } finally {
-  //     range -= 1;
-  //   }
-  // }
-
-  // continueFetchingPatientsIfPaused();
-  // onDone();
+  continueFetchingPatientsIfPaused();
+  onDone();
 };
