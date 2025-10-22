@@ -162,7 +162,7 @@ const processClientActionOnPatient = async ({
     return;
   }
 
-  const remainingTime = referralEndTimestamp - Date.now() - 120;
+  const remainingTime = referralEndTimestamp - Date.now() - 125;
 
   if (remainingTime < 0) {
     await sleep(remainingTime);
