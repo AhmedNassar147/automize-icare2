@@ -3,7 +3,7 @@
  * Helper: `processClientActionOnPatient`.
  *
  */
-import { writeFile /* unlink,  readFile */ } from "fs/promises";
+import { writeFile /*  readFile */ } from "fs/promises";
 import { join, resolve /* basename*/ } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import goToHomePage from "./goToHomePage.mjs";
@@ -161,6 +161,24 @@ const processClientActionOnPatient = async ({
     await closeCurrentPage(false);
     return;
   }
+
+  const remainingTime = referralEndTimestamp - Date.now() - 120;
+
+  if (remainingTime < 0) {
+    await sleep(remainingTime);
+  }
+
+  speakText({
+    text: "Go Go Go Go",
+    useMaleVoice: true,
+    delayMs: 0,
+    rate: 3,
+    volume: 100,
+    times: 1,
+  });
+
+  await closeCurrentPage(false);
+  return;
 
   await rewriteReferralDetails(page);
 
