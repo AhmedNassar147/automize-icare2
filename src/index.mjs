@@ -66,9 +66,29 @@ const currentProfile = "Profile 1";
   let wss;
   let browser;
   let pingInterval;
+  let resumeTimer = null;
+
+  function scheduleResume(atEpochMs) {
+    // clear any previous one
+    if (resumeTimer) {
+      clearTimeout(resumeTimer);
+      resumeTimer = null;
+    }
+    // clamp delay to [0, 2^31-1] to avoid Node’s max timeout issue
+    const delay = Math.max(0, atEpochMs - Date.now());
+
+    resumeTimer = setTimeout(() => {
+      resumeTimer = null; // free handle
+      continueFetchingPatientsIfPaused();
+    }, delay);
+  }
 
   async function shutdown(sig) {
     console.log(`\n${sig} received. Shutting down...`);
+
+    if (resumeTimer) {
+      clearTimeout(resumeTimer);
+    }
 
     try {
       clearInterval(pingInterval);
@@ -321,6 +341,8 @@ const currentProfile = "Profile 1";
             referralEndTimestamp,
           },
         });
+
+        scheduleResume(referralEndTimestamp);
       } catch (err) {
         console.error("patientAccepted broadcast failed:", err?.message || err);
       }
