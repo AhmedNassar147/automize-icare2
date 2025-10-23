@@ -19,7 +19,7 @@ import {
   TABS_COLLECTION_TYPES,
 } from "./constants.mjs";
 
-const INTERVAL = 62_000;
+const INTERVAL = 70_000;
 const NOT_LOGGED_SLEEP_TIME = 25_000;
 
 const LOCKED_OUT_SLEEP_TIME = 4 * 10 * 60_000;
