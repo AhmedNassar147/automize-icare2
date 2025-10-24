@@ -342,6 +342,8 @@ const currentProfile = "Profile 1";
           },
         });
 
+        console.log(`patientAccepted broadcast done referralId=${referralId}`);
+
         scheduleResume(referralEndTimestamp);
       } catch (err) {
         console.error("patientAccepted broadcast failed:", err?.message || err);
