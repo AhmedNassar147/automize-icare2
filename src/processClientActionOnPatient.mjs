@@ -299,11 +299,6 @@ export default processClientActionOnPatient;
 //   await sleep(remaining);
 // }
 
-// const remaining = referralEndTimestamp - Date.now() - 400;
-
-// if (remaining) {
-// }
-
 //  251.195ms
 // await selectAttachmentDropdownOption(page, actionName);
 // const fileInput = await page.$('#upload-single-file input[type="file"]');
@@ -323,10 +318,6 @@ export default processClientActionOnPatient;
 // console.log("took time to Left", leftTime);
 
 // const remaining = referralEndTimestamp - Date.now();
-
-// while (remaining > 400) {
-//   sleep(remaining - 400);
-// }
 
 // https://referralprogram.globemedsaudi.com/referrals/listing
 // {"pageSize":100,"pageNumber":1,"categoryReference":"pending","providerZone":[],"providerName":[],"specialtyCode":[],"referralTypeCode":[],"referralReasonCode":[],"genericSearch":"","sortOrder":"asc"}
