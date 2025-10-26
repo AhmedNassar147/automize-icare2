@@ -45,6 +45,7 @@ import {
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
 } from "./constants.mjs";
+import speakText from "./speakText.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
 // Download mkcert-vX.X.X-windows-amd64.exe
@@ -92,10 +93,18 @@ const currentProfile = "Profile 1";
       resumeTimer = null;
     }
     // clamp delay to [0, 2^31-1] to avoid Node’s max timeout issue
-    const delay = Math.max(0, atEpochMs - Date.now());
+    const delay = Math.max(0, atEpochMs - Date.now()) - 50;
 
     resumeTimer = setTimeout(() => {
       resumeTimer = null; // free handle
+      speakText({
+        text: `ACCEPT ACCEPT`,
+        delayMs: 0,
+        times: 1,
+        rate: 2,
+        useMaleVoice: true,
+        volume: 100,
+      });
       continueFetchingPatientsIfPaused();
     }, delay);
   }
