@@ -11,21 +11,6 @@ const urls = [
   `${baseGlobMedAPiUrl}/details`,
 ];
 
-// const globMedHeaders = {
-//   Accept: "application/json, text/plain, */*",
-//   "Content-Type": "application/json",
-//   "Accept-Language": "en-US,en;q=0.9",
-//   "X-CSRF": "1",
-// };
-
-// const responsex = await fetch("https://referralprogram.globemedsaudi.com/referrals/patient-info", {
-//                 method: "POST",
-//               headers: globMedHeaders,
-//               body: JSON.stringify({ idReferral: "352923" }),
-// })
-
-// const datax = await responsex.json();
-
 const getPatientReferralDataFromAPI = async (page, idReferral) => {
   const results = await page.evaluate(
     async ({ urls, globMedHeaders, idReferral, baseGlobMedAPiUrl }) => {
@@ -232,6 +217,21 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
 };
 
 export default getPatientReferralDataFromAPI;
+
+// const globMedHeaders = {
+//   Accept: "application/json, text/plain, */*",
+//   "Content-Type": "application/json",
+//   "Accept-Language": "en-US,en;q=0.9",
+//   "X-CSRF": "1",
+// };
+
+// const responsex = await fetch("https://referralprogram.globemedsaudi.com/referrals/details", {
+//                 method: "POST",
+//               headers: globMedHeaders,
+//               body: JSON.stringify({ idReferral: "352923" }),
+// })
+
+// const datax = await responsex.json();
 
 // https://referralprogram.globemedsaudi.com/referrals/attachments
 // Request Method

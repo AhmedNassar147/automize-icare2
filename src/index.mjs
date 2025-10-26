@@ -117,7 +117,7 @@ const currentProfile = "Profile 1";
       });
     }, delayToTakeAction);
 
-    const delay = Math.max(0, atEpochMs - Date.now());
+    const delay = Math.max(0, atEpochMs - Date.now()) - 20;
 
     resumeTimer = setTimeout(() => {
       resumeTimer = null; // free handle
@@ -399,6 +399,7 @@ const currentProfile = "Profile 1";
               attachmentTypeOptionText: "Acceptance",
               acceptanceFileBase64: filebase64,
               referralEndTimestamp,
+              detailsAPiServerResponseTimeMS,
             },
           });
         } catch (error) {}
