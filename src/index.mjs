@@ -389,9 +389,8 @@ const currentProfile = "Profile 1";
         //   return;
         // }
 
-        const filebase64 = await pdfToBase64(acceptanceFilePath);
-
         try {
+          const filebase64 = await pdfToBase64(acceptanceFilePath);
           broadcast({
             type: "accept",
             data: {
@@ -399,10 +398,14 @@ const currentProfile = "Profile 1";
               attachmentTypeOptionText: "Acceptance",
               acceptanceFileBase64: filebase64,
               referralEndTimestamp,
-              detailsAPiServerResponseTimeMS,
             },
           });
-        } catch (error) {}
+        } catch (error) {
+          console.log(
+            `patientAccepted broadcast failed referralId=${referralId}:`,
+            error
+          );
+        }
 
         scheduleResume(referralEndTimestamp, referralEndDateActionableAtMS);
         console.log(`patientAccepted broadcast done referralId=${referralId}`);
