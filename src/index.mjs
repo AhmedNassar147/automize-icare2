@@ -10,6 +10,9 @@ import fs from "node:fs";
 import { unlink, readFile } from "node:fs/promises";
 import path from "node:path";
 import https from "node:https";
+import dns from "node:dns/promises";
+import zlib from "node:zlib";
+import httpProxy from "http-proxy";
 import express from "express";
 import { WebSocketServer } from "ws";
 
@@ -46,7 +49,25 @@ import {
   TABS_COLLECTION_TYPES,
 } from "./constants.mjs";
 
+// https://github.com/FiloSottile/mkcert/releases
+// Download mkcert-vX.X.X-windows-amd64.exe
+// Rename it to just mkcert.exe.
+// mvoed it to C:\Windows\System32
+// in powershell as admin i tried mkcert -version
+// 1- mkcert -install
+// 2- mkdir certs
+// 3-  mkcert -key-file certs/key.pem -cert-file certs/cert.pem localhost
+// 4- mkcert -key-file certs/referral.key.pem -cert-file certs/referral.cert.pem referralprogram.globemedsaudi.com
+// Edit C:\Windows\System32\drivers\etc\hosts as Administrator and add a line:
+// notepad opent as admin => file => open => C:\Windows\System32\drivers\etc\ =>
+// 127.0.0.1   referralprogram.globemedsaudi.com
+// to verify ping referralprogram.globemedsaudi.com // we see 127.0.0.1
+
 const currentProfile = "Profile 1";
+const UPSTREAM_HOST = "referralprogram.globemedsaudi.com";
+const UPSTREAM_PORT = 443;
+
+// wss://referralprogram.globemedsaudi.com/gm-events
 
 (async () => {
   const {
@@ -56,10 +77,10 @@ const currentProfile = "Profile 1";
     SUMMARY_REPORT_GENERATED_AT,
     EXECLUDE_WHATSAPP_MSG_FOOTER,
     FIRST_SUMMARY_REPORT_STARTS_AT,
-    CERT_PATH = path.resolve("certs/cert.pem"),
-    KEY_PATH = path.resolve("certs/key.pem"),
-    HOST = "0.0.0.0",
-    PORT = "8443",
+    CERT_PATH,
+    KEY_PATH,
+    HOST,
+    PORT,
   } = process.env;
 
   let server;
@@ -221,9 +242,149 @@ const currentProfile = "Profile 1";
 
     // ---------- HTTPS + Express (DELETE only) ----------
     const app = express();
-    app.use(express.json());
+    app.disable("x-powered-by");
     app.set("trust proxy", 1);
 
+    // --- resolve upstream IP (and refresh every 10m) ---
+    let upstreamIP = null;
+    async function resolveUpstream() {
+      try {
+        const addrs = await dns.resolve4(UPSTREAM_HOST);
+        upstreamIP = addrs[0];
+        console.log("[proxy] upstream IP:", upstreamIP);
+      } catch (e) {
+        console.error("[proxy] DNS resolve failed:", e?.message || e);
+      }
+    }
+    await resolveUpstream();
+    setInterval(resolveUpstream, 10 * 60 * 1000);
+
+    // SNI agent so TLS upstream uses the real hostname
+    const upstreamAgent = new https.Agent({ servername: UPSTREAM_HOST });
+
+    // One shared proxy instance; no default `target` (we pass per-request)
+    const proxy = httpProxy.createProxyServer({
+      changeOrigin: true,
+      selfHandleResponse: true, // we rewrite one endpoint
+      secure: true, // verify upstream cert
+    });
+
+    // For everything except your local APIs, forward to upstream
+    app.use((req, res, next) => {
+      // keep your local API local
+      if (req.path.startsWith("/patients")) return next();
+      // never handle your own WS path here
+      if (req.path.startsWith("/gm-events")) return res.status(404).end();
+
+      if (!upstreamIP) return res.status(502).send("Upstream not resolved.");
+
+      proxy.web(req, res, {
+        target: `https://${upstreamIP}:${UPSTREAM_PORT}`,
+        headers: { host: UPSTREAM_HOST },
+        agent: upstreamAgent,
+        timeout: 60_000,
+        proxyTimeout: 60_000,
+      });
+    });
+
+    // Helpers for body/headers
+    function collectBody(stream) {
+      return new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on("data", (c) => chunks.push(Buffer.from(c)));
+        stream.on("error", reject);
+        stream.on("end", () => resolve(Buffer.concat(chunks)));
+      });
+    }
+    const stripTrailingSlash = (p) => String(p || "").replace(/\/+$/, "");
+
+    // Rewrite ONLY /referrals/details (plural)
+    proxy.on("proxyRes", async (proxyRes, req, res) => {
+      const pathname = (() => {
+        try {
+          return stripTrailingSlash(
+            new URL(req.url, `https://${UPSTREAM_HOST}`).pathname
+          );
+        } catch {
+          return stripTrailingSlash((req.url || "").split("?")[0]);
+        }
+      })();
+
+      if (pathname !== "/referrals/details") {
+        if (!res.headersSent)
+          res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
+        proxyRes.pipe(res);
+        return;
+      }
+
+      let upstreamBody; // <-- keep a reference we can reuse on failure
+      try {
+        upstreamBody = await collectBody(proxyRes);
+
+        // decompress if needed
+        const enc = String(
+          proxyRes.headers["content-encoding"] || ""
+        ).toLowerCase();
+        let body = upstreamBody;
+        if (enc === "gzip") body = zlib.gunzipSync(body);
+        else if (enc === "deflate") body = zlib.inflateSync(body);
+        else if (enc === "br") body = zlib.brotliDecompressSync(body);
+
+        let json;
+        try {
+          json = JSON.parse(body.toString("utf8"));
+        } catch {
+          // not JSON, pass original upstream (already buffered)
+          res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
+          res.end(upstreamBody);
+          return;
+        }
+
+        if (
+          json &&
+          typeof json === "object" &&
+          json.data &&
+          typeof json.data === "object"
+        ) {
+          json.data.status = "P";
+          json.data.canUpdate = true;
+          json.data.canTakeAction = true;
+        }
+        const patched = Buffer.from(JSON.stringify(json), "utf8");
+
+        // rewrite headers
+        const headers = { ...proxyRes.headers };
+        delete headers["content-length"];
+        delete headers["content-encoding"];
+        headers["content-type"] = "application/json; charset=utf-8";
+
+        res.writeHead(proxyRes.statusCode || 200, headers);
+        res.end(patched);
+      } catch (e) {
+        console.error("[proxy] rewrite failed:", e?.message || e);
+        try {
+          // we have buffered upstreamBody; return it if available
+          if (upstreamBody) {
+            res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
+            res.end(upstreamBody);
+          } else {
+            // fallback if something failed before buffering
+            if (!res.headersSent)
+              res.writeHead(502, { "content-type": "text/plain" });
+            res.end("Bad gateway.");
+          }
+        } catch {}
+      }
+    });
+
+    proxy.on("error", (err, req, res) => {
+      console.error("[proxy] error:", err?.message || err);
+      if (!res.headersSent)
+        res.writeHead(502, { "content-type": "text/plain" });
+      res.end("Bad gateway.");
+    });
+
+    app.use("/patients", express.json());
     app.delete("/patients/:referralId", async (req, res) => {
       try {
         const { referralId } = req.params || {};
@@ -271,8 +432,30 @@ const currentProfile = "Profile 1";
     const key = fs.readFileSync(KEY_PATH);
     server = https.createServer({ cert, key }, app);
 
+    server.keepAliveTimeout = 75_000; // helps HTTP keep-alive reuse
+    server.headersTimeout = 90_000; // should be > keepAliveTimeout
+
+    // WebSocket upgrades:
+    // - /gm-events -> handled locally by your WSS
+    // - everything else -> proxy to upstream WSS via IP + SNI host
+    server.on("upgrade", (req, socket, head) => {
+      if (req.url?.startsWith("/gm-events")) return; // handled by your WSS below
+      if (!upstreamIP) return socket.destroy();
+
+      proxy.ws(req, socket, head, {
+        target: `wss://${upstreamIP}:${UPSTREAM_PORT}`,
+        headers: { host: UPSTREAM_HOST },
+        agent: upstreamAgent,
+        secure: true,
+      });
+    });
+
     // ---------- WebSocket (event-only, no auto-kill) ----------
-    wss = new WebSocketServer({ server, perMessageDeflate: false });
+    wss = new WebSocketServer({
+      server,
+      path: "/gm-events",
+      perMessageDeflate: false,
+    });
 
     const broadcast = (obj) => {
       const data = JSON.stringify(obj);
@@ -381,15 +564,6 @@ const currentProfile = "Profile 1";
     await shutdown("SIGINT");
   }
 })();
-
-// https://github.com/FiloSottile/mkcert/releases
-// Download mkcert-vX.X.X-windows-amd64.exe
-// Rename it to just mkcert.exe.
-// mvoed it to C:\Windows\System32
-// in powershell as admin i tried mkcert -version
-// 1- mkcert -install
-// 2- mkdir certs
-// 3-  mkcert -key-file certs/key.pem -cert-file certs/cert.pem localhost
 
 // const profiles = [
 //   "Profile 4",

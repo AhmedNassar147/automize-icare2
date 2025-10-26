@@ -145,7 +145,7 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
       }
 
       // const cutoffTimeMs = generateRandomInt(41_000, 45_000);
-      const cutoffTimeMs = 10_000;
+      const cutoffTimeMs = 11_000;
       // const cutoffTimeMs = 30_000;
 
       const finalData = {
