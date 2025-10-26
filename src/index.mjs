@@ -99,25 +99,27 @@ const currentProfile = "Profile 1";
       takeActionTimer = null;
     }
 
+    takeActionTimer = null;
+
     // clamp delay to [0, 2^31-1] to avoid Node’s max timeout issue
-    const delayToTakeAction = Math.max(
-      0,
-      referralEndDateActionableAtMS - Date.now()
-    );
+    // const delayToTakeAction = Math.max(
+    //   0,
+    //   referralEndDateActionableAtMS - Date.now()
+    // );
 
-    takeActionTimer = setTimeout(() => {
-      takeActionTimer = null; // free handle
-      speakText({
-        text: `Action Action`,
-        delayMs: 0,
-        times: 1,
-        rate: 3,
-        useMaleVoice: true,
-        volume: 100,
-      });
-    }, delayToTakeAction);
+    // takeActionTimer = setTimeout(() => {
+    //   takeActionTimer = null; // free handle
+    //   speakText({
+    //     text: `Action Action`,
+    //     delayMs: 0,
+    //     times: 1,
+    //     rate: 3,
+    //     useMaleVoice: true,
+    //     volume: 100,
+    //   });
+    // }, delayToTakeAction);
 
-    const delay = Math.max(0, atEpochMs - Date.now()) - 20;
+    const delay = Math.max(0, atEpochMs - Date.now());
 
     resumeTimer = setTimeout(() => {
       resumeTimer = null; // free handle
