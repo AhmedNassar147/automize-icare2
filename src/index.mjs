@@ -85,15 +85,39 @@ const currentProfile = "Profile 1";
   let browser;
   let pingInterval;
   let resumeTimer = null;
+  let takeActionTimer = null;
 
-  function scheduleResume(atEpochMs) {
+  function scheduleResume(atEpochMs, referralEndDateActionableAtMS) {
     // clear any previous one
     if (resumeTimer) {
       clearTimeout(resumeTimer);
       resumeTimer = null;
     }
+
+    if (takeActionTimer) {
+      clearTimeout(takeActionTimer);
+      takeActionTimer = null;
+    }
+
     // clamp delay to [0, 2^31-1] to avoid Node’s max timeout issue
-    const delay = Math.max(0, atEpochMs - Date.now()) - 50;
+    const delayToTakeAction = Math.max(
+      0,
+      referralEndDateActionableAtMS - Date.now()
+    );
+
+    takeActionTimer = setTimeout(() => {
+      takeActionTimer = null; // free handle
+      speakText({
+        text: `Action Action`,
+        delayMs: 0,
+        times: 1,
+        rate: 3,
+        useMaleVoice: true,
+        volume: 100,
+      });
+    }, delayToTakeAction);
+
+    const delay = Math.max(0, atEpochMs - Date.now());
 
     resumeTimer = setTimeout(() => {
       resumeTimer = null; // free handle
@@ -114,6 +138,10 @@ const currentProfile = "Profile 1";
 
     if (resumeTimer) {
       clearTimeout(resumeTimer);
+    }
+
+    if (takeActionTimer) {
+      clearTimeout(takeActionTimer);
     }
 
     try {
@@ -343,7 +371,11 @@ const currentProfile = "Profile 1";
     // Broadcast only when timers fire
     patientsStore.on("patientAccepted", async (patient) => {
       try {
-        const { referralId, referralEndTimestamp } = patient;
+        const {
+          referralId,
+          referralEndTimestamp,
+          referralEndDateActionableAtMS,
+        } = patient;
         const acceptanceFilePath = path.join(
           generatedPdfsPathForAcceptance,
           `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
@@ -359,19 +391,20 @@ const currentProfile = "Profile 1";
 
         const filebase64 = await pdfToBase64(acceptanceFilePath);
 
-        broadcast({
-          type: "accept",
-          data: {
-            referralId,
-            attachmentTypeOptionText: "Acceptance",
-            acceptanceFileBase64: filebase64,
-            referralEndTimestamp,
-          },
-        });
+        try {
+          broadcast({
+            type: "accept",
+            data: {
+              referralId,
+              attachmentTypeOptionText: "Acceptance",
+              acceptanceFileBase64: filebase64,
+              referralEndTimestamp,
+            },
+          });
+        } catch (error) {}
 
+        scheduleResume(referralEndTimestamp, referralEndDateActionableAtMS);
         console.log(`patientAccepted broadcast done referralId=${referralId}`);
-
-        scheduleResume(referralEndTimestamp);
       } catch (err) {
         console.error("patientAccepted broadcast failed:", err?.message || err);
       }
