@@ -33,6 +33,7 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
+import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 
 import {
   waitingPatientsFolderDirectory,
@@ -44,8 +45,11 @@ import {
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
+  HOME_PAGE_URL,
 } from "./constants.mjs";
 import speakText from "./speakText.mjs";
+import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
+import closePageSafely from "./closePageSafely.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
 // Download mkcert-vX.X.X-windows-amd64.exe
@@ -84,67 +88,9 @@ const currentProfile = "Profile 1";
   let wss;
   let browser;
   let pingInterval;
-  let resumeTimer = null;
-  let takeActionTimer = null;
-
-  function scheduleResume(atEpochMs, referralEndDateActionableAtMS) {
-    // clear any previous one
-    if (resumeTimer) {
-      clearTimeout(resumeTimer);
-      resumeTimer = null;
-    }
-
-    if (takeActionTimer) {
-      clearTimeout(takeActionTimer);
-      takeActionTimer = null;
-    }
-
-    takeActionTimer = null;
-
-    // clamp delay to [0, 2^31-1] to avoid Node’s max timeout issue
-    // const delayToTakeAction = Math.max(
-    //   0,
-    //   referralEndDateActionableAtMS - Date.now()
-    // );
-
-    // takeActionTimer = setTimeout(() => {
-    //   takeActionTimer = null; // free handle
-    //   speakText({
-    //     text: `Action Action`,
-    //     delayMs: 0,
-    //     times: 1,
-    //     rate: 3,
-    //     useMaleVoice: true,
-    //     volume: 100,
-    //   });
-    // }, delayToTakeAction);
-
-    const delay = Math.max(0, atEpochMs - Date.now()) - 80;
-
-    resumeTimer = setTimeout(() => {
-      resumeTimer = null; // free handle
-      speakText({
-        text: `ACCEPT ACCEPT`,
-        delayMs: 0,
-        times: 1,
-        rate: 2,
-        useMaleVoice: true,
-        volume: 100,
-      });
-      continueFetchingPatientsIfPaused();
-    }, delay);
-  }
 
   async function shutdown(sig) {
     console.log(`\n${sig} received. Shutting down...`);
-
-    if (resumeTimer) {
-      clearTimeout(resumeTimer);
-    }
-
-    if (takeActionTimer) {
-      clearTimeout(takeActionTimer);
-    }
 
     try {
       clearInterval(pingInterval);
@@ -373,23 +319,11 @@ const currentProfile = "Profile 1";
     // Broadcast only when timers fire
     patientsStore.on("patientAccepted", async (patient) => {
       try {
-        const {
-          referralId,
-          referralEndTimestamp,
-          referralEndDateActionableAtMS,
-        } = patient;
+        const { referralId, referralEndTimestamp } = patient;
         const acceptanceFilePath = path.join(
           generatedPdfsPathForAcceptance,
           `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
         );
-
-        // // If the file isn't there yet, skip quietly
-        // if (!(await checkPathExists(acceptanceFilePath))) {
-        //   console.warn(
-        //     `accept PDF not found for referralId=${referralId}; skipping broadcast`
-        //   );
-        //   return;
-        // }
 
         try {
           const filebase64 = await pdfToBase64(acceptanceFilePath);
@@ -409,8 +343,35 @@ const currentProfile = "Profile 1";
           );
         }
 
-        scheduleResume(referralEndTimestamp, referralEndDateActionableAtMS);
         console.log(`patientAccepted broadcast done referralId=${referralId}`);
+
+        const [page] = await makeUserLoggedInOrOpenHomePage({
+          browser,
+          sendWhatsappMessage,
+          startingPageUrl: HOME_PAGE_URL,
+          noCursor: true,
+        });
+
+        const remainingMs = referralEndTimestamp - Date.now();
+
+        const isOk = await waitUntilCanTakeActionByWindow({
+          page,
+          idReferral: referralId,
+          remainingMs,
+        });
+
+        if (isOk) {
+          speakText({
+            text: `ACCEPT ACCEPT`,
+            delayMs: 0,
+            times: 1,
+            rate: 2,
+            useMaleVoice: true,
+            volume: 100,
+          });
+          await closePageSafely(page);
+          continueFetchingPatientsIfPaused();
+        }
       } catch (err) {
         console.error("patientAccepted broadcast failed:", err?.message || err);
       }
