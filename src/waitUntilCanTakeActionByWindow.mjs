@@ -77,7 +77,7 @@ async function waitUntilCanTakeActionByWindow({
 
       while (true) {
         const now = performance.now();
-        if (deadline - now <= safetyMs) return false;
+        if (deadline - now <= safetyMs) return true;
 
         const timeLeft = deadline - now - safetyMs;
         const thisReqTimeout = Math.min(
