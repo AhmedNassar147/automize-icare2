@@ -119,7 +119,7 @@ const currentProfile = "Profile 1";
     //   });
     // }, delayToTakeAction);
 
-    const delay = Math.max(0, atEpochMs - Date.now());
+    const delay = Math.max(0, atEpochMs - Date.now()) - 80;
 
     resumeTimer = setTimeout(() => {
       resumeTimer = null; // free handle
