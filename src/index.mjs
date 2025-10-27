@@ -354,7 +354,7 @@ const currentProfile = "Profile 1";
 
         const remainingMs = referralEndTimestamp - Date.now();
 
-        const isOk = await waitUntilCanTakeActionByWindow({
+        const { isOk, reason } = await waitUntilCanTakeActionByWindow({
           page,
           idReferral: referralId,
           remainingMs,
@@ -371,6 +371,7 @@ const currentProfile = "Profile 1";
           });
           await closePageSafely(page);
         }
+        console.log("patientAccepted reason", reason);
         continueFetchingPatientsIfPaused();
       } catch (err) {
         console.error("patientAccepted broadcast failed:", err?.message || err);

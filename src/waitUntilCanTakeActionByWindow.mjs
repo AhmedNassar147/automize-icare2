@@ -54,30 +54,38 @@ async function waitUntilCanTakeActionByWindow({
           const j = await r.json().catch(() => null);
           const { canTakeAction, canUpdate, status } = j?.data ?? {};
           const ok = !!canTakeAction && !!canUpdate && status === "P";
-          console.log(
-            `fetchDetailsOnce idReferral=${id} => ok=${ok}, status=${status}, canTakeAction=${canTakeAction}, canUpdate=${canUpdate}`
-          );
-          return { ok, rtt, status: 200 };
+          const logString = `fetchDetailsOnce idReferral=${id} => ok=${ok}, status=${status}, canTakeAction=${canTakeAction}, canUpdate=${canUpdate}`;
+          return { ok, rtt, status: 200, logString };
         } catch (e) {
-          console.log(`fetchDetailsOnce idReferral=${id} => error`, e);
+          const logString = `fetchDetailsOnce idReferral=${id} => ERROR: ${e?.name} ${e?.message}`;
           return {
             ok: false,
             rtt: performance.now() - t0,
             status: 0,
-            error: e,
+            logString,
           };
         } finally {
           clearTimeout(timer);
         }
       }
 
-      if (remainingMs <= 0) return false;
+      if (remainingMs <= 0) {
+        return {
+          isOk: false,
+          reason: `no remaining time, idReferral=${idReferral} remainingMs=${remainingMs}`,
+        };
+      }
+
       const deadline = performance.now() + remainingMs;
       let estRTT = 400;
 
       while (true) {
         const now = performance.now();
-        if (deadline - now <= safetyMs) return true;
+        if (deadline - now <= safetyMs)
+          return {
+            isOk: true,
+            reason: `time's up, idReferral=${idReferral} deadline=${deadline} now=${now} safetyMs=${safetyMs}`,
+          };
 
         const timeLeft = deadline - now - safetyMs;
         const thisReqTimeout = Math.min(
@@ -85,11 +93,19 @@ async function waitUntilCanTakeActionByWindow({
           Math.max(minGapMs, timeLeft)
         );
 
-        const { ok, rtt } = await fetchDetailsOnce(idReferral, thisReqTimeout);
+        const { ok, rtt, logString } = await fetchDetailsOnce(
+          idReferral,
+          thisReqTimeout
+        );
 
         estRTT = Math.min(Math.max(rtt, 150), 3000);
 
-        if (ok) return true;
+        if (ok) {
+          return {
+            isOk: true,
+            reason: logString,
+          };
+        }
 
         const tLeft = deadline - performance.now();
 
