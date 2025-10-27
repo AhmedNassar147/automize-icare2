@@ -362,16 +362,16 @@ const currentProfile = "Profile 1";
 
         if (isOk) {
           speakText({
-            text: `ACCEPT ACCEPT`,
+            text: "Accept Accept",
             delayMs: 0,
-            times: 1,
+            times: 2,
             rate: 2,
             useMaleVoice: true,
             volume: 100,
           });
           await closePageSafely(page);
-          continueFetchingPatientsIfPaused();
         }
+        continueFetchingPatientsIfPaused();
       } catch (err) {
         console.error("patientAccepted broadcast failed:", err?.message || err);
       }

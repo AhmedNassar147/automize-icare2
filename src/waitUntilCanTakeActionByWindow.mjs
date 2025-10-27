@@ -5,14 +5,14 @@
  */
 import { globMedHeaders } from "./constants.mjs";
 
-async function waitUntilCanTakeActionByWindow(
+async function waitUntilCanTakeActionByWindow({
   page,
   idReferral,
   remainingMs,
   reqTimeoutMs = 2000,
   minGapMs = 250,
-  safetyMs = 120 // a bit safer than 80ms
-) {
+  safetyMs = 120, // a bit safer than 80ms
+}) {
   return await page.evaluate(
     async ({
       idReferral,
@@ -54,8 +54,12 @@ async function waitUntilCanTakeActionByWindow(
           const j = await r.json().catch(() => null);
           const { canTakeAction, canUpdate, status } = j?.data ?? {};
           const ok = !!canTakeAction && !!canUpdate && status === "P";
+          console.log(
+            `fetchDetailsOnce idReferral=${id} => ok=${ok}, status=${status}, canTakeAction=${canTakeAction}, canUpdate=${canUpdate}`
+          );
           return { ok, rtt, status: 200 };
         } catch (e) {
+          console.log(`fetchDetailsOnce idReferral=${id} => error`, e);
           return {
             ok: false,
             rtt: performance.now() - t0,
@@ -81,11 +85,8 @@ async function waitUntilCanTakeActionByWindow(
           Math.max(minGapMs, timeLeft)
         );
 
-        const { ok, rtt, error } = await fetchDetailsOnce(
-          idReferral,
-          thisReqTimeout
-        );
-        console.log("error =>>>>>>>>>>>>>>>>", error);
+        const { ok, rtt } = await fetchDetailsOnce(idReferral, thisReqTimeout);
+
         estRTT = Math.min(Math.max(rtt, 150), 3000);
 
         if (ok) return true;
