@@ -11,7 +11,7 @@ async function waitUntilCanTakeActionByWindow({
   remainingMs,
   reqTimeoutMs = 2000,
   minGapMs = 250,
-  safetyMs = 80,
+  safetyMs = 40,
 }) {
   return await page.evaluate(
     async ({
