@@ -25,6 +25,7 @@ async function waitUntilCanTakeActionByWindow({
       async function fetchDetailsOnce(id, timeoutMs) {
         const ctrl = new AbortController();
         const t0 = performance.now();
+        const requestDate = Date.now();
         const timer = setTimeout(() => ctrl.abort(), timeoutMs);
 
         try {
@@ -54,7 +55,7 @@ async function waitUntilCanTakeActionByWindow({
           const j = await r.json().catch(() => null);
           const { canTakeAction, canUpdate, status } = j?.data ?? {};
           const ok = !!canTakeAction && !!canUpdate && status === "P";
-          const logString = `fetchDetailsOnce idReferral=${id} => ok=${ok}, status=${status}, canTakeAction=${canTakeAction}, canUpdate=${canUpdate}`;
+          const logString = `fetchDetailsOnce idReferral=${id} => ok=${ok}, status=${status}, canTakeAction=${canTakeAction}, canUpdate=${canUpdate}, requestDate=${requestDate}`;
           return { ok, rtt, status: 200, logString };
         } catch (e) {
           const logString = `fetchDetailsOnce idReferral=${id} => ERROR: ${e?.name} ${e?.message}`;
