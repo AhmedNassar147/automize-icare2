@@ -9,7 +9,7 @@ async function waitUntilCanTakeActionByWindow({
   remainingMs, // e.g. 4000
   reqTimeoutMs = 1200, // cap per request (will be clamped by time left)
   minGapMs = 120, // never poll faster than this
-  safetyMs = 90, // keep polling until last 30ms
+  safetyMs = 100, // keep polling until last 100ms
 }) {
   return await page.evaluate(
     async ({
@@ -55,20 +55,9 @@ async function waitUntilCanTakeActionByWindow({
       }
 
       const deadline = performance.now() + remainingMs;
-      let estRTT = 300; // updated by real calls
 
       const jitter = (ms, p = 0.08) =>
         Math.max(0, Math.floor(ms * (1 - p + Math.random() * 2 * p)));
-
-      // Gap schedule tuned for short windows (keeps polling until last 30ms)
-      function computeGap(tLeft) {
-        if (tLeft > 3000) return 450;
-        if (tLeft > 2000) return 350;
-        if (tLeft > 1200) return 280;
-        if (tLeft > 700) return 220;
-        if (tLeft > 300) return 180;
-        return 140; // last 300ms before the 30ms cutoff
-      }
 
       while (true) {
         const now = performance.now();
@@ -100,23 +89,18 @@ async function waitUntilCanTakeActionByWindow({
           Math.max(minGapMs, timeLeft - 12)
         );
 
-        const { ok, rtt, reason } = await fetchDetailsOnce(
+        const { ok, reason } = await fetchDetailsOnce(
           idReferral,
           thisReqTimeout
         );
-        if (Number.isFinite(rtt)) estRTT = Math.min(Math.max(rtt, 90), 2000);
 
-        if (ok) return { isOk: true, reason: `ready (${reason})` };
+        if (ok) {
+          return { isOk: true, reason: `ready (${reason})` };
+        }
 
-        // Compute next gap; avoid overlap vs RTT; don’t overshoot into last 30ms
-        const tLeftNow = deadline - performance.now();
-        let gap = computeGap(tLeftNow);
-        gap = Math.max(gap, Math.ceil(estRTT * 1.2), minGapMs);
-        gap = Math.min(gap, Math.max(minGapMs, tLeftNow - safetyMs));
-        gap = jitter(gap, 0.08);
+        const sleepTime = jitter(70);
 
-        if (gap <= 0) continue;
-        await new Promise((res) => setTimeout(res, gap));
+        await new Promise((res) => setTimeout(res, sleepTime));
       }
     },
     {
