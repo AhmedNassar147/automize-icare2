@@ -334,13 +334,17 @@ const currentProfile = "Profile 1";
           noCursor: true,
         });
 
-        const remainingMs = referralEndTimestamp - Date.now();
+        const currentTime = Date.now();
+
+        const remainingMs = referralEndTimestamp - currentTime;
 
         const { reason } = await waitUntilCanTakeActionByWindow({
           page,
           idReferral: referralId,
           remainingMs,
         });
+
+        const dateNow = Date.now();
 
         broadcast({
           type: "accept",
@@ -351,10 +355,14 @@ const currentProfile = "Profile 1";
             referralEndTimestamp,
           },
         });
-
         console.log(
-          `patientAccepted broadcast done referralId=${referralId} => reason=${reason}`
+          `acceptance  referralId=${referralId} remainingMs=${remainingMs} broadcast-time=${
+            Date.now() - dateNow
+          } action-searching-in-time=${dateNow - currentTime} leftMS=${
+            referralEndTimestamp - dateNow
+          } reason=${reason}`
         );
+
         await closePageSafely(page);
         continueFetchingPatientsIfPaused();
       } catch (err) {
