@@ -325,25 +325,7 @@ const currentProfile = "Profile 1";
           `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
         );
 
-        try {
-          const filebase64 = await pdfToBase64(acceptanceFilePath);
-          broadcast({
-            type: "accept",
-            data: {
-              referralId,
-              attachmentTypeOptionText: "Acceptance",
-              acceptanceFileBase64: filebase64,
-              referralEndTimestamp,
-            },
-          });
-        } catch (error) {
-          console.log(
-            `patientAccepted broadcast failed referralId=${referralId}:`,
-            error
-          );
-        }
-
-        console.log(`patientAccepted broadcast done referralId=${referralId}`);
+        const filebase64 = await pdfToBase64(acceptanceFilePath);
 
         const [page] = await makeUserLoggedInOrOpenHomePage({
           browser,
@@ -354,24 +336,26 @@ const currentProfile = "Profile 1";
 
         const remainingMs = referralEndTimestamp - Date.now();
 
-        const { isOk, reason } = await waitUntilCanTakeActionByWindow({
+        const { reason } = await waitUntilCanTakeActionByWindow({
           page,
           idReferral: referralId,
           remainingMs,
         });
 
-        if (isOk) {
-          speakText({
-            text: "Accept Accept",
-            delayMs: 0,
-            times: 2,
-            rate: 2,
-            useMaleVoice: true,
-            volume: 100,
-          });
-          await closePageSafely(page);
-        }
-        console.log("patientAccepted reason", reason);
+        broadcast({
+          type: "accept",
+          data: {
+            referralId,
+            attachmentTypeOptionText: "Acceptance",
+            acceptanceFileBase64: filebase64,
+            referralEndTimestamp,
+          },
+        });
+
+        console.log(
+          `patientAccepted broadcast done referralId=${referralId} => reason=${reason}`
+        );
+        await closePageSafely(page);
         continueFetchingPatientsIfPaused();
       } catch (err) {
         console.error("patientAccepted broadcast failed:", err?.message || err);
