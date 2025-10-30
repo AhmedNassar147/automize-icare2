@@ -33,7 +33,7 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
-import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+// import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 
 import {
   waitingPatientsFolderDirectory,
@@ -47,9 +47,8 @@ import {
   TABS_COLLECTION_TYPES,
   HOME_PAGE_URL,
 } from "./constants.mjs";
-import speakText from "./speakText.mjs";
-import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
-import closePageSafely from "./closePageSafely.mjs";
+// import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
+// import closePageSafely from "./closePageSafely.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
 // Download mkcert-vX.X.X-windows-amd64.exe
@@ -327,25 +326,6 @@ const currentProfile = "Profile 1";
 
         const filebase64 = await pdfToBase64(acceptanceFilePath);
 
-        const [page] = await makeUserLoggedInOrOpenHomePage({
-          browser,
-          sendWhatsappMessage,
-          startingPageUrl: HOME_PAGE_URL,
-          noCursor: true,
-        });
-
-        const currentTime = Date.now();
-
-        const remainingMs = referralEndTimestamp - currentTime;
-
-        const { reason } = await waitUntilCanTakeActionByWindow({
-          page,
-          idReferral: referralId,
-          remainingMs,
-        });
-
-        const dateNow = Date.now();
-
         broadcast({
           type: "accept",
           data: {
@@ -355,16 +335,49 @@ const currentProfile = "Profile 1";
             referralEndTimestamp,
           },
         });
-        console.log(
-          `acceptance  referralId=${referralId} remainingMs=${remainingMs} broadcast-time=${
-            Date.now() - dateNow
-          } action-searching-in-time=${dateNow - currentTime} leftMS=${
-            referralEndTimestamp - dateNow
-          } reason=${reason}`
-        );
 
-        await closePageSafely(page);
-        continueFetchingPatientsIfPaused();
+        const remainingMs = referralEndTimestamp - Date.now();
+
+        console.log("patientAccepted broadcast done. remainingMs", remainingMs);
+        setTimeout(continueFetchingPatientsIfPaused, remainingMs);
+
+        // const [page] = await makeUserLoggedInOrOpenHomePage({
+        //   browser,
+        //   sendWhatsappMessage,
+        //   startingPageUrl: HOME_PAGE_URL,
+        //   noCursor: true,
+        // });
+
+        // const currentTime = Date.now();
+
+        // const remainingMs = referralEndTimestamp - currentTime;
+
+        // const { reason } = await waitUntilCanTakeActionByWindow({
+        //   page,
+        //   idReferral: referralId,
+        //   remainingMs,
+        // });
+
+        // const dateNow = Date.now();
+
+        // broadcast({
+        //   type: "accept",
+        //   data: {
+        //     referralId,
+        //     attachmentTypeOptionText: "Acceptance",
+        //     acceptanceFileBase64: filebase64,
+        //     referralEndTimestamp,
+        //   },
+        // });
+        // console.log(
+        //   `acceptance  referralId=${referralId} remainingMs=${remainingMs} broadcast-time=${
+        //     Date.now() - dateNow
+        //   } action-searching-in-time=${dateNow - currentTime} leftMS=${
+        //     referralEndTimestamp - dateNow
+        //   } reason=${reason}`
+        // );
+
+        // await closePageSafely(page);
       } catch (err) {
         console.error("patientAccepted broadcast failed:", err?.message || err);
       }
