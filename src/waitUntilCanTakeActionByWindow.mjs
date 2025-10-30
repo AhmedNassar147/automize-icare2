@@ -59,6 +59,8 @@ async function waitUntilCanTakeActionByWindow({
       const jitter = (ms, p = 0.08) =>
         Math.max(0, Math.floor(ms * (1 - p + Math.random() * 2 * p)));
 
+      const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
       while (true) {
         const now = performance.now();
         const remain = deadline - now;
@@ -76,6 +78,9 @@ async function waitUntilCanTakeActionByWindow({
           //       : `final-shot:timeout (budget=${Math.floor(budget)}ms)`,
           //   };
           // }
+
+          await sleep(10);
+
           return {
             isOk: true,
             reason: `time-up (remain=${Math.floor(remain)}ms)`,
@@ -98,9 +103,8 @@ async function waitUntilCanTakeActionByWindow({
           return { isOk: true, reason: `ready (${reason})` };
         }
 
-        const sleepTime = jitter(70);
-
-        await new Promise((res) => setTimeout(res, sleepTime));
+        const sleepTime = jitter(65);
+        await sleep(sleepTime);
       }
     },
     {
