@@ -49,6 +49,7 @@ import {
 } from "./constants.mjs";
 // import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
 // import closePageSafely from "./closePageSafely.mjs";
+// import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
 // Download mkcert-vX.X.X-windows-amd64.exe
@@ -166,6 +167,26 @@ const currentProfile = "Profile 1";
       ignoreDefaultArgs: ["--enable-automation"],
       args: ["--start-maximized"],
     });
+
+    // const patientsArray = [
+    //   {
+    //     nationalId: "123456789",
+    //     nationality: "SAUDI",
+    //     patientName: "John Doe",
+    //     requestDate: "2023-01-01T00:00:00.000Z",
+    //     referralId: "ahmed11-1222",
+    //     specialty: "ICDS",
+    //     subSpecialty: "ICDS",
+    //     sourceProvider: "Al-Zahraa Hospital",
+    //     mobileNumber: "1234567890",
+    //     requestedBedType: "Ward",
+    //   },
+    // ];
+
+    // await generateAcceptancePdfLetters(browser, patientsArray, true);
+    // await generateAcceptancePdfLetters(browser, patientsArray, false);
+
+    // return;
 
     // Restore collected patients, bootstrap store
     const collectedPatients = await readJsonFile(
