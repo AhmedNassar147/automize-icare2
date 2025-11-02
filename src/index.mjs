@@ -77,6 +77,7 @@ const currentProfile = "Profile 1";
     SUMMARY_REPORT_GENERATED_AT,
     EXECLUDE_WHATSAPP_MSG_FOOTER,
     FIRST_SUMMARY_REPORT_STARTS_AT,
+    SUMMARY_REPORT_ENDS_AT,
     CERT_PATH,
     KEY_PATH,
     HOST,
@@ -210,7 +211,8 @@ const currentProfile = "Profile 1";
           await processCollectReferralSummary(
             browser,
             sendWhatsappMessage,
-            FIRST_SUMMARY_REPORT_STARTS_AT
+            FIRST_SUMMARY_REPORT_STARTS_AT,
+            SUMMARY_REPORT_ENDS_AT
           );
           console.log("[CRON] Summary job done.");
         } catch (err) {

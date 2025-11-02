@@ -51,7 +51,8 @@ const categoryReferences = ["admitted", "discharged"];
 const processCollectReferralSummary = async (
   browser,
   sendWhatsappMessage,
-  firstSummaryReportStartsAt
+  firstSummaryReportStartsAt,
+  firstSummaryReportEndsAt
 ) => {
   const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
@@ -64,11 +65,16 @@ const processCollectReferralSummary = async (
     return;
   }
 
-  const date = new Date();
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  const endDate = `${yyyy}-${mm}-${dd}`;
+  let endDate = firstSummaryReportEndsAt;
+
+  if (!firstSummaryReportEndsAt) {
+    const date = new Date();
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+
+    endDate = `${yyyy}-${mm}-${dd}`;
+  }
 
   const tabsResults = await page.evaluate(
     async ({
@@ -170,12 +176,22 @@ const processCollectReferralSummary = async (
   const allPatients = allPatientsStatement.all();
   const allPatientKeys = allPatients.map(({ rowKey }) => rowKey);
 
-  const allNewPatients = apisPatients
-    .filter((patient) => {
-      const rowKey = createPatientRowKey(patient);
-      return !allPatientKeys.includes(rowKey);
-    })
-    .filter(Boolean);
+  const allNewPatients = allPatientKeys.length
+    ? apisPatients
+        .filter((patient) => {
+          const rowKey = createPatientRowKey(patient);
+          return !allPatientKeys.includes(rowKey);
+        })
+        .filter(Boolean)
+    : apisPatients;
+
+  console.log({
+    firstSummaryReportStartsAt,
+    endDate,
+    apisPatients: apisPatients.length,
+    allNewPatients: allNewPatients.length,
+    allPatientKeys: allPatientKeys.length,
+  });
 
   if (!allNewPatients?.length) {
     console.info("There is no new patients for past week");
@@ -218,7 +234,20 @@ const processCollectReferralSummary = async (
   );
 
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet(fileTitle);
+  let sheet = null;
+
+  try {
+    sheet = workbook.addWorksheet(fileTitle);
+  } catch (error) {
+    console.log(`ERROR workbook.addWorksheet fileTitle=${fileTitle}`, error);
+  }
+
+  if (!sheet) {
+    console.error("NO SHEEET");
+    await closePageSafely(page);
+    return;
+  }
+
   sheet.columns = excelColumns;
 
   preparedPatients.forEach((row) => sheet.addRow(row));
