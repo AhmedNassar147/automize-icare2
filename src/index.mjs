@@ -332,7 +332,6 @@ const currentProfile = "Profile 1";
           type: "accept",
           data: {
             referralId,
-            attachmentTypeOptionText: "Acceptance",
             acceptanceFileBase64: filebase64,
             referralEndTimestamp,
           },
