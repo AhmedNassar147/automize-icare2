@@ -449,7 +449,7 @@
     if (cashedFile) {
       await chooseOption();
 
-      scrollableElm.scrollTo(0, 1950);
+      scrollableElm.scrollTo(0, 2000);
       await setHiddenFileInput();
 
       actionButtonCalled = false;
