@@ -307,7 +307,11 @@ class PatientStore extends EventEmitter {
         this.patientsById.set(referralId, updatedPatient);
         this.invalidateCache();
 
-        await safeWritePatientData(this.getAllPatients());
+        const data = this.getAllPatients();
+
+        console.log("ALL", JSON.stringify(data, null, 2));
+
+        await safeWritePatientData(data);
       }
     } catch (error) {
       console.log("error", error);
