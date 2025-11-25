@@ -276,7 +276,7 @@ class PatientStore extends EventEmitter {
     return this.patientsById.has(referralId);
   }
 
-  cancelPatient(referralId) {
+  async cancelPatient(referralId) {
     const isAccepted = this.goingPatientsToBeAccepted.has(referralId);
     const isRejected = this.goingPatientsToBeRejected.has(referralId);
 
@@ -293,6 +293,20 @@ class PatientStore extends EventEmitter {
     [this.goingPatientsToBeAccepted, this.goingPatientsToBeRejected].forEach(
       (set) => set.delete(referralId)
     );
+
+    const { patient } = this.findPatientByReferralId(referralId);
+
+    if (patient) {
+      const updatedPatient = {
+        ...patient,
+        userActionName: "",
+      };
+
+      this.patientsById.set(referralId, updatedPatient);
+      this.invalidateCache();
+
+      await safeWritePatientData(this.getAllPatients());
+    }
 
     return { success: true, message: USER_MESSAGES.cancelSuccess };
   }
