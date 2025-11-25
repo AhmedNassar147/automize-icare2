@@ -294,18 +294,23 @@ class PatientStore extends EventEmitter {
       (set) => set.delete(referralId)
     );
 
-    const { patient } = this.findPatientByReferralId(referralId);
+    try {
+      const { patient } = this.findPatientByReferralId(referralId);
+      console.log("patient", patient);
 
-    if (patient) {
-      const updatedPatient = {
-        ...patient,
-        userActionName: "",
-      };
+      if (patient) {
+        const updatedPatient = {
+          ...patient,
+          userActionName: "",
+        };
 
-      this.patientsById.set(referralId, updatedPatient);
-      this.invalidateCache();
+        this.patientsById.set(referralId, updatedPatient);
+        this.invalidateCache();
 
-      await safeWritePatientData(this.getAllPatients());
+        await safeWritePatientData(this.getAllPatients());
+      }
+    } catch (error) {
+      console.log("error", error);
     }
 
     return { success: true, message: USER_MESSAGES.cancelSuccess };

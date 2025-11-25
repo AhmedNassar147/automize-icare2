@@ -217,6 +217,12 @@ export const initializeClient = async (
           return;
         }
 
+        console.log("isCancellation", {
+          isCancellation,
+          isAcceptance,
+          isRejection,
+        });
+
         let result = {};
         if (isAcceptance) {
           result = await patientsStore.scheduleAcceptedPatient(
@@ -232,6 +238,8 @@ export const initializeClient = async (
         } else if (isCancellation) {
           result = await patientsStore.cancelPatient(referralId);
         }
+
+        console.log("isCancellation result", result);
 
         const { success, message: replyMessage } = result;
         const prefix = success ? "✅" : "❌";
