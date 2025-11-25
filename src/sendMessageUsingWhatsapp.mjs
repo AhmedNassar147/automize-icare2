@@ -208,7 +208,7 @@ export const initializeClient = async (
         }
 
         const scheduledAt = Date.now();
-        const validation = isRejection
+        const validation = !isAcceptance
           ? { success: true }
           : patientsStore.canStillProcessPatient(referralId);
 
