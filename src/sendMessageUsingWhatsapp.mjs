@@ -217,12 +217,6 @@ export const initializeClient = async (
           return;
         }
 
-        console.log("isCancellation", {
-          isCancellation,
-          isAcceptance,
-          isRejection,
-        });
-
         let result = {};
         if (isAcceptance) {
           result = await patientsStore.scheduleAcceptedPatient(
@@ -239,12 +233,10 @@ export const initializeClient = async (
           result = await patientsStore.cancelPatient(referralId);
         }
 
-        console.log("isCancellation result", result);
-
         const { success, message: replyMessage } = result;
         const prefix = success ? "✅" : "❌";
         await quotedMsg.reply(
-          `${prefix} ${replyMessage} (Referral ID: ${referralId})`
+          `${prefix} (Referral ID: ${referralId}) : ${replyMessage}`
         );
 
         console.log(

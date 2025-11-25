@@ -60,15 +60,15 @@ export const EFFECTIVE_REVIEW_DURATION_MS =
   ALLOWED_MINUTES_TO_REVIEW_PATIENTS * 60 * 1000;
 
 export const USER_MESSAGES = {
-  alreadyScheduledAccept: "Case Already scheduled for acceptance.",
-  alreadyScheduledReject: "Case Already scheduled for rejection.",
-  scheduleAcceptSuccess: "Case scheduled for acceptance.",
-  scheduleRejectSuccess: "Case scheduled for rejection.",
+  alreadyScheduledAccept: "Already scheduled for acceptance.",
+  alreadyScheduledReject: "Already scheduled for rejection.",
+  scheduleAcceptSuccess: "scheduled for acceptance.",
+  scheduleRejectSuccess: "scheduled for rejection.",
   notFound: "Patient does not exist.",
-  expired: "Time expired, cannot process patient.",
+  expired: "Time expired.",
   canProcess: "Patient can still be processed.",
-  cancelSuccess: "Scheduled cancellation successfully.",
-  noAction: "No-need, No scheduled action to cancel for this patient.",
+  cancelSuccess: "scheduled for cancellation.",
+  noAction: "No-need, No scheduled action for this patient.",
 };
 
 export const USER_ACTION_TYPES = {
