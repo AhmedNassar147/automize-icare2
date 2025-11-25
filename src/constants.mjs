@@ -67,7 +67,7 @@ export const USER_MESSAGES = {
   notFound: "Patient does not exist.",
   expired: "Time expired, cannot process patient.",
   canProcess: "Patient can still be processed.",
-  cancelSuccess: "Scheduled action canceled successfully.",
+  cancelSuccess: "Scheduled cancellation successfully.",
   noAction: "No-need, No scheduled action to cancel for this patient.",
 };
 

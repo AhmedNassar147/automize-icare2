@@ -230,7 +230,7 @@ export const initializeClient = async (
             scheduledAt
           );
         } else if (isCancellation) {
-          result = patientsStore.cancelPatient(referralId);
+          result = await patientsStore.cancelPatient(referralId);
         }
 
         const { success, message: replyMessage } = result;
