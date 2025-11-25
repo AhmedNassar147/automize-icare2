@@ -236,7 +236,7 @@ export const initializeClient = async (
         const { success, message: replyMessage } = result;
         const prefix = success ? "✅" : "❌";
         await quotedMsg.reply(
-          `${prefix} (Referral ID: ${referralId}) : ${replyMessage}`
+          `${prefix} (Referral ID: ${referralId})  ${replyMessage}`
         );
 
         console.log(
