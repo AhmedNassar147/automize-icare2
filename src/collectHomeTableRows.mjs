@@ -16,7 +16,7 @@ const collectHomePageTableRows = async (
   // // Wait only if needed
   await page
     .waitForSelector(tableRowsSelector, {
-      timeout: tableBodyTimeout || 2000,
+      timeout: tableBodyTimeout || 4000,
       visible: true,
     })
     .catch(() => {}); // Ignore timeout

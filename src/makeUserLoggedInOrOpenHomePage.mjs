@@ -18,9 +18,9 @@ const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
 
 const checkHomePageFullyLoaded = async (page) => {
   try {
-    await waitForHomeLink(page, 5_000);
+    await waitForHomeLink(page, 9_000);
     await page.waitForSelector(homePageTableSelector, {
-      timeout: 5_000,
+      timeout: 9_000,
     });
     return true;
   } catch (err) {
