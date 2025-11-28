@@ -21,8 +21,12 @@ const generateAcceptancePdfLetters = async (
   patientsArray,
   isAcceptance
 ) => {
-  const { CLIENT_IN_PDF_NAME, CLIENT_MANAGER_NAME, CLIENT_MANAGER_PHONE } =
-    process.env;
+  const {
+    CLIENT_IN_PDF_NAME,
+    CLIENT_MANAGER_NAME,
+    CLIENT_MANAGER_PHONE,
+    CLIENT_ID,
+  } = process.env;
 
   const cpuCount = os.cpus().length; // Get the number of CPU cores
 
@@ -37,6 +41,7 @@ const generateAcceptancePdfLetters = async (
         clientInPdf: CLIENT_IN_PDF_NAME || "",
         clientMangerName: CLIENT_MANAGER_NAME || "",
         clientManagerPhone: CLIENT_MANAGER_PHONE || "",
+        clientId: CLIENT_ID || "",
       }); // Assume you already have this
       await page.setContent(html, { waitUntil: "domcontentloaded" });
 
