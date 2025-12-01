@@ -22,7 +22,7 @@ const selectAttachmentDropdownOption = async (page, option) => {
         while (Date.now() < deadline) {
           trigger = document.querySelector('div[role="combobox"]');
           if (trigger) break;
-          await sleep(20);
+          await sleep(10);
         }
         if (!trigger) return false;
 
@@ -38,7 +38,7 @@ const selectAttachmentDropdownOption = async (page, option) => {
             clickLikeHuman(listItem);
             return true;
           }
-          await sleep(15);
+          await sleep(10);
         }
 
         return false;
