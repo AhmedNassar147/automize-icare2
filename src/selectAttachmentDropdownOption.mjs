@@ -1,56 +1,53 @@
-/*
- *
- * Helper: `selectAttachmentDropdownOption`.
- *
- */
-import { writeFile } from "fs/promises";
-import { htmlFilesPath } from "./constants.mjs";
-
 const selectAttachmentDropdownOption = async (page, option) => {
-  const timeoutMs = 5000;
+  const timeoutMs = 6000;
 
   const ok = await page.evaluate(
     async (option, timeoutMs) => {
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-      const normalized = option.trim().toLowerCase();
 
-      const clickLikeHuman = (el) => {
-        const opts = { bubbles: true, cancelable: true, view: window };
-        el.dispatchEvent(new MouseEvent("mousedown", opts));
-        el.dispatchEvent(new MouseEvent("mouseup", opts));
-        el.dispatchEvent(new MouseEvent("click", opts));
+      const fire = (el, type) => {
+        el.dispatchEvent(
+          new MouseEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            view: window,
+          })
+        );
       };
 
-      const deadline = Date.now() + timeoutMs;
+      const normalized = option.trim().toLowerCase();
+      const until = Date.now() + timeoutMs;
 
-      // 1) Find the combobox trigger (fast polling, no waitForSelector)
-      let trigger = null;
-      while (Date.now() < deadline) {
+      // --- 1) Find combobox trigger ---
+      let trigger;
+      while (Date.now() < until) {
         trigger = document.querySelector('div[role="combobox"]');
         if (trigger) break;
-        await sleep(20);
+        await sleep(25);
       }
       if (!trigger) return false;
 
-      // 2) Open dropdown without scrolling the page
-      try {
-        trigger.focus?.({ preventScroll: true });
-      } catch {
-        trigger.focus?.();
-      }
-      clickLikeHuman(trigger);
+      // --- 2) Open dropdown WITHOUT focus and WITHOUT scroll ---
+      // We explicitly block scrollIntoView by temporarily overriding it
+      const originalScroll = Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView = () => {};
 
-      // 3) Wait for listbox + option by TEXT instead of nth-child
-      const listDeadline = Date.now() + timeoutMs;
+      fire(trigger, "mousedown");
+      fire(trigger, "mouseup");
+      fire(trigger, "click");
 
-      while (Date.now() < listDeadline) {
+      // Restore scrollIntoView immediately
+      Element.prototype.scrollIntoView = originalScroll;
+
+      // --- 3) Wait for the listbox ---
+      let optionElement;
+      while (Date.now() < until) {
         const listbox = document.querySelector('ul[role="listbox"]');
         if (listbox) {
-          const items = Array.from(
-            listbox.querySelectorAll('li[role="option"]')
-          );
+          const items = [...listbox.querySelectorAll('li[role="option"]')];
 
-          const match =
+          optionElement =
             items.find(
               (li) => li.textContent.trim().toLowerCase() === normalized
             ) ||
@@ -58,30 +55,28 @@ const selectAttachmentDropdownOption = async (page, option) => {
               li.textContent.toLowerCase().includes(normalized)
             );
 
-          if (match) {
-            clickLikeHuman(match);
-            return true;
-          }
+          if (optionElement) break;
         }
-
-        await sleep(20);
+        await sleep(25);
       }
 
-      return false;
+      if (!optionElement) return false;
+
+      // --- 4) Click option WITHOUT scrolling ---
+      const originalScroll2 = Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView = () => {};
+
+      fire(optionElement, "mousedown");
+      fire(optionElement, "mouseup");
+      fire(optionElement, "click");
+
+      Element.prototype.scrollIntoView = originalScroll2;
+
+      return true;
     },
     option,
     timeoutMs
   );
 
-  if (!ok) {
-    const _error = `⚠️ Error selecting dropdown option "${option}" (not found or not clickable within timeout=${timeoutMs}ms)`;
-    const html = await page.content();
-    await writeFile(`${htmlFilesPath}/dropdown-option-not-found.html`, html);
-    console.log(_error);
-    return [false, _error];
-  }
-
-  return [true];
+  return ok ? [true] : [false, "Dropdown option not found or not clickable"];
 };
-
-export default selectAttachmentDropdownOption;

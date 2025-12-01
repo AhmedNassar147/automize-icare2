@@ -147,8 +147,11 @@ const processClientActionOnPatient = async ({
       );
     }, referralId);
 
+    const now = Date.now();
     await waitForReferralDetails(page, 8000);
+    console.log("Time", Date.now() - now);
 
+    const now1 = Date.now();
     await Promise.allSettled([
       page.evaluate(() => {
         const section = document.querySelector(
@@ -162,23 +165,24 @@ const processClientActionOnPatient = async ({
       }),
       selectAttachmentDropdownOption(page, actionName),
     ]);
+    console.log("Time", Date.now() - now1);
     const fileInput = await page.$('#upload-single-file input[type="file"]');
     await fileInput.uploadFile(filePath);
 
-    await handleAfterSubmitDone({
-      page,
-      startTime,
-      // leftTime,
-      continueFetchingPatientsIfPaused,
-      patientsStore,
-      sendErrorMessage,
-      sendSuccessMessage,
-      closeCurrentPage,
-      actionName,
-      acceptanceFilePath,
-      rejectionFilePath,
-      referralId,
-    });
+    // await handleAfterSubmitDone({
+    //   page,
+    //   startTime,
+    //   // leftTime,
+    //   continueFetchingPatientsIfPaused,
+    //   patientsStore,
+    //   sendErrorMessage,
+    //   sendSuccessMessage,
+    //   closeCurrentPage,
+    //   actionName,
+    //   acceptanceFilePath,
+    //   rejectionFilePath,
+    //   referralId,
+    // });
   } catch (error) {
     try {
       const html = await page.content();
