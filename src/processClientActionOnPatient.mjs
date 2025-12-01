@@ -5,10 +5,8 @@
  */
 import { writeFile /*  readFile */ } from "fs/promises";
 import { join, resolve /* basename*/ } from "path";
-import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import goToHomePage from "./goToHomePage.mjs";
 import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
-import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import buildDurationText from "./buildDurationText.mjs";
 import handleAfterSubmitDone from "./handleAfterSubmitDone.mjs";
@@ -20,6 +18,8 @@ import {
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
   htmlFilesPath,
+  tableRowsSelector,
+  dashboardLinkSelector,
 } from "./constants.mjs";
 import sleep from "./sleep.mjs";
 
@@ -31,8 +31,6 @@ const processClientActionOnPatient = async ({
   sendWhatsappMessage,
   continueFetchingPatientsIfPaused,
 }) => {
-  let preparingStartTime = Date.now();
-
   const { referralId, patientName, referralEndTimestamp } = patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
@@ -55,12 +53,18 @@ const processClientActionOnPatient = async ({
     isAcceptance ? acceptanceFilePath : rejectionFilePath
   );
 
-  const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
-    browser,
-    sendWhatsappMessage,
-    startingPageUrl: HOME_PAGE_URL,
-    noCursor: true,
-  });
+  const page = await browser.newPage();
+
+  try {
+    await page.goto(HOME_PAGE_URL, {
+      waitUntil: "networkidle2",
+      timeout: 10_000,
+    });
+
+    await page.waitForSelector(tableRowsSelector, {
+      timeout: 6000,
+    });
+  } catch (error) {}
 
   const { sendErrorMessage, sendSuccessMessage } =
     createDetailsPageWhatsappHandlers({
@@ -81,35 +85,18 @@ const processClientActionOnPatient = async ({
     await closePageSafely(page);
   };
 
-  if (!isLoggedIn) {
-    await sendErrorMessage(
-      "Login failed after 3 attempts.",
-      "user-action-no-loggedin",
-      buildDurationText(preparingStartTime, Date.now())
-    );
-    await closeCurrentPage(false);
-    return;
+  const timeToStartSearch = referralEndTimestamp - 11050;
+
+  const sleepTime = timeToStartSearch - Date.now();
+
+  if (sleepTime > 0) {
+    await sleep(sleepTime);
   }
 
-  const referralIdRecordResult = await collectHomePageTableRows(
-    page,
-    referralId,
-    8000
-  );
-
-  let { iconButton } = referralIdRecordResult || {};
-
-  if (!iconButton) {
-    console.log("referralIdRecordResult: ", referralIdRecordResult);
-    await sendErrorMessage(
-      "The Pending referrals table is empty or eye button not found.",
-      "no-patients-in-home-table",
-      buildDurationText(preparingStartTime, Date.now())
-    );
-
-    await closeCurrentPage(false);
-    return;
-  }
+  try {
+    const element = await page.$(dashboardLinkSelector);
+    await element.click();
+  } catch (error) {}
 
   let startTime = Date.now();
 
@@ -128,7 +115,20 @@ const processClientActionOnPatient = async ({
 
     startTime = Date.now();
     console.time("took_time");
-    await iconButton.click();
+    await page.evaluate((referralId) => {
+      window.history.replaceState(
+        {
+          usr: { idReferral: referralId, type: "Referral" },
+          key: `pt-${referralId}`,
+          idx: window.history.state?.idx + 1 || 2,
+        },
+        "",
+        "/referral/details"
+      );
+      window.dispatchEvent(
+        new PopStateEvent("popstate", { state: window.history.state })
+      );
+    }, referralId);
 
     await page.waitForSelector(".statusContainer", {
       timeout: 7000,

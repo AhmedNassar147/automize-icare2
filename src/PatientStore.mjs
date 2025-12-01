@@ -10,6 +10,7 @@ import {
   COLLECTD_PATIENTS_FILE_NAME,
   USER_MESSAGES,
   USER_ACTION_TYPES,
+  cutoffTimeMs,
 } from "./constants.mjs";
 
 async function safeWritePatientData(data, retries = 3, delay = 200) {
@@ -163,7 +164,7 @@ class PatientStore extends EventEmitter {
 
     const now = Date.now();
 
-    const lastTime = referralEndDateActionableAtMS - 12_000;
+    const lastTime = referralEndDateActionableAtMS + (cutoffTimeMs - 4000);
 
     return now < lastTime;
   }

@@ -153,7 +153,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
       if (isHomeLoaded) {
         console.log(`✅ User ${userName} is in home page.`);
-        await sleep(35 + Math.random() * 40);
+        await sleep(30 + Math.random() * 35);
 
         // if (showScoreButton) {
         //   const hasBinding = await page.evaluate(

@@ -3,16 +3,18 @@
 // =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 // Simulate navigation with state in a plain JS environment
 
-// window.history.pushState(
+// window.history.replaceState(
 //   {
-//     usr: { idReferral: 351733, type: "Referral" },
+//     usr: { idReferral: 363224, type: "Referral" },
 //     key: "manual",
 //     idx: window.history.state?.idx + 1 || 1,
 //   },
 //   "",
-//   "/target/path"
+//   "/referral/details"
 // );
-// window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+// window.dispatchEvent(
+//   new PopStateEvent("popstate", { state: window.history.state })
+// );
 
 // window.localStorage.setItem(
 //   "ABRCPAT",

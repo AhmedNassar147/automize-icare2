@@ -51,6 +51,8 @@ export const PATIENT_SECTIONS_STATUS = {
   },
 };
 
+export const cutoffTimeMs = 2 * 60 * 1000; // 20 seconds
+
 // the user will review patient till the 13 minute of the counter
 // export const STOP_USER_ACTION_MINUTES = ALLOWED_MINUTES_TO_REVIEW_PATIENTS - 13;
 
@@ -86,6 +88,7 @@ export const CONFIRMATION_TYPES = {
 };
 
 export const homePageTableSelector = "table.MuiTable-root";
+export const tableRowsSelector = `${homePageTableSelector} tbody tr`;
 
 export const SECTIONS_IN_DETAILS_PAGE = [
   "Patient Information",
