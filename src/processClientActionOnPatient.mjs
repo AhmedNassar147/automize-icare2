@@ -21,6 +21,7 @@ import {
   HOME_PAGE_URL,
   htmlFilesPath,
 } from "./constants.mjs";
+import sleep from "./sleep.mjs";
 
 const processClientActionOnPatient = async ({
   browser,
@@ -115,39 +116,39 @@ const processClientActionOnPatient = async ({
   try {
     const remainingMs = referralEndTimestamp - Date.now();
 
-    const { elapsedMs, reason, message, isReadyByTime } =
-      await isAcceptanceButtonShown({
-        page,
-        idReferral: referralId,
-        remainingMs,
-      });
+    const { elapsedMs, reason, isReadyByTime } = await isAcceptanceButtonShown({
+      page,
+      idReferral: referralId,
+      remainingMs,
+    });
 
     console.log(
-      `referralId=${referralId} remainingMs=${remainingMs} isReadyByTime=${isReadyByTime} reason=${reason} elapsedMs=${elapsedMs} message=${
-        typeof message === "string" ? message : "no-message"
-      }`
+      `referralId=${referralId} remainingMs=${remainingMs} isReadyByTime=${isReadyByTime} reason=${reason} elapsedMs=${elapsedMs}`
     );
 
     startTime = Date.now();
+    console.time("took_time");
     await iconButton.click();
 
-    console.time(`took_time`);
-
     await page.waitForSelector(".statusContainer", {
-      timeout: 5000,
+      timeout: 6000,
+    });
+
+    await page.evaluate(() => {
+      const section = document.querySelector(
+        "section.referral-button-container"
+      );
+      if (!section) return;
+      section.style.position = "absolute";
+      section.style.top = "845px";
+      section.style.right = "8%";
+      section.style.width = "100%";
     });
 
     await selectAttachmentDropdownOption(page, actionName);
-
-    await page.evaluate(() => {
-      const el = document.querySelector("[secondarysidebar] > :nth-child(2)");
-      el?.scrollTo(0, 6000);
-    });
-
     const fileInput = await page.$('#upload-single-file input[type="file"]');
     await fileInput.uploadFile(filePath);
-
-    console.timeEnd(`took_time`);
+    console.timeEnd("took_time");
 
     await handleAfterSubmitDone({
       page,
@@ -186,18 +187,3 @@ const processClientActionOnPatient = async ({
 };
 
 export default processClientActionOnPatient;
-
-// const selectedButton = referralButtons[isAcceptance ? 0 : 1];
-
-// await selectedButton.evaluate((el) => {
-//   el.scrollIntoView({
-//     behavior: "auto",
-//     block: "center",
-//   });
-// });
-// console.timeEnd("super_acceptance_time");
-
-// const leftTime = referralEndTimestamp - Date.now();
-// console.log("took time to Left", leftTime);
-
-// const remaining = referralEndTimestamp - Date.now();

@@ -5,7 +5,7 @@
  */
 import { globMedHeaders } from "./constants.mjs";
 
-const isAcceptanceButtonShown = ({
+const isAcceptanceButtonShown = async ({
   page,
   idReferral,
   remainingMs,
@@ -13,7 +13,7 @@ const isAcceptanceButtonShown = ({
   minTimeoutMs = 120,
   rttPadMs = 60,
 }) =>
-  page.evaluate(
+  await page.evaluate(
     async ({
       idReferral,
       remainingMs,
@@ -47,14 +47,12 @@ const isAcceptanceButtonShown = ({
           const j = await r.json().catch(() => null);
           const { message, canTakeAction, canUpdate, status } = j?.data ?? {};
           const ok = !!(canTakeAction && canUpdate && status === "P");
-          const isReadyByTime = false;
 
           return {
             ok,
             rtt,
             reason: ok ? "ready" : "not-ready",
             message,
-            isReadyByTime,
           };
         } catch (e) {
           const rtt = performance.now() - t0;

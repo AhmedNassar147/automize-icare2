@@ -163,7 +163,7 @@ class PatientStore extends EventEmitter {
 
     const now = Date.now();
 
-    const lastTime = referralEndDateActionableAtMS - 11_000;
+    const lastTime = referralEndDateActionableAtMS - 12_000;
 
     return now < lastTime;
   }
