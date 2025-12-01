@@ -1,3 +1,6 @@
+import { writeFile } from "fs/promises";
+import { htmlFilesPath } from "./constants.mjs";
+
 const selectAttachmentDropdownOption = async (page, option) => {
   const timeoutMs = 6000;
 
@@ -5,78 +8,56 @@ const selectAttachmentDropdownOption = async (page, option) => {
     async (option, timeoutMs) => {
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-      const fire = (el, type) => {
-        el.dispatchEvent(
-          new MouseEvent(type, {
-            bubbles: true,
-            cancelable: true,
-            composed: true,
-            view: window,
-          })
-        );
+      const clickLikeHuman = (el) => {
+        const opts = { bubbles: true, cancelable: true, view: window };
+        el.dispatchEvent(new MouseEvent("mousedown", opts));
+        el.dispatchEvent(new MouseEvent("mouseup", opts));
+        el.dispatchEvent(new MouseEvent("click", opts));
       };
 
-      const normalized = option.trim().toLowerCase();
-      const until = Date.now() + timeoutMs;
+      try {
+        const deadline = Date.now() + timeoutMs;
 
-      // --- 1) Find combobox trigger ---
-      let trigger;
-      while (Date.now() < until) {
-        trigger = document.querySelector('div[role="combobox"]');
-        if (trigger) break;
-        await sleep(25);
-      }
-      if (!trigger) return false;
-
-      // --- 2) Open dropdown WITHOUT focus and WITHOUT scroll ---
-      // We explicitly block scrollIntoView by temporarily overriding it
-      const originalScroll = Element.prototype.scrollIntoView;
-      Element.prototype.scrollIntoView = () => {};
-
-      fire(trigger, "mousedown");
-      fire(trigger, "mouseup");
-      fire(trigger, "click");
-
-      // Restore scrollIntoView immediately
-      Element.prototype.scrollIntoView = originalScroll;
-
-      // --- 3) Wait for the listbox ---
-      let optionElement;
-      while (Date.now() < until) {
-        const listbox = document.querySelector('ul[role="listbox"]');
-        if (listbox) {
-          const items = [...listbox.querySelectorAll('li[role="option"]')];
-
-          optionElement =
-            items.find(
-              (li) => li.textContent.trim().toLowerCase() === normalized
-            ) ||
-            items.find((li) =>
-              li.textContent.toLowerCase().includes(normalized)
-            );
-
-          if (optionElement) break;
+        let trigger = null;
+        while (Date.now() < deadline) {
+          trigger = document.querySelector('div[role="combobox"]');
+          if (trigger) break;
+          await sleep(20);
         }
-        await sleep(25);
+        if (!trigger) return false;
+
+        clickLikeHuman(trigger);
+
+        const listDeadline = Date.now() + timeoutMs;
+        const itemOrder = option === "Acceptance" ? 1 : 2;
+        const selector = `ul[role="listbox"] li[role="option"]:nth-child(${itemOrder})`;
+
+        while (Date.now() < listDeadline) {
+          const listItem = document.querySelector(selector);
+          if (listItem) {
+            clickLikeHuman(listItem);
+            return true;
+          }
+          await sleep(15);
+        }
+
+        return false;
+      } catch (error) {
+        return false;
       }
-
-      if (!optionElement) return false;
-
-      // --- 4) Click option WITHOUT scrolling ---
-      const originalScroll2 = Element.prototype.scrollIntoView;
-      Element.prototype.scrollIntoView = () => {};
-
-      fire(optionElement, "mousedown");
-      fire(optionElement, "mouseup");
-      fire(optionElement, "click");
-
-      Element.prototype.scrollIntoView = originalScroll2;
-
-      return true;
     },
     option,
     timeoutMs
   );
 
-  return ok ? [true] : [false, "Dropdown option not found or not clickable"];
+  if (!ok) {
+    const _error = `⚠️ Error selecting dropdown option "${option}" (not found or not clickable within timeout=${timeoutMs}ms)`;
+    const html = await page.content();
+    await writeFile(`${htmlFilesPath}/dropdown-option-not-found.html`, html);
+    console.log(_error);
+    return [false, _error];
+  }
+  return [true];
 };
+
+export default selectAttachmentDropdownOption;

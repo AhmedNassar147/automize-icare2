@@ -13,7 +13,6 @@ const handleAfterSubmitDone = async ({
   startTime,
   isAutoAccept,
   errorMessage,
-  leftTime,
   // isDoneSuccessfully,
   continueFetchingPatientsIfPaused,
   patientsStore,
@@ -30,10 +29,7 @@ const handleAfterSubmitDone = async ({
 
   const _isDoneSuccessfully = await waitForPath(page);
 
-  const durationText = buildDurationText(
-    startTime,
-    Date.now() - (leftTime || 0)
-  );
+  const durationText = buildDurationText(startTime, Date.now());
   console.log("durationText", durationText);
   patientsStore.forceReloadHomePage();
 

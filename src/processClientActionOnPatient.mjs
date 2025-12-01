@@ -28,9 +28,15 @@ async function waitForReferralDetails(page, timeout = 6000) {
 
   while (Date.now() - start < timeout) {
     const ok = await page.evaluate(() => {
-      // Find ANY <h4> whose text is exactly "Referral Details"
-      const h4s = Array.from(document.querySelectorAll("h4"));
-      return h4s.some((el) => el.textContent.trim() === "Referral Details");
+      const h4 = document.evaluate(
+        "//div[contains(@class,'breadcrumb')]//h4[normalize-space()='Referral Details']",
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+      ).singleNodeValue;
+
+      return !!h4;
     });
 
     if (ok) return true;
@@ -165,24 +171,23 @@ const processClientActionOnPatient = async ({
       }),
       selectAttachmentDropdownOption(page, actionName),
     ]);
-    console.log("Time", Date.now() - now1);
+    console.log("Time2", Date.now() - now1);
     const fileInput = await page.$('#upload-single-file input[type="file"]');
     await fileInput.uploadFile(filePath);
 
-    // await handleAfterSubmitDone({
-    //   page,
-    //   startTime,
-    //   // leftTime,
-    //   continueFetchingPatientsIfPaused,
-    //   patientsStore,
-    //   sendErrorMessage,
-    //   sendSuccessMessage,
-    //   closeCurrentPage,
-    //   actionName,
-    //   acceptanceFilePath,
-    //   rejectionFilePath,
-    //   referralId,
-    // });
+    await handleAfterSubmitDone({
+      page,
+      startTime,
+      continueFetchingPatientsIfPaused,
+      patientsStore,
+      sendErrorMessage,
+      sendSuccessMessage,
+      closeCurrentPage,
+      actionName,
+      acceptanceFilePath,
+      rejectionFilePath,
+      referralId,
+    });
   } catch (error) {
     try {
       const html = await page.content();
