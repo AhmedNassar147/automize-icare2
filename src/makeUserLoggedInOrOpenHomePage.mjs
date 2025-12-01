@@ -37,22 +37,12 @@ const makeUserLoggedInOrOpenHomePage = async ({
   currentPage,
   sendWhatsappMessage,
   startingPageUrl,
-  showScoreButton,
-  onClickScoreButton,
   noCursor,
 }) => {
   const userName = process.env.CLIENT_NAME;
   const password = process.env.CLIENT_PASSWORD;
 
   let page = currentPage || (await browser.newPage());
-
-  if (!currentPage && page) {
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, "webdriver", {
-        get: () => false,
-      });
-    });
-  }
 
   let cursor;
 

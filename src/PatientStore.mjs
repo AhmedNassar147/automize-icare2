@@ -163,7 +163,9 @@ class PatientStore extends EventEmitter {
 
     const now = Date.now();
 
-    return now < referralEndDateActionableAtMS;
+    const lastTime = referralEndDateActionableAtMS - 11_000;
+
+    return now < lastTime;
   }
 
   canStillProcessPatient(referralId) {

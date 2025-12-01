@@ -6,19 +6,11 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import fs from "node:fs";
-import { unlink, readFile } from "node:fs/promises";
-import path from "node:path";
-import https from "node:https";
-import express from "express";
-import { WebSocketServer } from "ws";
-
 import puppeteer from "puppeteer";
 import cron from "node-cron";
 
 import PatientStore from "./PatientStore.mjs";
 import readJsonFile from "./readJsonFile.mjs";
-import checkPathExists from "./checkPathExists.mjs";
 
 import waitForWaitingCountWithInterval, {
   continueFetchingPatientsIfPaused,
@@ -33,7 +25,7 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
-// import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+import processClientActionOnPatient from "./processClientActionOnPatient.mjs";
 
 import {
   waitingPatientsFolderDirectory,
@@ -78,15 +70,12 @@ const currentProfile = "Profile 1";
     EXECLUDE_WHATSAPP_MSG_FOOTER,
     FIRST_SUMMARY_REPORT_STARTS_AT,
     SUMMARY_REPORT_ENDS_AT,
-    CERT_PATH,
-    KEY_PATH,
     HOST,
     PORT,
   } = process.env;
 
-  let server;
-  let wss;
   let browser;
+
   let pingInterval;
 
   async function shutdown(sig) {
@@ -103,44 +92,10 @@ const currentProfile = "Profile 1";
     }
 
     try {
-      if (wss) {
-        for (const c of wss.clients) {
-          try {
-            c.terminate();
-          } catch {}
-        }
-        await new Promise((res) => {
-          try {
-            wss.close(() => res());
-          } catch {
-            res();
-          }
-        });
-      }
-    } catch {}
-
-    try {
       if (browser) await browser.close();
     } catch {}
 
-    try {
-      if (server) {
-        await new Promise((res) => {
-          try {
-            server.close(() => res());
-          } catch {
-            res();
-          }
-        });
-      }
-    } catch {}
-
     process.exit(0);
-  }
-
-  async function pdfToBase64(filePath) {
-    const buf = await readFile(filePath);
-    return buf.toString("base64");
   }
 
   try {
@@ -165,7 +120,23 @@ const currentProfile = "Profile 1";
       userDataDir: profilePath,
       protocolTimeout: 120000,
       ignoreDefaultArgs: ["--enable-automation"],
-      args: ["--start-maximized"],
+      args: [
+        "--start-maximized", // Open full screen like real users
+        "--disable-blink-features=AutomationControlled", // Prevent `navigator.webdriver = true`
+        "--disable-extensions", // Prevents loading suspicious default extensions
+        "--disable-dev-shm-usage", // Stability; safe even if not needed
+        "--enable-gpu",
+        "--use-gl=desktop",
+        "--enable-webgl", // WebGL is often checked
+        "--enable-webgl2",
+        "--disable-backgrounding-occluded-windows",
+        "--no-default-browser-check",
+        "--disable-infobars",
+        "--no-first-run",
+        "--disable-default-apps",
+        "--font-cache-shared",
+        "--disable-sync",
+      ],
     });
 
     // Restore collected patients, bootstrap store
@@ -236,177 +207,16 @@ const currentProfile = "Profile 1";
       { timezone: "Asia/Riyadh" }
     );
 
-    // ---------- HTTPS + Express (DELETE only) ----------
-    const app = express();
-    app.use(express.json());
-    // app.disable("x-powered-by");
-    app.set("trust proxy", 1);
-
-    app.delete("/patients/:referralId", async (req, res) => {
-      try {
-        const { referralId } = req.params || {};
-        if (!referralId) {
-          return res
-            .status(400)
-            .json({ success: false, message: "Missing referralId." });
-        }
-
-        // Delete generated PDFs if present
-        const acceptanceFilePath = path.join(
-          generatedPdfsPathForAcceptance,
-          `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
-        );
-        const rejectionFilePath = path.join(
-          generatedPdfsPathForRejection,
-          `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`
-        );
-
-        await Promise.allSettled([
-          checkPathExists(acceptanceFilePath).then(
-            (exists) => exists && unlink(acceptanceFilePath)
-          ),
-          checkPathExists(rejectionFilePath).then(
-            (exists) => exists && unlink(rejectionFilePath)
-          ),
-        ]);
-
-        const result = await patientsStore.removePatientByReferralId(
-          referralId
-        );
-
-        continueFetchingPatientsIfPaused();
-        return res.status(result.success ? 200 : 404).json(result);
-      } catch (err) {
-        console.error("DELETE /patients/:referralId error", err);
-        return res
-          .status(500)
-          .json({ success: false, message: "Internal error." });
-      }
-    });
-
-    // Create HTTPS server
-    const cert = fs.readFileSync(CERT_PATH);
-    const key = fs.readFileSync(KEY_PATH);
-    server = https.createServer({ cert, key }, app);
-
-    // ---------- WebSocket (event-only, no auto-kill) ----------
-    wss = new WebSocketServer({ server, perMessageDeflate: false });
-
-    const broadcast = (obj) => {
-      const data = JSON.stringify(obj);
-      for (const client of wss.clients) {
-        if (client.readyState === 1) {
-          try {
-            client.send(data);
-          } catch {}
-        }
-      }
-    };
-
-    wss.on("connection", (ws) => {
-      try {
-        ws._socket.setKeepAlive(true, 60_000);
-      } catch {}
-
-      ws.on("pong", () => {
-        /* passive heartbeat; no enforcement */
-      });
-
-      ws.on("message", () => {
-        /* event-only; no inbound commands */
-      });
-    });
-
-    // Passive heartbeat to keep intermediaries from idling out
-    const HEARTBEAT_MS = 30_000;
-    pingInterval = setInterval(() => {
-      for (const ws of wss.clients) {
-        if (ws.readyState === 1) {
-          try {
-            ws.ping();
-          } catch {}
-        }
-      }
-    }, HEARTBEAT_MS);
-
-    wss.on("close", () => clearInterval(pingInterval));
-
-    // Broadcast only when timers fire
-    patientsStore.on("patientAccepted", async (patient) => {
-      try {
-        const { referralId, referralEndTimestamp } = patient;
-        const acceptanceFilePath = path.join(
-          generatedPdfsPathForAcceptance,
-          `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
-        );
-
-        const filebase64 = await pdfToBase64(acceptanceFilePath);
-
-        broadcast({
-          type: "accept",
-          data: {
-            referralId,
-            acceptanceFileBase64: filebase64,
-            referralEndTimestamp,
-          },
-        });
-
-        const remainingMs = referralEndTimestamp - Date.now();
-
-        console.log("patientAccepted broadcast done. remainingMs", remainingMs);
-        setTimeout(continueFetchingPatientsIfPaused, remainingMs);
-
-        // const [page] = await makeUserLoggedInOrOpenHomePage({
-        //   browser,
-        //   sendWhatsappMessage,
-        //   startingPageUrl: HOME_PAGE_URL,
-        //   noCursor: true,
-        // });
-
-        // const currentTime = Date.now();
-
-        // const remainingMs = referralEndTimestamp - currentTime;
-
-        // const { reason } = await waitUntilCanTakeActionByWindow({
-        //   page,
-        //   idReferral: referralId,
-        //   remainingMs,
-        // });
-
-        // const dateNow = Date.now();
-
-        // broadcast({
-        //   type: "accept",
-        //   data: {
-        //     referralId,
-        //     attachmentTypeOptionText: "Acceptance",
-        //     acceptanceFileBase64: filebase64,
-        //     referralEndTimestamp,
-        //   },
-        // });
-        // console.log(
-        //   `acceptance  referralId=${referralId} remainingMs=${remainingMs} broadcast-time=${
-        //     Date.now() - dateNow
-        //   } action-searching-in-time=${dateNow - currentTime} leftMS=${
-        //     referralEndTimestamp - dateNow
-        //   } reason=${reason}`
-        // );
-
-        // await closePageSafely(page);
-      } catch (err) {
-        console.error("patientAccepted broadcast failed:", err?.message || err);
-      }
-    });
-
-    // patientsStore.on("patientRejected", (patient) => {
-    //   broadcast({ type: "reject", data: patient });
-    // });
-
-    // ---------- Start ----------
-    server.listen(Number(PORT), HOST, () => {
-      console.log(`HTTPS listening on https://${HOST}:${PORT}`);
-      console.log(`DELETE: https://${HOST}:${PORT}/patients/:referralId`);
-    });
+    patientsStore.on("patientAccepted", async (patient) =>
+      processClientActionOnPatient({
+        browser,
+        actionType: USER_ACTION_TYPES.ACCEPT,
+        patient,
+        patientsStore,
+        sendWhatsappMessage,
+        continueFetchingPatientsIfPaused,
+      })
+    );
 
     process.on("SIGINT", () => {
       void shutdown("SIGINT");

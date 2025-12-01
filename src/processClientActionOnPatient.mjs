@@ -7,69 +7,20 @@ import { writeFile /*  readFile */ } from "fs/promises";
 import { join, resolve /* basename*/ } from "path";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import goToHomePage from "./goToHomePage.mjs";
-// import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
+import selectAttachmentDropdownOption from "./selectAttachmentDropdownOption.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-import sleep from "./sleep.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import buildDurationText from "./buildDurationText.mjs";
-import getSubmissionButtonsIfFound from "./getSubmissionButtonsIfFound.mjs";
 import handleAfterSubmitDone from "./handleAfterSubmitDone.mjs";
+import isAcceptanceButtonShown from "./isAcceptanceButtonShown.mjs";
 import createDetailsPageWhatsappHandlers from "./createDetailsPageWhatsappHandlers.mjs";
-import rewriteReferralDetails from "./rewriteReferralDetails.mjs";
-// import generateRandomMs from "./generateRandomMs.mjs";
-import speakText from "./speakText.mjs";
 import {
   USER_ACTION_TYPES,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
   htmlFilesPath,
-  dashboardLinkSelector,
 } from "./constants.mjs";
-
-function scheduleThresholdNudge(
-  referralEndTimestamp,
-  {
-    thresholdMs = 400,
-    jitterMs = 80, // ±80ms jitter to avoid exact timing patterns
-    onNudge = () => {},
-    signal,
-  } = {}
-) {
-  const now = Date.now();
-  const remaining = referralEndTimestamp - now;
-
-  const run = () => {
-    if (signal?.aborted) return;
-    onNudge(Math.max(0, referralEndTimestamp - Date.now()));
-  };
-
-  if (remaining <= thresholdMs) {
-    run();
-    return () => {};
-  }
-
-  const delay = Math.max(0, remaining - thresholdMs);
-  const jitter = (Math.random() * 2 - 1) * jitterMs;
-  const whenMS = Math.max(0, delay + jitter);
-  console.log({
-    delay,
-    jitter,
-    whenMS,
-  });
-  const timer = setTimeout(run, whenMS);
-
-  const abortHandler = () => {
-    clearTimeout(timer);
-  };
-
-  if (signal) signal.addEventListener("abort", abortHandler, { once: true });
-
-  return () => {
-    clearTimeout(timer);
-    if (signal) signal.removeEventListener("abort", abortHandler);
-  };
-}
 
 const processClientActionOnPatient = async ({
   browser,
@@ -81,10 +32,7 @@ const processClientActionOnPatient = async ({
 }) => {
   let preparingStartTime = Date.now();
 
-  // const CLIENT_NAME = process.env.CLIENT_NAME;
-
-  const { referralId, patientName, referralEndTimestamp, cutoffTimeMs } =
-    patient;
+  const { referralId, patientName, referralEndTimestamp } = patient;
 
   const isAcceptance = USER_ACTION_TYPES.ACCEPT === actionType;
 
@@ -145,7 +93,7 @@ const processClientActionOnPatient = async ({
   const referralIdRecordResult = await collectHomePageTableRows(
     page,
     referralId,
-    5000
+    8000
   );
 
   let { iconButton } = referralIdRecordResult || {};
@@ -162,87 +110,44 @@ const processClientActionOnPatient = async ({
     return;
   }
 
-  const remainingTime = referralEndTimestamp - Date.now() - 125;
-
-  if (remainingTime < 0) {
-    await sleep(remainingTime);
-  }
-
-  speakText({
-    text: "Go Go Go Go",
-    useMaleVoice: true,
-    delayMs: 0,
-    rate: 3,
-    volume: 100,
-    times: 1,
-  });
-
-  await closeCurrentPage(false);
-  return;
-
-  await rewriteReferralDetails(page);
-
-  const startTime = Date.now();
-
-  const abort = new AbortController();
-  const cancelNudge = scheduleThresholdNudge(referralEndTimestamp, {
-    thresholdMs: 350,
-    jitterMs: 80,
-    signal: abort.signal,
-    onNudge: (timeLeftMs) => {
-      speakText({
-        text: "Go Go Go Go",
-        useMaleVoice: true,
-        delayMs: 0,
-        rate: 3,
-        volume: 100,
-        times: 1,
-      });
-
-      console.log(
-        "nudge @",
-        new Date(),
-        "for",
-        new Date(referralEndTimestamp - 200),
-        "left",
-        timeLeftMs
-      );
-    },
-  });
+  let startTime = Date.now();
 
   try {
+    const remainingMs = referralEndTimestamp - Date.now();
+
+    const { elapsedMs, reason, message, isReadyByTime } =
+      await isAcceptanceButtonShown({
+        page,
+        idReferral: referralId,
+        remainingMs,
+      });
+
+    console.log(
+      `referralId=${referralId} remainingMs=${remainingMs} isReadyByTime=${isReadyByTime} reason=${reason} elapsedMs=${elapsedMs} message=${
+        typeof message === "string" ? message : "no-message"
+      }`
+    );
+
+    startTime = Date.now();
     await iconButton.click();
 
-    let referralButtons;
+    console.time(`took_time`);
 
-    while (!referralButtons) {
-      referralButtons = await getSubmissionButtonsIfFound(page);
+    await page.waitForSelector(".statusContainer", {
+      timeout: 5000,
+    });
 
-      if (referralButtons) {
-        break;
-      }
+    await selectAttachmentDropdownOption(page, actionName);
 
-      await page.click(dashboardLinkSelector);
-      const newReferralIdRecordResult = await collectHomePageTableRows(
-        page,
-        referralId,
-        3000
-      );
+    await page.evaluate(() => {
+      const el = document.querySelector("[secondarysidebar] > :nth-child(2)");
+      el?.scrollTo(0, 6000);
+    });
 
-      if (newReferralIdRecordResult.iconButton) {
-        await newReferralIdRecordResult.iconButton.click();
-        continue;
-      } else {
-        const newReferralIdRecordResultX = await collectHomePageTableRows(
-          page,
-          referralId,
-          4000
-        );
+    const fileInput = await page.$('#upload-single-file input[type="file"]');
+    await fileInput.uploadFile(filePath);
 
-        await newReferralIdRecordResultX.iconButton.click();
-        continue;
-      }
-    }
+    console.timeEnd(`took_time`);
 
     await handleAfterSubmitDone({
       page,
@@ -276,33 +181,11 @@ const processClientActionOnPatient = async ({
     );
     await closeCurrentPage(false);
   } finally {
-    cancelNudge?.();
     continueFetchingPatientsIfPaused();
   }
 };
 
 export default processClientActionOnPatient;
-
-// console.log("took time before remaining", Date.now() - preparingStartTime);
-
-// const allowedToSubmit = generateRandomMs(3800, 4400);
-
-// const remaining = referralEndTimestamp - Date.now() - allowedToSubmit;
-
-// console.log({
-//   remaining,
-//   allowedToSubmit,
-//   cutoffTimeMs,
-// });
-
-// if (remaining > 0) {
-//   await sleep(remaining);
-// }
-
-//  251.195ms
-// await selectAttachmentDropdownOption(page, actionName);
-// const fileInput = await page.$('#upload-single-file input[type="file"]');
-// await fileInput.uploadFile(filePath);
 
 // const selectedButton = referralButtons[isAcceptance ? 0 : 1];
 
@@ -318,61 +201,3 @@ export default processClientActionOnPatient;
 // console.log("took time to Left", leftTime);
 
 // const remaining = referralEndTimestamp - Date.now();
-
-// https://referralprogram.globemedsaudi.com/referrals/listing
-// {"pageSize":100,"pageNumber":1,"categoryReference":"pending","providerZone":[],"providerName":[],"specialtyCode":[],"referralTypeCode":[],"referralReasonCode":[],"genericSearch":"","sortOrder":"asc"}
-
-// {
-//     "data": {
-//         "pageNumber": 1,
-//         "pageSize": 100,
-//         "totalNumberOfPages": 0,
-//         "totalNumberOfRecords": 0,
-//         "hasNext": false,
-//         "tableHeaders": [
-//             {
-//                 "id": "referralDate",
-//                 "label": "Referral Date",
-//                 "sortingId": "Referraldate"
-//             },
-//             {
-//                 "id": "idReferral",
-//                 "label": "GMS Referral Id",
-//                 "sortingId": "Id"
-//             },
-//             {
-//                 "id": "ihalatyReference",
-//                 "label": "MOH Referral Nb",
-//                 "sortingId": "Idihalaty"
-//             },
-//             {
-//                 "id": "adherentName",
-//                 "label": "Patient Name",
-//                 "sortingId": "IdpatientNavigation.Firstname"
-//             },
-//             {
-//                 "id": "adherentNationalId",
-//                 "label": "National ID",
-//                 "sortingId": "IdpatientNavigation.Nationalid"
-//             },
-//             {
-//                 "id": "referralType",
-//                 "label": "Referral Type",
-//                 "sortingId": "IdreferraltypeNavigation.Description"
-//             },
-//             {
-//                 "id": "referralReason",
-//                 "label": "Referral Reason",
-//                 "sortingId": "IdreferralreasonNavigation.Description"
-//             },
-//             {
-//                 "id": "sourceZone",
-//                 "label": "Source Zone",
-//                 "sortingId": "SourceproviderNavigation.Providerzone"
-//             }
-//         ],
-//         "result": []
-//     },
-//     "statusCode": "Success",
-//     "errorMessage": null
-// }
