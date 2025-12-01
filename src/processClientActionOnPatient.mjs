@@ -41,7 +41,7 @@ async function waitForReferralDetails(page, timeout = 6000) {
 
     if (ok) return true;
 
-    await sleep(15);
+    await sleep(20);
   }
 
   return false;
@@ -119,7 +119,7 @@ const processClientActionOnPatient = async ({
 
   try {
     const element = await page.$(dashboardLinkSelector);
-    await element.click();
+    await element?.click();
   } catch (error) {}
 
   let startTime = Date.now();
@@ -153,11 +153,8 @@ const processClientActionOnPatient = async ({
       );
     }, referralId);
 
-    const now = Date.now();
     await waitForReferralDetails(page, 8000);
-    console.log("Time", Date.now() - now);
 
-    const now1 = Date.now();
     await Promise.allSettled([
       page.evaluate(() => {
         const section = document.querySelector(
@@ -171,7 +168,6 @@ const processClientActionOnPatient = async ({
       }),
       selectAttachmentDropdownOption(page, actionName),
     ]);
-    console.log("Time2", Date.now() - now1);
     const fileInput = await page.$('#upload-single-file input[type="file"]');
     await fileInput.uploadFile(filePath);
 
