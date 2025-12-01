@@ -114,7 +114,6 @@ const processClientActionOnPatient = async ({
     );
 
     startTime = Date.now();
-    console.time("took_time");
     await page.evaluate((referralId) => {
       window.history.replaceState(
         {
@@ -148,7 +147,6 @@ const processClientActionOnPatient = async ({
     await selectAttachmentDropdownOption(page, actionName);
     const fileInput = await page.$('#upload-single-file input[type="file"]');
     await fileInput.uploadFile(filePath);
-    console.timeEnd("took_time");
 
     await handleAfterSubmitDone({
       page,
