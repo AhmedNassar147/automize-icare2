@@ -7,12 +7,12 @@ import humanClick from "./humanClick.mjs";
 import { dashboardLinkSelector, homePageTableSelector } from "./constants.mjs";
 import sleep from "./sleep.mjs";
 
-const timeout = 10_000;
+const timeout = 11_000;
 
 const goToHomePage = async (page) => {
   try {
     await humanClick(page, dashboardLinkSelector);
-    await sleep(10 + Math.random() * 20);
+    await sleep(10 + Math.random() * 10);
     await page.waitForSelector(homePageTableSelector, { timeout });
 
     return true;

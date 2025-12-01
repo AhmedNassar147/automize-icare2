@@ -131,7 +131,7 @@ const processClientActionOnPatient = async ({
     await iconButton.click();
 
     await page.waitForSelector(".statusContainer", {
-      timeout: 6000,
+      timeout: 7000,
     });
 
     await page.evaluate(() => {
