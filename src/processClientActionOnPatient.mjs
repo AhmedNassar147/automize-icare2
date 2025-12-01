@@ -41,7 +41,7 @@ async function waitForReferralDetails(page, timeout = 6000) {
 
     if (ok) return true;
 
-    await sleep(20);
+    await sleep(15);
   }
 
   return false;
