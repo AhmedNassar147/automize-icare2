@@ -23,6 +23,24 @@ import {
 } from "./constants.mjs";
 import sleep from "./sleep.mjs";
 
+async function waitForReferralDetails(page, timeout = 6000) {
+  const start = Date.now();
+
+  while (Date.now() - start < timeout) {
+    const ok = await page.evaluate(() => {
+      // Find ANY <h4> whose text is exactly "Referral Details"
+      const h4s = Array.from(document.querySelectorAll("h4"));
+      return h4s.some((el) => el.textContent.trim() === "Referral Details");
+    });
+
+    if (ok) return true;
+
+    await sleep(15);
+  }
+
+  return false;
+}
+
 const processClientActionOnPatient = async ({
   browser,
   actionType,
@@ -129,22 +147,21 @@ const processClientActionOnPatient = async ({
       );
     }, referralId);
 
-    await page.waitForSelector(".statusContainer", {
-      timeout: 7000,
-    });
+    await waitForReferralDetails(page, 8000);
 
-    await page.evaluate(() => {
-      const section = document.querySelector(
-        "section.referral-button-container"
-      );
-      if (!section) return;
-      section.style.position = "absolute";
-      section.style.top = "845px";
-      section.style.right = "8%";
-      section.style.width = "100%";
-    });
-
-    await selectAttachmentDropdownOption(page, actionName);
+    await Promise.allSettled([
+      page.evaluate(() => {
+        const section = document.querySelector(
+          "section.referral-button-container"
+        );
+        if (!section) return;
+        section.style.position = "absolute";
+        section.style.top = "845px";
+        section.style.right = "8%";
+        section.style.width = "100%";
+      }),
+      selectAttachmentDropdownOption(page, actionName),
+    ]);
     const fileInput = await page.$('#upload-single-file input[type="file"]');
     await fileInput.uploadFile(filePath);
 
