@@ -339,14 +339,14 @@ const currentProfile = "Profile 1";
       try {
         const { referralId, referralEndTimestamp, providerName } = patient;
 
-        speekText({
-          text: "Prepare",
-          times: 1,
-          useMaleVoice: true,
-          volume: 100,
-        });
+        // speekText({
+        //   text: "Prepare",
+        //   times: 1,
+        //   useMaleVoice: true,
+        //   volume: 100,
+        // });
 
-        await sleep(1000);
+        // await sleep(1000);
 
         const acceptanceFilePath = path.join(
           generatedPdfsPathForAcceptance,
