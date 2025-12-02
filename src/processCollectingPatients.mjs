@@ -50,9 +50,9 @@ const getSaudiStartAndEndDate = ({
     const minsLeft = parseInt(match?.[1], 10) ?? 0;
     const secsLeft = parseInt(match?.[2], 10) ?? 0;
 
-    leftMs = (minsLeft * 60 + secsLeft) * 1000;
+    const _leftMs = (minsLeft * 60 + secsLeft) * 1000;
 
-    const backExtraTime = Min_15 - leftMs;
+    const backExtraTime = Min_15 - _leftMs;
 
     saStartDate = new Date(
       detailsAPiFiresAtMS - detailsAPiServerResponseTimeMS - backExtraTime

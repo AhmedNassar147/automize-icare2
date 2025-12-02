@@ -133,7 +133,7 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         referralType: refType,
         note: note,
         detailsAPiFiresAtMS: apiFiresAtMS,
-        detailsAPiServerResponseTimeMS: serverResponseTimeMS,
+        detailsAPiServerResponseTimeMS: Math.trunc(serverResponseTimeMS),
         caseAlertMessage: message,
         quotaExceededMessage,
         patientDetailsError,
