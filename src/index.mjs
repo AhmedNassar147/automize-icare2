@@ -19,6 +19,7 @@ import cron from "node-cron";
 import PatientStore from "./PatientStore.mjs";
 import readJsonFile from "./readJsonFile.mjs";
 import checkPathExists from "./checkPathExists.mjs";
+import speekText from "./speakText.mjs";
 
 import waitForWaitingCountWithInterval, {
   continueFetchingPatientsIfPaused,
@@ -46,6 +47,7 @@ import {
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
 } from "./constants.mjs";
+import sleep from "./sleep.mjs";
 // import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
 // import closePageSafely from "./closePageSafely.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
@@ -336,6 +338,16 @@ const currentProfile = "Profile 1";
     patientsStore.on("patientAccepted", async (patient) => {
       try {
         const { referralId, referralEndTimestamp, providerName } = patient;
+
+        speekText({
+          text: `Visit ${referralId}`,
+          times: 1,
+          useMaleVoice: true,
+          volume: 100,
+        });
+
+        await sleep(4000);
+
         const acceptanceFilePath = path.join(
           generatedPdfsPathForAcceptance,
           `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
