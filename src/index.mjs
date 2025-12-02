@@ -346,7 +346,7 @@ const currentProfile = "Profile 1";
           volume: 100,
         });
 
-        await sleep(4000);
+        await sleep(6000);
 
         const acceptanceFilePath = path.join(
           generatedPdfsPathForAcceptance,
