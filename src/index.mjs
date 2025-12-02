@@ -46,6 +46,7 @@ import {
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
+  searchIfAcceptacneButtonShownMS,
 } from "./constants.mjs";
 import sleep from "./sleep.mjs";
 // import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
@@ -346,7 +347,14 @@ const currentProfile = "Profile 1";
           volume: 100,
         });
 
-        await sleep(5500);
+        const dateNow = Date.now();
+        const diff = referralEndTimestamp - dateNow;
+
+        const sleepTime = diff - (searchIfAcceptacneButtonShownMS - 100);
+
+        if (sleepTime > 0) {
+          await sleep(sleepTime);
+        }
 
         const acceptanceFilePath = path.join(
           generatedPdfsPathForAcceptance,

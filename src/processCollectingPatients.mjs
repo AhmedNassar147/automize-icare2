@@ -8,6 +8,7 @@ import sleep from "./sleep.mjs";
 import collectHomePageTableRows from "./collectHomeTableRows.mjs";
 import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
+import { cutoffTimeMs } from "./constants.mjs";
 
 const formateDateToString = (date) =>
   new Intl.DateTimeFormat("en-GB", {
@@ -144,7 +145,6 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
       }
 
       // const cutoffTimeMs = generateRandomInt(41_000, 45_000);
-      const cutoffTimeMs = 18_000;
 
       const finalData = {
         referralId,

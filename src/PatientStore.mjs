@@ -10,6 +10,8 @@ import {
   COLLECTD_PATIENTS_FILE_NAME,
   USER_MESSAGES,
   USER_ACTION_TYPES,
+  searchIfAcceptacneButtonShownMS,
+  cutoffTimeMs,
 } from "./constants.mjs";
 
 async function safeWritePatientData(data, retries = 3, delay = 200) {
@@ -162,8 +164,11 @@ class PatientStore extends EventEmitter {
       return false;
 
     const now = Date.now();
+    const lastTime =
+      referralEndDateActionableAtMS +
+      (cutoffTimeMs - searchIfAcceptacneButtonShownMS);
 
-    return now < referralEndDateActionableAtMS;
+    return now < lastTime;
   }
 
   canStillProcessPatient(referralId) {
