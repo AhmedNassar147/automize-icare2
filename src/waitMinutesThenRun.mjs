@@ -16,7 +16,7 @@ const waitMinutesThenRun = (
   const delayMain = caseWillBeSubmitMSAt - now;
 
   // Time until warning (9 seconds before end)
-  const WARNING_OFFSET = 9000;
+  const WARNING_OFFSET = 10500;
   const delayWarning = delayMain - WARNING_OFFSET;
 
   const cancel = () => {
