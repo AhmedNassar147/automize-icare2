@@ -82,6 +82,7 @@ const currentProfile = "Profile 1";
     KEY_PATH,
     HOST,
     PORT,
+    CLIENT_NAME,
   } = process.env;
 
   let server;
@@ -334,7 +335,7 @@ const currentProfile = "Profile 1";
     // Broadcast only when timers fire
     patientsStore.on("patientAccepted", async (patient) => {
       try {
-        const { referralId, referralEndTimestamp } = patient;
+        const { referralId, referralEndTimestamp, providerName } = patient;
         const acceptanceFilePath = path.join(
           generatedPdfsPathForAcceptance,
           `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
@@ -348,6 +349,9 @@ const currentProfile = "Profile 1";
             referralId,
             acceptanceFileBase64: filebase64,
             referralEndTimestamp,
+            providerName,
+            clientName: CLIENT_NAME,
+            fileName: `accept-${referralId}.pdf`,
           },
         });
 
