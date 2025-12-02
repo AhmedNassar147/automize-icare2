@@ -211,15 +211,20 @@ class PatientStore extends EventEmitter {
       };
     }
 
-    const timer = waitMinutesThenRun(referralEndDateActionableAtMS, () => {
-      this.pauseFetchingPatients?.();
-      actionSet.delete(referralId);
-      this.patientTimers.delete(referralId);
-      this.emit(
-        eventName,
-        isAccepting ? { ...patient, isSuperAcceptance } : patient
-      );
-    });
+    const timer = waitMinutesThenRun(
+      referralEndDateActionableAtMS,
+      () => {
+        this.pauseFetchingPatients?.();
+        actionSet.delete(referralId);
+        this.patientTimers.delete(referralId);
+        this.emit(
+          eventName,
+          isAccepting ? { ...patient, isSuperAcceptance } : patient
+        );
+      },
+      referralId,
+      isAccepting
+    );
 
     actionSet.add(referralId);
     this.patientTimers.set(referralId, timer);

@@ -46,7 +46,6 @@ import {
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
-  searchIfAcceptacneButtonShownMS,
 } from "./constants.mjs";
 import sleep from "./sleep.mjs";
 // import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
@@ -341,20 +340,13 @@ const currentProfile = "Profile 1";
         const { referralId, referralEndTimestamp, providerName } = patient;
 
         speekText({
-          text: `Visit ${referralId}`,
+          text: "Prepare",
           times: 1,
           useMaleVoice: true,
           volume: 100,
         });
 
-        const dateNow = Date.now();
-        const diff = referralEndTimestamp - dateNow;
-
-        const sleepTime = diff - (searchIfAcceptacneButtonShownMS - 100);
-
-        if (sleepTime > 0) {
-          await sleep(sleepTime);
-        }
+        await sleep(1500);
 
         const acceptanceFilePath = path.join(
           generatedPdfsPathForAcceptance,

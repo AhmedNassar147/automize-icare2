@@ -1,56 +1,76 @@
-/*
- *
- * helper: `waitMinutesThenRun`.
- *
- */
-const waitMinutesThenRun = (caseWillBeSubmitMSAt, asyncAction) => {
-  // isoDate is already in ISO format, just parse it directly
-  let timeoutId;
+const waitMinutesThenRun = (
+  caseWillBeSubmitMSAt,
+  asyncAction,
+  referralId,
+  useVisitVoice
+) => {
+  let timeoutIdMain;
+  let timeoutIdWarn;
   let cancelled = false;
 
-  const delay = caseWillBeSubmitMSAt - Date.now();
+  const now = Date.now();
+
+  // Time until main callback
+  const delayMain = caseWillBeSubmitMSAt - now;
+
+  // Time until warning (9 seconds before end)
+  const WARNING_OFFSET = 9000;
+  const delayWarning = delayMain - WARNING_OFFSET;
 
   const cancel = () => {
     cancelled = true;
-    if (timeoutId) {
-      clearTimeout(timeoutId);
+    clearTimeout(timeoutIdMain);
+    if (timeoutIdWarn) {
+      clearTimeout(timeoutIdWarn);
     }
   };
 
-  if (delay <= 0) {
-    const immediateRun = async () => {
-      if (cancelled) return;
+  // ---- Early 9-second warning ----
+  if (useVisitVoice) {
+    if (delayWarning <= 0) {
+      // Already inside 9 seconds → fire immediately
+      speekText({
+        text: `Visit ${referralId}`,
+        times: 1,
+        useMaleVoice: true,
+        volume: 100,
+      });
+    } else {
+      timeoutIdWarn = setTimeout(() => {
+        if (cancelled) return;
+        speekText({
+          text: `Visit ${referralId}`,
+          times: 1,
+          useMaleVoice: true,
+          volume: 100,
+        });
+      }, delayWarning);
+    }
+  }
 
+  // ---- Main execution at end time ----
+  if (delayMain <= 0) {
+    (async () => {
+      if (cancelled) return;
       try {
         await asyncAction();
       } catch (err) {
-        console.error(
-          "🛑 Error when calling patient action in waitMinutesThenRun:",
-          err
-        );
+        console.error("Error in asyncAction:", err);
       }
-    };
-    immediateRun();
-    return {
-      cancel,
-    };
+    })();
+    return { cancel };
   }
 
-  timeoutId = setTimeout(async () => {
+  timeoutIdMain = setTimeout(async () => {
     if (cancelled) return;
     try {
       await asyncAction();
     } catch (err) {
-      console.error(
-        "🛑 Error when calling patient action in waitMinutesThenRun:",
-        err
-      );
+      console.error("Error in asyncAction:", err);
     }
-  }, delay);
+  }, delayMain);
 
-  return {
-    cancel,
-  };
+  return { cancel };
 };
 
 export default waitMinutesThenRun;
