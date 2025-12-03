@@ -49,7 +49,7 @@ import {
 } from "./constants.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
-import speakText from "./speakText.mjs";
+import sleep from "./sleep.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -372,13 +372,12 @@ const currentProfile = "Profile 1";
           referralId,
           remainingMs,
         });
-        speakText({
-          text: "Accept Accept",
-          times: 1,
-          delayMs: 0,
-          useMaleVoice: true,
-          volume: 100,
+
+        await sleep(20);
+        await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+          message: `Accept ${referralId}`,
         });
+
         await closePageSafely(page);
         console.log(
           `Patient=${referralId} remainingMs=${remainingMs} reason=${reason} elapsedMs=${elapsedMs}`
