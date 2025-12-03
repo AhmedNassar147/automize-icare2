@@ -59,7 +59,7 @@ export const ALLOWED_MINUTES_TO_REVIEW_PATIENTS = 15;
 // export const cutoffTimeMs = 14_400;
 // export const searchIfAcceptacneButtonShownMS = 12_000;
 
-export const cutoffTimeMs = 11_000;
+export const cutoffTimeMs = 25_000;
 export const searchIfAcceptacneButtonShownMS = 11_000;
 
 export const EFFECTIVE_REVIEW_DURATION_MS =

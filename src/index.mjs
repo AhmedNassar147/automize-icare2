@@ -19,7 +19,6 @@ import cron from "node-cron";
 import PatientStore from "./PatientStore.mjs";
 import readJsonFile from "./readJsonFile.mjs";
 import checkPathExists from "./checkPathExists.mjs";
-import speekText from "./speakText.mjs";
 
 import waitForWaitingCountWithInterval, {
   continueFetchingPatientsIfPaused,
@@ -338,15 +337,6 @@ const currentProfile = "Profile 1";
     patientsStore.on("patientAccepted", async (patient) => {
       try {
         const { referralId, referralEndTimestamp, providerName } = patient;
-
-        // speekText({
-        //   text: "Prepare",
-        //   times: 1,
-        //   useMaleVoice: true,
-        //   volume: 100,
-        // });
-
-        // await sleep(1000);
 
         const acceptanceFilePath = path.join(
           generatedPdfsPathForAcceptance,
