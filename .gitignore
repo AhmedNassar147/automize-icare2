@@ -21,4 +21,5 @@
 /src/fix-xnew.mjs
 /src/fix-ryd.mjs
 /src/fix-super.mjs
+/src/fix-simple-super.mjs
 /start-auto.bat

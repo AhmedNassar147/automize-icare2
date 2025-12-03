@@ -87,7 +87,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
         if (pageUrl.toLowerCase().includes(startingPageUrl.toLowerCase())) {
           await page.waitForSelector(homePageTableSelector, {
-            timeout: 6000,
+            timeout: 7000,
           });
 
           hasEnteredStartingPage = true;
