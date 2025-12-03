@@ -86,7 +86,7 @@ const processClientActionOnPatient = async ({
     });
 
     await page.waitForSelector(tableRowsSelector, {
-      timeout: 6000,
+      timeout: 9000,
     });
   } catch (error) {}
 
@@ -109,18 +109,18 @@ const processClientActionOnPatient = async ({
     await closePageSafely(page);
   };
 
-  const timeToStartSearch = referralEndTimestamp - 11050;
+  // const timeToStartSearch = referralEndTimestamp - 11050;
 
-  const sleepTime = timeToStartSearch - Date.now();
+  // const sleepTime = timeToStartSearch - Date.now();
 
-  if (sleepTime > 0) {
-    await sleep(sleepTime);
-  }
+  // if (sleepTime > 0) {
+  //   await sleep(sleepTime);
+  // }
 
-  try {
-    const element = await page.$(dashboardLinkSelector);
-    await element?.click();
-  } catch (error) {}
+  // try {
+  //   const element = await page.$(dashboardLinkSelector);
+  //   await element?.click();
+  // } catch (error) {}
 
   let startTime = Date.now();
 
