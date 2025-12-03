@@ -49,7 +49,6 @@ import {
 } from "./constants.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
-import sleep from "./sleep.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -373,9 +372,8 @@ const currentProfile = "Profile 1";
           remainingMs,
         });
 
-        await sleep(20);
         await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-          message: `Accept ${referralId}`,
+          message: `*Accept ${referralId}*`,
         });
 
         await closePageSafely(page);
