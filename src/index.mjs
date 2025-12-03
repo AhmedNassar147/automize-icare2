@@ -372,13 +372,15 @@ const currentProfile = "Profile 1";
           remainingMs,
         });
 
+        const messageStartTime = Date.now();
         await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
           message: `*Accept ${referralId}*`,
         });
+        const messageTime = Date.now() - messageStartTime;
 
         await closePageSafely(page);
         console.log(
-          `Patient=${referralId} remainingMs=${remainingMs} reason=${reason} elapsedMs=${elapsedMs}`
+          `Patient=${referralId} remainingMs=${remainingMs} reason=${reason} elapsedMs=${elapsedMs} messageStartTime=${messageStartTime} messageTime=${messageTime}`
         );
 
         const _remainingMs = referralEndTimestamp - Date.now();
