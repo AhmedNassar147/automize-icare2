@@ -321,20 +321,20 @@
       return;
     }
 
-    cashedFile = base64ToFile(acceptanceFileBase64, fileName);
+    // cashedFile = base64ToFile(acceptanceFileBase64, fileName);
 
-    const remainingMs = referralEndTimestamp - Date.now();
+    // const remainingMs = referralEndTimestamp - Date.now();
 
-    const { elapsedMs, reason } = await isAcceptanceButtonShown({
-      idReferral: referralId,
-      remainingMs,
-    });
+    // const { elapsedMs, reason } = await isAcceptanceButtonShown({
+    //   idReferral: referralId,
+    //   remainingMs,
+    // });
 
     iconButton.click();
 
-    LOG(
-      `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
-    );
+    // LOG(
+    //   `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
+    // );
   }
 
   // --- Event Listener for Service Worker Messages ---
