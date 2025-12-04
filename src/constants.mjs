@@ -28,26 +28,31 @@ export const PATIENT_SECTIONS_STATUS = {
     targetText: "Pending Referrals",
     foundCountText: "waiting confirmation referrals",
     noCountText: "No waiting referrals found",
+    categoryReference: "pending",
   },
   [TABS_COLLECTION_TYPES.ACCEPTED]: {
     targetText: "Accepted Referrals",
     foundCountText: "Accepted referrals requests",
     noCountText: "No Accepted referrals requests found",
+    categoryReference: "accepted",
   },
   [TABS_COLLECTION_TYPES.CONFIRMED]: {
     targetText: "Confirmed Referrals",
     foundCountText: "confirmed referrals requests",
     noCountText: "No confirmed referrals requests found",
+    categoryReference: "confirmed",
   },
   [TABS_COLLECTION_TYPES.ADMITTED]: {
     targetText: "Admitted Requests",
     foundCountText: "Admitted referrals requests",
     noCountText: "No Admitted referrals found",
+    categoryReference: "admitted",
   },
   [TABS_COLLECTION_TYPES.DISCHARGED]: {
     targetText: "Discharged Requests",
     foundCountText: "Discharged Requests requests",
     noCountText: "No Discharged Requests found",
+    categoryReference: "discharged",
   },
 };
 
@@ -115,9 +120,6 @@ export const globMedHeaders = {
   "Content-Type": "application/json",
   "Accept-Language": "en-US,en;q=0.9",
   "X-CSRF": "1",
-  // Referer: "https://referralprogram.globemedsaudi.com/referral/details",
-  // Origin: APP_URL,
-  // Host: "referralprogram.globemedsaudi.com",
 };
 
 export const BLOCK_PATHS = new Set([

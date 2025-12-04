@@ -22,7 +22,6 @@
 
   let cashedFile = null;
   let actionButtonCalled = false;
-  let scrollableElm = null;
 
   const globMedHeaders = {
     Accept: "application/json, text/plain, */*",
@@ -36,8 +35,6 @@
 
   const CONFIG = {
     waitElmMs: 8000,
-    waitStateMs: 120,
-    pollStepMs: 5,
     waitTableMs: 15000,
     gmsColOrder: 2,
     upperSectionItemOrder: 3, //  3 confirmed, 2 accepted, 1 pending
@@ -114,7 +111,7 @@
       );
     });
 
-    await sleep(5);
+    await sleep(2);
 
     const directLi = await waitForElm(
       `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
@@ -302,14 +299,6 @@
 
     actionButtonCalled = true;
 
-    // Get the scrollable element early
-    const wrapper = document.querySelector("[secondarysidebar]");
-    scrollableElm = wrapper?.children[1];
-
-    if (!wrapper) {
-      ERR("[dash] [secondarysidebar] wrapper not found");
-    }
-
     const { referralId, referralEndTimestamp, acceptanceFileBase64, fileName } =
       patient;
 
@@ -337,38 +326,6 @@
     );
   }
 
-  async function runIfOnDetails() {
-    if (!/^\/referral\/details/i.test(location.pathname)) {
-      return;
-    }
-    const t0 = Date.now();
-
-    const statusContainer = await waitForElm(".statusContainer");
-
-    if (statusContainer && cashedFile) {
-      scrollableElm?.scrollTo(0, 155);
-
-      const section = document.querySelector(
-        "section.referral-button-container"
-      );
-
-      await chooseOption();
-
-      if (section) {
-        section.style.position = "absolute";
-        section.style.top = "315px";
-        section.style.right = "8%";
-        section.style.width = "100%";
-      }
-
-      await uploadFile();
-
-      cashedFile = null;
-      actionButtonCalled = false;
-      localStorage.setItem("TM", `${Date.now() - t0}ms, ${!!scrollableElm}`);
-    }
-  }
-
   // --- Event Listener for Service Worker Messages ---
   chrome.runtime.onMessage.addListener(async (request) => {
     if (request.type === "accept" && request.data) {
@@ -384,48 +341,77 @@
     return false;
   });
 
-  // --- Initial Run and Route Hooks ---
-  function handleLocationChange() {
-    runIfOnDetails().catch(ERR);
+  async function runIfOnDetails() {
+    const t0 = Date.now();
+
+    const statusContainer = await waitForElm(".statusContainer");
+
+    if (statusContainer && cashedFile) {
+      const section = document.querySelector(
+        "section.referral-button-container"
+      );
+
+      if (section) {
+        section.style.position = "absolute";
+        section.style.top = "845px";
+        section.style.right = "8%";
+        section.style.width = "100%";
+      }
+      await chooseOption();
+      await uploadFile();
+
+      cashedFile = null;
+      actionButtonCalled = false;
+      localStorage.setItem("TM", `${Date.now() - t0}ms`);
+    }
   }
 
-  (function installRouteHooks() {
-    // Wrap history methods to detect client-side route changes (React Router)
+  let running = false;
+  let scheduled = null;
+
+  async function handleLocationChange() {
+    console.log("===> CALLED <====");
+    if (running) return;
+    running = true;
+    try {
+      if (/\/referral\/details/i.test(location.pathname)) {
+        await runIfOnDetails();
+      }
+    } finally {
+      await sleep(2000); // wait for UI to settle
+      running = false;
+    }
+  }
+
+  function scheduleHandleLocationChange() {
+    if (scheduled) clearTimeout(scheduled);
+    scheduled = setTimeout(() => {
+      scheduled = null;
+      handleLocationChange();
+    }, 20);
+  }
+
+  // --- History hook for React Router ---
+  (function installHistoryHook() {
     const wrap = (orig) =>
       function (state, title, url) {
         const rv = orig.apply(this, arguments);
-        // Wait for next tick to allow React Router to render the new component
-        setTimeout(handleLocationChange, 20);
+        if (/\/referral\/details/i.test(url)) {
+          scheduleHandleLocationChange();
+        }
         return rv;
       };
 
     try {
       history.pushState = wrap(history.pushState);
       history.replaceState = wrap(history.replaceState);
-      addEventListener("popstate", () => {
-        // Wait for next tick to allow React Router to render the new component
-        setTimeout(handleLocationChange, 20);
+      window.addEventListener("popstate", () => {
+        if (/\/referral\/details/i.test(location.pathname)) {
+          scheduleHandleLocationChange();
+        }
       });
     } catch (e) {
-      ERR("Failed to install history hooks:", e);
+      console.error("Failed to install history hooks:", e);
     }
   })();
-
-  // watch app root for route view changes (extra reliability for React)
-  (function observeAppRoot() {
-    const root = document.getElementById("root") || document.body;
-    const mo = new MutationObserver(() => {
-      // small debounce
-      setTimeout(() => {
-        if (/\/referral\/details/i.test(location.pathname))
-          handleLocationChange();
-      }, 20);
-    });
-    try {
-      mo.observe(root, { childList: true, subtree: true });
-    } catch (e) {}
-  })();
-
-  // Initial run on page load
-  handleLocationChange();
 })();
