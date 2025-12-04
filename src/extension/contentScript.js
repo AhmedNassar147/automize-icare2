@@ -302,6 +302,17 @@
     const { referralId, referralEndTimestamp, acceptanceFileBase64, fileName } =
       patient;
 
+    const upperFilterContainer = document.querySelector(
+      ".MuiGrid-root.MuiGrid-container"
+    );
+
+    const itemElement = upperFilterContainer.querySelector(
+      `.MuiGrid-root.MuiGrid-item:nth-child(${CONFIG.upperSectionItemOrder}) small`
+    );
+
+    itemElement.click();
+    await sleep(1500 + Math.random() * 300);
+
     const iconButton = await findRowByReferralId(referralId);
 
     if (!iconButton) {
@@ -342,6 +353,8 @@
   });
 
   async function runIfOnDetails() {
+    console.log("===> CALLED IN DETAILS <====");
+
     const t0 = Date.now();
 
     const statusContainer = await waitForElm(".statusContainer");
