@@ -1,13 +1,19 @@
 {
-  "manifest_version": 2,
-  "name": "GM /referrals/details",
-  "version": "1.0",
-  "permissions": [
-    "webRequest",
-    "webRequestBlocking",
-    "webRequestFilterResponse",
-    "https://referralprogram.globemedsaudi.com/*"
-  ],
-  "background": { "scripts": ["background.js"] },
-  "applications": { "gecko": { "id": "gm-details@example.local" } }
+  "manifest_version": 3,
+  "name": "GlobeMed Referral Helper",
+  "version": "3.3",
+  "description": "GM referral acceptance",
+  "minimum_chrome_version": "116",
+  "host_permissions": ["https://referralprogram.globemedsaudi.com/*"],
+  "permissions": ["activeTab", "tabs", "alarms", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://referralprogram.globemedsaudi.com/*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_start"
+    }
+  ]
 }

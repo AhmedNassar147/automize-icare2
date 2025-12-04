@@ -1,52 +1,180 @@
-const URL_PAT = "*://referralprogram.globemedsaudi.com/referrals/details*";
+// background.js (MV3 service worker) — alarm-driven keepalive & reliable reconnect
 
-function tryParseJSON(s) {
+const CONFIG = {
+  reconnectBaseMs: 600, // initial backoff (ms)
+  reconnectMaxMs: 10000, // max backoff (ms)
+  alarmPeriodMinutes: 0.5, // periodic alarm every 30s
+  WS_URL: "wss://localhost:8443/",
+};
+
+const LOG = (...a) => console.log("[GM SW]", ...a);
+const ERR = (...a) => console.error("[GM SW]", ...a);
+
+let ws = null;
+let wsConnecting = false;
+let backoffMs = CONFIG.reconnectBaseMs;
+
+// ensure periodic alarm exists on install and startup
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.alarms.create("gm-check-ws", {
+    periodInMinutes: CONFIG.alarmPeriodMinutes,
+  });
+  LOG("Alarm gm-check-ws created (onInstalled)");
+});
+chrome.runtime.onStartup?.addListener(() => {
+  chrome.alarms.create("gm-check-ws", {
+    periodInMinutes: CONFIG.alarmPeriodMinutes,
+  });
+  LOG("Alarm gm-check-ws ensured (onStartup)");
+});
+
+// universal alarms handler
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (!alarm || !alarm.name) return;
+  if (alarm.name === "gm-check-ws" || alarm.name === "gm-reconnect") {
+    ensureConnected();
+  }
+});
+
+// schedule reconnect via a one-shot alarm (reliable across SW reloads)
+function scheduleReconnect(delayMs) {
+  const when = Date.now() + Math.max(0, delayMs || backoffMs);
+  // exponential backoff update
+  backoffMs = Math.min(
+    CONFIG.reconnectMaxMs,
+    Math.max(backoffMs * 2, CONFIG.reconnectBaseMs)
+  );
+  LOG(
+    `Scheduling reconnect alarm 'gm-reconnect' at ${new Date(
+      when
+    ).toISOString()} (next backoff ${backoffMs}ms)`
+  );
   try {
-    return JSON.parse(s);
-  } catch {
-    return null;
+    chrome.alarms.create("gm-reconnect", { when });
+  } catch (e) {
+    // fallback to setTimeout (may not fire if SW is suspended)
+    LOG("chrome.alarms.create failed, falling back to setTimeout", e);
+    setTimeout(() => ensureConnected(), delayMs || backoffMs);
   }
 }
 
-browser.webRequest.onHeadersReceived.addListener(
-  (details) => {
-    try {
-      const filter = browser.webRequest.filterResponseData(details.requestId);
-      const dec = new TextDecoder("utf-8");
-      const enc = new TextEncoder();
-      let buf = "";
-
-      filter.ondata = (e) => {
-        buf += dec.decode(e.data, { stream: true });
-      };
-      filter.onstop = () => {
-        buf += dec.decode();
-        let out = buf;
-
-        const json = tryParseJSON(buf);
-        if (json && json.data && typeof json.data === "object") {
-          json.data.status = "P";
-          json.data.canUpdate = true;
-          json.data.canTakeAction = true;
-          out = JSON.stringify(json);
-          // console.log("[ext] modified /referrals/details");
-        }
-
-        try {
-          filter.write(enc.encode(out));
-        } catch {}
-        filter.disconnect();
-      };
-      filter.onerror = (err) => {
-        try {
-          filter.disconnect();
-        } catch {}
-      };
-    } catch (e) {
-      // If filter creation fails, do nothing (fallback to original response)
+function ensureConnected() {
+  try {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      // open — send ping
+      try {
+        ws.send(JSON.stringify({ type: "ping" }));
+        LOG("ping sent");
+      } catch (e) {
+        ERR("ping failed; closing ws to trigger reconnect", e);
+        safeCloseWs();
+        scheduleReconnect(backoffMs);
+      }
+      return;
     }
-    return {};
-  },
-  { urls: [URL_PAT], types: ["xmlhttprequest", "fetch"] },
-  ["blocking", "responseHeaders"]
-);
+    if (wsConnecting) return;
+    connectWS();
+  } catch (e) {
+    ERR("ensureConnected error", e);
+  }
+}
+
+function handleIncomingMsg(msg) {
+  const { type, data } = msg;
+  if (type === "accept" && data?.referralId) {
+    const dashboardUrls = [
+      "https://referralprogram.globemedsaudi.com/dashboard/referral*",
+      "https://referralprogram.globemedsaudi.com/Dashboard/Referral*",
+    ];
+    chrome.tabs.query({ url: dashboardUrls }, (tabs) => {
+      if (chrome.runtime.lastError) {
+        ERR("tabs.query error", chrome.runtime.lastError.message);
+        return;
+      }
+      if (!tabs || !tabs.length) {
+        LOG("No dashboard tab found to forward accept message");
+        return;
+      }
+      const tab = tabs.find((t) => t.active) || tabs[0];
+      if (!tab || !tab.id) return;
+      // callback-based sendMessage + lastError check
+      chrome.tabs.sendMessage(tab.id, { type: "accept", data }, () => {
+        if (chrome.runtime.lastError) {
+          ERR("sendMessage failed:", chrome.runtime.lastError.message);
+        } else {
+          LOG("accept message forwarded to tab", tab.id, data.referralId);
+        }
+      });
+    });
+  }
+
+  // // other message types (e.g. debugging logs)
+  // if (type === "LOG" && data?.message) {
+  //   LOG("From content script:", data.message);
+  // }
+}
+
+function connectWS() {
+  if (ws && ws.readyState === WebSocket.OPEN) return;
+  wsConnecting = true;
+
+  try {
+    ws = new WebSocket(CONFIG.WS_URL);
+  } catch (e) {
+    wsConnecting = false;
+    ERR("WebSocket constructor failed:", e);
+    scheduleReconnect(backoffMs);
+    return;
+  }
+
+  ws.onopen = () => {
+    wsConnecting = false;
+    backoffMs = CONFIG.reconnectBaseMs; // reset backoff
+    LOG("WS open");
+  };
+
+  ws.onmessage = (ev) => {
+    let msg;
+    try {
+      msg = JSON.parse(typeof ev.data === "string" ? ev.data : "");
+    } catch {
+      return;
+    }
+    if (!msg || typeof msg !== "object") return;
+    handleIncomingMsg(msg);
+  };
+
+  ws.onclose = (ev) => {
+    LOG("WS closed", ev && ev.code);
+    wsConnecting = false;
+    safeCloseWs();
+    scheduleReconnect(backoffMs);
+  };
+
+  ws.onerror = (e) => {
+    ERR("WS error", e);
+    // force close to unify handling in onclose
+    try {
+      ws.close();
+    } catch (err) {
+      ERR("force close failed", err);
+    }
+  };
+}
+
+function safeCloseWs() {
+  try {
+    if (ws) {
+      ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null;
+      try {
+        ws.close();
+      } catch (e) {}
+      ws = null;
+    }
+  } catch (e) {
+    ERR("safeCloseWs error", e);
+  }
+}
+
+// try initial connection on startup of SW
+ensureConnected();

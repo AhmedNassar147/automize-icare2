@@ -33,7 +33,7 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
-import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+// import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 
 import {
   waitingPatientsFolderDirectory,
@@ -45,10 +45,10 @@ import {
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
-  HOME_PAGE_URL,
+  // HOME_PAGE_URL,
 } from "./constants.mjs";
-import closePageSafely from "./closePageSafely.mjs";
-import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
+// import closePageSafely from "./closePageSafely.mjs";
+// import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -357,35 +357,32 @@ const currentProfile = "Profile 1";
           },
         });
 
-        const [page] = await makeUserLoggedInOrOpenHomePage({
-          browser,
-          sendWhatsappMessage,
-          startingPageUrl: HOME_PAGE_URL,
-          noCursor: true,
-        });
+        // const [page] = await makeUserLoggedInOrOpenHomePage({
+        //   browser,
+        //   sendWhatsappMessage,
+        //   startingPageUrl: HOME_PAGE_URL,
+        //   noCursor: true,
+        // });
+
+        // const { reason, elapsedMs } = await waitUntilCanTakeActionByWindow({
+        //   page,
+        //   referralId,
+        //   remainingMs,
+        // });
+
+        // const messageStartTime = Date.now();
+        // await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+        //   message: `*Accept ${referralId}*`,
+        // });
+        // const messageTime = Date.now() - messageStartTime;
+
+        // await closePageSafely(page);
 
         const remainingMs = referralEndTimestamp - Date.now();
 
-        const { reason, elapsedMs } = await waitUntilCanTakeActionByWindow({
-          page,
-          referralId,
-          remainingMs,
-        });
-
-        const messageStartTime = Date.now();
-        await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-          message: `*Accept ${referralId}*`,
-        });
-        const messageTime = Date.now() - messageStartTime;
-
-        await closePageSafely(page);
-        console.log(
-          `Patient=${referralId} remainingMs=${remainingMs} reason=${reason} elapsedMs=${elapsedMs} messageStartTime=${messageStartTime} messageTime=${messageTime}`
-        );
-
-        const _remainingMs = referralEndTimestamp - Date.now();
-        if (_remainingMs > 0) {
-          setTimeout(continueFetchingPatientsIfPaused, _remainingMs);
+        console.log(`Patient=${referralId} remainingMs=${remainingMs}`);
+        if (remainingMs > 0) {
+          setTimeout(continueFetchingPatientsIfPaused, remainingMs);
         } else {
           continueFetchingPatientsIfPaused();
         }

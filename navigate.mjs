@@ -5,12 +5,12 @@
 
 // window.history.pushState(
 //   {
-//     usr: { idReferral: 351733, type: "Referral" },
+//     usr: { idReferral: 363984, type: "Referral" },
 //     key: "manual",
-//     idx: window.history.state?.idx + 1 || 1,
+//     idx: window.history.state?.idx || 1,
 //   },
 //   "",
-//   "/target/path"
+//   "/referral/details"
 // );
 // window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
 
