@@ -4,7 +4,10 @@
   "version": "3.3",
   "description": "GM referral acceptance",
   "minimum_chrome_version": "116",
-  "host_permissions": ["https://referralprogram.globemedsaudi.com/*"],
+  "host_permissions": [
+    "https://referralprogram.globemedsaudi.com/*",
+    "wss://localhost:8443/*"
+  ],
   "permissions": ["activeTab", "tabs", "alarms", "storage"],
   "background": {
     "service_worker": "background.js"
