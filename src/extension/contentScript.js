@@ -313,6 +313,17 @@
     const { referralId, referralEndTimestamp, acceptanceFileBase64, fileName } =
       patient;
 
+    const upperFilterContainer = document.querySelector(
+      ".MuiGrid-root.MuiGrid-container"
+    );
+
+    const itemElement = upperFilterContainer.querySelector(
+      `.MuiGrid-root.MuiGrid-item:nth-child(${CONFIG.upperSectionItemOrder}) small`
+    );
+
+    itemElement.click();
+    await sleep(1500 + Math.random() * 300);
+
     const iconButton = await findRowByReferralId(referralId);
 
     if (!iconButton) {
@@ -325,16 +336,16 @@
 
     const remainingMs = referralEndTimestamp - Date.now();
 
-    const { elapsedMs, reason } = await isAcceptanceButtonShown({
-      idReferral: referralId,
-      remainingMs,
-    });
+    // const { elapsedMs, reason } = await isAcceptanceButtonShown({
+    //   idReferral: referralId,
+    //   remainingMs,
+    // });
 
     iconButton.click();
 
-    LOG(
-      `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
-    );
+    // LOG(
+    //   `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
+    // );
   }
 
   async function runIfOnDetails() {
@@ -342,6 +353,8 @@
       return;
     }
     const t0 = Date.now();
+
+    console.log("🧠 runIfOnDetails");
 
     const statusContainer = await waitForElm(".statusContainer");
 
@@ -352,11 +365,11 @@
         "section.referral-button-container"
       );
 
-      try {
-        await chooseOption();
-      } catch (error) {
-        ERR("chooseOption failed:", error?.message || error);
-      }
+      // try {
+      //   await chooseOption();
+      // } catch (error) {
+      //   ERR("chooseOption failed:", error?.message || error);
+      // }
 
       if (section) {
         section.style.position = "absolute";
@@ -365,7 +378,7 @@
         section.style.width = "100%";
       }
 
-      await uploadFile();
+      // await uploadFile();
 
       cashedFile = null;
       actionButtonCalled = false;
