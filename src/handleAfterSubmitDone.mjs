@@ -3,9 +3,7 @@
  * Helper: `handleAfterSubmitDone`.
  *
  */
-import { unlink } from "fs/promises";
 import buildDurationText from "./buildDurationText.mjs";
-import checkPathExists from "./checkPathExists.mjs";
 import sleep from "./sleep.mjs";
 import waitForPath from "./waitForPath.mjs";
 
@@ -22,8 +20,6 @@ const handleAfterSubmitDone = async ({
   page,
   actionName,
   sendSuccessMessage,
-  acceptanceFilePath,
-  rejectionFilePath,
   referralId,
 }) => {
   continueFetchingPatientsIfPaused();
@@ -55,15 +51,6 @@ const handleAfterSubmitDone = async ({
   await sendSuccessMessage(durationText);
 
   await patientsStore.removePatientByReferralId(referralId);
-
-  await Promise.allSettled([
-    checkPathExists(acceptanceFilePath).then(
-      (exists) => exists && unlink(acceptanceFilePath)
-    ),
-    checkPathExists(rejectionFilePath).then(
-      (exists) => exists && unlink(rejectionFilePath)
-    ),
-  ]);
 
   await closeCurrentPage(true);
 };

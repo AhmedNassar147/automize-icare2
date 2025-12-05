@@ -14,6 +14,7 @@
     "dotenv": "^16.5.0",
     "exceljs": "^4.4.0",
     "express": "^5.1.0",
+    "fast-glob": "^3.3.3",
     "ghost-cursor": "^1.4.1",
     "http-proxy": "^1.18.1",
     "node-cron": "^4.2.1",

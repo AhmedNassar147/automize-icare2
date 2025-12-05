@@ -113,7 +113,10 @@ const makeUserLoggedInOrOpenHomePage = async ({
               timeout: 8_000,
             });
           } catch (error) {
-            console.log("AFTER SUBMITTING LOGIN", error.message);
+            console.log(
+              `[${new Date().toLocaleTimeString()}] 🛑 AFTER SUBMITTING LOGIN ...`,
+              error.message
+            );
           }
         }
 
@@ -143,20 +146,29 @@ const makeUserLoggedInOrOpenHomePage = async ({
         hasEnteredStartingPage || (await checkHomePageFullyLoaded(page));
 
       if (isHomeLoaded) {
-        console.log(`✅ User ${userName} is in home page.`);
+        console.log(
+          `[${new Date().toLocaleTimeString()}] ✅ User ${userName} is in home page.`
+        );
         await sleep(35 + Math.random() * 40);
 
         return [page, cursor, true];
       }
     } catch (error) {
-      console.error(`❌ Attempt #${retries + 1} failed: ${error.message}`);
+      console.log(
+        `[${new Date().toLocaleTimeString()}] ❌ Attempt #${
+          retries + 1
+        } failed:`,
+        error.message
+      );
     }
 
     retries++;
     await sleep(400 + retries * 220);
   }
 
-  console.error("❌ Failed to login after max retries.");
+  console.log(
+    `[${new Date().toLocaleTimeString()}] ❌ Failed to login after max retries`
+  );
   return [page, cursor, false];
 };
 

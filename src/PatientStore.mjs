@@ -4,7 +4,11 @@
  *
  */
 import EventEmitter from "events";
+import { join } from "path";
+import { unlink } from "fs/promises";
+import checkPathExists from "./checkPathExists.mjs";
 import writePatientData from "./writePatientData.mjs";
+import unlinkAllFastGlob from "./unlinkAllFastGlob.mjs";
 import waitMinutesThenRun from "./waitMinutesThenRun.mjs";
 import {
   COLLECTD_PATIENTS_FILE_NAME,
@@ -12,6 +16,8 @@ import {
   USER_ACTION_TYPES,
   searchIfAcceptacneButtonShownMS,
   cutoffTimeMs,
+  generatedPdfsPathForAcceptance,
+  generatedPdfsPathForRejection,
 } from "./constants.mjs";
 
 async function safeWritePatientData(data, retries = 3, delay = 200) {
@@ -143,9 +149,38 @@ class PatientStore extends EventEmitter {
     this.goingPatientsToBeRejected.delete(referralId);
 
     await safeWritePatientData(this.getAllPatients());
+
+    try {
+      const acceptanceFilePath = join(
+        generatedPdfsPathForAcceptance,
+        `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
+      );
+
+      const rejectionFilePath = join(
+        generatedPdfsPathForRejection,
+        `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`
+      );
+
+      await Promise.allSettled([
+        checkPathExists(acceptanceFilePath).then(
+          (exists) => exists && unlink(acceptanceFilePath)
+        ),
+        checkPathExists(rejectionFilePath).then(
+          (exists) => exists && unlink(rejectionFilePath)
+        ),
+      ]);
+    } catch (error) {
+      return {
+        success: false,
+        message: `🛑 Failed to remove Patient with referralId=${referralId}. error: ${
+          error?.message || error
+        }`,
+      };
+    }
+
     return {
       success: true,
-      message: `✅ Patient with referralId=${referralId} just removed.`,
+      message: `✅ Just removed Patient with referralId=${referralId}.`,
     };
   }
 
@@ -327,12 +362,18 @@ class PatientStore extends EventEmitter {
     return this.patientsById.size;
   }
 
-  clear() {
+  async clear() {
     this.patientsById.clear();
     this.goingPatientsToBeAccepted.clear();
     this.goingPatientsToBeRejected.clear();
     this.patientTimers.forEach((timer) => timer.cancel());
     this.patientTimers.clear();
+    this.invalidateCache();
+    await Promise.allSettled([
+      safeWritePatientData([]),
+      unlinkAllFastGlob(generatedPdfsPathForAcceptance),
+      unlinkAllFastGlob(generatedPdfsPathForRejection),
+    ]);
   }
 
   // cancelHomePageForceReload() {

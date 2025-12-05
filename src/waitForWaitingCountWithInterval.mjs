@@ -152,17 +152,26 @@ const waitForWaitingCountWithInterval = async ({
 
   if (!patientsStore.hasReloadListener()) {
     patientsStore.on("forceReloadHomePage", async () => {
-      console.log("📢 Received forceReloadHomePage event");
+      console.log(
+        `[${new Date().toLocaleTimeString()}] 📢 Received forceReloadHomePage event`
+      );
       if (page) {
         try {
           await pauseController.waitIfPaused();
           await page.reload({ waitUntil: "domcontentloaded" });
-          console.log("🔄 Page reloaded successfully from event.");
+          console.log(
+            `[${new Date().toLocaleTimeString()}] 🔄 Page reloaded successfully from event.`
+          );
         } catch (err) {
-          console.error("❌ Error during manual homepage reload:", err.message);
+          console.log(
+            `[${new Date().toLocaleTimeString()}] ❌ Error during manual homepage reload:`,
+            err.message
+          );
         }
       } else {
-        console.warn("⚠️ forceReloadHomePage event fired but page is null");
+        console.log(
+          `[${new Date().toLocaleTimeString()}] ⚠️ forceReloadHomePage event fired but page is null`
+        );
       }
     });
   }
@@ -222,8 +231,47 @@ const waitForWaitingCountWithInterval = async ({
         console.log(
           `[${new Date().toLocaleTimeString()}] ⏳ No patients found in API response, exiting...`
         );
-        await pausableSleep(INTERVAL + Math.random() * 4000);
+
+        if (patientsStore.size()) {
+          try {
+            await patientsStore.clear();
+          } catch (error) {
+            console.error(
+              `[${new Date().toLocaleTimeString()}] Error clearing patients store:`,
+              error
+            );
+          }
+          await pausableSleep(INTERVAL + Math.random() * 4000);
+          const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
+            page,
+            "clearing patients store and files"
+          );
+          if (shouldCreateNewPage) {
+            page = null;
+            cursor = null;
+          }
+        }
+
         continue;
+      }
+
+      console.log(
+        `[${new Date().toLocaleTimeString()}] 📋 Found ${patientsLength} patients from API to process`
+      );
+
+      const patientsInStore = patientsStore.getAllPatients();
+
+      const storePatientsNotInTheApi = patientsInStore.filter(
+        ({ referralId }) =>
+          !patients.find((p) => String(p.referralId) === referralId)
+      );
+
+      if (storePatientsNotInTheApi?.length) {
+        await Promise.allSettled(
+          storePatientsNotInTheApi.map(({ referralId }) =>
+            patientsStore.removePatientByReferralId(referralId)
+          )
+        );
       }
 
       const newPatientAdded = await processCollectingPatients({

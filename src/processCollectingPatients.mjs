@@ -96,8 +96,6 @@ const processCollectingPatients = async ({
   try {
     const patientsLength = patients?.length ?? 0;
 
-    console.log(`📋 Found ${patientsLength} patients from API to process.`);
-
     let index = 0;
 
     for (const patient of patients) {
@@ -187,7 +185,10 @@ const processCollectingPatients = async ({
       `[${new Date().toLocaleTimeString()}] ✅ Finished processing all patients from API.`
     );
   } catch (err) {
-    console.error("🛑 Fatal error during processing patients:", err.message);
+    console.log(
+      `[${new Date().toLocaleTimeString()}] 🛑 Fatal error during processing patients:`,
+      err.message
+    );
   }
 
   await sleep(2000 + Math.random() * 3000);
