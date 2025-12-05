@@ -33,27 +33,33 @@ const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
 
     if (!page || !page?.reload) {
       await pausableSleep(intervalTime);
+
       console.log(
-        `Will recreate page on next loop iteration, refreshing in ${
+        `[${new Date().toLocaleTimeString()}] Will recreate page on next loop iteration, refreshing in ${
           intervalTime / 1000
         }s...`
       );
       return true;
     }
 
-    console.log(`$${logString} refreshing in ${intervalTime / 1000}s...`);
+    console.log(
+      `[${new Date().toLocaleTimeString()}] ${logString} refreshing in ${
+        intervalTime / 1000
+      }s...`
+    );
     await pausableSleep(intervalTime);
 
     await pauseController.waitIfPaused();
     await page.reload({ waitUntil: "domcontentloaded" });
   } catch (err) {
-    console.error("🔁 Failed to reload page:", err.message);
     const intervalTime = INTERVAL + Math.random() * 11_000;
     await pausableSleep(intervalTime);
+
     console.log(
-      `Will recreate page on next loop iteration, refreshing in ${
+      `[${new Date().toLocaleTimeString()}] Will recreate page on next loop iteration, refreshing in ${
         intervalTime / 1000
-      }s...`
+      }s...`,
+      err.message
     );
     return true;
   }
@@ -260,6 +266,7 @@ const waitForWaitingCountWithInterval = async ({
             page = null;
             cursor = null;
           }
+          continue;
         }
 
         await pausableSleep(INTERVAL + Math.random() * 5000);
@@ -331,7 +338,10 @@ const waitForWaitingCountWithInterval = async ({
         }
       }
     } catch (err) {
-      console.error("🛑 Unexpected error during loop:", err.message);
+      console.log(
+        `[${new Date().toLocaleTimeString()}] 🛑 Unexpected error during loop:`,
+        err.message
+      );
       await pausableSleep(INTERVAL + Math.random() * 3000);
     }
   }
