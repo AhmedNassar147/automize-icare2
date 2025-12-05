@@ -363,7 +363,6 @@ const currentProfile = "Profile 1";
 
         // const [page] = await makeUserLoggedInOrOpenHomePage({
         //   browser,
-        //   sendWhatsappMessage,
         //   startingPageUrl: HOME_PAGE_URL,
         //   noCursor: true,
         // });

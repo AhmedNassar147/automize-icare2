@@ -57,7 +57,6 @@ const processCollectReferralSummary = async (
 ) => {
   const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
     browser,
-    sendWhatsappMessage,
     startingPageUrl: HOME_PAGE_URL,
   });
 

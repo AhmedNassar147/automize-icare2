@@ -34,7 +34,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
   browser,
   cursor: _cursor,
   currentPage,
-  sendWhatsappMessage,
   startingPageUrl,
   noCursor,
 }) => {
@@ -130,16 +129,14 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
         if (isStillInLoginPage) {
           const { shouldCloseApp, isErrorAboutLockedOut } =
-            await shouldCloseAppWhenLogin(page, sendWhatsappMessage);
+            await shouldCloseAppWhenLogin(page);
 
           if (isErrorAboutLockedOut) {
             return [page, cursor, false, true];
           }
 
           if (shouldCloseApp) {
-            await browser.close();
-            process.kill(process.pid);
-            return;
+            return [page, cursor, false, false, true];
           }
         }
       }

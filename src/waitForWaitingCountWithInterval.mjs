@@ -1,6 +1,10 @@
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import processCollectingPatients from "./processCollectingPatients.mjs";
-import closePageSafely from "./closePageSafely.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
+import fetchPatientsFromAPI from "./fetchPatientsFromAPI.mjs";
+import speakText from "./speakText.mjs";
+import createReloadAndCheckIfShouldCreateNewPage from "./createReloadAndCheckIfShouldCreateNewPage.mjs";
+import handleLockedOutRetry from "./handleLockedOutRetry.mjs";
 import sleep from "./sleep.mjs";
 import {
   pauseController,
@@ -8,12 +12,9 @@ import {
   continueIfPaused,
 } from "./PauseController.mjs";
 import {
-  globMedHeaders,
   PATIENT_SECTIONS_STATUS,
   TABS_COLLECTION_TYPES,
-  baseGlobMedAPiUrl,
 } from "./constants.mjs";
-import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const INTERVAL = 70_000;
 const NOT_LOGGED_SLEEP_TIME = 25_000;
@@ -24,114 +25,6 @@ const pausableSleep = async (ms) => {
   await sleep(ms);
 };
 
-const apiUrl = `${baseGlobMedAPiUrl}/listing`;
-
-const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
-  try {
-    const intervalTime = INTERVAL + Math.random() * 9000;
-
-    await pauseController.waitIfPaused();
-
-    if (!page || !page?.reload) {
-      await pausableSleep(intervalTime);
-
-      createConsoleMessage(
-        `Will recreate page on next loop iteration, refreshing in ${
-          intervalTime / 1000
-        }s...`,
-        "warn"
-      );
-      return true;
-    }
-
-    createConsoleMessage(
-      `${logString} refreshing in ${intervalTime / 1000}s...`,
-      "info"
-    );
-    await pausableSleep(intervalTime);
-
-    await pauseController.waitIfPaused();
-    await page.reload({ waitUntil: "domcontentloaded" });
-  } catch (err) {
-    const intervalTime = INTERVAL + Math.random() * 11_000;
-    await pausableSleep(intervalTime);
-
-    createConsoleMessage(
-      err,
-      "error",
-      `Will recreate page on next loop iteration, refreshing in ${
-        intervalTime / 1000
-      }s...`
-    );
-    return true;
-  }
-};
-
-const fetchPatientsFromAPI = async (page, requestBody) => {
-  try {
-    const result = await page.evaluate(
-      async ({ globMedHeaders, requestBody, apiUrl }) => {
-        try {
-          const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: globMedHeaders,
-            body: requestBody,
-          });
-
-          let data,
-            message = null;
-
-          try {
-            data = await response.json();
-          } catch {
-            data = await response.text();
-            message = "Response was not valid JSON";
-            return { success: false, data, message };
-          }
-
-          return { success: true, data, message };
-        } catch (err) {
-          return { success: false, data: null, message: err.message };
-        }
-      },
-      { globMedHeaders, requestBody, apiUrl }
-    );
-
-    const { success, data, message } = result;
-
-    const isDataString = typeof data === "string";
-
-    if (isDataString || !success || message) {
-      return {
-        success: false,
-        patients: [],
-        data,
-        message: isDataString ? data : message || "API fetch failed",
-      };
-    }
-
-    if (data?.statusCode !== "Success") {
-      return {
-        success: false,
-        patients: [],
-        data,
-        message: `API returned non-success status: ${
-          isDataString ? data : data?.statusCode
-        }`,
-      };
-    }
-
-    return {
-      success: true,
-      patients: data?.data?.result || [],
-      data,
-      message: null,
-    };
-  } catch (err) {
-    return { success: false, patients: [], data: null, message: err.message };
-  }
-};
-
 const waitForWaitingCountWithInterval = async ({
   collectionTabType,
   browser,
@@ -140,12 +33,21 @@ const waitForWaitingCountWithInterval = async ({
 }) => {
   let page, cursor;
 
+  const clientPhoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
+
   let apiHadData = false;
 
   const { targetText, categoryReference } =
     PATIENT_SECTIONS_STATUS[collectionTabType];
 
   const isPending = collectionTabType === TABS_COLLECTION_TYPES.WAITING;
+
+  const reloadAndCheckIfShouldCreateNewPage =
+    createReloadAndCheckIfShouldCreateNewPage(
+      pauseController,
+      pausableSleep,
+      INTERVAL
+    );
 
   const requestBody = JSON.stringify({
     pageSize: isPending ? 100 : 5,
@@ -189,31 +91,52 @@ const waitForWaitingCountWithInterval = async ({
       await pauseController.waitIfPaused();
 
       // 🔹 Login check
-      const [newPage, newCursor, isLoggedIn, isErrorAboutLockedOut] =
-        await makeUserLoggedInOrOpenHomePage({
-          browser,
-          cursor,
-          currentPage: page,
-          sendWhatsappMessage,
-        });
+      const [
+        newPage,
+        newCursor,
+        isLoggedIn,
+        isErrorAboutLockedOut,
+        shouldCloseApp,
+      ] = await makeUserLoggedInOrOpenHomePage({
+        browser,
+        cursor,
+        currentPage: page,
+      });
 
       page = newPage;
       cursor = newCursor;
 
-      if (isErrorAboutLockedOut) {
-        const now = new Date();
-        const unlockTime = new Date(now.getTime() + LOCKED_OUT_SLEEP_TIME);
-        createConsoleMessage(
-          `🔐 We are locked out, retrying in ${
-            LOCKED_OUT_SLEEP_TIME / 60_000
-          } minutes until ${unlockTime.toLocaleTimeString("en-US", {
-            hour12: false,
-          })}...`,
-          "info"
-        );
+      if (shouldCloseApp) {
+        await sendWhatsappMessage(clientPhoneNumber, [
+          {
+            message:
+              "⚠️ *‼️ Login Errors Detected ‼️*\n" +
+              "────────────────────────\n" +
+              "*CLOSING APP UNTILL FIXED*" +
+              "\n────────────────────────\n" +
+              "_App is Closed, Please check the app, try to open it manually_",
+          },
+        ]);
+        speakText({
+          text: "App is Closed, Please check the app, try to open it manually",
+          useMaleVoice: true,
+          volume: 100,
+          times: 10,
+        });
+        await browser.close();
+        process.kill(process.pid);
+        break;
+      }
 
-        await closePageSafely(page);
-        await pausableSleep(LOCKED_OUT_SLEEP_TIME);
+      if (isErrorAboutLockedOut) {
+        await handleLockedOutRetry({
+          patientsStore,
+          lockSleepTime: LOCKED_OUT_SLEEP_TIME,
+          page,
+          pausableSleep,
+          sendWhatsappMessage,
+        });
+
         page = null;
         cursor = null;
         continue;
@@ -246,7 +169,8 @@ const waitForWaitingCountWithInterval = async ({
 
       if (!patientsLength) {
         createConsoleMessage(
-          `⏳ No patients found in API response, exiting...`
+          `⏳ No patients found in API response, exiting...`,
+          "info"
         );
 
         if (apiHadData && patientsStore.size()) {

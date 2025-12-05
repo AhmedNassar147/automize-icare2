@@ -51,7 +51,7 @@ class PatientStore extends EventEmitter {
     this.patientTimers = new Map();
     this.cachedPatientsArray = null;
     this.pauseFetchingPatients = pauseFetchingPatients;
-    this.scoreTourStarted = false;
+    this.lastGoingToBeAcceptedPatient = null;
 
     for (const patient of initialPatients) {
       if (!patient) continue;
@@ -254,13 +254,15 @@ class PatientStore extends EventEmitter {
     const timer = waitMinutesThenRun(
       referralEndDateActionableAtMS,
       () => {
+        const currentPatient = isAccepting
+          ? { ...patient, isSuperAcceptance }
+          : patient;
+
+        this.lastGoingToBeAcceptedPatient = isAccepting ? currentPatient : null;
         this.pauseFetchingPatients?.();
         actionSet.delete(referralId);
         this.patientTimers.delete(referralId);
-        this.emit(
-          eventName,
-          isAccepting ? { ...patient, isSuperAcceptance } : patient
-        );
+        this.emit(eventName, currentPatient);
       },
       referralId,
       isAccepting
@@ -381,6 +383,13 @@ class PatientStore extends EventEmitter {
     ]);
   }
 
+  getLastGoingToBeAcceptedPatient() {
+    return this.lastGoingToBeAcceptedPatient;
+  }
+
+  setLastGoingToBeAcceptedPatient(patient) {
+    this.lastGoingToBeAcceptedPatient = patient;
+  }
   // cancelHomePageForceReload() {
   //   this.removeAllListeners("forceReloadHomePage");
   // }
@@ -391,22 +400,6 @@ class PatientStore extends EventEmitter {
 
   forceReloadHomePage() {
     this.emit("forceReloadHomePage", true);
-  }
-
-  startScoreTour() {
-    if (!this.scoreTourStarted) {
-      this.scoreTourStarted = true;
-      this.emit("scoreTourStarted");
-    }
-  }
-
-  endScoreTour() {
-    this.scoreTourStarted = false;
-    this.removeAllListeners("scoreTourStarted");
-  }
-
-  isScoreTourAlreadyStarted() {
-    return this.scoreTourStarted;
   }
 
   toJSON() {
