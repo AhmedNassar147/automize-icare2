@@ -5,8 +5,6 @@
  */
 import { createCursor } from "ghost-cursor";
 import checkIfLoginPage from "./checkIfLoginPage.mjs";
-// import humanType from "./humanType.mjs";
-// import humanClick from "./humanClick.mjs";
 import sleep from "./sleep.mjs";
 import waitForHomeLink from "./waitForHomeLink.mjs";
 import gotToLoginPage from "./gotToLoginPage.mjs";
@@ -37,8 +35,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
   currentPage,
   sendWhatsappMessage,
   startingPageUrl,
-  showScoreButton,
-  onClickScoreButton,
   noCursor,
 }) => {
   const userName = process.env.CLIENT_NAME;
@@ -111,21 +107,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
           await sleep(120 + Math.random() * 100);
           await page.click(loginButtonSelector);
 
-          // await humanType(page, cursor, "", userName);
-          // await humanType(page, cursor, "#Input_Password", password);
-
-          // const button = await page.$(loginButtonSelector);
-          // const submit_start_time = performance.now();
-          // await clickButtonThatObservedByRecapctahaInvisbleV2(cursor, button);
-          // const submit_end_time = performance.now();
-          // console.log(
-          //   `login time ${(
-          //     (submit_end_time - submit_start_time) /
-          //     1000
-          //   ).toFixed(2)} s`
-          // );
-          // await humanClick(page, loginButtonSelector);
-
           try {
             await page.waitForNavigation({
               waitUntil: ["load", "networkidle2"],
@@ -164,59 +145,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
       if (isHomeLoaded) {
         console.log(`✅ User ${userName} is in home page.`);
         await sleep(35 + Math.random() * 40);
-
-        // if (showScoreButton) {
-        //   const hasBinding = await page.evaluate(
-        //     (n) => typeof window[n] === "function",
-        //     "onInjectedScoreButtonClick"
-        //   );
-
-        //   if (!hasBinding) {
-        //     try {
-        //       await page.exposeFunction(
-        //         "onInjectedScoreButtonClick",
-        //         onClickScoreButton
-        //       );
-        //     } catch (err) {
-        //       if (!/already registered/i.test(err.message)) {
-        //         console.log(
-        //           "onInjectedScoreButtonClick already injected in page"
-        //         );
-        //       }
-        //     }
-        //   }
-
-        //   await page.waitForSelector(".breadcrumb > div:nth-child(2)");
-        //   await page.evaluate(() => {
-        //     const container = document.querySelector(
-        //       ".breadcrumb > div:nth-child(2)"
-        //     );
-        //     if (container && !container.querySelector(".my-injected-btn")) {
-        //       const btn = document.createElement("button");
-        //       btn.type = "button";
-        //       btn.textContent = "run automatic score tour";
-        //       btn.className = "my-injected-btn";
-        //       btn.style.cssText = `
-        //         background-color: #1976d2;
-        //         color: #fff;
-        //         border: none;
-        //         padding: 6px 12px;
-        //         border-radius: 4px;
-        //         cursor: pointer;
-        //         opacity: 1;
-        //         box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2),
-        //                     0px 4px 5px 0px rgba(0,0,0,0.14),
-        //                     0px 1px 10px 0px rgba(0,0,0,0.12);
-        //         transition: box-shadow 0.25s ease, transform 0.15s ease;
-        //       `;
-
-        //       btn.addEventListener("click", () => {
-        //         window.onInjectedScoreButtonClick(); // defined by exposeFunction above
-        //       });
-        //       container.appendChild(btn);
-        //     }
-        //   });
-        // }
 
         return [page, cursor, true];
       }

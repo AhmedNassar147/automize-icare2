@@ -4,11 +4,10 @@
  *
  */
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
-import sleep from "./sleep.mjs";
-import collectHomePageTableRows from "./collectHomeTableRows.mjs";
-import getReferralIdBasedTableRow from "./getReferralIdBasedTableRow.mjs";
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 import { cutoffTimeMs } from "./constants.mjs";
+import sleep from "./sleep.mjs";
+import insureFetchedPatientData from "./insureFetchedPatientData.mjs";
 
 const formateDateToString = (date) =>
   new Intl.DateTimeFormat("en-GB", {
@@ -86,47 +85,59 @@ const getSaudiStartAndEndDate = ({
   };
 };
 
-const processCollectingPatients = async ({ browser, patientsStore, page }) => {
+const processCollectingPatients = async ({
+  browser,
+  patientsStore,
+  page,
+  patients,
+}) => {
+  let newPatientAdded = false;
+
   try {
-    // Collect rows once (instead of inside while loop)
-    const rows = await collectHomePageTableRows(page);
+    const patientsLength = patients?.length ?? 0;
 
-    const rowsLength = rows?.length ?? 0;
-
-    if (!rowsLength) {
-      await sleep(4_000 + Math.random() * 3_000);
-      console.log("⏳ No patients found, exiting...");
-      return;
-    }
-
-    console.log(`📋 Found ${rowsLength} rows to process.`);
+    console.log(`📋 Found ${patientsLength} patients from API to process.`);
 
     let index = 0;
 
-    for (const row of rows) {
+    for (const patient of patients) {
       index++;
-      const { referralId, referralDate } = await getReferralIdBasedTableRow(
-        row
-      );
 
-      console.log(`Progress: ${index}/${rowsLength}`);
+      const { idReferral, referralDate } = patient || {};
+      const referralId = String(idReferral);
 
       if (!referralId) {
-        console.log(`⏩ didn't find referralId: ${referralId}`);
-        break;
-      }
-
-      if (patientsStore.has(referralId)) {
-        console.log(`⚠️ Patient referralId=${referralId} already collected...`);
-        await sleep(3_000 + Math.random() * 2_000);
+        console.log(
+          `[${new Date().toLocaleTimeString()}] ⏩ skipping patient without referralId`
+        );
         continue;
       }
 
       console.log(
-        `📡 fetch patient referralId=(${referralId}) API responses...`
+        `[${new Date().toLocaleTimeString()}] Progress: ${index}/${patientsLength} (referralId=${referralId})`
       );
 
-      const patientData = await getPatientReferralDataFromAPI(page, referralId);
+      if (patientsStore.has(referralId)) {
+        console.log(
+          `[${new Date().toLocaleTimeString()}] ⚠️ Patient referralId=${referralId} already collected...`
+        );
+        continue;
+      }
+
+      // mark as we found at least one new patient (before processing)
+      if (!newPatientAdded) newPatientAdded = true;
+
+      console.log(
+        `[${new Date().toLocaleTimeString()}] 📡 Fetching data for referralId=(${referralId})...`
+      );
+
+      // Call existing API function to get detailed patient info
+      const patientData = await insureFetchedPatientData(
+        () => getPatientReferralDataFromAPI(page, referralId),
+        3, // attempts
+        1200 // base backoff ms
+      );
+
       const {
         patientDetailsError,
         patientInfoError,
@@ -134,17 +145,20 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
         caseAlertMessage,
         detailsAPiFiresAtMS,
         detailsAPiServerResponseTimeMS,
-      } = patientData;
+      } = patientData || {};
 
-      if (patientDetailsError || patientInfoError || attchmentsError) {
+      const hasInternalError =
+        !patientData ||
+        patientDetailsError ||
+        patientInfoError ||
+        attchmentsError;
+
+      if (hasInternalError) {
         console.log(
-          `❌ Error when collecting referralId=${referralId}, reason:`,
-          [patientDetailsError, patientInfoError, attchmentsError].join("__")
+          `[${new Date().toLocaleTimeString()}] ❌ Error collecting referralId=${referralId} => patientData=${!!patientData}, patientDetailsError=${patientDetailsError}, patientInfoError=${patientInfoError}, attchmentsError=${attchmentsError}`
         );
-        break;
+        continue;
       }
-
-      // const cutoffTimeMs = generateRandomInt(41_000, 45_000);
 
       const finalData = {
         referralId,
@@ -160,19 +174,25 @@ const processCollectingPatients = async ({ browser, patientsStore, page }) => {
 
       await patientsStore.addPatients(finalData);
 
+      // Generate acceptance PDFs concurrently
       await Promise.allSettled([
         generateAcceptancePdfLetters(browser, [finalData], true),
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
-      await sleep(3_000 + Math.random() * 2_000);
+      await sleep(2500 + Math.random() * 3000);
     }
 
-    console.log("✅ Finished processing all rows.");
-    await sleep(4_000 + Math.random() * 4_000);
+    console.log(
+      `[${new Date().toLocaleTimeString()}] ✅ Finished processing all patients from API.`
+    );
   } catch (err) {
-    console.error("🛑 Fatal error during collecting patients:", err.message);
+    console.error("🛑 Fatal error during processing patients:", err.message);
   }
+
+  await sleep(2000 + Math.random() * 3000);
+
+  return newPatientAdded;
 };
 
 export default processCollectingPatients;
