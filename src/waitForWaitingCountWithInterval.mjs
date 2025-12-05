@@ -289,31 +289,24 @@ const waitForWaitingCountWithInterval = async ({
       const patientsInStore = patientsStore.getAllPatients();
       const patientsIds = patients.map(({ idReferral }) => String(idReferral));
 
+      let hasPatientsRemoved = false;
+
       if (patientsInStore.length) {
         const storePatientsNotInTheApi = patientsInStore.filter(
           ({ referralId }) => !patientsIds.includes(referralId)
         );
 
-        console.log(
-          JSON.stringify({
-            patientsInStore: patientsInStore.map((i) => i.referralId),
-            patientsIds,
-            storePatientsNotInTheApi: storePatientsNotInTheApi.map(
-              (i) => i.referralId
-            ),
-          })
-        );
-
         if (storePatientsNotInTheApi?.length) {
           try {
+            console.log(
+              `[${new Date().toLocaleTimeString()}] ✅ removing unsynced patients from store`
+            );
             await Promise.allSettled(
               storePatientsNotInTheApi.map(({ referralId }) =>
                 patientsStore.removePatientByReferralId(referralId)
               )
             );
-            console.log(
-              `[${new Date().toLocaleTimeString()}] ✅ removing unsynced patients from store`
-            );
+            hasPatientsRemoved = true;
           } catch (error) {
             console.log(
               `[${new Date().toLocaleTimeString()}] 🛑 Failed removing unsynced patients from store`
@@ -322,11 +315,7 @@ const waitForWaitingCountWithInterval = async ({
         }
       }
 
-      if (!newPatientAdded) {
-        await pausableSleep(INTERVAL + Math.random() * 3000);
-      }
-
-      if (newPatientAdded) {
+      if (newPatientAdded || hasPatientsRemoved) {
         await sleep(2000 + Math.random() * 3000);
         const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
           page,
@@ -336,6 +325,8 @@ const waitForWaitingCountWithInterval = async ({
           page = null;
           cursor = null;
         }
+      } else {
+        await pausableSleep(INTERVAL + Math.random() * 5000);
       }
     } catch (err) {
       console.log(
