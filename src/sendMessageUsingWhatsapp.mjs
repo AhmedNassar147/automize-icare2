@@ -64,16 +64,21 @@ export const initializeClient = async (
         client: oldClient,
       } = clients.get(number);
       if (isReady || isInitializing) {
-        console.log(`ℹ️ [${number}] Client already initialized.`);
+        console.log(
+          `[${new Date().toLocaleTimeString()}] ℹ️ [${number}] Client already initialized.`
+        );
         return;
       }
       try {
         await oldClient.destroy();
         console.log(
-          `♻️ [${number}] Destroyed old client before reinitialization.`
+          `[${new Date().toLocaleTimeString()}] ♻️ [${number}] Destroyed old client before reinitialization.`
         );
       } catch (err) {
-        console.error(`❌ [${number}] Error destroying old client:`, err);
+        console.log(
+          `[${new Date().toLocaleTimeString()}] ❌ [${number}] Error destroying old client:`,
+          err
+        );
       }
     }
 
@@ -96,21 +101,24 @@ export const initializeClient = async (
     clients.set(number, state);
 
     client.on("qr", (qr) => {
-      console.log(`📱 [${number}] Scan QR:`);
       qrcode.generate(qr, { small: true });
     });
 
     client.on("ready", async () => {
       if (state.isReady) return;
 
-      console.log(`✅ [${number}] Client ready.`);
+      console.log(
+        `[${new Date().toLocaleTimeString()}] ✅ [${number}] Client ready.`
+      );
       state.isReady = true;
       state.isInitializing = false;
       state.retryCount = 0;
 
       if (state.queue.length > 0) {
         console.log(
-          `📤 [${number}] Sending ${state.queue.length} queued message(s)...`
+          `[${new Date().toLocaleTimeString()}] 📤 [${number}] Sending ${
+            state.queue.length
+          } queued message(s)...`
         );
         await Promise.all(
           state.queue.map((msg) => sendMessageWithFiles(number, msg))
@@ -120,19 +128,25 @@ export const initializeClient = async (
     });
 
     client.on("auth_failure", (msg) => {
-      console.error(`❌ [${number}] Auth failure: ${msg}`);
+      console.log(
+        `[${new Date().toLocaleTimeString()}] ❌ [${number}] Auth failure: ${msg}`
+      );
       state.isReady = false;
       state.isInitializing = false;
     });
 
     client.on("disconnected", () => {
-      console.warn(`⚠️ [${number}] Disconnected.`);
+      console.log(
+        `[${new Date().toLocaleTimeString()}] ⚠️ [${number}] Disconnected.`
+      );
 
       state.isReady = false;
       state.isInitializing = false;
 
       if (state.retryCount >= MAX_RETRIES) {
-        console.error(`🛑 [${number}] Max retries reached.`);
+        console.log(
+          `[${new Date().toLocaleTimeString()}] 🛑 [${number}] Max retries reached.`
+        );
         return;
       }
 
@@ -141,8 +155,11 @@ export const initializeClient = async (
       state.retryCount++;
 
       console.log(
-        `🔁 [${number}] Retrying in ${(delay / 1000).toFixed(2)}s...`
+        `[${new Date().toLocaleTimeString()}] 🔁 [${number}] Retrying in ${(
+          delay / 1000
+        ).toFixed(2)}s...`
       );
+
       setTimeout(
         () => initializeClient(number, patientsStore, { headless }),
         delay
@@ -154,7 +171,9 @@ export const initializeClient = async (
         const { from: _from, body } = message || {};
 
         if (!_from || !body) {
-          console.warn(`⚠️ [${number}] Message missing 'from' or 'body'.`);
+          console.log(
+            `[${new Date().toLocaleTimeString()}] ⚠️ [${number}] Message missing 'from' or 'body'.`
+          );
           return;
         }
 
@@ -166,13 +185,15 @@ export const initializeClient = async (
         }
 
         console.log(
-          `📨 [${number}] Incoming message from: ${from} — "${body}"`
+          `[${new Date().toLocaleTimeString()}] 📨 [${number}] Incoming message from: ${from} — "${body}"`
         );
-        console.log(`🎯 [${number}] Expected chatId: ${chatId}`);
+        console.log(
+          `[${new Date().toLocaleTimeString()}] 🎯 [${number}] Expected chatId: ${chatId}`
+        );
 
         if (from !== chatId) {
-          console.warn(
-            `⛔ [${number}] Message ignored — not from expected chatId.`
+          console.log(
+            `[${new Date().toLocaleTimeString()}] ⛔ [${number}] Message ignored — not from expected chatId.`
           );
           return;
         }
@@ -198,8 +219,10 @@ export const initializeClient = async (
         const referralId = extractReferralId(quotedMsg.body);
 
         if (!referralId) {
-          console.warn(
-            `❌ [${number}] No referral ID in quoted message:\n${quotedMsg.body}`
+          console.log(
+            `[${new Date().toLocaleTimeString()}] ❌ [${number}] No referral ID in quoted message:\n${
+              quotedMsg.body
+            }`
           );
           await quotedMsg.reply(
             `❌ Invalid patient message — No *Referral ID* in quoted message.`
@@ -240,10 +263,13 @@ export const initializeClient = async (
         );
 
         console.log(
-          `📩 [${number}] Patient update result: ${prefix} ${replyMessage}`
+          `[${new Date().toLocaleTimeString()}] 📩 [${number}] Patient update result: ${prefix} ${replyMessage}`
         );
       } catch (err) {
-        console.error(`💥 [${number}] Error handling incoming message:`, err);
+        console.log(
+          `[${new Date().toLocaleTimeString()}] ❌ [${number}] Error handling incoming message:`,
+          err
+        );
       }
     });
 
@@ -277,7 +303,10 @@ const sendMessageWithFiles = async (number, msgWithFiles) => {
       }
     }
   } catch (err) {
-    console.error(`❌ [${number}] Failed to send message or files:`, err);
+    console.log(
+      `[${new Date().toLocaleTimeString()}] ❌ [${number}] Failed to send message or files:`,
+      err
+    );
   }
 };
 
@@ -291,14 +320,20 @@ const sendMessageUsingWhatsapp =
     const state = clients.get(phoneNo);
 
     if (!state?.isReady) {
-      console.log(`📥 [${phoneNo}] Client not ready — queuing messages.`);
+      console.log(
+        `[${new Date().toLocaleTimeString()}] 📥 [${phoneNo}] Client not ready — queuing messages`
+      );
+      console.log(`.`);
       state.queue.push(...safeMessages);
     } else {
       for (const msg of safeMessages) {
         try {
           await sendMessageWithFiles(phoneNo, msg);
         } catch (err) {
-          console.error(`❌ [${phoneNo}] Failed to send message:`, err);
+          console.log(
+            `[${new Date().toLocaleTimeString()}] ❌ [${phoneNo}] Failed to send message:`,
+            err
+          );
         }
       }
     }

@@ -132,6 +132,8 @@ const waitForWaitingCountWithInterval = async ({
 }) => {
   let page, cursor;
 
+  let apiHadData = false;
+
   const { targetText, categoryReference } =
     PATIENT_SECTIONS_STATUS[collectionTabType];
 
@@ -241,7 +243,10 @@ const waitForWaitingCountWithInterval = async ({
               error
             );
           }
-          await pausableSleep(INTERVAL + Math.random() * 4000);
+        }
+        await pausableSleep(INTERVAL + Math.random() * 4000);
+        if (apiHadData) {
+          apiHadData = false;
           const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
             page,
             "clearing patients store and files"
@@ -251,7 +256,6 @@ const waitForWaitingCountWithInterval = async ({
             cursor = null;
           }
         }
-
         continue;
       }
 
@@ -260,10 +264,10 @@ const waitForWaitingCountWithInterval = async ({
       );
 
       const patientsInStore = patientsStore.getAllPatients();
+      const patientsIds = patients.map(({ referralId }) => String(referralId));
 
       const storePatientsNotInTheApi = patientsInStore.filter(
-        ({ referralId }) =>
-          !patients.find((p) => String(p.referralId) === referralId)
+        ({ referralId }) => !patientsIds.includes(String(referralId))
       );
 
       if (storePatientsNotInTheApi?.length) {
@@ -273,6 +277,8 @@ const waitForWaitingCountWithInterval = async ({
           )
         );
       }
+
+      apiHadData = true;
 
       const newPatientAdded = await processCollectingPatients({
         browser,
