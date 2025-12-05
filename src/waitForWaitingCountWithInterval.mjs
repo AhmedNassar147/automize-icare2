@@ -198,6 +198,16 @@ const waitForWaitingCountWithInterval = async ({
       cursor = newCursor;
 
       if (isErrorAboutLockedOut) {
+        const now = new Date();
+        const unlockTime = new Date(now.getTime() + LOCKED_OUT_SLEEP_TIME);
+        createConsoleMessage(
+          `🔐 We are locked out, retrying in ${
+            LOCKED_OUT_SLEEP_TIME / 60_000
+          } minutes until ${unlockTime.toLocaleTimeString("en-US", {
+            hour12: false,
+          })}...`
+        );
+
         await closePageSafely(page);
         await pausableSleep(LOCKED_OUT_SLEEP_TIME);
         page = null;
