@@ -49,7 +49,7 @@
   const optionIndex = optionName === "Acceptance" ? 1 : 2;
 
   const normalize = (str) => (str || "").trim();
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  // const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   function waitForElmFast(selector, all = false) {
     return new Promise((resolve) => {
@@ -88,12 +88,9 @@
       );
     });
 
-    await sleep(2);
-
     const directLi = await waitForElmFast(
       `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
     );
-
     directLi?.click?.();
   }
 
@@ -271,10 +268,7 @@
     const selectTrigger = await waitForElmFast('div[role="combobox"]');
 
     if (selectTrigger && cashedFile) {
-      const section = document.querySelector(
-        "section.referral-button-container"
-      );
-
+      const section = await waitForElmFast("section.referral-button-container");
       section.style.position = "absolute";
       section.style.top = "845px";
       section.style.right = "8%";
@@ -282,6 +276,8 @@
       await chooseOption(selectTrigger);
       await uploadFile();
       localStorage.setItem("TM", `${Date.now() - t0}ms`);
+      cashedFile = null;
+      actionButtonCalled = false;
     }
   }
 
@@ -318,17 +314,19 @@
 
     iconButton.click();
 
-    try {
-      await runIfOnDetails();
-    } catch (error) {
-      console.log("runIfOnDetails error", error);
-    } finally {
-      cashedFile = null;
-      actionButtonCalled = false;
-      LOG(
-        `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
-      );
-    }
+    requestAnimationFrame(() => {
+      (async () => {
+        try {
+          await runIfOnDetails();
+        } catch (error) {
+          console.error("runIfOnDetails failed:", error);
+        } finally {
+          LOG(
+            `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
+          );
+        }
+      })();
+    });
   }
 
   chrome.runtime.onMessage.addListener(async (request) => {
