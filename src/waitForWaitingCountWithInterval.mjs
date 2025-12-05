@@ -270,12 +270,21 @@ const waitForWaitingCountWithInterval = async ({
         `[${new Date().toLocaleTimeString()}] 📋 Found ${patientsLength} patients from API to process`
       );
 
+      apiHadData = true;
+
+      const newPatientAdded = await processCollectingPatients({
+        browser,
+        page,
+        patientsStore,
+        patients,
+      });
+
       const patientsInStore = patientsStore.getAllPatients();
-      const patientsIds = patients.map(({ referralId }) => String(referralId));
+      const patientsIds = patients.map(({ idReferral }) => String(idReferral));
 
       if (patientsInStore.length) {
         const storePatientsNotInTheApi = patientsInStore.filter(
-          ({ referralId }) => !patientsIds.includes(String(referralId))
+          ({ referralId }) => !patientsIds.includes(referralId)
         );
 
         console.log(
@@ -305,15 +314,6 @@ const waitForWaitingCountWithInterval = async ({
           }
         }
       }
-
-      apiHadData = true;
-
-      const newPatientAdded = await processCollectingPatients({
-        browser,
-        page,
-        patientsStore,
-        patients,
-      });
 
       if (!newPatientAdded) {
         await pausableSleep(INTERVAL + Math.random() * 3000);
