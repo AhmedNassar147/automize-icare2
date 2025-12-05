@@ -170,7 +170,7 @@ const waitForWaitingCountWithInterval = async ({
       if (!patientsLength) {
         createConsoleMessage(
           `⏳ No patients found in API response, exiting...`,
-          "info"
+          "warn"
         );
 
         if (apiHadData && patientsStore.size()) {
