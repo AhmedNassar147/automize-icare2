@@ -1,27 +1,21 @@
-/*
- *
- * Helper: `waitForWaitingCountWithInterval`.
- *
- */
-import sleep from "./sleep.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import closePageSafely from "./closePageSafely.mjs";
+import sleep from "./sleep.mjs";
 import {
   pauseController,
   pause,
   continueIfPaused,
 } from "./PauseController.mjs";
-// import goToHomePage from "./goToHomePage.mjs";
 import {
+  globMedHeaders,
   PATIENT_SECTIONS_STATUS,
   TABS_COLLECTION_TYPES,
+  baseGlobMedAPiUrl,
 } from "./constants.mjs";
 
 const INTERVAL = 70_000;
 const NOT_LOGGED_SLEEP_TIME = 25_000;
-
 const LOCKED_OUT_SLEEP_TIME = 4 * 10 * 60_000;
 
 const pausableSleep = async (ms) => {
@@ -29,11 +23,12 @@ const pausableSleep = async (ms) => {
   await sleep(ms);
 };
 
+const apiUrl = `${baseGlobMedAPiUrl}/listing`;
+
 const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
   try {
     const intervalTime = INTERVAL + Math.random() * 9000;
 
-    // 🔹 Check pause before waiting/reloading
     await pauseController.waitIfPaused();
 
     if (!page || !page?.reload) {
@@ -46,16 +41,14 @@ const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
       return true;
     }
 
-    console.log(`${logString}refreshing in ${intervalTime / 1000}s...`);
+    console.log(`$${logString} refreshing in ${intervalTime / 1000}s...`);
     await pausableSleep(intervalTime);
 
-    // 🔹 Check pause right before reload (long operation)
     await pauseController.waitIfPaused();
     await page.reload({ waitUntil: "domcontentloaded" });
   } catch (err) {
     console.error("🔁 Failed to reload page:", err.message);
     const intervalTime = INTERVAL + Math.random() * 11_000;
-
     await pausableSleep(intervalTime);
     console.log(
       `Will recreate page on next loop iteration, refreshing in ${
@@ -66,30 +59,107 @@ const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
   }
 };
 
+const fetchPatientsFromAPI = async (page, requestBody) => {
+  try {
+    const result = await page.evaluate(
+      async ({ globMedHeaders, requestBody, apiUrl }) => {
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: globMedHeaders,
+            body: requestBody,
+          });
+
+          let data,
+            message = null;
+
+          try {
+            data = await response.json();
+          } catch {
+            data = await response.text();
+            message = "Response was not valid JSON";
+            return { success: false, data, message };
+          }
+
+          return { success: true, data, message };
+        } catch (err) {
+          return { success: false, data: null, message: err.message };
+        }
+      },
+      { globMedHeaders, requestBody, apiUrl }
+    );
+
+    const { success, data, message } = result;
+
+    const isDataString = typeof data === "string";
+
+    if (isDataString || !success || message) {
+      return {
+        success: false,
+        patients: [],
+        data,
+        message: isDataString ? data : message || "API fetch failed",
+      };
+    }
+
+    if (data?.statusCode !== "Success") {
+      return {
+        success: false,
+        patients: [],
+        data,
+        message: `API returned non-success status: ${
+          isDataString ? data : data?.statusCode
+        }`,
+      };
+    }
+
+    return {
+      success: true,
+      patients: data?.data?.result || [],
+      data,
+      message: null,
+    };
+  } catch (err) {
+    return { success: false, patients: [], data: null, message: err.message };
+  }
+};
+
 const waitForWaitingCountWithInterval = async ({
   collectionTabType,
-  patientsStore,
   browser,
+  patientsStore,
   sendWhatsappMessage,
 }) => {
-  const { targetText, noCountText } =
-    PATIENT_SECTIONS_STATUS[collectionTabType];
-
   let page, cursor;
 
-  console.log(`🌀 Loop running for ${collectionTabType} patients...`);
+  const { targetText, categoryReference } =
+    PATIENT_SECTIONS_STATUS[collectionTabType];
+
+  const isPending = collectionTabType === TABS_COLLECTION_TYPES.WAITING;
+
+  const requestBody = JSON.stringify({
+    pageSize: isPending ? 100 : 5,
+    pageNumber: 1,
+    categoryReference,
+    providerZone: [],
+    providerName: [],
+    specialtyCode: [],
+    referralTypeCode: [],
+    referralReasonCode: [],
+    genericSearch: "",
+    sortOrder: "asc",
+  });
 
   if (!patientsStore.hasReloadListener()) {
     patientsStore.on("forceReloadHomePage", async () => {
       console.log("📢 Received forceReloadHomePage event");
       if (page) {
         try {
-          // Respect pause even for manual reloads
           await pauseController.waitIfPaused();
           await page.reload({ waitUntil: "domcontentloaded" });
           console.log("🔄 Page reloaded successfully from event.");
         } catch (err) {
-          console.error("🔁 Error during manual homepage reload:", err.message);
+          console.error("❌ Error during manual homepage reload:", err.message);
         }
       } else {
         console.warn("⚠️ forceReloadHomePage event fired but page is null");
@@ -99,36 +169,22 @@ const waitForWaitingCountWithInterval = async ({
 
   while (true) {
     try {
-      // 🔹 First checkpoint each iteration
       await pauseController.waitIfPaused();
 
+      // 🔹 Login check
       const [newPage, newCursor, isLoggedIn, isErrorAboutLockedOut] =
         await makeUserLoggedInOrOpenHomePage({
           browser,
           cursor,
           currentPage: page,
           sendWhatsappMessage,
-          showScoreButton: !patientsStore.isScoreTourAlreadyStarted(),
-          onClickScoreButton: () => patientsStore.startScoreTour(),
         });
 
       page = newPage;
       cursor = newCursor;
 
       if (isErrorAboutLockedOut) {
-        const now = new Date();
-        const unlockTime = new Date(now.getTime() + LOCKED_OUT_SLEEP_TIME);
-
-        console.log(
-          `🔐 We are locked out, retrying in ${
-            LOCKED_OUT_SLEEP_TIME / 60_000
-          } minutes until ${unlockTime.toLocaleTimeString("en-US", {
-            hour12: false,
-          })}...`
-        );
-
         await closePageSafely(page);
-
         await pausableSleep(LOCKED_OUT_SLEEP_TIME);
         page = null;
         cursor = null;
@@ -136,67 +192,65 @@ const waitForWaitingCountWithInterval = async ({
       }
 
       if (!isLoggedIn) {
-        console.log(
-          `🔐 Not logged in, retrying in ${NOT_LOGGED_SLEEP_TIME / 1000}s...`
-        );
-
         await pausableSleep(NOT_LOGGED_SLEEP_TIME);
         continue;
       }
 
-      if (!page) {
-        console.log("Page is not initialized. Skipping reload...");
-        await pausableSleep(NOT_LOGGED_SLEEP_TIME);
-        cursor = null;
-        continue;
-      }
-
-      // 🔹 Check pause before a possibly long DOM interaction
-      await pauseController.waitIfPaused();
-
-      const { count } = await searchForItemCountAndClickItIfFound(
+      console.log(
+        `[${new Date().toLocaleTimeString()}] 🌀 Fetching ${targetText} collection ...`
+      );
+      const { patients, message, success } = await fetchPatientsFromAPI(
         page,
-        targetText,
-        collectionTabType !== TABS_COLLECTION_TYPES.WAITING
+        requestBody
       );
 
-      if (!count) {
-        await pausableSleep(10_000 + Math.random() * 3_000);
-        const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(
+      if (!success || message) {
+        const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
           page,
-          `${noCountText}, `
+          `success=${success} message=${message}`
         );
-
-        if (shouldCreateNewpage) {
+        if (shouldCreateNewPage) {
           page = null;
           cursor = null;
         }
         continue;
       }
 
-      console.log(
-        `🧐 ${count} patient(s) found. Checking at ${new Date().toLocaleTimeString()}`
-      );
+      const patientsLength = patients.length ?? 0;
 
-      // 🔹 Pause-gate before processing
-      await pauseController.waitIfPaused();
+      if (!patientsLength) {
+        console.log(
+          `[${new Date().toLocaleTimeString()}] ⏳ No patients found in API response, exiting...`
+        );
+        await pausableSleep(INTERVAL + Math.random() * 4000);
+        continue;
+      }
 
-      await processCollectingPatients({
+      const newPatientAdded = await processCollectingPatients({
         browser,
-        patientsStore,
         page,
-        targetText,
-        cursor,
-        sendWhatsappMessage,
+        patientsStore,
+        patients,
       });
-    } catch (error) {
-      console.error("🛑 Unexpected error during loop:", error.message);
-    }
-    const shouldCreateNewpage = await reloadAndCheckIfShouldCreateNewPage(page);
 
-    if (shouldCreateNewpage) {
-      page = null;
-      cursor = null;
+      if (!newPatientAdded) {
+        await pausableSleep(INTERVAL + Math.random() * 3000);
+      }
+
+      if (newPatientAdded) {
+        await sleep(2000 + Math.random() * 3000);
+        const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
+          page,
+          "showing patients"
+        );
+        if (shouldCreateNewPage) {
+          page = null;
+          cursor = null;
+        }
+      }
+    } catch (err) {
+      console.error("🛑 Unexpected error during loop:", err.message);
+      await pausableSleep(INTERVAL + Math.random() * 3000);
     }
   }
 };

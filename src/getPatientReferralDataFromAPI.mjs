@@ -14,7 +14,7 @@ const urls = [
 const getPatientReferralDataFromAPI = async (page, idReferral) => {
   const results = await page.evaluate(
     async ({ urls, globMedHeaders, idReferral, baseGlobMedAPiUrl }) => {
-      const responses = await Promise.all(
+      const responses = await Promise.allSettled(
         urls.map(async (url) => {
           const apiFiresAtMS = new Date().getTime();
           try {
@@ -57,6 +57,20 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         })
       );
 
+      const normalizeSettled = (settled) => {
+        if (!settled) return { success: false, data: null, error: "no-result" };
+        if (settled.status === "fulfilled") {
+          return (
+            settled.value || { success: false, data: null, error: "no-value" }
+          );
+        } else {
+          // rejected
+          const reason = settled.reason;
+          const msg = (reason && reason.message) || String(reason);
+          return { success: false, data: null, error: msg };
+        }
+      };
+
       const [attachmentResponse, patientInfoResponse, detailsResponse] =
         responses;
 
@@ -65,13 +79,13 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         error: patientDetailsError,
         apiFiresAtMS,
         serverResponseTimeMS,
-      } = detailsResponse;
+      } = normalizeSettled(detailsResponse);
 
       const { data: patientInfo, error: patientInfoError } =
-        patientInfoResponse || {};
+        normalizeSettled(patientInfoResponse);
 
       const { data: attachmentList, error: attchmentsError } =
-        attachmentResponse || {};
+        normalizeSettled(attachmentResponse);
 
       const {
         requiredSpecialty,
@@ -142,18 +156,39 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
 
       if (Array.isArray(attachmentList) && attachmentList.length) {
         function arrayBufferToBase64(buffer) {
-          let binary = "";
           const bytes = new Uint8Array(buffer);
-          const chunkSize = 0x8000; // 32KB chunks
 
-          for (let i = 0; i < bytes.length; i += chunkSize) {
-            binary += String.fromCharCode.apply(
-              null,
-              bytes.subarray(i, i + chunkSize)
+          const base64abc =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split(
+              ""
             );
+
+          let result = "";
+          let i;
+
+          for (i = 2; i < bytes.length; i += 3) {
+            result += base64abc[bytes[i - 2] >> 2];
+            result +=
+              base64abc[((bytes[i - 2] & 3) << 4) | (bytes[i - 1] >> 4)];
+            result += base64abc[((bytes[i - 1] & 15) << 2) | (bytes[i] >> 6)];
+            result += base64abc[bytes[i] & 63];
           }
 
-          return btoa(binary);
+          if (i === bytes.length + 1) {
+            result += base64abc[bytes[i - 2] >> 2];
+            result += base64abc[(bytes[i - 2] & 3) << 4];
+            result += "==";
+          }
+
+          if (i === bytes.length) {
+            result += base64abc[bytes[i - 2] >> 2];
+            result +=
+              base64abc[((bytes[i - 2] & 3) << 4) | (bytes[i - 1] >> 4)];
+            result += base64abc[(bytes[i - 1] & 15) << 2];
+            result += "=";
+          }
+
+          return result;
         }
 
         const downloadTasks = attachmentList
@@ -173,23 +208,16 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
                 };
               }
 
-              const getSaveName = (name) =>
-                name ? name.replace(/[^a-z0-9_\-\.]/gi, "_") : "";
-
               const blob = await fileRes.blob();
-
               const arrayBuffer = await blob.arrayBuffer();
               const base64 = arrayBufferToBase64(arrayBuffer);
 
               const parts = (fileName || "").split(".");
               const extension = parts.length > 1 ? parts.pop() : "pdf";
               const name = parts.join(".");
-              const safeName = getSaveName(name);
 
               return {
-                fileName: `${idReferral}_${getSaveName(
-                  _specialty
-                )}_${safeName}`,
+                fileName: `${idReferral}_${_specialty}_${name}`,
                 extension: extension,
                 fileBase64: base64,
                 idAttachment,
