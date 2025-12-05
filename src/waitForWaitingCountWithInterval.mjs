@@ -273,34 +273,38 @@ const waitForWaitingCountWithInterval = async ({
       const patientsInStore = patientsStore.getAllPatients();
       const patientsIds = patients.map(({ referralId }) => String(referralId));
 
-      const storePatientsNotInTheApi = patientsInStore.filter(
-        ({ referralId }) => !patientsIds.includes(String(referralId))
-      );
+      if (patientsInStore.length) {
+        const storePatientsNotInTheApi = patientsInStore.filter(
+          ({ referralId }) => !patientsIds.includes(String(referralId))
+        );
 
-      console.log(
-        JSON.stringify({
-          patientsInStore,
-          patientsIds,
-          storePatientsNotInTheApi,
-        })
-      );
+        console.log(
+          JSON.stringify({
+            patientsInStore: patientsInStore.map((i) => i.referralId),
+            patientsIds,
+            storePatientsNotInTheApi: storePatientsNotInTheApi.map(
+              (i) => i.referralId
+            ),
+          })
+        );
 
-      // if (storePatientsNotInTheApi?.length) {
-      //   try {
-      //     await Promise.allSettled(
-      //       storePatientsNotInTheApi.map(({ referralId }) =>
-      //         patientsStore.removePatientByReferralId(referralId)
-      //       )
-      //     );
-      //     console.log(
-      //       `[${new Date().toLocaleTimeString()}] ✅ removing unsynced patients from store`
-      //     );
-      //   } catch (error) {
-      //     console.log(
-      //       `[${new Date().toLocaleTimeString()}] 🛑 Failed removing unsynced patients from store`
-      //     );
-      //   }
-      // }
+        if (storePatientsNotInTheApi?.length) {
+          try {
+            await Promise.allSettled(
+              storePatientsNotInTheApi.map(({ referralId }) =>
+                patientsStore.removePatientByReferralId(referralId)
+              )
+            );
+            console.log(
+              `[${new Date().toLocaleTimeString()}] ✅ removing unsynced patients from store`
+            );
+          } catch (error) {
+            console.log(
+              `[${new Date().toLocaleTimeString()}] 🛑 Failed removing unsynced patients from store`
+            );
+          }
+        }
+      }
 
       apiHadData = true;
 
