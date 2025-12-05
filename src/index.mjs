@@ -403,13 +403,9 @@ const currentProfile = "Profile 1";
 
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {
+      createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`);
       createConsoleMessage(
-        `HTTPS listening on https://${HOST}:${PORT}`,
-        "info"
-      );
-      createConsoleMessage(
-        `DELETE: https://${HOST}:${PORT}/patients/:referralId`,
-        "info"
+        `DELETE: https://${HOST}:${PORT}/patients/:referralId`
       );
     });
 
