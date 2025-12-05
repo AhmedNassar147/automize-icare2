@@ -249,13 +249,3 @@ export default getWhenCaseStarted;
 // };
 
 // const ms = parseDateInSaudiToMs("7/15/2025, 12:46:43 AM");
-// console.log("Milliseconds:", ms);
-
-// console.log(
-//   getWhenCaseStarted(
-//     parseDateInSaudiToMs("7/15/2025, 12:46:43 AM"),
-//     "A waiting period of 15 minutes shall pass before an action can be performed. There is 14 minute(s) and 34 second(s) remaining."
-//   )
-// );
-
-// // console.log(getWhenCaseStarted(Date.now(), "", true));

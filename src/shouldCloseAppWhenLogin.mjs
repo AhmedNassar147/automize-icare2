@@ -3,6 +3,7 @@
  * Helper: `shouldCloseAppWhenLogin`.
  *
  */
+import createConsoleMessage from "./createConsoleMessage.mjs";
 import getLoginErrors from "./getLoginErrors.mjs";
 
 const shouldCloseAppWhenLogin = async (page, sendWhatsappMessage) => {
@@ -13,8 +14,9 @@ const shouldCloseAppWhenLogin = async (page, sendWhatsappMessage) => {
   const errorsLength = errors?.length ?? 0;
 
   if (errorsLength) {
-    console.error(
-      `❌ Login errors: ${errors.join(", ")} sending errors to client...`
+    createConsoleMessage(
+      `❌ Login errors: ${errors.join(", ")} sending errors to client...`,
+      "error"
     );
 
     const isErrorAboutLockedOut =

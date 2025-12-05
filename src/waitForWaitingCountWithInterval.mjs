@@ -13,6 +13,7 @@ import {
   TABS_COLLECTION_TYPES,
   baseGlobMedAPiUrl,
 } from "./constants.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const INTERVAL = 70_000;
 const NOT_LOGGED_SLEEP_TIME = 25_000;
@@ -34,18 +35,16 @@ const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
     if (!page || !page?.reload) {
       await pausableSleep(intervalTime);
 
-      console.log(
-        `[${new Date().toLocaleTimeString()}] Will recreate page on next loop iteration, refreshing in ${
+      createConsoleMessage(
+        `Will recreate page on next loop iteration, refreshing in ${
           intervalTime / 1000
         }s...`
       );
       return true;
     }
 
-    console.log(
-      `[${new Date().toLocaleTimeString()}] ${logString} refreshing in ${
-        intervalTime / 1000
-      }s...`
+    createConsoleMessage(
+      `${logString} refreshing in ${intervalTime / 1000}s...`
     );
     await pausableSleep(intervalTime);
 
@@ -55,11 +54,12 @@ const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
     const intervalTime = INTERVAL + Math.random() * 11_000;
     await pausableSleep(intervalTime);
 
-    console.log(
-      `[${new Date().toLocaleTimeString()}] Will recreate page on next loop iteration, refreshing in ${
+    createConsoleMessage(
+      err,
+      "error",
+      `Will recreate page on next loop iteration, refreshing in ${
         intervalTime / 1000
-      }s...`,
-      err.message
+      }s...`
     );
     return true;
   }
@@ -160,25 +160,22 @@ const waitForWaitingCountWithInterval = async ({
 
   if (!patientsStore.hasReloadListener()) {
     patientsStore.on("forceReloadHomePage", async () => {
-      console.log(
-        `[${new Date().toLocaleTimeString()}] 📢 Received forceReloadHomePage event`
-      );
+      createConsoleMessage(`📢 Received forceReloadHomePage event`);
       if (page) {
         try {
           await pauseController.waitIfPaused();
           await page.reload({ waitUntil: "domcontentloaded" });
-          console.log(
-            `[${new Date().toLocaleTimeString()}] 🔄 Page reloaded successfully from event.`
-          );
+          createConsoleMessage(`🔄 Page reloaded successfully from event.`);
         } catch (err) {
-          console.log(
-            `[${new Date().toLocaleTimeString()}] ❌ Error during manual homepage reload:`,
-            err.message
+          createConsoleMessage(
+            err,
+            "error",
+            `❌ Error during manual homepage reload:`
           );
         }
       } else {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ⚠️ forceReloadHomePage event fired but page is null`
+        createConsoleMessage(
+          `⚠️ forceReloadHomePage event fired but page is null`
         );
       }
     });
@@ -213,9 +210,7 @@ const waitForWaitingCountWithInterval = async ({
         continue;
       }
 
-      console.log(
-        `[${new Date().toLocaleTimeString()}] 🌀 Fetching ${targetText} collection ...`
-      );
+      createConsoleMessage(`🌀 Fetching ${targetText} collection ...`);
       const { patients, message, success } = await fetchPatientsFromAPI(
         page,
         requestBody
@@ -236,25 +231,24 @@ const waitForWaitingCountWithInterval = async ({
       const patientsLength = patients.length ?? 0;
 
       if (!patientsLength) {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ⏳ No patients found in API response, exiting...`
+        createConsoleMessage(
+          `⏳ No patients found in API response, exiting...`
         );
 
         if (apiHadData && patientsStore.size()) {
           apiHadData = false;
-          console.log(
-            `[${new Date().toLocaleTimeString()}] ✅ checking for store patients with files to clear`
+          createConsoleMessage(
+            `✅ checking for store patients with files to clear`
           );
 
           try {
             await patientsStore.clear();
-            console.log(
-              `[${new Date().toLocaleTimeString()}] ✅ Patient store with files cleared`
-            );
+            createConsoleMessage(`✅ Patient store with files cleared`);
           } catch (error) {
-            console.error(
-              `[${new Date().toLocaleTimeString()}] Error clearing patients store:`,
-              error
+            createConsoleMessage(
+              error,
+              "error",
+              `Error clearing patients store`
             );
           }
 
@@ -273,8 +267,8 @@ const waitForWaitingCountWithInterval = async ({
         continue;
       }
 
-      console.log(
-        `[${new Date().toLocaleTimeString()}] 📋 Found ${patientsLength} patients from API to process`
+      createConsoleMessage(
+        `📋 Found ${patientsLength} patients from API to process`
       );
 
       apiHadData = true;
@@ -298,9 +292,7 @@ const waitForWaitingCountWithInterval = async ({
 
         if (storePatientsNotInTheApi?.length) {
           try {
-            console.log(
-              `[${new Date().toLocaleTimeString()}] ✅ removing unsynced patients from store`
-            );
+            createConsoleMessage(`✅ removing unsynced patients from store`);
             await Promise.allSettled(
               storePatientsNotInTheApi.map(({ referralId }) =>
                 patientsStore.removePatientByReferralId(referralId)
@@ -308,8 +300,10 @@ const waitForWaitingCountWithInterval = async ({
             );
             hasPatientsRemoved = true;
           } catch (error) {
-            console.log(
-              `[${new Date().toLocaleTimeString()}] 🛑 Failed removing unsynced patients from store`
+            createConsoleMessage(
+              error,
+              "error",
+              `🛑 Failed removing unsynced patients from store`
             );
           }
         }
@@ -329,10 +323,7 @@ const waitForWaitingCountWithInterval = async ({
         await pausableSleep(INTERVAL + Math.random() * 5000);
       }
     } catch (err) {
-      console.log(
-        `[${new Date().toLocaleTimeString()}] 🛑 Unexpected error during loop:`,
-        err.message
-      );
+      createConsoleMessage(err, "error", `🛑 Unexpected error during loop:`);
       await pausableSleep(INTERVAL + Math.random() * 3000);
     }
   }

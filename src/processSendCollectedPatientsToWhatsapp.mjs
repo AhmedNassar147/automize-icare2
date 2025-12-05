@@ -5,6 +5,7 @@
  */
 import speakText from "./speakText.mjs";
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const processSendCollectedPatientsToWhatsapp =
   (sendWhatsappMessage, execludeWhatsAppMsgFooter) => async (addedPatients) => {
@@ -101,7 +102,7 @@ const processSendCollectedPatientsToWhatsapp =
       });
       // }
     } catch (error) {
-      console.log("SOUND error", error.message);
+      createConsoleMessage(error, "error", "SOUND error");
     }
   };
 

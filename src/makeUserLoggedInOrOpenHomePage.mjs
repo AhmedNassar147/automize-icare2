@@ -10,6 +10,7 @@ import waitForHomeLink from "./waitForHomeLink.mjs";
 import gotToLoginPage from "./gotToLoginPage.mjs";
 import shouldCloseAppWhenLogin from "./shouldCloseAppWhenLogin.mjs";
 import { homePageTableSelector } from "./constants.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const MAX_RETRIES = 3;
 const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
@@ -113,9 +114,10 @@ const makeUserLoggedInOrOpenHomePage = async ({
               timeout: 8_000,
             });
           } catch (error) {
-            console.log(
-              `[${new Date().toLocaleTimeString()}] 🛑 AFTER SUBMITTING LOGIN ...`,
-              error.message
+            createConsoleMessage(
+              error,
+              "error",
+              `🛑 AFTER SUBMITTING LOGIN ...`
             );
           }
         }
@@ -146,29 +148,20 @@ const makeUserLoggedInOrOpenHomePage = async ({
         hasEnteredStartingPage || (await checkHomePageFullyLoaded(page));
 
       if (isHomeLoaded) {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ✅ User ${userName} is in home page.`
-        );
+        createConsoleMessage(`✅ User ${userName} is in home page.`);
         await sleep(35 + Math.random() * 40);
 
         return [page, cursor, true];
       }
     } catch (error) {
-      console.log(
-        `[${new Date().toLocaleTimeString()}] ❌ Attempt #${
-          retries + 1
-        } failed:`,
-        error.message
-      );
+      createConsoleMessage(error, "error", `❌ Attempt #${retries + 1} failed`);
     }
 
     retries++;
     await sleep(400 + retries * 220);
   }
 
-  console.log(
-    `[${new Date().toLocaleTimeString()}] ❌ Failed to login after max retries`
-  );
+  createConsoleMessage(`❌ Failed to login after max retries`);
   return [page, cursor, false];
 };
 

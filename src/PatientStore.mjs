@@ -19,6 +19,7 @@ import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
 } from "./constants.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 async function safeWritePatientData(data, retries = 3, delay = 200) {
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -30,7 +31,11 @@ async function safeWritePatientData(data, retries = 3, delay = 200) {
       return;
     } catch (err) {
       if (attempt === retries) {
-        console.error("❌ Failed to write patient data after retries:", err);
+        createConsoleMessage(
+          err,
+          "error",
+          "❌ Failed to write patient data after retries:"
+        );
       }
       await new Promise((res) => setTimeout(res, delay));
     }
@@ -106,7 +111,7 @@ class PatientStore extends EventEmitter {
         isSuperAcceptance: patient.isSuperAcceptance,
       });
 
-      console.log(`Called From Initial Schedule: ${message}`);
+      createConsoleMessage(`Called From Initial Schedule: ${message}`);
     }
   }
 

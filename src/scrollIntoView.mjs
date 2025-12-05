@@ -3,6 +3,7 @@
  * Helper: `scrollIntoView`.
  *
  */
+import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
 
 const scrollIntoView = async (page, cursor, selector, options = {}) => {
@@ -22,7 +23,7 @@ const scrollIntoView = async (page, cursor, selector, options = {}) => {
     elementHandle = isStringSelector ? await page.$(selector) : selector;
 
     if (!elementHandle) {
-      console.log(`⚠️ Element not found for selector: ${selector}`);
+      createConsoleMessage(`⚠️ Element not found for selector: ${selector}`);
       return;
     }
 
@@ -34,7 +35,7 @@ const scrollIntoView = async (page, cursor, selector, options = {}) => {
         scrollDelay: afterScrollDelay,
       });
     } catch (err) {
-      console.log("⚠️ cursor.scrollIntoView failed, using fallback");
+      createConsoleMessage("⚠️ cursor.scrollIntoView failed, using fallback");
 
       const box = await elementHandle.boundingBox();
       if (!box) return;
@@ -76,9 +77,10 @@ const scrollIntoView = async (page, cursor, selector, options = {}) => {
       }
     }
   } catch (error) {
-    console.error(
-      `Error while scrollIntoView selector "${selector}":`,
-      error.message
+    createConsoleMessage(
+      error,
+      "error",
+      `Error while scrollIntoView selector "${selector}":`
     );
   }
 };

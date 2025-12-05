@@ -10,6 +10,7 @@ import extractReferralId from "./extractReferralId.mjs";
 import normalizePhoneNumber from "./normalizePhoneNumber.mjs";
 import validateReplyText from "./validateReplyText.mjs";
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const { Client, LocalAuth, MessageMedia } = pkg;
 
@@ -21,14 +22,18 @@ const BASE_RETRY_DELAY = 3000;
 const getChatId = (number) => `${number}@c.us`;
 
 export const shutdownAllClients = async () => {
-  console.log("🛑 Shutting down all clients...");
+  createConsoleMessage("🛑 Shutting down all clients...");
   await Promise.all(
     Array.from(clients.entries()).map(async ([number, { client }]) => {
       try {
         await client.destroy();
-        console.log(`✅ [${number}] Client destroyed.`);
+        createConsoleMessage(`✅ [${number}] Client destroyed.`);
       } catch (err) {
-        console.error(`❌ [${number}] Failed to destroy client:`, err);
+        createConsoleMessage(
+          err,
+          "error",
+          `❌ [${number}] Failed to destroy client:`
+        );
       }
     })
   );
@@ -64,20 +69,19 @@ export const initializeClient = async (
         client: oldClient,
       } = clients.get(number);
       if (isReady || isInitializing) {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ℹ️ [${number}] Client already initialized.`
-        );
+        createConsoleMessage(`ℹ️ [${number}] Client already initialized.`);
         return;
       }
       try {
         await oldClient.destroy();
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ♻️ [${number}] Destroyed old client before reinitialization.`
+        createConsoleMessage(
+          `♻️ [${number}] Destroyed old client before reinitialization.`
         );
       } catch (err) {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ❌ [${number}] Error destroying old client:`,
-          err
+        createConsoleMessage(
+          err,
+          "error",
+          `❌ [${number}] Error destroying old client:`
         );
       }
     }
@@ -107,18 +111,14 @@ export const initializeClient = async (
     client.on("ready", async () => {
       if (state.isReady) return;
 
-      console.log(
-        `[${new Date().toLocaleTimeString()}] ✅ [${number}] Client ready.`
-      );
+      createConsoleMessage(`✅ [${number}] Client ready.`);
       state.isReady = true;
       state.isInitializing = false;
       state.retryCount = 0;
 
       if (state.queue.length > 0) {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] 📤 [${number}] Sending ${
-            state.queue.length
-          } queued message(s)...`
+        createConsoleMessage(
+          `📤 [${number}] Sending ${state.queue.length} queued message(s)...`
         );
         await Promise.all(
           state.queue.map((msg) => sendMessageWithFiles(number, msg))
@@ -128,25 +128,19 @@ export const initializeClient = async (
     });
 
     client.on("auth_failure", (msg) => {
-      console.log(
-        `[${new Date().toLocaleTimeString()}] ❌ [${number}] Auth failure: ${msg}`
-      );
+      createConsoleMessage(`❌ [${number}] Auth failure: ${msg}`);
       state.isReady = false;
       state.isInitializing = false;
     });
 
     client.on("disconnected", () => {
-      console.log(
-        `[${new Date().toLocaleTimeString()}] ⚠️ [${number}] Disconnected.`
-      );
+      createConsoleMessage(`⚠️ [${number}] Disconnected.`);
 
       state.isReady = false;
       state.isInitializing = false;
 
       if (state.retryCount >= MAX_RETRIES) {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] 🛑 [${number}] Max retries reached.`
-        );
+        createConsoleMessage(`🛑 [${number}] Max retries reached.`);
         return;
       }
 
@@ -154,10 +148,8 @@ export const initializeClient = async (
         BASE_RETRY_DELAY * 2 ** state.retryCount + Math.random() * 1000;
       state.retryCount++;
 
-      console.log(
-        `[${new Date().toLocaleTimeString()}] 🔁 [${number}] Retrying in ${(
-          delay / 1000
-        ).toFixed(2)}s...`
+      createConsoleMessage(
+        `🔁 [${number}] Retrying in ${(delay / 1000).toFixed(2)}s...`
       );
 
       setTimeout(
@@ -171,8 +163,8 @@ export const initializeClient = async (
         const { from: _from, body } = message || {};
 
         if (!_from || !body) {
-          console.log(
-            `[${new Date().toLocaleTimeString()}] ⚠️ [${number}] Message missing 'from' or 'body'.`
+          createConsoleMessage(
+            `⚠️ [${number}] Message missing 'from' or 'body'.`
           );
           return;
         }
@@ -184,16 +176,14 @@ export const initializeClient = async (
           from = contact.id?._serialized;
         }
 
-        console.log(
-          `[${new Date().toLocaleTimeString()}] 📨 [${number}] Incoming message from: ${from} — "${body}"`
+        createConsoleMessage(
+          `📨 [${number}] Incoming message from: ${from} — "${body}"`
         );
-        console.log(
-          `[${new Date().toLocaleTimeString()}] 🎯 [${number}] Expected chatId: ${chatId}`
-        );
+        createConsoleMessage(`🎯 [${number}] Expected chatId: ${chatId}`);
 
         if (from !== chatId) {
-          console.log(
-            `[${new Date().toLocaleTimeString()}] ⛔ [${number}] Message ignored — not from expected chatId.`
+          createConsoleMessage(
+            `⛔ [${number}] Message ignored — not from expected chatId.`
           );
           return;
         }
@@ -219,10 +209,9 @@ export const initializeClient = async (
         const referralId = extractReferralId(quotedMsg.body);
 
         if (!referralId) {
-          console.log(
-            `[${new Date().toLocaleTimeString()}] ❌ [${number}] No referral ID in quoted message:\n${
-              quotedMsg.body
-            }`
+          createConsoleMessage(
+            `❌ [${number}] No referral ID in quoted message:\n${quotedMsg.body}`,
+            "error"
           );
           await quotedMsg.reply(
             `❌ Invalid patient message — No *Referral ID* in quoted message.`
@@ -262,13 +251,14 @@ export const initializeClient = async (
           `${prefix} (Referral ID: ${referralId})  ${replyMessage}`
         );
 
-        console.log(
-          `[${new Date().toLocaleTimeString()}] 📩 [${number}] Patient update result: ${prefix} ${replyMessage}`
+        createConsoleMessage(
+          `📩 [${number}] Patient update result: ${prefix} ${replyMessage}`
         );
       } catch (err) {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ❌ [${number}] Error handling incoming message:`,
-          err
+        createConsoleMessage(
+          err,
+          "error",
+          `❌ [${number}] Error handling incoming message:`
         );
       }
     });
@@ -303,9 +293,10 @@ const sendMessageWithFiles = async (number, msgWithFiles) => {
       }
     }
   } catch (err) {
-    console.log(
-      `[${new Date().toLocaleTimeString()}] ❌ [${number}] Failed to send message or files:`,
-      err
+    createConsoleMessage(
+      err,
+      "error",
+      `❌ [${number}] Failed to send message or files:`
     );
   }
 };
@@ -320,19 +311,19 @@ const sendMessageUsingWhatsapp =
     const state = clients.get(phoneNo);
 
     if (!state?.isReady) {
-      console.log(
-        `[${new Date().toLocaleTimeString()}] 📥 [${phoneNo}] Client not ready — queuing messages`
+      createConsoleMessage(
+        `📥 [${phoneNo}] Client not ready — queuing messages`
       );
-      console.log(`.`);
       state.queue.push(...safeMessages);
     } else {
       for (const msg of safeMessages) {
         try {
           await sendMessageWithFiles(phoneNo, msg);
         } catch (err) {
-          console.log(
-            `[${new Date().toLocaleTimeString()}] ❌ [${phoneNo}] Failed to send message:`,
-            err
+          createConsoleMessage(
+            err,
+            "error",
+            `❌ [${phoneNo}] Failed to send message:`
           );
         }
       }

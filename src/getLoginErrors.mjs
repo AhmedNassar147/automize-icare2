@@ -3,6 +3,8 @@
  * Helper: `getLoginErrors`.
  *
  */
+import createConsoleMessage from "./createConsoleMessage.mjs";
+
 const errorSelector = ".validation-summary-errors ul li";
 
 /**
@@ -18,8 +20,7 @@ const getLoginErrors = async (page) => {
 
     return errors.filter(Boolean);
   } catch (error) {
-    // Optional debug log:
-    // console.warn("⚠️ No visible login error found in DOM:", error.message);
+    createConsoleMessage(error, "error", "getLoginErrors");
     return [];
   }
 };

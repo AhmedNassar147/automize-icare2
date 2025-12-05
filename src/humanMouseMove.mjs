@@ -5,6 +5,7 @@
  * Helper: Move mouse from point A to B like a human (with noise, pauses, corrections).
  */
 
+import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
 
 const jitter = (x, y, range = 3) => ({
@@ -39,7 +40,7 @@ const humanMouseMove = async ({
   delayAfterDone,
 }) => {
   if (!page || !start || !end || typeof page.mouse?.move !== "function") {
-    console.log("humanMouseMove: invalid page or coordinates");
+    createConsoleMessage("humanMouseMove: invalid page or coordinates");
     return;
   }
 
@@ -60,8 +61,6 @@ const humanMouseMove = async ({
 
   const distance = Math.hypot(end.x - start.x, end.y - start.y);
   const steps = Math.max(Math.floor(distance / 8), _maxSteps);
-
-  console.log("steps", steps);
 
   const delay = _moveTime / steps;
 

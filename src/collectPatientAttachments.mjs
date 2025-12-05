@@ -6,6 +6,7 @@
 import humanClick from "./humanClick.mjs";
 import scrollIntoView from "./scrollIntoView.mjs";
 import extractExtensionFromContentDisposition from "./extractExtensionFromContentDisposition.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
 
 const collectPatientAttachments = async ({
@@ -39,11 +40,11 @@ const collectPatientAttachments = async ({
   const logString = `for patientName=${patientName} referralId=${referralId} specialty=${specialty}`;
 
   if (!validDownloadButtons.length) {
-    console.log(`⚠️ No valid download buttons found ${logString}`);
+    createConsoleMessage(`⚠️ No valid download buttons found ${logString}`);
     return [];
   }
 
-  console.log(`✅ collecting attachments ${logString}`);
+  createConsoleMessage(`✅ collecting attachments ${logString}`);
 
   const downloadedFiles = [];
 
@@ -51,7 +52,9 @@ const collectPatientAttachments = async ({
     try {
       await scrollIntoView(page, cursor, btn);
 
-      console.log("⚡ Waiting for file response and clicking button...");
+      createConsoleMessage(
+        "⚡ Waiting for file response and clicking button..."
+      );
 
       const [response] = await Promise.all([
         page.waitForResponse(
@@ -69,7 +72,7 @@ const collectPatientAttachments = async ({
       ]);
 
       if (!response) {
-        console.log(
+        createConsoleMessage(
           `⚠️ invalid response after clicking download ${logString}.`
         );
         continue;
@@ -77,7 +80,9 @@ const collectPatientAttachments = async ({
 
       const contentType = response.headers()["content-type"] || "";
       if (!contentType.includes("application")) {
-        console.log("❌ Skipping due to unexpected content-type:", contentType);
+        createConsoleMessage(
+          `❌ Skipping due to unexpected content-type:=${contentType}`
+        );
         continue;
       }
 
@@ -93,9 +98,12 @@ const collectPatientAttachments = async ({
         fileBase64: buffer.toString("base64"),
       });
 
-      console.log(`✅ Downloaded: ${fileName} ${logString}`);
+      createConsoleMessage(`✅ Downloaded: ${fileName} ${logString}`);
     } catch (err) {
-      console.error(`❌ Error downloading ${logString}: ${err.message}`);
+      createConsoleMessage(
+        `❌ Error downloading ${logString}: ${err.message}`,
+        "error"
+      );
     }
   }
 

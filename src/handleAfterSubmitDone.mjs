@@ -4,6 +4,7 @@
  *
  */
 import buildDurationText from "./buildDurationText.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
 import waitForPath from "./waitForPath.mjs";
 
@@ -30,7 +31,7 @@ const handleAfterSubmitDone = async ({
     startTime,
     Date.now() - (leftTime || 0)
   );
-  console.log("durationText", durationText);
+  createConsoleMessage(`durationText=${durationText}`);
   patientsStore.forceReloadHomePage();
 
   await sleep(5000 + Math.random() * 2000);

@@ -5,6 +5,7 @@
  */
 import sleep from "./sleep.mjs";
 import humanMouseMove from "./humanMouseMove.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const defaultOptions = {
   debug: false,
@@ -48,13 +49,13 @@ const humanClick = async (page, target, options = {}) => {
   }
 
   if (!element) {
-    console.log(`humanClick: Element ${target} not found`);
+    createConsoleMessage(`humanClick: Element ${target} not found`);
     return;
   }
 
   const box = await element.boundingBox();
   if (!box) {
-    console.log(`humanClick: Element ${target} has no bounding box`);
+    createConsoleMessage(`humanClick: Element ${target} has no bounding box`);
     return;
   }
 
@@ -106,16 +107,20 @@ const humanClick = async (page, target, options = {}) => {
   await page.mouse.up();
 
   if (debug) {
-    console.log("CLICK_STATS", {
-      mode,
-      moveTime,
-      hoverTime,
-      hesitateTime,
-      pressTime,
-      start,
-      end,
-      direction,
-    });
+    createConsoleMessage(
+      {
+        mode,
+        moveTime,
+        hoverTime,
+        hesitateTime,
+        pressTime,
+        start,
+        end,
+        direction,
+      },
+      "info",
+      "CLICK_STATS"
+    );
   }
 };
 

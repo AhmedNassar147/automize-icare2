@@ -1,3 +1,4 @@
+import createConsoleMessage from "./createConsoleMessage.mjs";
 /**
  * Search for a dashboard card by header text and optionally click it if its count > 0.
  *
@@ -16,7 +17,9 @@ const searchForItemCountAndClickItIfFound = async (
   try {
     await page.waitForSelector(targetTextElement, { timeout: 60_000 });
   } catch {
-    console.log(`❌ Could not find '${targetTextElement}' on the page`);
+    createConsoleMessage(
+      `❌ Could not find '${targetTextElement}' on the page`
+    );
     return { clicked: false, count: 0 };
   }
 
@@ -57,22 +60,30 @@ const searchForItemCountAndClickItIfFound = async (
   );
 
   if (!clickable || !uid) {
-    console.log(`ℹ️ '${targetText}' found but count=${count}, not clicked.`);
+    createConsoleMessage(
+      `ℹ️ '${targetText}' found but count=${count}, not clicked.`
+    );
     return { clicked: false, count };
   }
 
   if (shouldClickHeaderItem) {
     try {
       await page.click(`[data-click-target="${uid}"]`);
-      console.log(`✅ Clicked '${targetText}' card with count=${count}`);
+      createConsoleMessage(
+        `✅ Clicked '${targetText}' card with count=${count}`
+      );
       return { clicked: true, count };
     } catch (err) {
-      console.log(`❌ Failed to click '${targetText}' card:`, err.message);
+      createConsoleMessage(
+        err,
+        "error",
+        `❌ Failed to click '${targetText}' card:`
+      );
       return { clicked: false, count };
     }
   }
 
-  console.log(`✅ '${targetText}' card found with count=${count}`);
+  createConsoleMessage(`✅ '${targetText}' card found with count=${count}`);
   return { clicked: false, count };
 };
 

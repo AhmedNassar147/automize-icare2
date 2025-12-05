@@ -37,5 +37,3 @@ export default extractReferralId;
 // U80.3 - Epilepsy (20) AND isDefault=(Yes)
 
 // `;
-
-// console.log(extractReferralId(message));

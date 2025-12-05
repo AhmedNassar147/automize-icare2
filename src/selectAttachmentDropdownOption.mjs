@@ -21,7 +21,7 @@ const selectAttachmentDropdownOption = async (page, option) => {
   );
 
   if (!dropdownTrigger) {
-    console.log(`❌ dropdown trigger not found.`);
+    createConsoleMessage(`❌ dropdown trigger not found.`);
 
     const html = await page.content();
     await writeFile(`${htmlFilesPath}/dropdown-trigger-not-found.html`, html);
@@ -32,7 +32,7 @@ const selectAttachmentDropdownOption = async (page, option) => {
   try {
     await dropdownTrigger.click();
   } catch (err) {
-    console.log(err.message);
+    createConsoleMessage(err, "error", "couldn't click dropdown trigger");
     await humanClick(page, dropdownTrigger, {
       mode: "fast",
     });
@@ -56,7 +56,7 @@ const selectAttachmentDropdownOption = async (page, option) => {
 
     const html = await page.content();
     await writeFile(`${htmlFilesPath}/dropdown-option-not-found.html`, html);
-    console.log(_error);
+    createConsoleMessage(_error, "error");
     return [false, _error];
   }
 };

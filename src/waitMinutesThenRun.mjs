@@ -1,4 +1,4 @@
-import speekText from "./speakText.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const waitMinutesThenRun = (
   caseWillBeSubmitMSAt,
@@ -56,7 +56,7 @@ const waitMinutesThenRun = (
       try {
         await asyncAction();
       } catch (err) {
-        console.error("Error in asyncAction:", err);
+        createConsoleMessage(err, "error", "Error in asyncAction:");
       }
     })();
     return { cancel };
@@ -67,7 +67,7 @@ const waitMinutesThenRun = (
     try {
       await asyncAction();
     } catch (err) {
-      console.error("Error in asyncAction:", err);
+      createConsoleMessage(err, "error", "Error in asyncAction:");
     }
   }, delayMain);
 

@@ -8,6 +8,7 @@ import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 import { cutoffTimeMs } from "./constants.mjs";
 import sleep from "./sleep.mjs";
 import insureFetchedPatientData from "./insureFetchedPatientData.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const formateDateToString = (date) =>
   new Intl.DateTimeFormat("en-GB", {
@@ -105,19 +106,17 @@ const processCollectingPatients = async ({
       const referralId = String(idReferral);
 
       if (!referralId) {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ⏩ skipping patient without referralId`
-        );
+        createConsoleMessage(`⏩ skipping patient without referralId`);
         continue;
       }
 
-      console.log(
-        `[${new Date().toLocaleTimeString()}] Progress: ${index}/${patientsLength} (referralId=${referralId})`
+      createConsoleMessage(
+        `Progress: ${index}/${patientsLength} (referralId=${referralId})`
       );
 
       if (patientsStore.has(referralId)) {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ⚠️ Patient referralId=${referralId} already collected...`
+        createConsoleMessage(
+          `⚠️ Patient referralId=${referralId} already collected...`
         );
         continue;
       }
@@ -125,8 +124,8 @@ const processCollectingPatients = async ({
       // mark as we found at least one new patient (before processing)
       if (!newPatientAdded) newPatientAdded = true;
 
-      console.log(
-        `[${new Date().toLocaleTimeString()}] 📡 Fetching data for referralId=(${referralId})...`
+      createConsoleMessage(
+        `📡 Fetching data for referralId=(${referralId})...`
       );
 
       // Call existing API function to get detailed patient info
@@ -152,8 +151,9 @@ const processCollectingPatients = async ({
         attchmentsError;
 
       if (hasInternalError) {
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ❌ Error collecting referralId=${referralId} => patientData=${!!patientData}, patientDetailsError=${patientDetailsError}, patientInfoError=${patientInfoError}, attchmentsError=${attchmentsError}`
+        createConsoleMessage(
+          `❌ Error collecting referralId=${referralId} => patientData=${!!patientData}, patientDetailsError=${patientDetailsError}, patientInfoError=${patientInfoError}, attchmentsError=${attchmentsError}`,
+          "error"
         );
         continue;
       }
@@ -181,13 +181,12 @@ const processCollectingPatients = async ({
       await sleep(2500 + Math.random() * 3000);
     }
 
-    console.log(
-      `[${new Date().toLocaleTimeString()}] ✅ Finished processing all patients from API.`
-    );
+    createConsoleMessage(`✅ Finished processing all patients from API.`);
   } catch (err) {
-    console.log(
-      `[${new Date().toLocaleTimeString()}] 🛑 Fatal error during processing patients:`,
-      err.message
+    createConsoleMessage(
+      err,
+      "error",
+      `🛑 Fatal error during processing patients:`
     );
   }
 

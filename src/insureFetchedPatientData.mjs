@@ -3,6 +3,7 @@
  * Helper: `insureFetchedPatientData`.
  *
  */
+import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
 
 /**
@@ -30,8 +31,8 @@ const insureFetchedPatientData = async (
       if (patientDetailsError || patientInfoError || attchmentsError) {
         if (attempt < maxAttempts) {
           const wait = baseBackoffMs + Math.random() * 1000;
-          console.log(
-            `[${new Date().toLocaleTimeString()}] ⚠️ attempt ${attempt} returned internal errors, retrying in ${Math.round(
+          createConsoleMessage(
+            `⚠️ attempt ${attempt} returned internal errors, retrying in ${Math.round(
               wait
             )}ms...`
           );
@@ -49,19 +50,19 @@ const insureFetchedPatientData = async (
       // fn threw — retry unless we exhausted attempts
       if (attempt < maxAttempts) {
         const wait = baseBackoffMs + Math.random() * 1000;
-        console.log(
-          `[${new Date().toLocaleTimeString()}] ⚠️ attempt ${attempt} threw (${
+        createConsoleMessage(
+          `⚠️ attempt ${attempt} threw (${
             err.message
-          }), retrying in ${Math.round(wait)}ms...`
+          }), retrying in ${Math.round(wait)}ms...`,
+          "error"
         );
         await sleep(wait);
         continue;
       }
 
-      console.log(
-        `[${new Date().toLocaleTimeString()}] ❌ all ${maxAttempts} attempts failed (last error: ${
-          err.message
-        })`
+      createConsoleMessage(
+        `❌ all ${maxAttempts} attempts failed (last error: ${err.message})`,
+        "error"
       );
       return lastPatientData; // maybe null
     }

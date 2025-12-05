@@ -47,6 +47,7 @@ import {
   TABS_COLLECTION_TYPES,
   // HOME_PAGE_URL,
 } from "./constants.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 // import closePageSafely from "./closePageSafely.mjs";
 // import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
@@ -92,7 +93,7 @@ const currentProfile = "Profile 1";
   let pingInterval;
 
   async function shutdown(sig) {
-    console.log(`\n${sig} received. Shutting down...`);
+    createConsoleMessage(`\n${sig} received. Shutting down...`);
 
     try {
       clearInterval(pingInterval);
@@ -101,7 +102,7 @@ const currentProfile = "Profile 1";
     try {
       await shutdownAllClients();
     } catch (e) {
-      console.error("shutdownAllClients failed:", e?.message || e);
+      createConsoleMessage(e, "error", "shutdownAllClients failed:");
     }
 
     try {
@@ -158,7 +159,6 @@ const currentProfile = "Profile 1";
 
     // Launch browser with a fixed profile
     const profilePath = `${USER_PROFILE_PATH}/${currentProfile}`;
-    console.log("Using profile", profilePath);
 
     browser = await puppeteer.launch({
       headless: false,
@@ -222,7 +222,7 @@ const currentProfile = "Profile 1";
     cron.schedule(
       SUMMARY_REPORT_GENERATED_AT,
       async () => {
-        console.log("[CRON] Summary job at", new Date().toISOString());
+        createConsoleMessage("Starting [CRON] Summary job");
         try {
           await processCollectReferralSummary(
             browser,
@@ -230,9 +230,9 @@ const currentProfile = "Profile 1";
             FIRST_SUMMARY_REPORT_STARTS_AT,
             SUMMARY_REPORT_ENDS_AT
           );
-          console.log("[CRON] Summary job done.");
+          createConsoleMessage("[CRON] Summary job done.");
         } catch (err) {
-          console.error("[CRON] Summary job failed:", err.message);
+          createConsoleMessage(err, "error", "[CRON] Summary job Failure");
         }
       },
       { timezone: "Asia/Riyadh" }
@@ -279,7 +279,11 @@ const currentProfile = "Profile 1";
         continueFetchingPatientsIfPaused();
         return res.status(result.success ? 200 : 404).json(result);
       } catch (err) {
-        console.error("DELETE /patients/:referralId error", err);
+        createConsoleMessage(
+          err,
+          "error",
+          "DELETE /patients/:referralId error"
+        );
         return res
           .status(500)
           .json({ success: false, message: "Internal error." });
@@ -380,14 +384,16 @@ const currentProfile = "Profile 1";
 
         const remainingMs = referralEndTimestamp - Date.now();
 
-        console.log(`Patient=${referralId} remainingMs=${remainingMs}`);
+        createConsoleMessage(
+          `Patient=${referralId} remainingMs=${remainingMs}`
+        );
         if (remainingMs > 0) {
           setTimeout(continueFetchingPatientsIfPaused, remainingMs);
         } else {
           continueFetchingPatientsIfPaused();
         }
       } catch (err) {
-        console.error("patientAccepted broadcast failed:", err?.message || err);
+        createConsoleMessage(err, "error", "patientAccepted broadcast failed");
       }
     });
 
@@ -397,8 +403,10 @@ const currentProfile = "Profile 1";
 
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {
-      console.log(`HTTPS listening on https://${HOST}:${PORT}`);
-      console.log(`DELETE: https://${HOST}:${PORT}/patients/:referralId`);
+      createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`);
+      createConsoleMessage(
+        `DELETE: https://${HOST}:${PORT}/patients/:referralId`
+      );
     });
 
     process.on("SIGINT", () => {
@@ -410,15 +418,15 @@ const currentProfile = "Profile 1";
 
     // Optional: catch fatals and shut down cleanly
     process.on("unhandledRejection", (e) => {
-      console.error("unhandledRejection:", e);
+      createConsoleMessage(e, "error", "unhandledRejection:");
       void shutdown("SIGINT");
     });
     process.on("uncaughtException", (e) => {
-      console.error("uncaughtException:", e);
+      createConsoleMessage(e, "error", "uncaughtException:");
       void shutdown("SIGINT");
     });
   } catch (error) {
-    console.error("❌ index.mjs crashed:", error);
+    createConsoleMessage(e, "error", "❌ index.mjs crashed:");
     await shutdown("SIGINT");
   }
 })();
@@ -437,7 +445,6 @@ const currentProfile = "Profile 1";
 
 // Rotate randomly
 // const currentProfile = profiles[Math.floor(Math.random() * profiles.length)];
-// console.log("Using profile", profilePath);
 
 // const browser = await puppeteer.launch({
 //   headless: false,
@@ -493,13 +500,11 @@ const currentProfile = "Profile 1";
 // });
 
 // import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
-// console.time("search");
 // await searchForItemCountAndClickItIfFound(
 //   page,
 //   "Confirmed Referrals",
 //   true
 // );
-// console.timeEnd("search");
 
 // const minReferralEndTimestamp = referralEndTimestamp - 120;
 // const delay = Math.max(0, minReferralEndTimestamp - Date.now());
@@ -556,7 +561,6 @@ const currentProfile = "Profile 1";
 // );
 
 // const numbers = await twilioClient.incomingPhoneNumbers.list();
-// console.log("numbers", numbers);
 
 // const createCall = async () => {
 //   const call = await twilioClient.calls.create({

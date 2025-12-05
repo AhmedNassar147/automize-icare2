@@ -3,6 +3,8 @@
  * Helper: `createDetailsPageWhatsappHandlers`.
  *
  */
+import createConsoleMessage from "./createConsoleMessage.mjs";
+
 const createDetailsPageWhatsappHandlers = ({
   actionName,
   referralId,
@@ -29,9 +31,13 @@ const createDetailsPageWhatsappHandlers = ({
         message: `${baseMessage}✅ Status: *SUCCESS*\nPatient has been *${status}*\n${durationText}\n🕓 *timeStamp*: ${timeStamp}`,
       });
 
-      console.log(`✅ ${status} ${durationText} in ${logString}`);
+      createConsoleMessage(`✅ ${status} ${durationText} in ${logString}`);
     } catch (error) {
-      console.log("Error when sending whatsapp success data");
+      createConsoleMessage(
+        error,
+        "error",
+        `Error when sending whatsapp success data`
+      );
     }
   };
 
@@ -52,9 +58,13 @@ const createDetailsPageWhatsappHandlers = ({
           : Promise.resolve(),
       ]);
 
-      console.log(`❌ ${reason} ${durationText} in ${logString}`);
+      createConsoleMessage(`❌ ${reason} ${durationText} in ${logString}`);
     } catch (error) {
-      console.log("Error when sending whatsapp error data");
+      createConsoleMessage(
+        error,
+        "error",
+        `Error when sending whatsapp error data`
+      );
     }
   };
 

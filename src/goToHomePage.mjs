@@ -6,6 +6,7 @@
 import humanClick from "./humanClick.mjs";
 import { dashboardLinkSelector, homePageTableSelector } from "./constants.mjs";
 import sleep from "./sleep.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const timeout = 10_000;
 
@@ -17,7 +18,7 @@ const goToHomePage = async (page) => {
 
     return true;
   } catch (error) {
-    console.error("Error when going to home page", error);
+    createConsoleMessage(error, "error", "goToHomePage");
     return false;
   }
 };

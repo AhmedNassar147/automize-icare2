@@ -4,6 +4,7 @@
  *
  */
 import { APP_URL } from "./constants.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const LOGIN_TIMEOUT = 1.5 * 60 * 1000;
 
@@ -23,8 +24,6 @@ const gotToLoginPage = async (page) => {
   const hasAnotherNavigation =
     currentUrl.includes("account/login") || currentUrl.includes("signin");
 
-  // console.log("currentUrl when gotToLoginPage", currentUrl);
-
   if (hasAnotherNavigation) {
     try {
       await page.waitForNavigation({
@@ -32,7 +31,7 @@ const gotToLoginPage = async (page) => {
         timeout: 3_000,
       });
     } catch (error) {
-      console.log("LOGIN_SECOND waitForNavigation", error.message);
+      createConsoleMessage(error, "error", "gotToLoginPage");
     }
   }
 };

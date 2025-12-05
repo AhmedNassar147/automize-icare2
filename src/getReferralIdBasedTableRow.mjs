@@ -4,6 +4,8 @@
  *
  *
  */
+import createConsoleMessage from "./createConsoleMessage.mjs";
+
 const filter = (el) =>
   (el?.textContent || "").trim().replace(/\s|\n|\t|\\/g, "");
 
@@ -18,7 +20,7 @@ const getReferralIdBasedTableRow = async (row) => {
 
     return { referralDate, referralId };
   } catch (e) {
-    console.error("❌ Failed to get referral row data:", e.message);
+    createConsoleMessage(e, "error", "getReferralIdBasedTableRow");
     return {};
   }
 };

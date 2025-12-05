@@ -3,6 +3,7 @@
  * Helper: `getSubmissionButtonsIfFound`.
  *
  */
+import createConsoleMessage from "./createConsoleMessage.mjs";
 const buttonsSelector = "section.referral-button-container button";
 
 const getSubmissionButtonsIfFound = async (page) => {
@@ -18,7 +19,7 @@ const getSubmissionButtonsIfFound = async (page) => {
 
     return buttons;
   } catch (err) {
-    console.log("❌ Failed to get submission buttons:", err.message);
+    createConsoleMessage(err, "error", "getSubmissionButtonsIfFound");
     return false;
   }
 };

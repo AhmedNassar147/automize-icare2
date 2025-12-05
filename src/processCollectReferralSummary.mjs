@@ -18,6 +18,7 @@ import {
   globMedHeaders,
   baseGlobMedAPiUrl,
 } from "./constants.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const excelColumns = [
   { header: "order", key: "order", width: 12 },
@@ -61,7 +62,9 @@ const processCollectReferralSummary = async (
   });
 
   if (!isLoggedIn) {
-    console.log("User is not logged in, cannot collect referral summary.");
+    createConsoleMessage(
+      "User is not logged in, cannot collect referral summary."
+    );
     return;
   }
 
@@ -168,7 +171,9 @@ const processCollectReferralSummary = async (
   const { patients: apisPatients, errors } = tabsResults;
 
   if (errors.length) {
-    errors.forEach((error) => console.error(error));
+    errors.forEach((error) =>
+      createConsoleMessage(error, "error", "processCollectReferralSummary")
+    );
     await closePageSafely(page);
     return;
   }
@@ -185,16 +190,16 @@ const processCollectReferralSummary = async (
         .filter(Boolean)
     : apisPatients;
 
-  console.log({
-    firstSummaryReportStartsAt,
-    endDate,
-    apisPatients: apisPatients.length,
-    allNewPatients: allNewPatients.length,
-    allPatientKeys: allPatientKeys.length,
-  });
+  // console.log({
+  //   firstSummaryReportStartsAt,
+  //   endDate,
+  //   apisPatients: apisPatients.length,
+  //   allNewPatients: allNewPatients.length,
+  //   allPatientKeys: allPatientKeys.length,
+  // });
 
   if (!allNewPatients?.length) {
-    console.info("There is no new patients for past week");
+    createConsoleMessage("There is no new patients for past week", "info");
     await closePageSafely(page);
     return;
   }
@@ -239,11 +244,15 @@ const processCollectReferralSummary = async (
   try {
     sheet = workbook.addWorksheet(fileTitle);
   } catch (error) {
-    console.log(`ERROR workbook.addWorksheet fileTitle=${fileTitle}`, error);
+    createConsoleMessage(
+      error,
+      "error",
+      `ERROR workbook.addWorksheet fileTitle=${fileTitle}`
+    );
   }
 
   if (!sheet) {
-    console.error("NO SHEEET");
+    createConsoleMessage("NO SHEEET", "error");
     await closePageSafely(page);
     return;
   }
@@ -291,7 +300,7 @@ const processCollectReferralSummary = async (
   });
 
   insertPatients(allNewPatients);
-  console.log("all new patients length", allNewPatients.length);
+  createConsoleMessage(`all new patients length is ${allNewPatients.length}`);
 
   await closePageSafely(page);
 };

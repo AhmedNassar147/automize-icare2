@@ -4,6 +4,7 @@
  *
  */
 import { spawn } from "child_process";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const speakText = ({
   text,
@@ -41,7 +42,7 @@ const speakText = ({
 
       // Handle process errors
       ps.on("error", (error) => {
-        console.error("speakText: PowerShell error:", error);
+        createConsoleMessage(error, "error", "speakText: PowerShell Error");
       });
 
       ps.stdin.write(`
@@ -56,7 +57,7 @@ const speakText = ({
 
       ps.on("exit", (code) => {
         if (code !== 0) {
-          console.error(`speakText: Process exited with code ${code}`);
+          createConsoleMessage(`speakText: Process exited with code ${code}`);
         }
         count++;
         if (count < times && delayMs > 0) {
@@ -64,7 +65,7 @@ const speakText = ({
         }
       });
     } catch (error) {
-      console.error("speakText: Unexpected error:", error);
+      createConsoleMessage(error, "error", "speakText: Unexpected error:");
     }
   };
 
