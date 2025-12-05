@@ -2,8 +2,10 @@
 (() => {
   "use strict";
 
-  const NO_ANIM_STYLE_ID = "gm-disable-animations";
-  (function injectNoAnimStyle() {
+  let styleInjected = false;
+  const NO_ANIM_STYLE_ID = "disable-animations";
+
+  function injectNoAnimStyle() {
     try {
       const s = document.createElement("style");
       s.id = NO_ANIM_STYLE_ID;
@@ -14,11 +16,12 @@
         }
       `;
       document?.head?.appendChild(s);
+      styleInjected = true;
     } catch (e) {
       // ignore
       console.warn("[GM-ext] failed to inject no-animation style", e);
     }
-  })();
+  }
 
   let cashedFile = null;
   let actionButtonCalled = false;
@@ -48,54 +51,28 @@
   const normalize = (str) => (str || "").trim();
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  async function waitForElm(
-    selector,
-    timeoutMs = CONFIG.waitElmMs,
-    all = false
-  ) {
-    const existing = all
-      ? document.querySelectorAll(selector)
-      : document.querySelector(selector);
-    if (all ? existing && existing.length : existing) return existing;
-
+  function waitForElmFast(selector, all = false) {
     return new Promise((resolve) => {
-      let timerId = null;
+      const el = all
+        ? document.querySelectorAll(selector)
+        : document.querySelector(selector);
+      if (el && (all ? el.length : true)) return resolve(el);
 
-      const done = (result) => {
-        if (timerId) clearTimeout(timerId);
-        mo.disconnect();
-        resolve(result);
-      };
-
-      const mo = new MutationObserver(() => {
+      const rafLoop = () => {
         const el = all
           ? document.querySelectorAll(selector)
           : document.querySelector(selector);
-        if (all ? el && el.length : el) done(el);
-      });
-
-      try {
-        mo.observe(document.documentElement || document, {
-          childList: true,
-          subtree: true,
-        });
-      } catch (e) {}
-
-      if (timeoutMs) {
-        timerId = setTimeout(() => {
-          done(
-            all
-              ? document.querySelectorAll(selector)
-              : document.querySelector(selector)
-          );
-        }, timeoutMs);
-      }
+        if (el && (all ? el.length : true)) {
+          resolve(el);
+        } else {
+          requestAnimationFrame(rafLoop);
+        }
+      };
+      rafLoop();
     });
   }
 
-  async function chooseOption() {
-    let trigger = await waitForElm('div[role="combobox"]');
-
+  async function chooseOption(trigger) {
     if (!trigger) {
       ERR("No trigger found");
       return false;
@@ -113,7 +90,7 @@
 
     await sleep(2);
 
-    const directLi = await waitForElm(
+    const directLi = await waitForElmFast(
       `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
     );
 
@@ -163,11 +140,7 @@
   }
 
   async function findRowByReferralId(referralId) {
-    const rows = await waitForElm(
-      "table.MuiTable-root tbody tr",
-      CONFIG.waitTableMs,
-      true
-    );
+    const rows = await waitForElmFast("table.MuiTable-root tbody tr", true);
     if (!rows?.length) {
       return null;
     }
@@ -292,6 +265,26 @@
     }
   };
 
+  async function runIfOnDetails() {
+    const t0 = Date.now();
+
+    const selectTrigger = await waitForElmFast('div[role="combobox"]');
+
+    if (selectTrigger && cashedFile) {
+      const section = document.querySelector(
+        "section.referral-button-container"
+      );
+
+      section.style.position = "absolute";
+      section.style.top = "845px";
+      section.style.right = "8%";
+      section.style.width = "100%";
+      await chooseOption(selectTrigger);
+      await uploadFile();
+      localStorage.setItem("TM", `${Date.now() - t0}ms`);
+    }
+  }
+
   async function clickDashboardRow(patient) {
     if (actionButtonCalled) {
       return;
@@ -302,17 +295,6 @@
     const { referralId, referralEndTimestamp, acceptanceFileBase64, fileName } =
       patient;
 
-    const upperFilterContainer = document.querySelector(
-      ".MuiGrid-root.MuiGrid-container"
-    );
-
-    const itemElement = upperFilterContainer.querySelector(
-      `.MuiGrid-root.MuiGrid-item:nth-child(${CONFIG.upperSectionItemOrder}) small`
-    );
-
-    itemElement.click();
-    await sleep(1500 + Math.random() * 300);
-
     const iconButton = await findRowByReferralId(referralId);
 
     if (!iconButton) {
@@ -321,23 +303,34 @@
       return;
     }
 
-    // cashedFile = base64ToFile(acceptanceFileBase64, fileName);
+    if (!styleInjected) {
+      injectNoAnimStyle();
+    }
 
-    // const remainingMs = referralEndTimestamp - Date.now();
+    cashedFile = base64ToFile(acceptanceFileBase64, fileName);
 
-    // const { elapsedMs, reason } = await isAcceptanceButtonShown({
-    //   idReferral: referralId,
-    //   remainingMs,
-    // });
+    const remainingMs = referralEndTimestamp - Date.now();
+
+    const { elapsedMs, reason } = await isAcceptanceButtonShown({
+      idReferral: referralId,
+      remainingMs,
+    });
 
     iconButton.click();
 
-    // LOG(
-    //   `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
-    // );
+    try {
+      await runIfOnDetails();
+    } catch (error) {
+      console.log("runIfOnDetails error", error);
+    } finally {
+      cashedFile = null;
+      actionButtonCalled = false;
+      LOG(
+        `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
+      );
+    }
   }
 
-  // --- Event Listener for Service Worker Messages ---
   chrome.runtime.onMessage.addListener(async (request) => {
     if (request.type === "accept" && request.data) {
       LOG("Received 'accept' command from Service Worker.");
@@ -351,80 +344,4 @@
     // but here we simply acknowledge the message for one-way communication.
     return false;
   });
-
-  async function runIfOnDetails() {
-    console.log("===> CALLED IN DETAILS <====");
-
-    const t0 = Date.now();
-
-    const statusContainer = await waitForElm(".statusContainer");
-
-    if (statusContainer && cashedFile) {
-      const section = document.querySelector(
-        "section.referral-button-container"
-      );
-
-      if (section) {
-        section.style.position = "absolute";
-        section.style.top = "845px";
-        section.style.right = "8%";
-        section.style.width = "100%";
-      }
-      await chooseOption();
-      await uploadFile();
-
-      cashedFile = null;
-      actionButtonCalled = false;
-      localStorage.setItem("TM", `${Date.now() - t0}ms`);
-    }
-  }
-
-  let running = false;
-  let scheduled = null;
-
-  async function handleLocationChange() {
-    console.log("===> CALLED <====");
-    if (running) return;
-    running = true;
-    try {
-      if (/\/referral\/details/i.test(location.pathname)) {
-        await runIfOnDetails();
-      }
-    } finally {
-      await sleep(2000); // wait for UI to settle
-      running = false;
-    }
-  }
-
-  function scheduleHandleLocationChange() {
-    if (scheduled) clearTimeout(scheduled);
-    scheduled = setTimeout(() => {
-      scheduled = null;
-      handleLocationChange();
-    }, 20);
-  }
-
-  // --- History hook for React Router ---
-  (function installHistoryHook() {
-    const wrap = (orig) =>
-      function (state, title, url) {
-        const rv = orig.apply(this, arguments);
-        if (/\/referral\/details/i.test(url)) {
-          scheduleHandleLocationChange();
-        }
-        return rv;
-      };
-
-    try {
-      history.pushState = wrap(history.pushState);
-      history.replaceState = wrap(history.replaceState);
-      window.addEventListener("popstate", () => {
-        if (/\/referral\/details/i.test(location.pathname)) {
-          scheduleHandleLocationChange();
-        }
-      });
-    } catch (e) {
-      console.error("Failed to install history hooks:", e);
-    }
-  })();
 })();
