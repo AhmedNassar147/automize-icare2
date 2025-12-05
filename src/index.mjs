@@ -93,7 +93,7 @@ const currentProfile = "Profile 1";
   let pingInterval;
 
   async function shutdown(sig) {
-    createConsoleMessage(`\n${sig} received. Shutting down...`);
+    createConsoleMessage(`\n${sig} received. Shutting down...`, "info");
 
     try {
       clearInterval(pingInterval);
@@ -222,7 +222,7 @@ const currentProfile = "Profile 1";
     cron.schedule(
       SUMMARY_REPORT_GENERATED_AT,
       async () => {
-        createConsoleMessage("Starting [CRON] Summary job");
+        createConsoleMessage("Starting [CRON] Summary job", "info");
         try {
           await processCollectReferralSummary(
             browser,
@@ -230,7 +230,7 @@ const currentProfile = "Profile 1";
             FIRST_SUMMARY_REPORT_STARTS_AT,
             SUMMARY_REPORT_ENDS_AT
           );
-          createConsoleMessage("[CRON] Summary job done.");
+          createConsoleMessage("[CRON] Summary job done.", "info");
         } catch (err) {
           createConsoleMessage(err, "error", "[CRON] Summary job Failure");
         }
@@ -385,7 +385,8 @@ const currentProfile = "Profile 1";
         const remainingMs = referralEndTimestamp - Date.now();
 
         createConsoleMessage(
-          `Patient=${referralId} remainingMs=${remainingMs}`
+          `Patient=${referralId} remainingMs=${remainingMs}`,
+          "info"
         );
         if (remainingMs > 0) {
           setTimeout(continueFetchingPatientsIfPaused, remainingMs);
@@ -403,9 +404,13 @@ const currentProfile = "Profile 1";
 
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {
-      createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`);
       createConsoleMessage(
-        `DELETE: https://${HOST}:${PORT}/patients/:referralId`
+        `HTTPS listening on https://${HOST}:${PORT}`,
+        "info"
+      );
+      createConsoleMessage(
+        `DELETE: https://${HOST}:${PORT}/patients/:referralId`,
+        "info"
       );
     });
 

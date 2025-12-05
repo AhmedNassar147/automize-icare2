@@ -22,12 +22,12 @@ const BASE_RETRY_DELAY = 3000;
 const getChatId = (number) => `${number}@c.us`;
 
 export const shutdownAllClients = async () => {
-  createConsoleMessage("🛑 Shutting down all clients...");
+  createConsoleMessage("🛑 Shutting down all clients...", "info");
   await Promise.all(
     Array.from(clients.entries()).map(async ([number, { client }]) => {
       try {
         await client.destroy();
-        createConsoleMessage(`✅ [${number}] Client destroyed.`);
+        createConsoleMessage(`✅ [${number}] Client destroyed.`, "info");
       } catch (err) {
         createConsoleMessage(
           err,
@@ -69,13 +69,17 @@ export const initializeClient = async (
         client: oldClient,
       } = clients.get(number);
       if (isReady || isInitializing) {
-        createConsoleMessage(`ℹ️ [${number}] Client already initialized.`);
+        createConsoleMessage(
+          `ℹ️ [${number}] Client already initialized.`,
+          "info"
+        );
         return;
       }
       try {
         await oldClient.destroy();
         createConsoleMessage(
-          `♻️ [${number}] Destroyed old client before reinitialization.`
+          `♻️ [${number}] Destroyed old client before reinitialization.`,
+          "info"
         );
       } catch (err) {
         createConsoleMessage(
@@ -111,14 +115,15 @@ export const initializeClient = async (
     client.on("ready", async () => {
       if (state.isReady) return;
 
-      createConsoleMessage(`✅ [${number}] Client ready.`);
+      createConsoleMessage(`✅ [${number}] Client ready.`, "info");
       state.isReady = true;
       state.isInitializing = false;
       state.retryCount = 0;
 
       if (state.queue.length > 0) {
         createConsoleMessage(
-          `📤 [${number}] Sending ${state.queue.length} queued message(s)...`
+          `📤 [${number}] Sending ${state.queue.length} queued message(s)...`,
+          "info"
         );
         await Promise.all(
           state.queue.map((msg) => sendMessageWithFiles(number, msg))
@@ -128,19 +133,19 @@ export const initializeClient = async (
     });
 
     client.on("auth_failure", (msg) => {
-      createConsoleMessage(`❌ [${number}] Auth failure: ${msg}`);
+      createConsoleMessage(`❌ [${number}] Auth failure: ${msg}`, "error");
       state.isReady = false;
       state.isInitializing = false;
     });
 
     client.on("disconnected", () => {
-      createConsoleMessage(`⚠️ [${number}] Disconnected.`);
+      createConsoleMessage(`⚠️ [${number}] Disconnected.`, "warn");
 
       state.isReady = false;
       state.isInitializing = false;
 
       if (state.retryCount >= MAX_RETRIES) {
-        createConsoleMessage(`🛑 [${number}] Max retries reached.`);
+        createConsoleMessage(`🛑 [${number}] Max retries reached.`, "warn");
         return;
       }
 
@@ -149,7 +154,8 @@ export const initializeClient = async (
       state.retryCount++;
 
       createConsoleMessage(
-        `🔁 [${number}] Retrying in ${(delay / 1000).toFixed(2)}s...`
+        `🔁 [${number}] Retrying in ${(delay / 1000).toFixed(2)}s...`,
+        "info"
       );
 
       setTimeout(
@@ -164,7 +170,8 @@ export const initializeClient = async (
 
         if (!_from || !body) {
           createConsoleMessage(
-            `⚠️ [${number}] Message missing 'from' or 'body'.`
+            `⚠️ [${number}] Message missing 'from' or 'body'.`,
+            "warn"
           );
           return;
         }
@@ -177,13 +184,14 @@ export const initializeClient = async (
         }
 
         createConsoleMessage(
-          `📨 [${number}] Incoming message from: ${from} — "${body}"`
+          `📨 [${number}] Incoming message from: ${from} — "${body}" where Expected chatId=${chatId}`,
+          "info"
         );
-        createConsoleMessage(`🎯 [${number}] Expected chatId: ${chatId}`);
 
         if (from !== chatId) {
           createConsoleMessage(
-            `⛔ [${number}] Message ignored — not from expected chatId.`
+            `⛔ [${number}] Message ignored — not from expected chatId.`,
+            "warn"
           );
           return;
         }
@@ -252,7 +260,8 @@ export const initializeClient = async (
         );
 
         createConsoleMessage(
-          `📩 [${number}] Patient update result: ${prefix} ${replyMessage}`
+          `📩 [${number}] Patient update result: ${prefix} ${replyMessage}`,
+          "info"
         );
       } catch (err) {
         createConsoleMessage(
@@ -312,7 +321,8 @@ const sendMessageUsingWhatsapp =
 
     if (!state?.isReady) {
       createConsoleMessage(
-        `📥 [${phoneNo}] Client not ready — queuing messages`
+        `📥 [${phoneNo}] Client not ready — queuing messages`,
+        "info"
       );
       state.queue.push(...safeMessages);
     } else {

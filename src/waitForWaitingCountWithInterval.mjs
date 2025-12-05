@@ -38,13 +38,15 @@ const reloadAndCheckIfShouldCreateNewPage = async (page, logString = "") => {
       createConsoleMessage(
         `Will recreate page on next loop iteration, refreshing in ${
           intervalTime / 1000
-        }s...`
+        }s...`,
+        "warn"
       );
       return true;
     }
 
     createConsoleMessage(
-      `${logString} refreshing in ${intervalTime / 1000}s...`
+      `${logString} refreshing in ${intervalTime / 1000}s...`,
+      "info"
     );
     await pausableSleep(intervalTime);
 
@@ -160,7 +162,7 @@ const waitForWaitingCountWithInterval = async ({
 
   if (!patientsStore.hasReloadListener()) {
     patientsStore.on("forceReloadHomePage", async () => {
-      createConsoleMessage(`📢 Received forceReloadHomePage event`);
+      createConsoleMessage(`📢 Received forceReloadHomePage event`, "info");
       if (page) {
         try {
           await pauseController.waitIfPaused();
@@ -175,7 +177,8 @@ const waitForWaitingCountWithInterval = async ({
         }
       } else {
         createConsoleMessage(
-          `⚠️ forceReloadHomePage event fired but page is null`
+          `⚠️ forceReloadHomePage event fired but page is null`,
+          "warn"
         );
       }
     });
@@ -205,7 +208,8 @@ const waitForWaitingCountWithInterval = async ({
             LOCKED_OUT_SLEEP_TIME / 60_000
           } minutes until ${unlockTime.toLocaleTimeString("en-US", {
             hour12: false,
-          })}...`
+          })}...`,
+          "info"
         );
 
         await closePageSafely(page);
@@ -248,7 +252,8 @@ const waitForWaitingCountWithInterval = async ({
         if (apiHadData && patientsStore.size()) {
           apiHadData = false;
           createConsoleMessage(
-            `✅ checking for store patients with files to clear`
+            `✅ checking for store patients with files to clear`,
+            "info"
           );
 
           try {
@@ -278,7 +283,8 @@ const waitForWaitingCountWithInterval = async ({
       }
 
       createConsoleMessage(
-        `📋 Found ${patientsLength} patients from API to process`
+        `📋 Found ${patientsLength} patients from API to process`,
+        "info"
       );
 
       apiHadData = true;
@@ -302,7 +308,10 @@ const waitForWaitingCountWithInterval = async ({
 
         if (storePatientsNotInTheApi?.length) {
           try {
-            createConsoleMessage(`✅ removing unsynced patients from store`);
+            createConsoleMessage(
+              `✅ removing unsynced patients from store`,
+              "info"
+            );
             await Promise.allSettled(
               storePatientsNotInTheApi.map(({ referralId }) =>
                 patientsStore.removePatientByReferralId(referralId)
@@ -320,7 +329,7 @@ const waitForWaitingCountWithInterval = async ({
       }
 
       if (newPatientAdded || hasPatientsRemoved) {
-        await sleep(2000 + Math.random() * 3000);
+        await pausableSleep(2000 + Math.random() * 3000);
         const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
           page,
           "showing patients"

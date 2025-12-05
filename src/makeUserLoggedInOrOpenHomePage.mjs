@@ -148,7 +148,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
         hasEnteredStartingPage || (await checkHomePageFullyLoaded(page));
 
       if (isHomeLoaded) {
-        createConsoleMessage(`✅ User ${userName} is in home page.`);
+        createConsoleMessage(`✅ User ${userName} is in home page.`, "info");
         await sleep(35 + Math.random() * 40);
 
         return [page, cursor, true];
@@ -161,7 +161,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
     await sleep(400 + retries * 220);
   }
 
-  createConsoleMessage(`❌ Failed to login after max retries`);
+  createConsoleMessage(`❌ Failed to login after max retries`, "error");
   return [page, cursor, false];
 };
 

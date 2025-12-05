@@ -21,7 +21,7 @@ const selectAttachmentDropdownOption = async (page, option) => {
   );
 
   if (!dropdownTrigger) {
-    createConsoleMessage(`❌ dropdown trigger not found.`);
+    createConsoleMessage(`❌ dropdown trigger not found.`, "error");
 
     const html = await page.content();
     await writeFile(`${htmlFilesPath}/dropdown-trigger-not-found.html`, html);

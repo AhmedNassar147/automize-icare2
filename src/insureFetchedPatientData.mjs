@@ -34,7 +34,8 @@ const insureFetchedPatientData = async (
           createConsoleMessage(
             `⚠️ attempt ${attempt} returned internal errors, retrying in ${Math.round(
               wait
-            )}ms...`
+            )}ms...`,
+            "info"
           );
           await sleep(wait);
           continue;

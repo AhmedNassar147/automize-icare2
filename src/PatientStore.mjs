@@ -111,7 +111,7 @@ class PatientStore extends EventEmitter {
         isSuperAcceptance: patient.isSuperAcceptance,
       });
 
-      createConsoleMessage(`Called From Initial Schedule: ${message}`);
+      createConsoleMessage(`Called From Initial Schedule: ${message}`, "info");
     }
   }
 

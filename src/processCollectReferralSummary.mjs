@@ -63,7 +63,8 @@ const processCollectReferralSummary = async (
 
   if (!isLoggedIn) {
     createConsoleMessage(
-      "User is not logged in, cannot collect referral summary."
+      "User is not logged in, cannot collect referral summary.",
+      "error"
     );
     return;
   }

@@ -3,13 +3,12 @@
  * Helper: `createConsoleMessage`.
  *
  */
+
 /**
  * Creates a stylized log message for Node.js console using ANSI escape codes.
  *
- * NOTE: This version replaces browser CSS (%c) with ANSI codes for Node.js compatibility.
- *
  * @param {string} sourceTag - A tag to identify the source (e.g., "DASH").
- * @param {('log'|'warn'|'error')} level - The logging severity level.
+ * @param {('log'|'info'|'warn'|'error')} level - The logging severity level.
  * @param {(string|object|Error)} message - The content to log.
  */
 
@@ -19,33 +18,65 @@ const ANSI = {
   bright: "\x1b[1m",
   dim: "\x1b[2m",
 
-  // Foreground colors (Text Color)
+  // Foreground colors
   fgBlack: "\x1b[30m",
   fgRed: "\x1b[31m",
   fgGreen: "\x1b[32m",
   fgYellow: "\x1b[33m",
   fgBlue: "\x1b[34m",
+  fgMagenta: "\x1b[35m",
+  fgCyan: "\x1b[36m",
   fgWhite: "\x1b[37m",
 
   // Background colors
   bgBlack: "\x1b[40m",
   bgRed: "\x1b[41m",
   bgYellow: "\x1b[43m",
+  bgBlue: "\x1b[44m",
+  bgMagenta: "\x1b[45m",
+  bgCyan: "\x1b[46m",
 };
 
-// Mapped styles for output
+/** Palette of tag background colors */
+const TAG_BG_COLORS = [
+  ANSI.bgRed,
+  ANSI.bgYellow,
+  ANSI.bgBlue,
+  ANSI.bgMagenta,
+  ANSI.bgCyan,
+  ANSI.bgBlack,
+];
+
+/** Palette of tag foreground colors (white is safest) */
+const TAG_FG = ANSI.fgWhite + ANSI.bright;
+
+/**
+ * Simple deterministic hash → integer
+ */
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+/**
+ * Get auto color style for tag based on hash
+ */
+function getAutoTagStyle(tag) {
+  const index = hashString(tag) % TAG_BG_COLORS.length;
+  return TAG_BG_COLORS[index] + TAG_FG;
+}
+
+// Mapped styles
 const ANSI_STYLES = {
-  time: ANSI.fgBlue, // Use Blue for time
+  time: ANSI.fgBlue,
 
-  // Tag: White text (fgWhite) on Black BG (bgBlack)
-  tag: ANSI.bgBlack + ANSI.fgWhite + ANSI.bright,
-
-  // Content Styles
   log: ANSI.fgGreen,
+  info: ANSI.fgCyan + ANSI.bright,
   warn: ANSI.fgYellow + ANSI.bright,
   error: ANSI.fgRed + ANSI.bright,
-
-  // Reset all formatting
   reset: ANSI.reset,
 };
 
@@ -53,27 +84,21 @@ function createConsoleMessage(message, level, sourceTag) {
   const time = new Date().toLocaleTimeString();
   const consoleMethod = console[level] || console.log;
 
-  // Apply ANSI styles to the static parts
-  const tagFormatted = `${ANSI_STYLES.tag} ${sourceTag || ""} ${
-    ANSI_STYLES.reset
-  }`;
-  const timeFormatted = `${ANSI_STYLES.time}[${time}]${ANSI_STYLES.reset}`;
+  // --- AUTO COLORED TAG ---
+  const tagColor = getAutoTagStyle(sourceTag || "");
+  const tagFormatted = `${tagColor} ${sourceTag || ""} ${ANSI.reset}`;
 
-  let prefix = `${timeFormatted} ${tagFormatted}`;
+  const timeFormatted = `${ANSI_STYLES.time}[${time}]${ANSI.reset}`;
+  const prefix = `${timeFormatted} ${tagFormatted}`;
 
-  // --- Format output based on message type ---
   if (message instanceof Error) {
-    // Handle Error objects with bold red text
-    const errorMsg = `${ANSI_STYLES.error} Error: ${message.message} ${ANSI_STYLES.reset}`;
-    // Print message and stack trace
+    const errorMsg = `${ANSI_STYLES.error} Error: ${message.message} ${ANSI.reset}`;
     consoleMethod(`${prefix} ${errorMsg}\n${message.stack}`);
   } else if (typeof message === "object" && message !== null) {
-    // Handle standard objects (Node.js will print these interactively)
     consoleMethod(`${prefix} Object:`, message);
   } else {
-    // Handle strings with dynamic content style
     const contentStyle = ANSI_STYLES[level] || ANSI_STYLES.log;
-    consoleMethod(`${prefix} ${contentStyle}${message}${ANSI_STYLES.reset}`);
+    consoleMethod(`${prefix} ${contentStyle}${message}${ANSI.reset}`);
   }
 }
 

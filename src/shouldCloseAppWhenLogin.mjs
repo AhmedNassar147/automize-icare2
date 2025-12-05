@@ -16,7 +16,7 @@ const shouldCloseAppWhenLogin = async (page, sendWhatsappMessage) => {
   if (errorsLength) {
     createConsoleMessage(
       `❌ Login errors: ${errors.join(", ")} sending errors to client...`,
-      "error"
+      "warn"
     );
 
     const isErrorAboutLockedOut =

@@ -31,7 +31,10 @@ const createDetailsPageWhatsappHandlers = ({
         message: `${baseMessage}✅ Status: *SUCCESS*\nPatient has been *${status}*\n${durationText}\n🕓 *timeStamp*: ${timeStamp}`,
       });
 
-      createConsoleMessage(`✅ ${status} ${durationText} in ${logString}`);
+      createConsoleMessage(
+        `✅ ${status} ${durationText} in ${logString}`,
+        "info"
+      );
     } catch (error) {
       createConsoleMessage(
         error,
@@ -58,7 +61,10 @@ const createDetailsPageWhatsappHandlers = ({
           : Promise.resolve(),
       ]);
 
-      createConsoleMessage(`❌ ${reason} ${durationText} in ${logString}`);
+      createConsoleMessage(
+        `❌ ${reason} ${durationText} in ${logString}`,
+        "info"
+      );
     } catch (error) {
       createConsoleMessage(
         error,

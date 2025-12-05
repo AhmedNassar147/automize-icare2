@@ -106,17 +106,19 @@ const processCollectingPatients = async ({
       const referralId = String(idReferral);
 
       if (!referralId) {
-        createConsoleMessage(`⏩ skipping patient without referralId`);
+        createConsoleMessage(`⏩ skipping patient without referralId`, "warn");
         continue;
       }
 
       createConsoleMessage(
-        `Progress: ${index}/${patientsLength} (referralId=${referralId})`
+        `Progress: ${index}/${patientsLength} (referralId=${referralId})`,
+        "info"
       );
 
       if (patientsStore.has(referralId)) {
         createConsoleMessage(
-          `⚠️ Patient referralId=${referralId} already collected...`
+          `⚠️ Patient referralId=${referralId} already collected...`,
+          "info"
         );
         continue;
       }
@@ -181,7 +183,10 @@ const processCollectingPatients = async ({
       await sleep(2500 + Math.random() * 3000);
     }
 
-    createConsoleMessage(`✅ Finished processing all patients from API.`);
+    createConsoleMessage(
+      `✅ Finished processing all patients from API.`,
+      "info"
+    );
   } catch (err) {
     createConsoleMessage(
       err,
