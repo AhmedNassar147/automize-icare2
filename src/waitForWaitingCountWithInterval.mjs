@@ -277,7 +277,7 @@ const waitForWaitingCountWithInterval = async ({
         ({ referralId }) => !patientsIds.includes(String(referralId))
       );
 
-      console.log.log(
+      console.log(
         JSON.stringify({
           patientsInStore,
           patientsIds,
