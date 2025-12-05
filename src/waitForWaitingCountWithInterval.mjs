@@ -234,28 +234,35 @@ const waitForWaitingCountWithInterval = async ({
           `[${new Date().toLocaleTimeString()}] ⏳ No patients found in API response, exiting...`
         );
 
-        if (patientsStore.size()) {
+        if (apiHadData && patientsStore.size()) {
+          apiHadData = false;
+          console.log(
+            `[${new Date().toLocaleTimeString()}] ✅ checking for store patients with files to clear`
+          );
+
           try {
             await patientsStore.clear();
+            console.log(
+              `[${new Date().toLocaleTimeString()}] ✅ Patient store with files cleared`
+            );
           } catch (error) {
             console.error(
               `[${new Date().toLocaleTimeString()}] Error clearing patients store:`,
               error
             );
           }
-        }
-        await pausableSleep(INTERVAL + Math.random() * 4000);
-        if (apiHadData) {
-          apiHadData = false;
+
           const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
             page,
-            "clearing patients store and files"
+            "cleared patients store and files"
           );
           if (shouldCreateNewPage) {
             page = null;
             cursor = null;
           }
         }
+
+        await pausableSleep(INTERVAL + Math.random() * 5000);
         continue;
       }
 
@@ -270,13 +277,30 @@ const waitForWaitingCountWithInterval = async ({
         ({ referralId }) => !patientsIds.includes(String(referralId))
       );
 
-      if (storePatientsNotInTheApi?.length) {
-        await Promise.allSettled(
-          storePatientsNotInTheApi.map(({ referralId }) =>
-            patientsStore.removePatientByReferralId(referralId)
-          )
-        );
-      }
+      console.log.log(
+        JSON.stringify({
+          patientsInStore,
+          patientsIds,
+          storePatientsNotInTheApi,
+        })
+      );
+
+      // if (storePatientsNotInTheApi?.length) {
+      //   try {
+      //     await Promise.allSettled(
+      //       storePatientsNotInTheApi.map(({ referralId }) =>
+      //         patientsStore.removePatientByReferralId(referralId)
+      //       )
+      //     );
+      //     console.log(
+      //       `[${new Date().toLocaleTimeString()}] ✅ removing unsynced patients from store`
+      //     );
+      //   } catch (error) {
+      //     console.log(
+      //       `[${new Date().toLocaleTimeString()}] 🛑 Failed removing unsynced patients from store`
+      //     );
+      //   }
+      // }
 
       apiHadData = true;
 
