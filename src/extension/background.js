@@ -10,7 +10,6 @@ const CONFIG = {
 const LOG = (...a) => console.log("[GM SW]", ...a);
 const ERR = (...a) => console.error("[GM SW]", ...a);
 
-// --- GLOBAL CONSTANT FOR TARGET URLS ---
 const DASHBOARD_URLS = [
   "https://referralprogram.globemedsaudi.com/dashboard/referral*",
   "https://referralprogram.globemedsaudi.com/Dashboard/Referral*",
@@ -19,32 +18,28 @@ const DASHBOARD_URLS = [
 let ws = null;
 let wsConnecting = false;
 let backoffMs = CONFIG.reconnectBaseMs;
+let reconnectScheduled = false;
 
-// --- CRITICAL RELIABILITY FUNCTION ---
-/**
- * Sends a message to a tab, retrying with exponential backoff if the
- * Content Script's listener is not ready (which causes 'receiving end does not exist').
- * @param {number} tabId - The ID of the target tab.
- * @param {object} message - The message payload.
- * @param {number} maxRetries - Maximum number of attempts.
- */
+// --- RELIABLE MESSAGE SENDING ---
 async function sendReliably(tabId, message, maxRetries = 5) {
-  let delay = 50; // Start with 100ms delay
+  let delay = 50;
   let success = false;
   let lastError = null;
+
+  const TRANSIENT_ERRORS = [
+    "Receiving end does not exist",
+    "The message port closed before a response was received.",
+  ];
 
   for (let i = 0; i < maxRetries; i++) {
     lastError = null;
 
     await new Promise((resolve) => {
-      // Use the callback pattern to check chrome.runtime.lastError
       chrome.tabs.sendMessage(tabId, message, (response) => {
-        // Must read chrome.runtime.lastError in the callback to clear it
         if (chrome.runtime.lastError) {
           lastError = chrome.runtime.lastError.message;
           resolve();
         } else {
-          // Message successfully sent (and listener existed)
           success = true;
           resolve();
         }
@@ -52,116 +47,46 @@ async function sendReliably(tabId, message, maxRetries = 5) {
     });
 
     if (success) {
-      LOG(
-        `Message successfully forwarded to tab ${tabId} after ${
-          i + 1
-        } attempts.`
-      );
+      LOG(`Message sent to tab ${tabId} after ${i + 1} attempt(s).`);
       return true;
     }
 
-    // Check for the specific race condition error
-    if (lastError && lastError.includes("Receiving end does not exist")) {
+    const isTransient = TRANSIENT_ERRORS.some(
+      (err) => lastError && lastError.includes(err)
+    );
+    if (isTransient) {
       LOG(
-        `Attempt ${i + 1} failed (Listener not ready). Retrying in ${delay}ms.`
+        `Attempt ${
+          i + 1
+        } failed (transient: ${lastError}). Retrying in ${delay}ms.`
       );
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      delay = Math.min(delay * 2, 1500); // Exponential backoff, max 1500
+      await new Promise((r) => setTimeout(r, delay));
+      delay = Math.min(delay * 2, 1500);
     } else {
-      // An unrecoverable error occurred (e.g., tab closed, permission error)
       ERR(`Unrecoverable error sending message to tab ${tabId}: ${lastError}`);
       return false;
     }
   }
 
   ERR(
-    `Failed to send message to tab ${tabId} after ${maxRetries} attempts. Final error: ${lastError}`
+    `Failed to send message to tab ${tabId} after ${maxRetries} attempts. Last error: ${lastError}`
   );
   return false;
 }
 
-// ensure periodic alarm exists on install and startup
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.alarms.create("gm-check-ws", {
-    periodInMinutes: CONFIG.alarmPeriodMinutes,
+// --- ALARM MANAGEMENT ---
+function ensureAlarm(name, periodMinutes) {
+  chrome.alarms.get(name, (alarm) => {
+    if (!alarm) {
+      chrome.alarms.create(name, { periodInMinutes: periodMinutes });
+      LOG(`Alarm '${name}' created`);
+    }
   });
-  LOG("Alarm gm-check-ws created (onInstalled)");
-});
-chrome.runtime.onStartup?.addListener(() => {
-  chrome.alarms.create("gm-check-ws", {
-    periodInMinutes: CONFIG.alarmPeriodMinutes,
-  });
-  LOG("Alarm gm-check-ws ensured (onStartup)");
-});
-
-// universal alarms handler
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (!alarm || !alarm.name) return;
-  if (alarm.name === "gm-check-ws" || alarm.name === "gm-reconnect") {
-    ensureConnected();
-  }
-});
-
-// schedule reconnect via a one-shot alarm (reliable across SW reloads)
-function scheduleReconnect(delayMs) {
-  const when = Date.now() + Math.max(0, delayMs || backoffMs);
-  // exponential backoff update
-  backoffMs = Math.min(
-    CONFIG.reconnectMaxMs,
-    Math.max(backoffMs * 2, CONFIG.reconnectBaseMs)
-  );
-  LOG(
-    `Scheduling reconnect alarm 'gm-reconnect' at ${new Date(
-      when
-    ).toISOString()} (next backoff ${backoffMs}ms)`
-  );
-  try {
-    chrome.alarms.create("gm-reconnect", { when });
-  } catch (e) {
-    // fallback to setTimeout (may not fire if SW is suspended)
-    LOG("chrome.alarms.create failed, falling back to setTimeout", e);
-    setTimeout(() => ensureConnected(), delayMs || backoffMs);
-  }
 }
 
-function handleIncomingMsg(msg) {
-  const { type, data } = msg;
-  if (type === "accept" && data?.referralId) {
-    chrome.tabs.query({ url: DASHBOARD_URLS }, (tabs) => {
-      if (chrome.runtime.lastError) {
-        ERR("tabs.query error", chrome.runtime.lastError.message);
-        return;
-      }
-      if (!tabs || !tabs.length) {
-        LOG("No dashboard tab found to forward accept message");
-        return;
-      }
-
-      const tab = tabs.find((t) => t.active) || tabs[0];
-      if (!tab || !tab.id) return;
-
-      // --- Use the reliable send function to handle the Content Script race condition ---
-      sendReliably(tab.id, { type: "accept", data })
-        .then((success) => {
-          if (success) {
-            LOG(`Accept message successfully delivered to tab ${tab.id}.`);
-          } else {
-            // Failure case is logged within sendReliably
-          }
-        })
-        .catch((e) => ERR("sendReliably final process failure", e));
-    });
-  }
-}
-
+// --- WEBSOCKET MANAGEMENT ---
 function connectWS() {
-  if (
-    ws &&
-    (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)
-  ) {
-    LOG("connectWS: WS already connecting/open — skipping");
-    return;
-  }
+  if (wsConnecting || (ws && ws.readyState === WebSocket.CONNECTING)) return;
 
   wsConnecting = true;
 
@@ -176,73 +101,107 @@ function connectWS() {
 
   ws.onopen = () => {
     wsConnecting = false;
-    backoffMs = CONFIG.reconnectBaseMs; // reset backoff
-    LOG("WS open");
+    backoffMs = CONFIG.reconnectBaseMs;
+    LOG("WebSocket connected");
   };
 
   ws.onmessage = (ev) => {
-    let msg;
     try {
-      msg = JSON.parse(typeof ev.data === "string" ? ev.data : "");
-    } catch {
-      return;
+      const msg = JSON.parse(typeof ev.data === "string" ? ev.data : "");
+      if (msg && typeof msg === "object") handleIncomingMsg(msg);
+    } catch (e) {
+      ERR("Failed to parse WS message", e);
     }
-    if (!msg || typeof msg !== "object") return;
-    handleIncomingMsg(msg);
   };
 
   ws.onclose = (ev) => {
-    LOG("WS closed", ev && ev.code);
+    LOG("WebSocket closed", ev && ev.code);
     wsConnecting = false;
     safeCloseWs();
     scheduleReconnect(backoffMs);
   };
 
   ws.onerror = (e) => {
-    ERR("WS error", e);
-    // force close to unify handling in onclose
+    ERR("WebSocket error", e);
     try {
       ws.close();
-    } catch (err) {
-      ERR("force close failed", err);
-    }
+    } catch {}
   };
 }
 
+function safeCloseWs() {
+  try {
+    wsConnecting = false;
+
+    if (ws) {
+      ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null;
+      if (
+        ws.readyState === WebSocket.OPEN ||
+        ws.readyState === WebSocket.CONNECTING
+      ) {
+        ws.close();
+      }
+      ws = null;
+    }
+  } catch (e) {
+    ERR("safeCloseWs error", e);
+  }
+}
+
+// --- RECONNECT SCHEDULING ---
+function scheduleReconnect(delayMs) {
+  if (reconnectScheduled) return; // already scheduled
+
+  reconnectScheduled = true;
+  const when = Date.now() + Math.max(0, delayMs || backoffMs);
+  backoffMs = Math.min(
+    CONFIG.reconnectMaxMs,
+    Math.max(backoffMs * 2, CONFIG.reconnectBaseMs)
+  );
+
+  LOG(
+    `Scheduling reconnect at ${new Date(
+      when
+    ).toISOString()} (next backoff ${backoffMs}ms)`
+  );
+
+  try {
+    chrome.alarms.create("gm-reconnect", { when });
+  } catch (e) {
+    LOG("chrome.alarms.create failed, fallback setTimeout", e);
+    setTimeout(() => ensureConnected(), delayMs || backoffMs);
+  }
+}
+
+// --- DASHBOARD TABS CHECK & WS ENSURE ---
 function ensureConnected() {
   try {
+    reconnectScheduled = false;
     chrome.tabs.query({ url: DASHBOARD_URLS }, (tabs) => {
+      if (chrome.runtime.lastError)
+        return ERR(chrome.runtime.lastError.message);
+
       const onDashboard = tabs && tabs.length > 0;
 
-      // --- CASE 1: No dashboard tabs exist → teardown WS completely ---
       if (!onDashboard) {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          LOG("Dashboard not open → closing WS");
-          safeCloseWs();
-        }
+        if (ws && ws.readyState === WebSocket.OPEN)
+          LOG("No dashboard → closing WS");
+        safeCloseWs();
         wsConnecting = false;
-        return; // do NOT attempt reconnect
+        return;
       }
 
-      // If already open, just ping
       if (ws && ws.readyState === WebSocket.OPEN) {
         try {
           ws.send(JSON.stringify({ type: "ping" }));
-          LOG("ping sent");
+          LOG("Ping sent");
         } catch (e) {
-          ERR("ping failed → closing and scheduling reconnect", e);
+          ERR("Ping failed, reconnecting", e);
           safeCloseWs();
           scheduleReconnect(backoffMs);
         }
         return;
       }
-
-      // If connecting → do nothing
-      if (ws && ws.readyState === WebSocket.CONNECTING) {
-        return;
-      }
-
-      if (wsConnecting) return;
 
       connectWS();
     });
@@ -251,19 +210,53 @@ function ensureConnected() {
   }
 }
 
-function safeCloseWs() {
-  try {
-    if (ws) {
-      ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null;
-      try {
-        ws.close();
-      } catch (e) {}
-      ws = null;
-    }
-  } catch (e) {
-    ERR("safeCloseWs error", e);
+const sentTabMessage = (tab, data) => {
+  if (tab && tab.id) {
+    sendReliably(tab.id, { type: "accept", data })
+      .then((success) => success && LOG(`Message delivered to tab ${tab.id}`))
+      .catch((e) => ERR("sendReliably failure", e));
+  }
+};
+
+// --- INCOMING MESSAGE HANDLER ---
+function handleIncomingMsg(msg) {
+  const { type, data } = msg;
+
+  if (type === "accept" && data?.referralId) {
+    chrome.tabs.query({ url: DASHBOARD_URLS, active: true }, (tabs) => {
+      if (chrome.runtime.lastError)
+        return ERR(chrome.runtime.lastError.message);
+
+      if (!tabs || !tabs.length) {
+        // fallback: any dashboard tab
+        chrome.tabs.query({ url: DASHBOARD_URLS }, (allTabs) => {
+          if (!allTabs || !allTabs.length) {
+            return LOG("No dashboard tab available to send message");
+          }
+          sentTabMessage(allTabs[0], data);
+        });
+        return;
+      }
+      sentTabMessage(tabs[0], data);
+    });
   }
 }
 
-// try initial connection on startup of SW
+// --- INSTALL & STARTUP ---
+chrome.runtime.onInstalled.addListener(() =>
+  ensureAlarm("gm-check-ws", CONFIG.alarmPeriodMinutes)
+);
+chrome.runtime.onStartup?.addListener(() =>
+  ensureAlarm("gm-check-ws", CONFIG.alarmPeriodMinutes)
+);
+
+// --- ALARMS ---
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (!alarm || !alarm.name) return;
+  if (alarm.name === "gm-check-ws" || alarm.name === "gm-reconnect") {
+    ensureConnected();
+  }
+});
+
+// --- INITIAL CONNECTION ---
 ensureConnected();
