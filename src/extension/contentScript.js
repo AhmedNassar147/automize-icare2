@@ -295,16 +295,6 @@
 
     const _remainingMs = referralEndTimestamp - Date.now();
 
-    const upperFilterContainer = document.querySelector(
-      ".MuiGrid-root.MuiGrid-container"
-    );
-
-    const itemElement = upperFilterContainer.querySelector(
-      `.MuiGrid-root.MuiGrid-item:nth-child(${CONFIG.upperSectionItemOrder}) small`
-    );
-
-    itemElement.click();
-
     const iconButton = await findRowByReferralId(referralId);
 
     if (!iconButton) {
@@ -321,14 +311,10 @@
 
     const remainingMs = referralEndTimestamp - Date.now();
 
-    LOG(
-      `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs}`
-    );
-
-    // const { elapsedMs, reason } = await isAcceptanceButtonShown({
-    //   idReferral: referralId,
-    //   remainingMs,
-    // });
+    const { elapsedMs, reason } = await isAcceptanceButtonShown({
+      idReferral: referralId,
+      remainingMs,
+    });
 
     iconButton.click();
 
@@ -339,9 +325,9 @@
         } catch (error) {
           console.error("runIfOnDetails failed:", error);
         } finally {
-          // LOG(
-          //   `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} reason=${reason} elapsedMs=${elapsedMs}`
-          // );
+          LOG(
+            `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} reason=${reason} elapsedMs=${elapsedMs}`
+          );
         }
       })();
     });
