@@ -176,22 +176,22 @@ const currentProfile = "Profile 1";
       true
     );
 
-    //     const _collectedPatients = collectedPatients.map((item, index) => {
-    //   if (!index) {
-    //     const _referralEndTimestamp = Date.now() + 1 * 60_000;
+    const _collectedPatients = collectedPatients.map((item, index) => {
+      if (!index) {
+        const _referralEndTimestamp = Date.now() + 1 * 60_000;
 
-    //     return {
-    //       ...item,
-    //       referralEndTimestamp: _referralEndTimestamp,
-    //       referralEndDateActionableAtMS: _referralEndTimestamp - 10_000,
-    //     };
-    //   }
+        return {
+          ...item,
+          referralEndTimestamp: _referralEndTimestamp,
+          referralEndDateActionableAtMS: _referralEndTimestamp - 10_000,
+        };
+      }
 
-    //   return item;
-    // });
+      return item;
+    });
 
     const patientsStore = new PatientStore(
-      collectedPatients || [],
+      _collectedPatients || [],
       pauseFetchingPatients
     );
 

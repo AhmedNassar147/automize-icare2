@@ -139,23 +139,28 @@
   }
 
   async function findRowByReferralId(referralId) {
-    const tbody = await waitForElmFast("table.MuiTable-root tbody");
+    const colIndex = CONFIG.gmsColOrder;
 
-    if (!tbody) return null;
+    const spans = await waitForElmFast(
+      `table.MuiTable-root tbody tr td:nth-of-type(${colIndex}) span`,
+      true
+    );
+    if (!spans?.length) {
+      return null;
+    }
 
-    const colIndex = CONFIG.gmsColOrder; // 1-based
-
-    const spans = tbody.querySelectorAll(`td:nth-of-type(${colIndex}) span`);
-    if (!spans || spans.length === 0) return null;
+    const target = normalize(String(referralId));
 
     for (const span of spans) {
-      const txt = (span.textContent || "").trim();
+      const txt = normalize(span.textContent || "");
       if (!txt) continue;
-      if (txt === referralId) {
+
+      if (txt === target) {
         const row = span.closest("tr");
         if (!row) continue;
+
         const iconButton = row.querySelector("td.iconCell button");
-        return iconButton || null;
+        return iconButton ?? null;
       }
     }
 
@@ -288,6 +293,8 @@
     const { referralId, referralEndTimestamp, acceptanceFileBase64, fileName } =
       patient;
 
+    const _remainingMs = referralEndTimestamp - Date.now();
+
     const upperFilterContainer = document.querySelector(
       ".MuiGrid-root.MuiGrid-container"
     );
@@ -297,7 +304,6 @@
     );
 
     itemElement.click();
-    await sleep(1500 + Math.random() * 300);
 
     const iconButton = await findRowByReferralId(referralId);
 
@@ -311,9 +317,13 @@
       injectNoAnimStyle();
     }
 
-    // cashedFile = base64ToFile(acceptanceFileBase64, fileName);
+    cashedFile = base64ToFile(acceptanceFileBase64, fileName);
 
-    // const remainingMs = referralEndTimestamp - Date.now();
+    const remainingMs = referralEndTimestamp - Date.now();
+
+    LOG(
+      `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} reason=${reason}`
+    );
 
     // const { elapsedMs, reason } = await isAcceptanceButtonShown({
     //   idReferral: referralId,
@@ -330,7 +340,7 @@
           console.error("runIfOnDetails failed:", error);
         } finally {
           // LOG(
-          //   `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
+          //   `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} reason=${reason} elapsedMs=${elapsedMs}`
           // );
         }
       })();

@@ -173,34 +173,34 @@ const waitForWaitingCountWithInterval = async ({
           "warn"
         );
 
-        if (apiHadData && patientsStore.size()) {
-          apiHadData = false;
-          createConsoleMessage(
-            `✅ checking for store patients with files to clear`,
-            "info"
-          );
+        // if (apiHadData && patientsStore.size()) {
+        //   apiHadData = false;
+        //   createConsoleMessage(
+        //     `✅ checking for store patients with files to clear`,
+        //     "info"
+        //   );
 
-          try {
-            await patientsStore.clear();
-            createConsoleMessage(`✅ Patient store with files cleared`);
-          } catch (error) {
-            createConsoleMessage(
-              error,
-              "error",
-              `Error clearing patients store`
-            );
-          }
+        //   try {
+        //     await patientsStore.clear();
+        //     createConsoleMessage(`✅ Patient store with files cleared`);
+        //   } catch (error) {
+        //     createConsoleMessage(
+        //       error,
+        //       "error",
+        //       `Error clearing patients store`
+        //     );
+        //   }
 
-          const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
-            page,
-            "cleared patients store and files"
-          );
-          if (shouldCreateNewPage) {
-            page = null;
-            cursor = null;
-          }
-          continue;
-        }
+        //   const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
+        //     page,
+        //     "cleared patients store and files"
+        //   );
+        //   if (shouldCreateNewPage) {
+        //     page = null;
+        //     cursor = null;
+        //   }
+        //   continue;
+        // }
 
         const waitingMs = INTERVAL + Math.random() * 5000;
         createConsoleMessage(
@@ -229,32 +229,32 @@ const waitForWaitingCountWithInterval = async ({
 
       let hasPatientsRemoved = false;
 
-      if (patientsInStore.length) {
-        const storePatientsNotInTheApi = patientsInStore.filter(
-          ({ referralId }) => !patientsIds.includes(referralId)
-        );
+      // if (patientsInStore.length) {
+      //   const storePatientsNotInTheApi = patientsInStore.filter(
+      //     ({ referralId }) => !patientsIds.includes(referralId)
+      //   );
 
-        if (storePatientsNotInTheApi?.length) {
-          try {
-            createConsoleMessage(
-              `✅ removing unsynced patients from store`,
-              "info"
-            );
-            await Promise.allSettled(
-              storePatientsNotInTheApi.map(({ referralId }) =>
-                patientsStore.removePatientByReferralId(referralId)
-              )
-            );
-            hasPatientsRemoved = true;
-          } catch (error) {
-            createConsoleMessage(
-              error,
-              "error",
-              `🛑 Failed removing unsynced patients from store`
-            );
-          }
-        }
-      }
+      //   if (storePatientsNotInTheApi?.length) {
+      //     try {
+      //       createConsoleMessage(
+      //         `✅ removing unsynced patients from store`,
+      //         "info"
+      //       );
+      //       await Promise.allSettled(
+      //         storePatientsNotInTheApi.map(({ referralId }) =>
+      //           patientsStore.removePatientByReferralId(referralId)
+      //         )
+      //       );
+      //       hasPatientsRemoved = true;
+      //     } catch (error) {
+      //       createConsoleMessage(
+      //         error,
+      //         "error",
+      //         `🛑 Failed removing unsynced patients from store`
+      //       );
+      //     }
+      //   }
+      // }
 
       if (newPatientAdded || hasPatientsRemoved) {
         await pausableSleep(2000 + Math.random() * 3000);
