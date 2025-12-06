@@ -139,28 +139,23 @@
   }
 
   async function findRowByReferralId(referralId) {
-    const rows = await waitForElmFast("table.MuiTable-root tbody tr", true);
-    if (!rows?.length) {
-      return null;
-    }
+    const tbody = await waitForElmFast("table.MuiTable-root tbody");
 
-    const target = normalize(String(referralId));
-    const colIndex = CONFIG.gmsColOrder;
+    if (!tbody) return null;
 
-    const spans = document.querySelectorAll(
-      `table.MuiTable-root tbody tr td:nth-of-type(${colIndex}) span`
-    );
+    const colIndex = CONFIG.gmsColOrder; // 1-based
+
+    const spans = tbody.querySelectorAll(`td:nth-of-type(${colIndex}) span`);
+    if (!spans || spans.length === 0) return null;
 
     for (const span of spans) {
-      const txt = normalize(span.textContent || "");
+      const txt = (span.textContent || "").trim();
       if (!txt) continue;
-
-      if (txt === target) {
+      if (txt === referralId) {
         const row = span.closest("tr");
         if (!row) continue;
-
         const iconButton = row.querySelector("td.iconCell button");
-        return iconButton ?? null;
+        return iconButton || null;
       }
     }
 
@@ -293,6 +288,17 @@
     const { referralId, referralEndTimestamp, acceptanceFileBase64, fileName } =
       patient;
 
+    const upperFilterContainer = document.querySelector(
+      ".MuiGrid-root.MuiGrid-container"
+    );
+
+    const itemElement = upperFilterContainer.querySelector(
+      `.MuiGrid-root.MuiGrid-item:nth-child(${CONFIG.upperSectionItemOrder}) small`
+    );
+
+    itemElement.click();
+    await sleep(1500 + Math.random() * 300);
+
     const iconButton = await findRowByReferralId(referralId);
 
     if (!iconButton) {
@@ -305,14 +311,14 @@
       injectNoAnimStyle();
     }
 
-    cashedFile = base64ToFile(acceptanceFileBase64, fileName);
+    // cashedFile = base64ToFile(acceptanceFileBase64, fileName);
 
-    const remainingMs = referralEndTimestamp - Date.now();
+    // const remainingMs = referralEndTimestamp - Date.now();
 
-    const { elapsedMs, reason } = await isAcceptanceButtonShown({
-      idReferral: referralId,
-      remainingMs,
-    });
+    // const { elapsedMs, reason } = await isAcceptanceButtonShown({
+    //   idReferral: referralId,
+    //   remainingMs,
+    // });
 
     iconButton.click();
 
@@ -323,9 +329,9 @@
         } catch (error) {
           console.error("runIfOnDetails failed:", error);
         } finally {
-          LOG(
-            `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
-          );
+          // LOG(
+          //   `remainingMs=${remainingMs} referralId=${referralId} reason=${reason} elapsedMs=${elapsedMs}`
+          // );
         }
       })();
     });

@@ -10,9 +10,75 @@ const CONFIG = {
 const LOG = (...a) => console.log("[GM SW]", ...a);
 const ERR = (...a) => console.error("[GM SW]", ...a);
 
+// --- GLOBAL CONSTANT FOR TARGET URLS ---
+const DASHBOARD_URLS = [
+  "https://referralprogram.globemedsaudi.com/dashboard/referral*",
+  "https://referralprogram.globemedsaudi.com/Dashboard/Referral*",
+];
+
 let ws = null;
 let wsConnecting = false;
 let backoffMs = CONFIG.reconnectBaseMs;
+
+// --- CRITICAL RELIABILITY FUNCTION ---
+/**
+ * Sends a message to a tab, retrying with exponential backoff if the
+ * Content Script's listener is not ready (which causes 'receiving end does not exist').
+ * @param {number} tabId - The ID of the target tab.
+ * @param {object} message - The message payload.
+ * @param {number} maxRetries - Maximum number of attempts.
+ */
+async function sendReliably(tabId, message, maxRetries = 5) {
+  let delay = 50; // Start with 100ms delay
+  let success = false;
+  let lastError = null;
+
+  for (let i = 0; i < maxRetries; i++) {
+    lastError = null;
+
+    await new Promise((resolve) => {
+      // Use the callback pattern to check chrome.runtime.lastError
+      chrome.tabs.sendMessage(tabId, message, (response) => {
+        // Must read chrome.runtime.lastError in the callback to clear it
+        if (chrome.runtime.lastError) {
+          lastError = chrome.runtime.lastError.message;
+          resolve();
+        } else {
+          // Message successfully sent (and listener existed)
+          success = true;
+          resolve();
+        }
+      });
+    });
+
+    if (success) {
+      LOG(
+        `Message successfully forwarded to tab ${tabId} after ${
+          i + 1
+        } attempts.`
+      );
+      return true;
+    }
+
+    // Check for the specific race condition error
+    if (lastError && lastError.includes("Receiving end does not exist")) {
+      LOG(
+        `Attempt ${i + 1} failed (Listener not ready). Retrying in ${delay}ms.`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay = Math.min(delay * 2, 1500); // Exponential backoff, max 1500
+    } else {
+      // An unrecoverable error occurred (e.g., tab closed, permission error)
+      ERR(`Unrecoverable error sending message to tab ${tabId}: ${lastError}`);
+      return false;
+    }
+  }
+
+  ERR(
+    `Failed to send message to tab ${tabId} after ${maxRetries} attempts. Final error: ${lastError}`
+  );
+  return false;
+}
 
 // ensure periodic alarm exists on install and startup
 chrome.runtime.onInstalled.addListener(() => {
@@ -58,35 +124,10 @@ function scheduleReconnect(delayMs) {
   }
 }
 
-function ensureConnected() {
-  try {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      // open — send ping
-      try {
-        ws.send(JSON.stringify({ type: "ping" }));
-        LOG("ping sent");
-      } catch (e) {
-        ERR("ping failed; closing ws to trigger reconnect", e);
-        safeCloseWs();
-        scheduleReconnect(backoffMs);
-      }
-      return;
-    }
-    if (wsConnecting) return;
-    connectWS();
-  } catch (e) {
-    ERR("ensureConnected error", e);
-  }
-}
-
 function handleIncomingMsg(msg) {
   const { type, data } = msg;
   if (type === "accept" && data?.referralId) {
-    const dashboardUrls = [
-      "https://referralprogram.globemedsaudi.com/dashboard/referral*",
-      "https://referralprogram.globemedsaudi.com/Dashboard/Referral*",
-    ];
-    chrome.tabs.query({ url: dashboardUrls }, (tabs) => {
+    chrome.tabs.query({ url: DASHBOARD_URLS }, (tabs) => {
       if (chrome.runtime.lastError) {
         ERR("tabs.query error", chrome.runtime.lastError.message);
         return;
@@ -95,27 +136,33 @@ function handleIncomingMsg(msg) {
         LOG("No dashboard tab found to forward accept message");
         return;
       }
+
       const tab = tabs.find((t) => t.active) || tabs[0];
       if (!tab || !tab.id) return;
-      // callback-based sendMessage + lastError check
-      chrome.tabs.sendMessage(tab.id, { type: "accept", data }, () => {
-        if (chrome.runtime.lastError) {
-          ERR("sendMessage failed:", chrome.runtime.lastError.message);
-        } else {
-          LOG("accept message forwarded to tab", tab.id, data.referralId);
-        }
-      });
+
+      // --- Use the reliable send function to handle the Content Script race condition ---
+      sendReliably(tab.id, { type: "accept", data })
+        .then((success) => {
+          if (success) {
+            LOG(`Accept message successfully delivered to tab ${tab.id}.`);
+          } else {
+            // Failure case is logged within sendReliably
+          }
+        })
+        .catch((e) => ERR("sendReliably final process failure", e));
     });
   }
-
-  // // other message types (e.g. debugging logs)
-  // if (type === "LOG" && data?.message) {
-  //   LOG("From content script:", data.message);
-  // }
 }
 
 function connectWS() {
-  if (ws && ws.readyState === WebSocket.OPEN) return;
+  if (
+    ws &&
+    (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)
+  ) {
+    LOG("connectWS: WS already connecting/open — skipping");
+    return;
+  }
+
   wsConnecting = true;
 
   try {
@@ -160,6 +207,48 @@ function connectWS() {
       ERR("force close failed", err);
     }
   };
+}
+
+function ensureConnected() {
+  try {
+    chrome.tabs.query({ url: DASHBOARD_URLS }, (tabs) => {
+      const onDashboard = tabs && tabs.length > 0;
+
+      // --- CASE 1: No dashboard tabs exist → teardown WS completely ---
+      if (!onDashboard) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          LOG("Dashboard not open → closing WS");
+          safeCloseWs();
+        }
+        wsConnecting = false;
+        return; // do NOT attempt reconnect
+      }
+
+      // If already open, just ping
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({ type: "ping" }));
+          LOG("ping sent");
+        } catch (e) {
+          ERR("ping failed → closing and scheduling reconnect", e);
+          safeCloseWs();
+          scheduleReconnect(backoffMs);
+        }
+        return;
+      }
+
+      // If connecting → do nothing
+      if (ws && ws.readyState === WebSocket.CONNECTING) {
+        return;
+      }
+
+      if (wsConnecting) return;
+
+      connectWS();
+    });
+  } catch (e) {
+    ERR("ensureConnected error", e);
+  }
 }
 
 function safeCloseWs() {
