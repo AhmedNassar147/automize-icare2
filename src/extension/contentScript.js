@@ -322,7 +322,7 @@
     const remainingMs = referralEndTimestamp - Date.now();
 
     LOG(
-      `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} reason=${reason}`
+      `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs}`
     );
 
     // const { elapsedMs, reason } = await isAcceptanceButtonShown({
