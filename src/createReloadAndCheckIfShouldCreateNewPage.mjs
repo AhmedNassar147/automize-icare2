@@ -26,7 +26,7 @@ const createReloadAndCheckIfShouldCreateNewPage =
       }
 
       createConsoleMessage(
-        `${logString} refreshing in ${intervalTime / 1000}s...`,
+        `✅ ${logString} refreshing in ${intervalTime / 1000}s...`,
         "info"
       );
       await pausableSleep(intervalTime);

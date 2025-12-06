@@ -193,7 +193,7 @@ const waitForWaitingCountWithInterval = async ({
 
           const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
             page,
-            "cleared patients store and files"
+            "🛑 cleared patients store and files"
           );
           if (shouldCreateNewPage) {
             page = null;
@@ -236,10 +236,7 @@ const waitForWaitingCountWithInterval = async ({
 
         if (storePatientsNotInTheApi?.length) {
           try {
-            createConsoleMessage(
-              `✅ removing unsynced patients from store`,
-              "info"
-            );
+            createConsoleMessage(`🛑 removing unsynced patients from store`);
             await Promise.allSettled(
               storePatientsNotInTheApi.map(({ referralId }) =>
                 patientsStore.removePatientByReferralId(referralId)

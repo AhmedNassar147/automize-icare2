@@ -111,13 +111,13 @@ const processCollectingPatients = async ({
       }
 
       createConsoleMessage(
-        `Progress: ${index}/${patientsLength} (referralId=${referralId})`,
+        `🔹 Progress: ${index}/${patientsLength} (referralId=${referralId})`,
         "info"
       );
 
       if (patientsStore.has(referralId)) {
         createConsoleMessage(
-          `⚠️ Patient referralId=${referralId} already collected...`,
+          `✅ Skipping referralId=${referralId} already collected...`,
           "info"
         );
         continue;
