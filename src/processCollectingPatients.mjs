@@ -118,7 +118,7 @@ const processCollectingPatients = async ({
       if (patientsStore.has(referralId)) {
         createConsoleMessage(
           `✅ Skipping referralId=${referralId} already collected...`,
-          "info"
+          "warn"
         );
         continue;
       }
