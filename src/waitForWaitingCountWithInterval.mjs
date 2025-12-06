@@ -18,7 +18,7 @@ import {
 
 const INTERVAL = 70_000;
 const NOT_LOGGED_SLEEP_TIME = 25_000;
-const LOCKED_OUT_SLEEP_TIME = 4 * 10 * 60_000;
+const LOCKED_OUT_SLEEP_TIME = 30 * 60_000;
 
 const pausableSleep = async (ms) => {
   await pauseController.waitIfPaused();
@@ -259,7 +259,11 @@ const waitForWaitingCountWithInterval = async ({
           cursor = null;
         }
       } else {
-        await pausableSleep(INTERVAL + Math.random() * 5000);
+        const waitingMs = INTERVAL + Math.random() * 5000;
+        createConsoleMessage(
+          `📋 sleep for ${waitingMs / 1000} s before next search ...`
+        );
+        await pausableSleep(waitingMs);
       }
     } catch (err) {
       createConsoleMessage(err, "error", `🛑 Unexpected error during loop:`);

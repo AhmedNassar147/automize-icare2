@@ -182,11 +182,6 @@ const processCollectingPatients = async ({
 
       await sleep(2500 + Math.random() * 3000);
     }
-
-    createConsoleMessage(
-      `✅ Finished processing all patients from API.`,
-      "info"
-    );
   } catch (err) {
     createConsoleMessage(
       err,

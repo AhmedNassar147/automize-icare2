@@ -8,15 +8,14 @@ import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const createSendLockedMessage =
-  (sendWhatsappMessage, patientsStore, patient) => async (message) => {
+  (sendWhatsappMessage, patientsStore, clientPhoneNumber, patient) =>
+  async (message) => {
     if (patient) {
       patientsStore.setLastGoingToBeAcceptedPatient({
         ...patient,
         hasLockMessageSent: true,
       });
     }
-
-    const clientPhoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
 
     await sendWhatsappMessage(clientPhoneNumber, [
       {
@@ -37,6 +36,7 @@ async function handleLockedOutRetry({
   pausableSleep,
   sendWhatsappMessage,
 }) {
+  const { CLIENT_WHATSAPP_NUMBER, APP_LOCK_HOURS } = process.env;
   const now = Date.now();
   const candidateNextAttempt = now + Number(lockSleepTime || 0);
 
@@ -46,6 +46,7 @@ async function handleLockedOutRetry({
   const sendMessage = createSendLockedMessage(
     sendWhatsappMessage,
     patientsStore,
+    CLIENT_WHATSAPP_NUMBER,
     lastPatient
   );
 
@@ -58,7 +59,9 @@ async function handleLockedOutRetry({
 
   // If there's a deadline, enforce "do not retry after deadline"
   if (hasValidDeadline) {
-    const deadline = rawDeadline;
+    const appLockHours = APP_LOCK_HOURS || 0;
+    // hours * minutes * seconds * milliseconds
+    const deadline = rawDeadline + appLockHours * 60 * 60 * 1000;
 
     // If the next candidate attempt would be after the deadline -> skip retrying
     if (candidateNextAttempt > deadline) {
