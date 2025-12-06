@@ -426,7 +426,7 @@ const currentProfile = "Profile 1";
       void shutdown("SIGINT");
     });
   } catch (error) {
-    createConsoleMessage(e, "error", "❌ index.mjs crashed:");
+    createConsoleMessage(error, "error", "❌ index.mjs crashed:");
     await shutdown("SIGINT");
   }
 })();
