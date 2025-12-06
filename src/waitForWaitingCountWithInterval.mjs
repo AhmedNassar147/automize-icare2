@@ -175,11 +175,6 @@ const waitForWaitingCountWithInterval = async ({
 
         if (apiHadData && patientsStore.size()) {
           apiHadData = false;
-          createConsoleMessage(
-            `✅ checking for store patients with files to clear`,
-            "info"
-          );
-
           try {
             await patientsStore.clear();
             createConsoleMessage(`✅ Patient store with files cleared`);
