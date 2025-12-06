@@ -2,6 +2,8 @@
 (() => {
   "use strict";
 
+  console.log("Hello browser");
+
   let styleInjected = false;
   const NO_ANIM_STYLE_ID = "disable-animations";
 

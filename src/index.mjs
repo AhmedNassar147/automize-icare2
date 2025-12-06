@@ -385,7 +385,7 @@ const currentProfile = "Profile 1";
 
         createConsoleMessage(
           `Patient=${referralId} remainingMs=${remainingMs}`,
-          "info"
+          "warn"
         );
         if (remainingMs > 0) {
           setTimeout(continueFetchingPatientsIfPaused, remainingMs);
