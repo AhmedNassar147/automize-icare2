@@ -204,8 +204,7 @@ const waitForWaitingCountWithInterval = async ({
 
         const waitingMs = INTERVAL + Math.random() * 5000;
         createConsoleMessage(
-          `📋 Running next search after ${waitingMs / 1000}s...`,
-          "warn"
+          `📋 Running next search after ${waitingMs / 1000}s...`
         );
         await pausableSleep(waitingMs);
         continue;
