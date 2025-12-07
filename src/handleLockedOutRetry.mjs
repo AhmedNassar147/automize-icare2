@@ -22,8 +22,6 @@ const createSendLockedMessage =
         message:
           "⚠️ *‼️ Login Errors Detected ‼️*\n" +
           "────────────────────────\n" +
-          "We Are locked out\n" +
-          "────────────────────────\n" +
           `_${message}_`,
       },
     ]);
