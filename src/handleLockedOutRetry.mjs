@@ -68,7 +68,7 @@ async function handleLockedOutRetry({
       const deadlineDate = new Date(deadline);
       const message = `🔐 Locked out — next retry would be AFTER referral deadline (${deadlineDate.toLocaleString()}). Skipping further retries (deadlineReached_noRetry)`;
 
-      createConsoleMessage(message, "warn", "LOCK");
+      createConsoleMessage(message, "warn");
       await closePageSafely(page);
 
       if (!hasLockMessageSent) {
@@ -88,7 +88,7 @@ async function handleLockedOutRetry({
       hour12: false,
     })} (deadline ${new Date(deadline).toLocaleString()}).`;
 
-    createConsoleMessage(message, "info", "LOCK");
+    createConsoleMessage(message, "info");
     await closePageSafely(page);
 
     if (!hasLockMessageSent) {
@@ -110,7 +110,7 @@ async function handleLockedOutRetry({
     hour12: false,
   })}.`;
 
-  createConsoleMessage(message, "info", "LOCK");
+  createConsoleMessage(message, "info");
   await closePageSafely(page);
   if (!hasLockMessageSent) {
     await sendMessage(message);
