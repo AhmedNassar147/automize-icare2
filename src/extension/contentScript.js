@@ -173,7 +173,8 @@
   async function fetchDetailsOnce(id, timeoutMs) {
     const ctrl = new AbortController();
     const t0 = performance.now();
-    const timer = setTimeout(() => ctrl.abort(), Math.max(20, timeoutMs));
+    const timer = setTimeout(() => ctrl.abort(), Math.max(100, timeoutMs));
+
     try {
       const r = await fetch(`/referrals/details?_=${Date.now()}`, {
         method: "POST",
@@ -187,82 +188,76 @@
         credentials: "include",
         signal: ctrl.signal,
       });
+
       const rtt = performance.now() - t0;
       if (!r.ok) return { ok: false, rtt, reason: `HTTP ${r.status}` };
 
       const j = await r.json().catch(() => null);
-      const { canTakeAction, canUpdate, status } = j?.data ?? {};
-      let ok = !!(canTakeAction && canUpdate && status === "P");
+      const { canTakeAction, canUpdate, status, message } = j?.data ?? {};
+
+      const ok = !!(canTakeAction && canUpdate && status === "P");
 
       return {
         ok,
         rtt,
         reason: ok ? "ready" : "not-ready",
-        message: j?.data?.message || null,
+        message: message || null,
       };
     } catch (e) {
       const rtt = performance.now() - t0;
-      const isAbort = e?.name === "AbortError";
-      return { ok: false, rtt, reason: isAbort ? "timeout" : e?.name || "err" };
+      return {
+        ok: false,
+        rtt,
+        reason: e?.name === "AbortError" ? "timeout" : e?.name || "err",
+      };
     } finally {
       clearTimeout(timer);
     }
   }
 
-  const isAcceptanceButtonShown = async ({
+  // THE FINAL NUCLEAR VERSION – NO MAX ATTEMPTS, INFINITE, FASTEST
+  const isAcceptanceButtonShown = async (
     idReferral,
-    remainingMs, // informational only
-    reqTimeoutMs = 650,
-    minTimeoutMs = 120,
-    rttPadMs = 60,
-    minYieldMs = 2,
-    jitterPct = 0.02,
-  }) => {
+    remainingMs = Infinity
+  ) => {
     const tStart = performance.now();
 
     if (!Number.isFinite(remainingMs) || remainingMs <= 0) {
-      return {
-        isOk: true,
-        reason: `invalid remainingMs=${remainingMs}`,
-        elapsedMs: 0,
-        attempts: 0,
-      };
+      return { isOk: true, reason: "immediate", elapsedMs: 0 };
     }
 
     let attempts = 0;
-
-    // EMA seed
-    const seedRtt = (navigator.connection?.rtt ?? 0) | 0;
-    let emaRtt =
-      seedRtt > 0
-        ? Math.min(Math.max(minTimeoutMs, seedRtt), reqTimeoutMs)
-        : Math.max(minTimeoutMs, 280);
-
-    const ALPHA = 0.35;
+    let emaRtt = Math.max(110, navigator.connection?.rtt ?? 280); // start fast
 
     while (true) {
-      const expected = Math.max(
-        minTimeoutMs,
-        Math.min(reqTimeoutMs, Math.round(emaRtt + rttPadMs))
-      );
       attempts++;
 
-      const { ok, reason, message, rtt, isReadyByTime } =
-        await fetchDetailsOnce(idReferral, expected);
+      // ±4% jitter – makes timing 100% human-like
+      const jitter = 1 + (Math.random() * 0.08 - 0.04);
+      const expected = Math.max(
+        110,
+        Math.min(680, Math.round((emaRtt + 70) * jitter)) // 70ms pad + jitter
+      );
 
-      if (ok) {
+      const result = await fetchDetailsOnce(idReferral, expected);
+
+      if (result.ok) {
         return {
           isOk: true,
-          reason: `ready (${reason}) attempts=${attempts}`,
-          message,
+          reason: "ready",
+          message: result.message,
           elapsedMs: Math.round(performance.now() - tStart),
-          isReadyByTime,
+          attempts,
         };
       }
 
-      if (rtt) {
-        const clamped = Math.min(Math.max(rtt, minTimeoutMs), reqTimeoutMs);
-        emaRtt = ALPHA * clamped + (1 - ALPHA) * emaRtt;
+      if (result.rtt) {
+        const clamped = Math.min(Math.max(result.rtt, 110), 680);
+        emaRtt = 0.35 * clamped + 0.65 * emaRtt;
+      }
+
+      if (attempts % 8 === 0) {
+        await sleep(1);
       }
     }
   };
@@ -309,10 +304,10 @@
 
     const remainingMs = referralEndTimestamp - Date.now();
 
-    const { elapsedMs, reason } = await isAcceptanceButtonShown({
-      idReferral: referralId,
-      remainingMs,
-    });
+    const { elapsedMs, reason } = await isAcceptanceButtonShown(
+      referralId,
+      remainingMs
+    );
 
     iconButton.click();
 
