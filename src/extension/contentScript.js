@@ -272,7 +272,7 @@
 
     const selectTrigger = await waitForElmFast('div[role="combobox"]');
 
-    if (selectTrigger && cashedFile) {
+    if (cashedFile) {
       await chooseOption(selectTrigger);
       await uploadFile();
       localStorage.setItem("TM", `${Date.now() - t0}ms`);
