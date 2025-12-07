@@ -222,7 +222,7 @@ const currentProfile = "Profile 1";
     cron.schedule(
       SUMMARY_REPORT_GENERATED_AT,
       async () => {
-        createConsoleMessage("Starting [CRON] Summary job", "info");
+        createConsoleMessage("✅ Starting [CRON] Summary job", "info");
         try {
           await processCollectReferralSummary(
             browser,
@@ -230,9 +230,13 @@ const currentProfile = "Profile 1";
             FIRST_SUMMARY_REPORT_STARTS_AT,
             SUMMARY_REPORT_ENDS_AT
           );
-          createConsoleMessage("[CRON] Summary job done.", "info");
+          createConsoleMessage("✅ [CRON] Summary job done.", "info");
         } catch (err) {
-          createConsoleMessage(err, "error", "[CRON] Summary job Failure");
+          createConsoleMessage(
+            err.message || err,
+            "error",
+            "[CRON] Summary job Failure"
+          );
         }
       },
       { timezone: "Asia/Riyadh" }
@@ -384,7 +388,7 @@ const currentProfile = "Profile 1";
         const remainingMs = referralEndTimestamp - Date.now();
 
         createConsoleMessage(
-          `Patient=${referralId} remainingMs=${remainingMs}`,
+          `✅ Patient=${referralId} remainingMs=${remainingMs}`,
           "warn"
         );
         if (remainingMs > 0) {

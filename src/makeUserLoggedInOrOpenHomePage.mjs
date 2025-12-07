@@ -114,7 +114,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
             });
           } catch (error) {
             createConsoleMessage(
-              error,
+              error.message,
               "error",
               `🛑 AFTER SUBMITTING LOGIN ...`
             );
