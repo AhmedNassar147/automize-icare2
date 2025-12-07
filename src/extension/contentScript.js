@@ -319,7 +319,7 @@
     iconButton.click();
 
     try {
-      await sleep(10);
+      await sleep(7);
       await runIfOnDetails();
     } catch (error) {
       console.error("runIfOnDetails failed:", error);
