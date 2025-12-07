@@ -112,7 +112,7 @@ const waitForWaitingCountWithInterval = async ({
             message:
               "⚠️ *‼️ Login Errors Detected ‼️*\n" +
               "────────────────────────\n" +
-              "*CLOSING APP UNTILL FIXED*" +
+              "*CLOSING APP UNTILL FIXED*\n" +
               "\n────────────────────────\n" +
               "_App is Closed, Please check the app, try to open it manually_",
           },
