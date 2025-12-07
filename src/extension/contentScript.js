@@ -51,7 +51,7 @@
   const optionIndex = optionName === "Acceptance" ? 1 : 2;
 
   const normalize = (str) => (str || "").trim();
-  // const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   function waitForElmFast(selector, all = false) {
     return new Promise((resolve) => {
@@ -318,19 +318,16 @@
 
     iconButton.click();
 
-    requestAnimationFrame(() => {
-      (async () => {
-        try {
-          await runIfOnDetails();
-        } catch (error) {
-          console.error("runIfOnDetails failed:", error);
-        } finally {
-          LOG(
-            `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} reason=${reason} elapsedMs=${elapsedMs}`
-          );
-        }
-      })();
-    });
+    try {
+      await sleep(10);
+      await runIfOnDetails();
+    } catch (error) {
+      console.error("runIfOnDetails failed:", error);
+    } finally {
+      LOG(
+        `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} reason=${reason} elapsedMs=${elapsedMs}`
+      );
+    }
   }
 
   chrome.runtime.onMessage.addListener(async (request) => {

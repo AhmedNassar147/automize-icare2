@@ -57,6 +57,14 @@ class PatientStore extends EventEmitter {
       if (!patient) continue;
       const key = this.keyExtractor(patient);
       if (!key) continue;
+      const { userActionName } = patient;
+      const isAcceptanceAction = userActionName === USER_ACTION_TYPES.ACCEPT;
+      const canProcess = this.calculateCanStillProcessPatient(patient);
+
+      if (isAcceptanceAction && !canProcess) {
+        this.lastGoingToBeAcceptedPatient = patient;
+      }
+
       this.patientsById.set(key, patient);
     }
   }
