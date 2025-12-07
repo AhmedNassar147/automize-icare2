@@ -26,7 +26,6 @@
           will-change: transform !important;
           z-index: 9999 !important;
           pointer-events: auto !important;
-          background-color: green !important;
         }
       `;
       document?.head?.appendChild(s);
