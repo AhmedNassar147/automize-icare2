@@ -16,9 +16,21 @@
           transition: none !important;
           animation: none !important;
         }
+
+        section.referral-button-container {
+          position: absolute !important;
+          top: 845px !important;
+          right: 8% !important;
+          width: 100% !important;
+          transform: translateZ(0) !important;
+          will-change: transform !important;
+          z-index: 9999 !important;
+          pointer-events: auto !important;
+          background-color: green !important;
+        }
       `;
       document?.head?.appendChild(s);
-      styleInjected = true;
+      // styleInjected = true;
     } catch (e) {
       // ignore
       console.warn("[GM-ext] failed to inject no-animation style", e);
@@ -53,26 +65,17 @@
   const normalize = (str) => (str || "").trim();
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  function waitForElmFast(selector, all = false) {
-    return new Promise((resolve) => {
-      const el = all
-        ? document.querySelectorAll(selector)
-        : document.querySelector(selector);
-      if (el && (all ? el.length : true)) return resolve(el);
-
-      const rafLoop = () => {
-        const el = all
+  const waitForElmFast = (selector, all = false) =>
+    new Promise((r) => {
+      const c = () => {
+        const e = all
           ? document.querySelectorAll(selector)
           : document.querySelector(selector);
-        if (el && (all ? el.length : true)) {
-          resolve(el);
-        } else {
-          requestAnimationFrame(rafLoop);
-        }
+        if (e && (all ? e.length : e)) r(e);
+        else requestAnimationFrame(c);
       };
-      rafLoop();
+      c();
     });
-  }
 
   async function chooseOption(trigger) {
     if (!trigger) {
@@ -270,11 +273,6 @@
     const selectTrigger = await waitForElmFast('div[role="combobox"]');
 
     if (selectTrigger && cashedFile) {
-      const section = await waitForElmFast("section.referral-button-container");
-      section.style.position = "absolute";
-      section.style.top = "845px";
-      section.style.right = "8%";
-      section.style.width = "100%";
       await chooseOption(selectTrigger);
       await uploadFile();
       localStorage.setItem("TM", `${Date.now() - t0}ms`);
@@ -319,7 +317,7 @@
     iconButton.click();
 
     try {
-      await sleep(7);
+      await sleep(5);
       await runIfOnDetails();
     } catch (error) {
       console.error("runIfOnDetails failed:", error);
