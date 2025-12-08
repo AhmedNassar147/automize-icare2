@@ -311,7 +311,7 @@
     iconButton.click();
 
     try {
-      await sleep(5);
+      await sleep(3);
       await runIfOnDetails();
     } catch (error) {
       console.error("runIfOnDetails failed:", error);
