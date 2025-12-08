@@ -106,7 +106,7 @@ const processClientActionOnPatient = async ({
     isAcceptance ? acceptanceFilePath : rejectionFilePath
   );
 
-  const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+  const { newPage: page, isLoggedIn } = await makeUserLoggedInOrOpenHomePage({
     browser,
     startingPageUrl: HOME_PAGE_URL,
     noCursor: true,

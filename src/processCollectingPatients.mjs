@@ -8,21 +8,8 @@ import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 import { cutoffTimeMs } from "./constants.mjs";
 import sleep from "./sleep.mjs";
 import insureFetchedPatientData from "./insureFetchedPatientData.mjs";
+import formateDateToString from "./formateDateToString.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
-
-const formateDateToString = (date) =>
-  new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Riyadh",
-    hour12: true,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  })
-    .format(date)
-    .replace(",", "");
 
 const getSaudiStartAndEndDate = ({
   referralDate,

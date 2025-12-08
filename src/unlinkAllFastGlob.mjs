@@ -3,18 +3,11 @@
  * Helper: `unlinkAllFastGlob`.
  *
  */
-import fg from "fast-glob";
+import collectFolderFiles from "./collectFolderFiles.mjs";
 import { unlink } from "fs/promises";
 
 const unlinkAllFastGlob = async (folderPath) => {
-  const files = await fg("**/*", {
-    cwd: folderPath,
-    absolute: true,
-    onlyFiles: true,
-    dot: true,
-    concurrency: 64, // default is already fast
-    followSymbolicLinks: false,
-  });
+  const files = await collectFolderFiles(folderPath);
 
   if (!files?.length) return false;
 

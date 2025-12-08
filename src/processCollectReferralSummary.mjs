@@ -55,7 +55,7 @@ const processCollectReferralSummary = async (
   firstSummaryReportStartsAt,
   firstSummaryReportEndsAt
 ) => {
-  const [page, _, isLoggedIn] = await makeUserLoggedInOrOpenHomePage({
+  const { newPage: page, isLoggedIn } = await makeUserLoggedInOrOpenHomePage({
     browser,
     startingPageUrl: HOME_PAGE_URL,
   });

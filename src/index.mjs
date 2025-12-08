@@ -33,6 +33,7 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
+import createInitialSiteCodeFolder from "./createInitialSiteCodeFolder.mjs";
 // import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 
 import {
@@ -44,6 +45,7 @@ import {
   generatedPdfsPathForRejection,
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
+  siteCodeFolderDirectory,
   TABS_COLLECTION_TYPES,
   // HOME_PAGE_URL,
 } from "./constants.mjs";
@@ -155,6 +157,7 @@ const currentProfile = "Profile 1";
       generateFolderIfNotExisting(generatedPdfsPathForRejection),
       generateFolderIfNotExisting(htmlFilesPath),
       generateFolderIfNotExisting(generatedSummaryFolderPath),
+      createInitialSiteCodeFolder(),
     ]);
 
     // Launch browser with a fixed profile

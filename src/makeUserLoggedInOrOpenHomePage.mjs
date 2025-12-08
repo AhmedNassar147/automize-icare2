@@ -11,6 +11,7 @@ import gotToLoginPage from "./gotToLoginPage.mjs";
 import shouldCloseAppWhenLogin from "./shouldCloseAppWhenLogin.mjs";
 import { homePageTableSelector } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
+import patchBundleFromPage from "./patchBundleFromPage.mjs";
 
 const MAX_RETRIES = 3;
 const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
@@ -132,11 +133,22 @@ const makeUserLoggedInOrOpenHomePage = async ({
             await shouldCloseAppWhenLogin(page);
 
           if (isErrorAboutLockedOut) {
-            return [page, cursor, false, true];
+            return {
+              newPage: page,
+              newCursor: cursor,
+              isLoggedIn: false,
+              isErrorAboutLockedOut: true,
+            };
           }
 
           if (shouldCloseApp) {
-            return [page, cursor, false, false, true];
+            return {
+              newPage: page,
+              newCursor: cursor,
+              isLoggedIn: false,
+              isErrorAboutLockedOut: false,
+              shouldCloseApp: true,
+            };
           }
         }
       }
@@ -146,9 +158,13 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
       if (isHomeLoaded) {
         createConsoleMessage(`✅ User ${userName} is in home page.`, "info");
-        await sleep(35 + Math.random() * 40);
+        await patchBundleFromPage(page);
 
-        return [page, cursor, true];
+        return {
+          newPage: page,
+          newCursor: cursor,
+          isLoggedIn: true,
+        };
       }
     } catch (error) {
       createConsoleMessage(error, "error", `❌ Attempt #${retries + 1} failed`);
@@ -159,7 +175,11 @@ const makeUserLoggedInOrOpenHomePage = async ({
   }
 
   createConsoleMessage(`❌ Failed to login after max retries`, "error");
-  return [page, cursor, false];
+  return {
+    newPage: page,
+    newCursor: cursor,
+    isLoggedIn: false,
+  };
 };
 
 export default makeUserLoggedInOrOpenHomePage;

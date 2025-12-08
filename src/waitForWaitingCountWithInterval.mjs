@@ -91,13 +91,13 @@ const waitForWaitingCountWithInterval = async ({
       await pauseController.waitIfPaused();
 
       // 🔹 Login check
-      const [
+      const {
         newPage,
         newCursor,
         isLoggedIn,
         isErrorAboutLockedOut,
         shouldCloseApp,
-      ] = await makeUserLoggedInOrOpenHomePage({
+      } = await makeUserLoggedInOrOpenHomePage({
         browser,
         cursor,
         currentPage: page,
