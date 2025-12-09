@@ -127,7 +127,7 @@
       );
     });
 
-    let directLi = await waitForElm(
+    let directLi = await waitForElmFast(
       `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
     );
 
