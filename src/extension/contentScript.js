@@ -286,7 +286,8 @@
     const selectTrigger = await waitForElm('div[role="combobox"]');
 
     if (selectTrigger && cashedFile) {
-      await Promise.allSettled([chooseOption(selectTrigger), uploadFile()]);
+      await chooseOption(selectTrigger);
+      await uploadFile();
       localStorage.setItem("TM", `${Date.now() - t0}ms`);
       cashedFile = null;
       actionButtonCalled = false;
@@ -329,7 +330,6 @@
     iconButton.click();
 
     try {
-      await sleep(0);
       await runIfOnDetails();
     } catch (error) {
       console.error("runIfOnDetails failed:", error);
