@@ -17,7 +17,7 @@
           animation: none !important;
         }
 
-        section.referral-button-container {
+        .referral-button-container {
           position: absolute !important;
           top: 845px !important;
           right: 8% !important;
@@ -29,7 +29,7 @@
         }
       `;
       document?.head?.appendChild(s);
-      // styleInjected = true;
+      styleInjected = true;
     } catch (e) {
       // ignore
       console.warn("[GM-ext] failed to inject no-animation style", e);
@@ -76,12 +76,43 @@
       c();
     });
 
-  async function chooseOption(trigger) {
-    if (!trigger) {
-      ERR("No trigger found");
-      return false;
-    }
+  function waitForElm(
+    selector,
+    { all = false, root = document, timeoutMs = 8000 }
+  ) {
+    return new Promise((resolve) => {
+      const initial = all
+        ? root.querySelectorAll(selector)
+        : root.querySelector(selector);
 
+      if (initial && (all ? initial.length : initial)) {
+        resolve(initial);
+        return;
+      }
+
+      const observer = new MutationObserver(() => {
+        const el = all
+          ? root.querySelectorAll(selector)
+          : root.querySelector(selector);
+
+        if (el && (all ? el.length : el)) {
+          observer.disconnect();
+          resolve(el);
+        }
+      });
+
+      observer.observe(root, { childList: true, subtree: true });
+
+      if (typeof timeoutMs === "number") {
+        setTimeout(() => {
+          observer.disconnect();
+          resolve(undefined);
+        }, timeoutMs);
+      }
+    });
+  }
+
+  async function chooseOption(trigger) {
     ["mousedown", "mouseup"].forEach((type) => {
       trigger.dispatchEvent(
         new MouseEvent(type, {
@@ -92,9 +123,18 @@
       );
     });
 
-    const directLi = await waitForElmFast(
+    let directLi = await waitForElm(
       `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
     );
+
+    if (!directLi) {
+      LOG("no direct li found");
+      await sleep(2);
+      directLi = await waitForElm(
+        `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
+      );
+    }
+
     directLi?.click?.();
   }
 
@@ -169,11 +209,7 @@
     return null;
   }
 
-  async function fetchDetailsOnce(id, timeoutMs) {
-    const ctrl = new AbortController();
-    const t0 = performance.now();
-    const timer = setTimeout(() => ctrl.abort(), Math.max(100, timeoutMs));
-
+  async function fetchDetailsOnce(id) {
     try {
       const r = await fetch(`/referrals/details?_=${Date.now()}`, {
         method: "POST",
@@ -185,11 +221,9 @@
         body: JSON.stringify({ idReferral: id }),
         cache: "no-store",
         credentials: "include",
-        signal: ctrl.signal,
       });
 
-      const rtt = performance.now() - t0;
-      if (!r.ok) return { ok: false, rtt, reason: `HTTP ${r.status}` };
+      if (!r.ok) return { ok: false, reason: `HTTP ${r.status}` };
 
       const j = await r.json().catch(() => null);
       const { canTakeAction, canUpdate, status, message } = j?.data ?? {};
@@ -198,23 +232,17 @@
 
       return {
         ok,
-        rtt,
         reason: ok ? "ready" : "not-ready",
         message: message || null,
       };
     } catch (e) {
-      const rtt = performance.now() - t0;
       return {
         ok: false,
-        rtt,
-        reason: e?.name === "AbortError" ? "timeout" : e?.name || "err",
+        reason: e?.name || "err in catch",
       };
-    } finally {
-      clearTimeout(timer);
     }
   }
 
-  // THE FINAL NUCLEAR VERSION – NO MAX ATTEMPTS, INFINITE, FASTEST
   const isAcceptanceButtonShown = async (
     idReferral,
     remainingMs = Infinity
@@ -226,19 +254,11 @@
     }
 
     let attempts = 0;
-    let emaRtt = Math.max(110, navigator.connection?.rtt ?? 280); // start fast
 
     while (true) {
       attempts++;
 
-      // ±4% jitter – makes timing 100% human-like
-      const jitter = 1 + (Math.random() * 0.08 - 0.04);
-      const expected = Math.max(
-        110,
-        Math.min(680, Math.round((emaRtt + 70) * jitter)) // 70ms pad + jitter
-      );
-
-      const result = await fetchDetailsOnce(idReferral, expected);
+      const result = await fetchDetailsOnce(idReferral);
 
       if (result.ok) {
         return {
@@ -250,11 +270,6 @@
         };
       }
 
-      if (result.rtt) {
-        const clamped = Math.min(Math.max(result.rtt, 110), 680);
-        emaRtt = 0.35 * clamped + 0.65 * emaRtt;
-      }
-
       if (attempts % 8 === 0) {
         await sleep(1);
       }
@@ -264,9 +279,9 @@
   async function runIfOnDetails() {
     const t0 = Date.now();
 
-    const selectTrigger = await waitForElmFast('div[role="combobox"]');
+    const selectTrigger = await waitForElm('div[role="combobox"]');
 
-    if (cashedFile) {
+    if (selectTrigger && cashedFile) {
       await chooseOption(selectTrigger);
       await uploadFile();
       localStorage.setItem("TM", `${Date.now() - t0}ms`);
@@ -311,7 +326,7 @@
     iconButton.click();
 
     try {
-      await sleep(1);
+      await sleep(0);
       await runIfOnDetails();
     } catch (error) {
       console.error("runIfOnDetails failed:", error);
