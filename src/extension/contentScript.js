@@ -280,20 +280,6 @@
     }
   };
 
-  async function runIfOnDetails() {
-    const t0 = Date.now();
-
-    const selectTrigger = await waitForElm('div[role="combobox"]');
-
-    if (selectTrigger && cashedFile) {
-      await chooseOption(selectTrigger);
-      await uploadFile();
-      localStorage.setItem("TM", `${Date.now() - t0}ms`);
-      cashedFile = null;
-      actionButtonCalled = false;
-    }
-  }
-
   async function clickDashboardRow(patient) {
     if (actionButtonCalled) {
       return;
@@ -320,6 +306,7 @@
 
     cashedFile = base64ToFile(acceptanceFileBase64, fileName);
 
+    const selectTriggerPromise = waitForElm('div[role="combobox"]');
     const remainingMs = referralEndTimestamp - Date.now();
 
     const { elapsedMs, reason, attempts } = await isAcceptanceButtonShown(
@@ -330,7 +317,18 @@
     iconButton.click();
 
     try {
-      await runIfOnDetails();
+      await sleep(0);
+      const t0 = Date.now();
+
+      const selectTrigger = await selectTriggerPromise;
+
+      if (selectTrigger && cashedFile) {
+        await chooseOption(selectTrigger);
+        await uploadFile();
+        localStorage.setItem("TM", `${Date.now() - t0}ms`);
+        cashedFile = null;
+        actionButtonCalled = false;
+      }
     } catch (error) {
       console.error("runIfOnDetails failed:", error);
     } finally {
