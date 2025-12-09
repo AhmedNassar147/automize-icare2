@@ -280,14 +280,13 @@
     }
   };
 
-  async function runIfOnDetails(selectTriggerpromise) {
+  async function runIfOnDetails() {
     const t0 = Date.now();
 
-    const selectTrigger = await selectTriggerpromise;
+    const selectTrigger = await waitForElm('div[role="combobox"]');
 
     if (selectTrigger && cashedFile) {
-      await chooseOption(selectTrigger);
-      await uploadFile();
+      await Promise.allSettled([chooseOption(selectTrigger), uploadFile()]);
       localStorage.setItem("TM", `${Date.now() - t0}ms`);
       cashedFile = null;
       actionButtonCalled = false;
@@ -320,8 +319,6 @@
 
     cashedFile = base64ToFile(acceptanceFileBase64, fileName);
 
-    const selectTriggerpromise = waitForElm('div[role="combobox"]');
-
     const remainingMs = referralEndTimestamp - Date.now();
 
     const { elapsedMs, reason, attempts } = await isAcceptanceButtonShown(
@@ -333,7 +330,7 @@
 
     try {
       await sleep(0);
-      await runIfOnDetails(selectTriggerpromise);
+      await runIfOnDetails();
     } catch (error) {
       console.error("runIfOnDetails failed:", error);
     } finally {
