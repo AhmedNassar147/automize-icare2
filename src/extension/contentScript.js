@@ -76,10 +76,14 @@
       c();
     });
 
-  function waitForElm(
-    selector,
-    { all = false, root = document, timeoutMs = 8000 }
-  ) {
+  function waitForElm(selector, options) {
+    const { all, root, timeoutMs } = {
+      all: false,
+      root: document,
+      timeoutMs: 8000,
+      ...(options || null),
+    };
+
     return new Promise((resolve) => {
       const initial = all
         ? root.querySelectorAll(selector)
