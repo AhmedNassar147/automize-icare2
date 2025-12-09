@@ -280,10 +280,10 @@
     }
   };
 
-  async function runIfOnDetails() {
+  async function runIfOnDetails(selectTriggerpromise) {
     const t0 = Date.now();
 
-    const selectTrigger = await waitForElm('div[role="combobox"]');
+    const selectTrigger = await selectTriggerpromise;
 
     if (selectTrigger && cashedFile) {
       await chooseOption(selectTrigger);
@@ -320,6 +320,8 @@
 
     cashedFile = base64ToFile(acceptanceFileBase64, fileName);
 
+    const selectTriggerpromise = waitForElm('div[role="combobox"]');
+
     const remainingMs = referralEndTimestamp - Date.now();
 
     const { elapsedMs, reason, attempts } = await isAcceptanceButtonShown(
@@ -331,7 +333,7 @@
 
     try {
       await sleep(0);
-      await runIfOnDetails();
+      await runIfOnDetails(selectTriggerpromise);
     } catch (error) {
       console.error("runIfOnDetails failed:", error);
     } finally {
