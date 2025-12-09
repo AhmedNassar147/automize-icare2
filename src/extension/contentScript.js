@@ -303,7 +303,7 @@
 
     const remainingMs = referralEndTimestamp - Date.now();
 
-    const { elapsedMs, reason } = await isAcceptanceButtonShown(
+    const { elapsedMs, reason, attempts } = await isAcceptanceButtonShown(
       referralId,
       remainingMs
     );
@@ -317,7 +317,7 @@
       console.error("runIfOnDetails failed:", error);
     } finally {
       LOG(
-        `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} reason=${reason} elapsedMs=${elapsedMs}`
+        `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} attempts=${attempts} reason=${reason} elapsedMs=${elapsedMs}`
       );
     }
   }
