@@ -2,13 +2,17 @@
 (() => {
   "use strict";
 
-  console.log("Hello browser");
+  const LOG = (...a) => console.log("[GM details]", ...a);
+  const ERR = (...a) => console.error("[GM details]", ...a); // Keep errors in the content script console for immediate debugging
 
-  let styleInjected = false;
+  LOG("Hello browser");
+
   const NO_ANIM_STYLE_ID = "disable-animations";
 
   function injectNoAnimStyle() {
     try {
+      if (document.getElementById(NO_ANIM_STYLE_ID)) return;
+
       const s = document.createElement("style");
       s.id = NO_ANIM_STYLE_ID;
       s.textContent = `
@@ -29,10 +33,8 @@
         }
       `;
       document?.head?.appendChild(s);
-      styleInjected = true;
     } catch (e) {
-      // ignore
-      console.warn("[GM-ext] failed to inject no-animation style", e);
+      LOG("[GM-ext] failed to inject no-animation style", e?.message || e);
     }
   }
 
@@ -45,9 +47,6 @@
     "Accept-Language": "en-US,en;q=0.9",
     "X-CSRF": "1",
   };
-
-  const LOG = (...a) => console.log("[GM details]", ...a);
-  const ERR = (...a) => console.error("[GM details]", ...a); // Keep errors in the content script console for immediate debugging
 
   const CONFIG = {
     waitElmMs: 8000,
@@ -300,9 +299,7 @@
       return;
     }
 
-    if (!styleInjected) {
-      injectNoAnimStyle();
-    }
+    injectNoAnimStyle();
 
     cashedFile = base64ToFile(acceptanceFileBase64, fileName);
 
