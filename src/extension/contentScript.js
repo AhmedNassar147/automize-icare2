@@ -306,7 +306,9 @@
 
     cashedFile = base64ToFile(acceptanceFileBase64, fileName);
 
-    const selectTriggerPromise = waitForElm('div[role="combobox"]');
+    const selectTriggerPromise = waitForElm('div[role="combobox"]', {
+      timeoutMs: 25_000,
+    });
     const remainingMs = referralEndTimestamp - Date.now();
 
     const { elapsedMs, reason, attempts } = await isAcceptanceButtonShown(
