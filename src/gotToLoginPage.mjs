@@ -31,7 +31,7 @@ const gotToLoginPage = async (page) => {
         timeout: 3_000,
       });
     } catch (error) {
-      createConsoleMessage(error, "error", "gotToLoginPage");
+      createConsoleMessage(error.message, "error", "gotToLoginPage");
     }
   }
 };

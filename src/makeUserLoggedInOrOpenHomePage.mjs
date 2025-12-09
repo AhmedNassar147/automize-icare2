@@ -11,7 +11,7 @@ import gotToLoginPage from "./gotToLoginPage.mjs";
 import shouldCloseAppWhenLogin from "./shouldCloseAppWhenLogin.mjs";
 import { homePageTableSelector } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
-import patchBundleFromPage from "./patchBundleFromPage.mjs";
+// import patchBundleFromPage from "./patchBundleFromPage.mjs";
 
 const MAX_RETRIES = 3;
 const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
@@ -158,7 +158,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
       if (isHomeLoaded) {
         createConsoleMessage(`✅ User ${userName} is in home page.`, "info");
-        await patchBundleFromPage(page);
+        // await patchBundleFromPage(page);
 
         return {
           newPage: page,
@@ -167,7 +167,11 @@ const makeUserLoggedInOrOpenHomePage = async ({
         };
       }
     } catch (error) {
-      createConsoleMessage(error, "error", `❌ Attempt #${retries + 1} failed`);
+      createConsoleMessage(
+        error.message,
+        "error",
+        `❌ Attempt #${retries + 1} failed`
+      );
     }
 
     retries++;
