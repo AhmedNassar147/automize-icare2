@@ -23,7 +23,7 @@
 
         .referral-button-container {
           position: absolute !important;
-          top: 845px !important;
+          top: 130px !important;
           right: 8% !important;
           width: 100% !important;
           transform: translateZ(0) !important;
