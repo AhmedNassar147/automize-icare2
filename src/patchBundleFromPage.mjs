@@ -23,8 +23,7 @@ const getOverridePathForUrl = (bundleUrl) => {
 
   return join(
     overridesFolder,
-    url.protocol.replace(":", ""), // “https”
-    url.hostname, // “referralprogram.globemedsaudi.com”
+    url.hostname,
     ...url.pathname.split("/").filter(Boolean)
   );
 };

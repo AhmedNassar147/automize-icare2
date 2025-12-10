@@ -71,7 +71,7 @@ function modifyGlobMedSourceCode(sourceCode) {
   sourceCode =
     sourceCode.slice(0, windowStart) + segment + sourceCode.slice(windowEnd);
 
-  return `console.log("<<< PATCHED BUNDLE LOADED >>>");window.__PATCHED_BUNDLE__ = true;${sourceCode}`;
+  return sourceCode;
 }
 
 export default modifyGlobMedSourceCode;
