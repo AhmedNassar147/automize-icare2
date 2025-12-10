@@ -23,7 +23,7 @@
 
         .referral-button-container {
           position: absolute !important;
-          top: 130px !important;
+          top: 85px !important;
           right: 8% !important;
           width: 100% !important;
           transform: translateZ(0) !important;
@@ -75,45 +75,45 @@
       c();
     });
 
-  function waitForElm(selector, options) {
-    const { all, root, timeoutMs } = {
-      all: false,
-      root: document,
-      timeoutMs: 8000,
-      ...(options || null),
-    };
+  // function waitForElm(selector, options) {
+  //   const { all, root, timeoutMs } = {
+  //     all: false,
+  //     root: document,
+  //     timeoutMs: 8000,
+  //     ...(options || null),
+  //   };
 
-    return new Promise((resolve) => {
-      const initial = all
-        ? root.querySelectorAll(selector)
-        : root.querySelector(selector);
+  //   return new Promise((resolve) => {
+  //     const initial = all
+  //       ? root.querySelectorAll(selector)
+  //       : root.querySelector(selector);
 
-      if (initial && (all ? initial.length : initial)) {
-        resolve(initial);
-        return;
-      }
+  //     if (initial && (all ? initial.length : initial)) {
+  //       resolve(initial);
+  //       return;
+  //     }
 
-      const observer = new MutationObserver(() => {
-        const el = all
-          ? root.querySelectorAll(selector)
-          : root.querySelector(selector);
+  //     const observer = new MutationObserver(() => {
+  //       const el = all
+  //         ? root.querySelectorAll(selector)
+  //         : root.querySelector(selector);
 
-        if (el && (all ? el.length : el)) {
-          observer.disconnect();
-          resolve(el);
-        }
-      });
+  //       if (el && (all ? el.length : el)) {
+  //         observer.disconnect();
+  //         resolve(el);
+  //       }
+  //     });
 
-      observer.observe(root, { childList: true, subtree: true });
+  //     observer.observe(root, { childList: true, subtree: true });
 
-      if (typeof timeoutMs === "number") {
-        setTimeout(() => {
-          observer.disconnect();
-          resolve(undefined);
-        }, timeoutMs);
-      }
-    });
-  }
+  //     if (typeof timeoutMs === "number") {
+  //       setTimeout(() => {
+  //         observer.disconnect();
+  //         resolve(undefined);
+  //       }, timeoutMs);
+  //     }
+  //   });
+  // }
 
   // async function chooseOption(trigger) {
   //   ["mousedown", "mouseup"].forEach((type) => {
@@ -334,7 +334,8 @@
 
     setTimeout(() => {
       actionButtonCalled = false;
-    }, 1500);
+      localStorage.removeItem("GM__FILS");
+    }, 6000);
   }
 
   chrome.runtime.onMessage.addListener(async (request) => {
