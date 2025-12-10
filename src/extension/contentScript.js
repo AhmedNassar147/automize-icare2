@@ -286,8 +286,13 @@
 
     actionButtonCalled = true;
 
-    const { referralId, referralEndTimestamp, acceptanceFileBase64, fileName } =
-      patient;
+    const {
+      referralId,
+      referralEndTimestamp,
+      acceptanceFileBase64,
+      fileName,
+      clientName,
+    } = patient;
 
     const _remainingMs = referralEndTimestamp - Date.now();
 
@@ -301,7 +306,18 @@
 
     injectNoAnimStyle();
 
-    cashedFile = base64ToFile(acceptanceFileBase64, fileName);
+    const files = [
+      {
+        fileName: fileName,
+        fileData: acceptanceFileBase64,
+        fileExtension: 0,
+        userCode: clientName,
+        idAttachmentType: 14,
+        languageCode: 1,
+      },
+    ];
+
+    localStorage.setItem("GM__FILS", JSON.stringify(files));
 
     const remainingMs = referralEndTimestamp - Date.now();
 
@@ -312,26 +328,9 @@
 
     iconButton.click();
 
-    try {
-      await sleep(0);
-      const t0 = Date.now();
-
-      const selectTrigger = await waitForElm('div[role="combobox"]');
-
-      if (selectTrigger && cashedFile) {
-        await chooseOption(selectTrigger);
-        await uploadFile();
-        localStorage.setItem("TM", `${Date.now() - t0}ms`);
-        cashedFile = null;
-        actionButtonCalled = false;
-      }
-    } catch (error) {
-      console.error("runIfOnDetails failed:", error);
-    } finally {
-      LOG(
-        `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} attempts=${attempts} reason=${reason} elapsedMs=${elapsedMs}`
-      );
-    }
+    LOG(
+      `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} attempts=${attempts} reason=${reason} elapsedMs=${elapsedMs}`
+    );
   }
 
   chrome.runtime.onMessage.addListener(async (request) => {
