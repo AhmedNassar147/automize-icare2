@@ -10,8 +10,8 @@ import createConsoleMessage from "./createConsoleMessage.mjs";
 import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
 import formateDateToString from "./formateDateToString.mjs";
 import speakText from "./speakText.mjs";
-import readJsonFile from "./readJsonFile.mjs";
 import { siteCodeConfigFile } from "./constants.mjs";
+import readJsonFile from "./readJsonFile.mjs";
 import checkPathExists from "./checkPathExists.mjs";
 
 const getOverridePathForUrl = (bundleUrl) => {

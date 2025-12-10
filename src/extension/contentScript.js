@@ -335,14 +335,16 @@
     setTimeout(() => {
       actionButtonCalled = false;
       localStorage.removeItem("GM__FILS");
-    }, 6000);
+    }, 7000);
   }
 
   chrome.runtime.onMessage.addListener(async (request) => {
     if (request.type === "accept" && request.data) {
-      LOG("Received 'accept' command from Service Worker.");
       try {
-        await clickDashboardRow(request.data);
+        if (!actionButtonCalled) {
+          LOG("Received 'accept' command from Service Worker.");
+          await clickDashboardRow(request.data);
+        }
       } catch (e) {
         ERR("clickDashboardRow failed:", e?.message || e);
       }
