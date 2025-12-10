@@ -4,13 +4,37 @@
  *
  */
 import { writeFile } from "fs/promises";
-import { basename } from "path";
+import { basename, join, dirname } from "path";
 import modifyGlobMedSourceCode from "./modifyGlobMedSourceCode.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
+import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
 import formateDateToString from "./formateDateToString.mjs";
 import readJsonFile from "./readJsonFile.mjs";
-import unlinkAllFastGlob from "./unlinkAllFastGlob.mjs";
-import { siteCodeConfigFile, siteCodeFolderDirectory } from "./constants.mjs";
+import { siteCodeConfigFile } from "./constants.mjs";
+
+const getOverridePathForUrl = (bundleUrl) => {
+  const url = new URL(bundleUrl);
+
+  const overridesFolder = join(
+    process.env.USER_PROFILE_PATH,
+    "Default",
+    "Overrides"
+  );
+
+  return join(
+    overridesFolder,
+    url.protocol.replace(":", ""), // “https”
+    url.hostname, // “referralprogram.globemedsaudi.com”
+    ...url.pathname.split("/").filter(Boolean)
+  );
+};
+
+async function saveToChromeOverrides(filePath, patchedCode) {
+  const folderPath = dirname(filePath);
+
+  await generateFolderIfNotExisting(folderPath);
+  await writeFile(filePath, patchedCode, "utf8");
+}
 
 async function patchBundleFromPage(page) {
   const { error: bundleUrlError, bundleUrl } = await page.evaluate(async () => {
@@ -38,12 +62,12 @@ async function patchBundleFromPage(page) {
 
   createConsoleMessage(`✅ Detected bundle URL: ${bundleUrl}`, "info");
 
-  const orginalFileName = basename(new URL(bundleUrl).pathname);
+  const originalFileName = basename(new URL(bundleUrl).pathname);
   const config = await readJsonFile(siteCodeConfigFile, true);
 
-  if (config.current === orginalFileName) {
+  if (config.current === originalFileName) {
     createConsoleMessage(
-      `✅ Original bundle unchanged (${orginalFileName}), skipping...`,
+      `✅ Original bundle unchanged (${originalFileName}), skipping...`,
       "info"
     );
     return;
@@ -78,26 +102,35 @@ async function patchBundleFromPage(page) {
   // 3) Patch it in Node
   createConsoleMessage("✅ Patching bundle", "info");
   const patchedBody = modifyGlobMedSourceCode(originalBody);
-  await unlinkAllFastGlob(siteCodeFolderDirectory);
+
+  if (!patchedBody.includes("GM__FILS")) {
+    createConsoleMessage(
+      `❌ The patched source hasn't the GM__FILS variable, skipping...`,
+      "error"
+    );
+
+    return;
+  }
+
+  // 4) Write into Chrome Overrides
+  const overridePath = getOverridePathForUrl(bundleUrl);
+  await saveToChromeOverrides(overridePath, patchedBody);
 
   const lastModifiedAt = formateDateToString(new Date());
 
   const newConfig = {
     previous: config.current,
-    current: orginalFileName,
-    lastModifiedAt: lastModifiedAt,
+    current: originalFileName,
+    overridePath,
+    lastModifiedAt,
   };
 
-  const outputPath = `${siteCodeFolderDirectory}/index-patched.js`;
-  const orginalFileNamePath = `${siteCodeFolderDirectory}/${orginalFileName}`;
+  await writeFile(siteCodeConfigFile, JSON.stringify(newConfig, null, 2));
 
-  await Promise.allSettled([
-    writeFile(siteCodeConfigFile, JSON.stringify(newConfig, null, 2)),
-    writeFile(orginalFileNamePath, originalBody),
-    writeFile(outputPath, patchedBody),
-  ]);
-
-  createConsoleMessage(`✅ Patched bundle written to: ${outputPath}`, "info");
+  createConsoleMessage(
+    `✅ Patched bundle written to Chrome Overrides: \n${overridePath}`,
+    "info"
+  );
 }
 
 export default patchBundleFromPage;

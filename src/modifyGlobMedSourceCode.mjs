@@ -63,7 +63,7 @@ function modifyGlobMedSourceCode(sourceCode) {
   segment = segment.replace(
     promiseRegex,
     filesVarName +
-      '=JSON.parse(localStorage.getItem("__MY_FILES__")||"null")||' +
+      '=JSON.parse(localStorage.getItem("GM__FILS")||"null")||' +
       "(await $1);"
   );
 
@@ -71,7 +71,7 @@ function modifyGlobMedSourceCode(sourceCode) {
   sourceCode =
     sourceCode.slice(0, windowStart) + segment + sourceCode.slice(windowEnd);
 
-  return `console.log("<<< PATCHED BUNDLE LOADED >>>");window.__PATCHED_BUNDLE__ = true;${sourceCode}`;
+  return sourceCode;
 }
 
 export default modifyGlobMedSourceCode;

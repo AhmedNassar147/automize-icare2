@@ -154,7 +154,8 @@ const waitForWaitingCountWithInterval = async ({
       if (!success || message) {
         const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
           page,
-          `success=${success} message=${message}`
+          `success=${success} message=${message}`,
+          0
         );
         if (shouldCreateNewPage) {
           page = null;
@@ -186,7 +187,8 @@ const waitForWaitingCountWithInterval = async ({
 
           const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
             page,
-            "🛑 cleared patients store and files"
+            "🛑 cleared patients store and files",
+            0
           );
           if (shouldCreateNewPage) {
             page = null;
@@ -247,10 +249,10 @@ const waitForWaitingCountWithInterval = async ({
       }
 
       if (newPatientAdded || hasPatientsRemoved) {
-        await pausableSleep(2000 + Math.random() * 3000);
         const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
           page,
-          "showing patients"
+          "showing patients",
+          2000
         );
         if (shouldCreateNewPage) {
           page = null;

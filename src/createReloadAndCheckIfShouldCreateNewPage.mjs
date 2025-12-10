@@ -7,9 +7,11 @@ import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const createReloadAndCheckIfShouldCreateNewPage =
   (pauseController, pausableSleep, INTERVAL) =>
-  async (page, logString = "") => {
+  async (page, logString = "", internal = false) => {
+    const _interval = typeof internal === "number" ? internal : INTERVAL;
+
     try {
-      const intervalTime = INTERVAL + Math.random() * 9000;
+      const intervalTime = _interval + Math.random() * 9000;
 
       await pauseController.waitIfPaused();
 
@@ -34,7 +36,7 @@ const createReloadAndCheckIfShouldCreateNewPage =
       await pauseController.waitIfPaused();
       await page.reload({ waitUntil: "domcontentloaded" });
     } catch (err) {
-      const intervalTime = INTERVAL + Math.random() * 11_000;
+      const intervalTime = _interval + Math.random() * 11_000;
       await pausableSleep(intervalTime);
 
       createConsoleMessage(
