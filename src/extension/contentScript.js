@@ -115,73 +115,73 @@
     });
   }
 
-  async function chooseOption(trigger) {
-    ["mousedown", "mouseup"].forEach((type) => {
-      trigger.dispatchEvent(
-        new MouseEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          composed: true,
-        })
-      );
-    });
+  // async function chooseOption(trigger) {
+  //   ["mousedown", "mouseup"].forEach((type) => {
+  //     trigger.dispatchEvent(
+  //       new MouseEvent(type, {
+  //         bubbles: true,
+  //         cancelable: true,
+  //         composed: true,
+  //       })
+  //     );
+  //   });
 
-    let directLi = await waitForElmFast(
-      `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
-    );
+  //   let directLi = await waitForElmFast(
+  //     `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
+  //   );
 
-    if (!directLi) {
-      LOG("no direct li found");
-      await sleep(2);
-      directLi = await waitForElm(
-        `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
-      );
-    }
+  //   if (!directLi) {
+  //     LOG("no direct li found");
+  //     await sleep(2);
+  //     directLi = await waitForElm(
+  //       `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
+  //     );
+  //   }
 
-    directLi?.click?.();
-  }
+  //   directLi?.click?.();
+  // }
 
-  function base64ToFile(base64Str, fileName, mime = "application/pdf") {
-    if (!base64Str) {
-      LOG("empty base64");
-      return null;
-    }
+  // function base64ToFile(base64Str, fileName, mime = "application/pdf") {
+  //   if (!base64Str) {
+  //     LOG("empty base64");
+  //     return null;
+  //   }
 
-    let raw = base64Str;
-    const comma = base64Str.indexOf(",");
-    if (comma >= 0) raw = base64Str.slice(comma + 1);
+  //   let raw = base64Str;
+  //   const comma = base64Str.indexOf(",");
+  //   if (comma >= 0) raw = base64Str.slice(comma + 1);
 
-    let bin;
-    try {
-      bin = atob(raw);
-    } catch {
-      LOG("invalid base64");
-      return null;
-    }
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    const blob = new Blob([bytes], { type: mime });
-    return new File([blob], fileName || "upload.pdf", { type: blob.type });
-  }
+  //   let bin;
+  //   try {
+  //     bin = atob(raw);
+  //   } catch {
+  //     LOG("invalid base64");
+  //     return null;
+  //   }
+  //   const bytes = new Uint8Array(bin.length);
+  //   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  //   const blob = new Blob([bytes], { type: mime });
+  //   return new File([blob], fileName || "upload.pdf", { type: blob.type });
+  // }
 
-  async function uploadFile() {
-    let input = document.querySelector(CONFIG.uploadInputSelector);
+  // async function uploadFile() {
+  //   let input = document.querySelector(CONFIG.uploadInputSelector);
 
-    if (!input) {
-      return false;
-    }
+  //   if (!input) {
+  //     return false;
+  //   }
 
-    const dt = new DataTransfer();
-    dt.items.add(cashedFile);
-    input.files = dt.files;
-    ["input", "change"].forEach((type) => {
-      input.dispatchEvent(
-        new Event(type, { bubbles: true, cancelable: true, composed: true })
-      );
-    });
+  //   const dt = new DataTransfer();
+  //   dt.items.add(cashedFile);
+  //   input.files = dt.files;
+  //   ["input", "change"].forEach((type) => {
+  //     input.dispatchEvent(
+  //       new Event(type, { bubbles: true, cancelable: true, composed: true })
+  //     );
+  //   });
 
-    return true;
-  }
+  //   return true;
+  // }
 
   async function findRowByReferralId(referralId) {
     const colIndex = CONFIG.gmsColOrder;
@@ -331,6 +331,10 @@
     LOG(
       `referralId=${referralId} remainingMsWhenReceived=${_remainingMs} remainingMs=${remainingMs} attempts=${attempts} reason=${reason} elapsedMs=${elapsedMs}`
     );
+
+    setTimeout(() => {
+      actionButtonCalled = false;
+    }, 1500);
   }
 
   chrome.runtime.onMessage.addListener(async (request) => {
