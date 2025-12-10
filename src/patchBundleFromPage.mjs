@@ -3,14 +3,16 @@
  * Helper: `patchBundleFromPage`.
  *
  */
-import { writeFile } from "fs/promises";
+import { writeFile, unlink } from "fs/promises";
 import { basename, join, dirname } from "path";
 import modifyGlobMedSourceCode from "./modifyGlobMedSourceCode.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
 import formateDateToString from "./formateDateToString.mjs";
+import speakText from "./speakText.mjs";
 import readJsonFile from "./readJsonFile.mjs";
 import { siteCodeConfigFile } from "./constants.mjs";
+import checkPathExists from "./checkPathExists.mjs";
 
 const getOverridePathForUrl = (bundleUrl) => {
   const url = new URL(bundleUrl);
@@ -72,6 +74,28 @@ async function patchBundleFromPage(page) {
     return;
   }
 
+  const overridePath = getOverridePathForUrl(bundleUrl);
+
+  if (config.current) {
+    speakText({
+      text: `Get Ahmed Nassar, globemed changed there code (${originalFileName})`,
+      times: 20,
+      useMaleVoice: true,
+      volume: 100,
+    });
+
+    const isFileExists = await checkPathExists(overridePath);
+
+    if (isFileExists) {
+      await unlink(overridePath);
+    }
+
+    createConsoleMessage(
+      `✅ Need to make real chrome points to new (${originalFileName})`,
+      "warn"
+    );
+  }
+
   // 2) FETCH INSIDE THE BROWSER so cookies/headers are used
   const { error, originalBody } = await page.evaluate(async (bundleUrl) => {
     const res = await fetch(bundleUrl, {
@@ -112,7 +136,6 @@ async function patchBundleFromPage(page) {
   }
 
   // 4) Write into Chrome Overrides
-  const overridePath = getOverridePathForUrl(bundleUrl);
   await saveToChromeOverrides(overridePath, patchedBody);
 
   const lastModifiedAt = formateDateToString(new Date());
