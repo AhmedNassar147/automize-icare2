@@ -4,7 +4,7 @@
  *
  */
 import { writeFile, unlink } from "fs/promises";
-import { basename, join, dirname } from "path";
+import { basename, join, dirname, normalize } from "path";
 import modifyGlobMedSourceCode from "./modifyGlobMedSourceCode.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
@@ -23,10 +23,12 @@ const getOverridePathForUrl = (bundleUrl) => {
     "Overrides"
   );
 
-  return join(
-    overridesFolder,
-    url.hostname,
-    ...url.pathname.split("/").filter(Boolean)
+  return normalize(
+    join(
+      overridesFolder,
+      url.hostname,
+      ...url.pathname.split("/").filter(Boolean)
+    )
   );
 };
 
