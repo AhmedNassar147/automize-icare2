@@ -168,7 +168,7 @@ const currentProfile = "Profile 1";
       defaultViewport: null,
       executablePath: CHROME_EXECUTABLE_PATH,
       userDataDir: profilePath,
-      protocolTimeout: 120000,
+      protocolTimeout: 180000,
       ignoreDefaultArgs: ["--enable-automation"],
       args: ["--start-maximized"],
     });
