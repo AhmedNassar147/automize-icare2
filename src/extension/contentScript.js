@@ -335,7 +335,7 @@
     setTimeout(() => {
       actionButtonCalled = false;
       localStorage.removeItem("GM__FILS");
-    }, 7000);
+    }, 15_000);
   }
 
   chrome.runtime.onMessage.addListener(async (request) => {
