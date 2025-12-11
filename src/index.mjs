@@ -33,7 +33,7 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
-// import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 
 import {
   waitingPatientsFolderDirectory,
@@ -45,12 +45,13 @@ import {
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
-  // HOME_PAGE_URL,
+  HOME_PAGE_URL,
 } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
-// import closePageSafely from "./closePageSafely.mjs";
-// import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
+import closePageSafely from "./closePageSafely.mjs";
+import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
+import speakText from "./speakText.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -367,34 +368,44 @@ const currentProfile = "Profile 1";
           },
         });
 
-        // const [page] = await makeUserLoggedInOrOpenHomePage({
-        //   browser,
-        //   startingPageUrl: HOME_PAGE_URL,
-        //   noCursor: true,
-        // });
-
-        // const { reason, elapsedMs } = await waitUntilCanTakeActionByWindow({
-        //   page,
-        //   referralId,
-        //   remainingMs,
-        // });
-
-        // const messageStartTime = Date.now();
-        // await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-        //   message: `*Accept ${referralId}*`,
-        // });
-        // const messageTime = Date.now() - messageStartTime;
-
-        // await closePageSafely(page);
+        const { newPage } = await makeUserLoggedInOrOpenHomePage({
+          browser,
+          startingPageUrl: HOME_PAGE_URL,
+          noCursor: true,
+          ignoreBundleModification: true,
+        });
 
         const remainingMs = referralEndTimestamp - Date.now();
 
+        const { reason, elapsedMs, attempts } =
+          await waitUntilCanTakeActionByWindow({
+            page: newPage,
+            referralId,
+            remainingMs,
+          });
+
+        const speekingStartTime = Date.now();
+        speakText({
+          text: "Accept Accept",
+          times: 1,
+          useMaleVoice: true,
+          volume: 100,
+          rate: 1,
+          delayMs: 0,
+        });
+        const speekingTime = Date.now() - speekingStartTime;
+
+        await closePageSafely(newPage);
+
         createConsoleMessage(
-          `✅ Patient=${referralId} remainingMs=${remainingMs}`,
+          `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} speekingTime=${speekingTime} attempts=${attempts} reason=${reason}`,
           "warn"
         );
-        if (remainingMs > 0) {
-          setTimeout(continueFetchingPatientsIfPaused, remainingMs);
+
+        const _remainingMs = referralEndTimestamp - Date.now();
+
+        if (_remainingMs > 0) {
+          setTimeout(continueFetchingPatientsIfPaused, _remainingMs);
         } else {
           continueFetchingPatientsIfPaused();
         }

@@ -1,5 +1,7 @@
 /*
- * Helper: waitUntilCanTakeActionByWindow (poll until last 30ms)
+ * Helper: waitUntilCanTakeActionByWindow
+ * Polls in the window context until the referral becomes actionable.
+ * Infinite loop by design; rely on outer timeouts to stop it.
  */
 import { globMedHeaders } from "./constants.mjs";
 
@@ -7,23 +9,22 @@ async function waitUntilCanTakeActionByWindow({
   page,
   referralId,
   remainingMs,
-  reqTimeoutMs = 600,
-  minTimeoutMs = 120,
-  rttPadMs = 60,
 }) {
+  if (!Number.isFinite(remainingMs) || remainingMs <= 0) {
+    return {
+      isOk: true,
+      reason: "invalid-remaining-ms",
+      message: null,
+      elapsedMs: 0,
+      attempts: 0,
+    };
+  }
+
   return await page.evaluate(
-    async ({
-      globMedHeaders,
-      referralId,
-      remainingMs,
-      reqTimeoutMs,
-      minTimeoutMs,
-      rttPadMs,
-    }) => {
-      async function fetchDetailsOnce(id, timeoutMs) {
-        const ctrl = new AbortController();
-        const t0 = performance.now();
-        const timer = setTimeout(() => ctrl.abort(), Math.max(20, timeoutMs));
+    async ({ globMedHeaders, referralId }) => {
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      async function fetchDetailsOnce(id) {
         try {
           const r = await fetch(`/referrals/details?_=${Date.now()}`, {
             method: "POST",
@@ -35,90 +36,65 @@ async function waitUntilCanTakeActionByWindow({
             body: JSON.stringify({ idReferral: id }),
             cache: "no-store",
             credentials: "include",
-            signal: ctrl.signal,
           });
-          const rtt = performance.now() - t0;
-          if (!r.ok) return { ok: false, rtt, reason: `HTTP ${r.status}` };
+
+          if (!r.ok) {
+            return {
+              ok: false,
+              reason: `http-${r.status}`,
+              message: null,
+            };
+          }
 
           const j = await r.json().catch(() => null);
-          const { message, canTakeAction, canUpdate, status } = j?.data ?? {};
-          let ok = !!(canTakeAction && canUpdate && status === "P");
+          const { canTakeAction, canUpdate, status, message } = j?.data ?? {};
+
+          const ok = !!(canTakeAction && canUpdate && status === "P");
 
           return {
             ok,
-            rtt,
             reason: ok ? "ready" : "not-ready",
-            message,
+            message: message || null,
           };
         } catch (e) {
-          const rtt = performance.now() - t0;
-          const isAbort = e?.name === "AbortError";
           return {
             ok: false,
-            rtt,
-            reason: isAbort ? "timeout" : e?.name || "err",
+            reason: "network-error",
+            message: e?.message || null,
           };
-        } finally {
-          clearTimeout(timer);
         }
       }
 
       const tStart = performance.now();
 
-      if (!Number.isFinite(remainingMs) || remainingMs <= 0) {
-        return {
-          isOk: true,
-          reason: `invalid remainingMs=${remainingMs}`,
-          elapsedMs: 0,
-          attempts: 0,
-        };
-      }
-
       let attempts = 0;
 
-      // EMA seed
-      const seedRtt = (navigator.connection?.rtt ?? 0) | 0;
-      let emaRtt =
-        seedRtt > 0
-          ? Math.min(Math.max(minTimeoutMs, seedRtt), reqTimeoutMs)
-          : Math.max(minTimeoutMs, 280);
-
-      const ALPHA = 0.35;
-
       while (true) {
-        const expected = Math.max(
-          minTimeoutMs,
-          Math.min(reqTimeoutMs, Math.round(emaRtt + rttPadMs))
-        );
         attempts++;
 
-        const { ok, reason, message, rtt } = await fetchDetailsOnce(
-          referralId,
-          expected
-        );
+        const result = await fetchDetailsOnce(referralId);
+        const elapsedMs = Math.round(performance.now() - tStart);
 
-        if (ok) {
+        if (result.ok) {
           return {
             isOk: true,
-            reason: `ready (${reason}) attempts=${attempts}`,
-            message,
-            elapsedMs: Math.round(performance.now() - tStart),
+            reason: "ready",
+            message: result.message,
+            elapsedMs,
+            attempts,
           };
         }
 
-        if (rtt) {
-          const clamped = Math.min(Math.max(rtt, minTimeoutMs), reqTimeoutMs);
-          emaRtt = ALPHA * clamped + (1 - ALPHA) * emaRtt;
+        // Not ready yet; keep polling.
+        // Very light throttle: short sleep every 7 attempts.
+        if (attempts % 7 === 0) {
+          await sleep(3);
         }
       }
     },
     {
       globMedHeaders,
       referralId,
-      remainingMs,
-      reqTimeoutMs,
-      minTimeoutMs,
-      rttPadMs,
     }
   );
 }

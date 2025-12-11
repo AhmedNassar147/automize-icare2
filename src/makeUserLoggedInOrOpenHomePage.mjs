@@ -37,19 +37,12 @@ const makeUserLoggedInOrOpenHomePage = async ({
   currentPage,
   startingPageUrl,
   noCursor,
+  ignoreBundleModification,
 }) => {
   const userName = process.env.CLIENT_NAME;
   const password = process.env.CLIENT_PASSWORD;
 
   let page = currentPage || (await browser.newPage());
-
-  if (!currentPage && page) {
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, "webdriver", {
-        get: () => false,
-      });
-    });
-  }
 
   let cursor;
 
@@ -157,8 +150,10 @@ const makeUserLoggedInOrOpenHomePage = async ({
         hasEnteredStartingPage || (await checkHomePageFullyLoaded(page));
 
       if (isHomeLoaded) {
-        createConsoleMessage(`✅ User ${userName} is in home page.`, "info");
-        await patchBundleFromPage(page);
+        if (!ignoreBundleModification) {
+          createConsoleMessage(`✅ User ${userName} is in home page.`, "info");
+          await patchBundleFromPage(page);
+        }
 
         return {
           newPage: page,
@@ -175,7 +170,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
     }
 
     retries++;
-    await sleep(400 + retries * 220);
+    await sleep(300 + retries * 220);
   }
 
   createConsoleMessage(`❌ Failed to login after max retries`, "error");

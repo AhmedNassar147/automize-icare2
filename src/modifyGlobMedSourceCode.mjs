@@ -3,6 +3,12 @@
  * Helper: `modifyGlobMedSourceCode`.
  *
  */
+
+// when 15 minutes not done the details api returns the next vaues
+// "status": "P",
+// "canUpdate": false,
+// "canTakeAction": true,
+
 function modifyGlobMedSourceCode(sourceCode) {
   // 1) Find the button with className `referral-button-container...` and grab its onClick handler name
   const buttonRegex =
@@ -15,6 +21,32 @@ function modifyGlobMedSourceCode(sourceCode) {
   }
 
   const handlerName = buttonMatch[1]; // e.g. "Rt"
+  const classIndex = buttonMatch.index ?? -1;
+
+  // 1.a) In the JSX around that className, force *.canUpdate / *.canTakeAction to be true
+  if (classIndex >= 0) {
+    const JSX_WINDOW = 900;
+    const jsxStart = Math.max(0, classIndex - 200);
+    const jsxEnd = Math.min(sourceCode.length, classIndex + JSX_WINDOW);
+
+    let jsxSegment = sourceCode.slice(jsxStart, jsxEnd);
+
+    // Replace `<any>.canUpdate &&` → `true &&`
+    jsxSegment = jsxSegment.replace(
+      /[A-Za-z_$][\w$]*\s*\.canUpdate\s*&&/g,
+      "true &&"
+    );
+
+    // Replace `<any>.canTakeAction` → `true`
+    jsxSegment = jsxSegment.replace(
+      /[A-Za-z_$][\w$]*\s*\.canTakeAction\b/g,
+      "true"
+    );
+
+    // Rebuild the source with the patched JSX segment
+    sourceCode =
+      sourceCode.slice(0, jsxStart) + jsxSegment + sourceCode.slice(jsxEnd);
+  }
 
   // 2) Find where that handler starts: "Rt = async (...) => {"
   const handlerStartRegex = new RegExp(
