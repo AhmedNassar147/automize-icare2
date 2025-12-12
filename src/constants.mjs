@@ -62,8 +62,8 @@ export const PATIENT_SECTIONS_STATUS = {
 
 export const ALLOWED_MINUTES_TO_REVIEW_PATIENTS = 15;
 
-export const cutoffTimeMs = 14000;
-export const searchIfAcceptacneButtonShownMS = 14000;
+export const cutoffTimeMs = 16000;
+export const searchIfAcceptacneButtonShownMS = 16000;
 
 export const EFFECTIVE_REVIEW_DURATION_MS =
   ALLOWED_MINUTES_TO_REVIEW_PATIENTS * 60 * 1000;
