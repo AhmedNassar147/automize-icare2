@@ -10,17 +10,19 @@
 // "canTakeAction": true,
 
 function modifyGlobMedSourceCode(sourceCode) {
-  // 1) For ["referral-details"...] query: remove warning toast and log message instead
-  //    (minified-safe: captures onSuccess param name dynamically)
   // ---------------------------------------------------------------------------
-  const anchor = '["referral-details"';
+  // 1) Patch referral-details onSuccess toast -> console.log (minified-safe)
+  // ---------------------------------------------------------------------------
+  const anchor = '(["referral-details"';
   const idx = sourceCode.indexOf(anchor);
+
   if (idx !== -1) {
-    const windowStart = Math.max(0, idx - 1500);
-    const windowEnd = Math.min(sourceCode.length, idx + 8000);
+    const windowStart = Math.max(0, idx - 200);
+    const windowEnd = Math.min(sourceCode.length, idx + 2500);
     let seg = sourceCode.slice(windowStart, windowEnd);
 
-    // Capture: onSuccess:(<param>)=>{ ... },
+    // Match: onSuccess:J=>{ ... }   OR   onSuccess:(J)=>{ ... }
+    // Stop at the first "}" that is followed by "," or "}" (end of object prop)
     const onSuccessRegex =
       /onSuccess\s*:\s*(?:\(\s*([A-Za-z_$][\w$]*)\s*\)|([A-Za-z_$][\w$]*))\s*=>\s*{([\s\S]*?)}(?=\s*[,}])/;
 
@@ -29,21 +31,32 @@ function modifyGlobMedSourceCode(sourceCode) {
       const param = m[1] || m[2];
       const body = m[3];
 
-      const stmtRegex = new RegExp(
-        `!\\s*${param}\\.canUpdate\\s*&&\\s*${param}\\.message\\s*&&\\s*[\\s\\S]*?(?=\\}|,)`
+      // Match the warning toast tail WITHOUT assuming function names:
+      // !J.canUpdate&&J.message&&l(Qr({message:J.message,type:"warning",time:1e4}))
+      //
+      // Explanation:
+      // - require the guard: !<param>.canUpdate && <param>.message &&
+      // - then match: <anyFn>(<anyFn>({message:<param>.message,type:"warning",time:1e4}))
+      // - allow whitespace variations
+      const toastRegex = new RegExp(
+        String.raw`!\s*${param}\.canUpdate\s*&&\s*${param}\.message\s*&&\s*` +
+          String.raw`[A-Za-z_$][\w$]*\s*\(\s*[A-Za-z_$][\w$]*\s*\(\s*` +
+          String.raw`\{\s*message\s*:\s*${param}\.message\s*,\s*type\s*:\s*"warning"\s*,\s*time\s*:\s*1e4\s*\}\s*` +
+          String.raw`\)\s*\)\s*`
       );
 
-      if (stmtRegex.test(body)) {
+      if (toastRegex.test(body)) {
         const newBody = body.replace(
-          stmtRegex,
+          toastRegex,
           `!${param}.canUpdate&&${param}.message&&console.log("${param}.message",${param}.message)`
         );
 
-        seg = seg.replace(
-          onSuccessRegex,
-          (full, p1, p2) =>
-            `onSuccess:${p1 ? `(${param})` : param}=>{${newBody}}`
-        );
+        // Rebuild the onSuccess property exactly as it appeared (param with/without parens)
+        const rebuilt = m[1]
+          ? `onSuccess:(${param})=>{${newBody}}`
+          : `onSuccess:${param}=>{${newBody}}`;
+
+        seg = seg.replace(onSuccessRegex, rebuilt);
 
         sourceCode =
           sourceCode.slice(0, windowStart) + seg + sourceCode.slice(windowEnd);
