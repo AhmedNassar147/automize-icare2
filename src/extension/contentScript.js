@@ -273,8 +273,8 @@
         };
       }
 
-      if (attempts % 8 === 0) {
-        await sleep(1);
+      if (attempts % 5 === 0) {
+        await sleep(3);
       }
     }
   };

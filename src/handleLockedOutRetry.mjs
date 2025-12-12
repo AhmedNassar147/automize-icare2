@@ -6,7 +6,6 @@
 
 import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
-import sleep from "./sleep.mjs";
 
 const createSendLockedMessage =
   (sendWhatsappMessage, patientsStore, clientPhoneNumber, patient) =>
@@ -74,10 +73,10 @@ async function handleLockedOutRetry({
         await sendMessage(message);
       }
 
-      const sleepTime = deadlineDate.getTime() - Date.now();
+      const sleepTime = deadline - Date.now();
 
       if (sleepTime > 0) {
-        await sleep(sleepTime);
+        await pausableSleep(sleepTime);
       }
 
       // clear references (caller can rely on returned page/cursor)
