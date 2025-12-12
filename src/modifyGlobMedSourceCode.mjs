@@ -22,29 +22,27 @@ function modifyGlobMedSourceCode(sourceCode) {
 
     // Capture: onSuccess:(<param>)=>{ ... },
     const onSuccessRegex =
-      /onSuccess:\s*\(\s*([A-Za-z_$][\w$]*)\s*\)\s*=>\s*{([\s\S]*?)}\s*,/;
+      /onSuccess\s*:\s*(?:\(\s*([A-Za-z_$][\w$]*)\s*\)|([A-Za-z_$][\w$]*))\s*=>\s*{([\s\S]*?)}(?=\s*[,}])/;
 
     const m = seg.match(onSuccessRegex);
     if (m) {
-      const param = m[1];
-      const body = m[2];
+      const param = m[1] || m[2];
+      const body = m[3];
 
-      // Match the whole statement:
-      // !param.canUpdate && param.message && <anything until ;>
-      // (no dependency on l/Qr/etc)
       const stmtRegex = new RegExp(
-        `!\\s*${param}\\.canUpdate\\s*&&\\s*${param}\\.message\\s*&&\\s*[\\s\\S]*?;`
+        `!\\s*${param}\\.canUpdate\\s*&&\\s*${param}\\.message\\s*&&\\s*[\\s\\S]*?(?=\\}|,)`
       );
 
       if (stmtRegex.test(body)) {
         const newBody = body.replace(
           stmtRegex,
-          `!${param}.canUpdate && ${param}.message && console.log("${param}.message", ${param}.message);`
+          `!${param}.canUpdate&&${param}.message&&console.log("${param}.message",${param}.message)`
         );
 
         seg = seg.replace(
           onSuccessRegex,
-          `onSuccess:(${param})=>{${newBody}},`
+          (full, p1, p2) =>
+            `onSuccess:${p1 ? `(${param})` : param}=>{${newBody}}`
         );
 
         sourceCode =
