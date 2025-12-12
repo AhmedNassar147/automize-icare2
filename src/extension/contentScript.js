@@ -334,7 +334,6 @@
 
     setTimeout(() => {
       actionButtonCalled = false;
-      localStorage.removeItem("GM__FILS");
     }, 15_000);
   }
 
