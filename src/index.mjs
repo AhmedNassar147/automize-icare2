@@ -384,21 +384,16 @@ const currentProfile = "Profile 1";
             remainingMs,
           });
 
-        const speekingStartTime = Date.now();
-        speakText({
-          text: "Accept Accept",
-          times: 1,
-          useMaleVoice: true,
-          volume: 100,
-          rate: 1,
-          delayMs: 0,
+        const messageStartTime = Date.now();
+        sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+          message: `Accept ${referralId}`,
         });
-        const speekingTime = Date.now() - speekingStartTime;
+        const whatsAppMessageTime = Date.now() - messageStartTime;
 
         await closePageSafely(newPage);
 
         createConsoleMessage(
-          `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} speekingTime=${speekingTime} attempts=${attempts} reason=${reason}`,
+          `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} whatsAppMessageTime=${whatsAppMessageTime} attempts=${attempts} reason=${reason}`,
           "warn"
         );
 

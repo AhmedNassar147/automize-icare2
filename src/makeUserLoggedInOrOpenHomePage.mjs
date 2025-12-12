@@ -70,7 +70,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
       if (startingPageUrl && retries === 0) {
         await page.goto(startingPageUrl, {
           waitUntil: "networkidle2",
-          timeout: 10_000,
+          timeout: 12_000,
         });
 
         const pageUrl = page.url();
