@@ -10,7 +10,52 @@
 // "canTakeAction": true,
 
 function modifyGlobMedSourceCode(sourceCode) {
-  // 1) Find the button with className `referral-button-container...` and grab its onClick handler name
+  // 1) For ["referral-details"...] query: remove warning toast and log message instead
+  //    (minified-safe: captures onSuccess param name dynamically)
+  // ---------------------------------------------------------------------------
+  const anchor = '["referral-details"';
+  const idx = sourceCode.indexOf(anchor);
+  if (idx !== -1) {
+    const windowStart = Math.max(0, idx - 1500);
+    const windowEnd = Math.min(sourceCode.length, idx + 8000);
+    let seg = sourceCode.slice(windowStart, windowEnd);
+
+    // Capture: onSuccess:(<param>)=>{ ... },
+    const onSuccessRegex =
+      /onSuccess:\s*\(\s*([A-Za-z_$][\w$]*)\s*\)\s*=>\s*{([\s\S]*?)}\s*,/;
+
+    const m = seg.match(onSuccessRegex);
+    if (m) {
+      const param = m[1];
+      const body = m[2];
+
+      // Match the whole statement:
+      // !param.canUpdate && param.message && <anything until ;>
+      // (no dependency on l/Qr/etc)
+      const stmtRegex = new RegExp(
+        `!\\s*${param}\\.canUpdate\\s*&&\\s*${param}\\.message\\s*&&\\s*[\\s\\S]*?;`
+      );
+
+      if (stmtRegex.test(body)) {
+        const newBody = body.replace(
+          stmtRegex,
+          `!${param}.canUpdate && ${param}.message && console.log("${param}.message", ${param}.message);`
+        );
+
+        seg = seg.replace(
+          onSuccessRegex,
+          `onSuccess:(${param})=>{${newBody}},`
+        );
+
+        sourceCode =
+          sourceCode.slice(0, windowStart) + seg + sourceCode.slice(windowEnd);
+      }
+    }
+  }
+
+  // 2) Patch files Promise.all -> localStorage fallback (your existing logic)
+  // Find the button with className `referral-button-container...` and grab its onClick handler name
+  // ---------------------------------------------------------------------------
   const buttonRegex =
     /className:\s*[`'"]referral-button-container[\s\S]*?[`'"][\s\S]{0,400}?onClick:\s*(\w+)/;
   const buttonMatch = sourceCode.match(buttonRegex);
@@ -23,7 +68,10 @@ function modifyGlobMedSourceCode(sourceCode) {
   const handlerName = buttonMatch[1]; // e.g. "Rt"
   const classIndex = buttonMatch.index ?? -1;
 
-  // 1.a) In the JSX around that className, force *.canUpdate / *.canTakeAction to be true
+  // 2.a) In the JSX around that className, force *.canUpdate / *.canTakeAction to be true
+  // Make canUpdate + canTakeAction always true ONLY inside referral-button-container
+  //    (minified-safe: does NOT assume variable names like xe/ac/etc)
+  // ---------------------------------------------------------------------------
   if (classIndex >= 0) {
     const JSX_WINDOW = 900;
     const jsxStart = Math.max(0, classIndex - 200);
