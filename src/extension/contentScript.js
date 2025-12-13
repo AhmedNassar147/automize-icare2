@@ -233,25 +233,25 @@
 
       const ok = !!(canTakeAction && canUpdate && status === "P");
 
-      // if (!ok && message) {
-      //   const match = message.match(
-      //     /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/
-      //   );
+      if (!ok && message) {
+        const match = message.match(
+          /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/
+        );
 
-      //   const minsLeft = parseInt(match?.[1], 10) ?? 0;
-      //   const secsLeft = parseInt(match?.[2], 10) ?? 0;
+        const minsLeft = parseInt(match?.[1], 10) ?? 0;
+        const secsLeft = parseInt(match?.[2], 10) ?? 0;
 
-      //   const totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
+        const totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
 
-      //   if (totalMsLeft === 0) {
-      //     await sleep(500);
-      //     return {
-      //       ok: true,
-      //       reason: "ready by zero time calculation",
-      //       message: message || null,
-      //     };
-      //   }
-      // }
+        if (totalMsLeft === 0) {
+          await sleep(500);
+          return {
+            ok: true,
+            reason: "ready by zero time calculation",
+            message: message || null,
+          };
+        }
+      }
 
       return {
         ok,
