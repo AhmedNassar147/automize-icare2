@@ -3,7 +3,18 @@
   "use strict";
 
   const LOG = (...a) => console.log("[GM details]", ...a);
-  const ERR = (...a) => console.error("[GM details]", ...a); // Keep errors in the content script console for immediate debugging
+  const ERR = (...a) => console.error("[GM details]", ...a);
+
+  // .referral-button-container {
+  //   position: absolute !important;
+  //   top: 85px !important;
+  //   right: 8% !important;
+  //   width: 100% !important;
+  //   transform: translateZ(0) !important;
+  //   will-change: transform !important;
+  //   z-index: 9999 !important;
+  //   pointer-events: auto !important;
+  // }
 
   LOG("Hello browser");
 
@@ -20,17 +31,6 @@
           transition: none !important;
           animation: none !important;
         }
-
-        .referral-button-container {
-          position: absolute !important;
-          top: 85px !important;
-          right: 8% !important;
-          width: 100% !important;
-          transform: translateZ(0) !important;
-          will-change: transform !important;
-          z-index: 9999 !important;
-          pointer-events: auto !important;
-        }
       `;
       document?.head?.appendChild(s);
     } catch (e) {
@@ -38,7 +38,6 @@
     }
   }
 
-  let cashedFile = null;
   let actionButtonCalled = false;
 
   const globMedHeaders = {
@@ -74,114 +73,6 @@
       };
       c();
     });
-
-  // function waitForElm(selector, options) {
-  //   const { all, root, timeoutMs } = {
-  //     all: false,
-  //     root: document,
-  //     timeoutMs: 8000,
-  //     ...(options || null),
-  //   };
-
-  //   return new Promise((resolve) => {
-  //     const initial = all
-  //       ? root.querySelectorAll(selector)
-  //       : root.querySelector(selector);
-
-  //     if (initial && (all ? initial.length : initial)) {
-  //       resolve(initial);
-  //       return;
-  //     }
-
-  //     const observer = new MutationObserver(() => {
-  //       const el = all
-  //         ? root.querySelectorAll(selector)
-  //         : root.querySelector(selector);
-
-  //       if (el && (all ? el.length : el)) {
-  //         observer.disconnect();
-  //         resolve(el);
-  //       }
-  //     });
-
-  //     observer.observe(root, { childList: true, subtree: true });
-
-  //     if (typeof timeoutMs === "number") {
-  //       setTimeout(() => {
-  //         observer.disconnect();
-  //         resolve(undefined);
-  //       }, timeoutMs);
-  //     }
-  //   });
-  // }
-
-  // async function chooseOption(trigger) {
-  //   ["mousedown", "mouseup"].forEach((type) => {
-  //     trigger.dispatchEvent(
-  //       new MouseEvent(type, {
-  //         bubbles: true,
-  //         cancelable: true,
-  //         composed: true,
-  //       })
-  //     );
-  //   });
-
-  //   let directLi = await waitForElmFast(
-  //     `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
-  //   );
-
-  //   if (!directLi) {
-  //     LOG("no direct li found");
-  //     await sleep(2);
-  //     directLi = await waitForElm(
-  //       `[id^="menu-"] [role="listbox"] li[role="option"]:nth-child(${optionIndex})`
-  //     );
-  //   }
-
-  //   directLi?.click?.();
-  // }
-
-  // function base64ToFile(base64Str, fileName, mime = "application/pdf") {
-  //   if (!base64Str) {
-  //     LOG("empty base64");
-  //     return null;
-  //   }
-
-  //   let raw = base64Str;
-  //   const comma = base64Str.indexOf(",");
-  //   if (comma >= 0) raw = base64Str.slice(comma + 1);
-
-  //   let bin;
-  //   try {
-  //     bin = atob(raw);
-  //   } catch {
-  //     LOG("invalid base64");
-  //     return null;
-  //   }
-  //   const bytes = new Uint8Array(bin.length);
-  //   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  //   const blob = new Blob([bytes], { type: mime });
-  //   return new File([blob], fileName || "upload.pdf", { type: blob.type });
-  // }
-
-  // async function uploadFile() {
-  //   let input = document.querySelector(CONFIG.uploadInputSelector);
-
-  //   if (!input) {
-  //     return false;
-  //   }
-
-  //   const dt = new DataTransfer();
-  //   dt.items.add(cashedFile);
-  //   input.files = dt.files;
-  //   ["input", "change"].forEach((type) => {
-  //     input.dispatchEvent(
-  //       new Event(type, { bubbles: true, cancelable: true, composed: true })
-  //     );
-  //   });
-
-  //   return true;
-  // }
 
   async function findRowByReferralId(referralId) {
     const colIndex = CONFIG.gmsColOrder;
