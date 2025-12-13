@@ -214,7 +214,6 @@
 
   async function fetchDetailsOnce(id) {
     try {
-      const t0 = performance.now();
       const r = await fetch(`/referrals/details?_=${Date.now()}`, {
         method: "POST",
         headers: {
@@ -226,7 +225,6 @@
         cache: "no-store",
         credentials: "include",
       });
-      const rtt = performance.now() - t0;
 
       if (!r.ok) return { ok: false, reason: `HTTP ${r.status}` };
 
@@ -243,8 +241,10 @@
         const minsLeft = parseInt(match?.[1], 10) ?? 0;
         const secsLeft = parseInt(match?.[2], 10) ?? 0;
 
-        if (minsLeft === 0 && secsLeft === 0) {
-          await sleep(350);
+        const totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
+
+        if (totalMsLeft === 0) {
+          await sleep(390);
           return {
             ok: true,
             reason: "ready by zero time calculation",
