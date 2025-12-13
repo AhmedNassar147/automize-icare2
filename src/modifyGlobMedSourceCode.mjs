@@ -3,8 +3,100 @@
  * Helper: `modifyGlobMedSourceCode`.
  *
  */
-function modifyGlobMedSourceCode(sourceCode) {
-  // 1) Find the button with className `referral-button-container...` and grab its onClick handler name
+// import { readFile, writeFile } from "fs/promises";
+
+function findReferralRendererName(src, markerIdx) {
+  const marker = "referral-button-container";
+
+  const re =
+    /(^|[^\w$])([A-Za-z_$][\w$]*)\s*=\s*\(\s*\)\s*=>\s*p\.jsx?s?\s*\(/gm;
+
+  let bestName = null;
+  let bestStart = -1;
+
+  for (const m of src.matchAll(re)) {
+    const name = m[2];
+    const start = m.index ?? -1;
+    if (start < 0 || start > markerIdx) continue;
+
+    // Check a forward window from this renderer start includes the marker
+    const snippet = src.slice(start, Math.min(src.length, start + 20000));
+    if (!snippet.includes(marker)) continue;
+
+    // pick the closest one before marker
+    if (start > bestStart) {
+      bestStart = start;
+      bestName = name;
+    }
+  }
+
+  return bestName;
+}
+
+function removeAllRendererInvocations(src, rendererName) {
+  // Remove call-sites like:  ni(),   or   ni()   (optionally with trailing comma)
+  // but DO NOT touch: ni = () => ...
+  const callRe = new RegExp(
+    `(^|[\\[,\\s])${rendererName}\\s*\\(\\s*\\)\\s*,?`,
+    "g"
+  );
+
+  return src.replace(callRe, (m, prefix) => prefix);
+}
+
+function findEnclosingReactCallStart(src, anchorIdx) {
+  // Search backwards a bit for the nearest p.jsx( or p.jsxs( that encloses the anchor
+  const backStart = Math.max(0, anchorIdx - 6000);
+  const back = src.slice(backStart, anchorIdx);
+
+  const jsxIdx = back.lastIndexOf("p.jsx(");
+  const jsxsIdx = back.lastIndexOf("p.jsxs(");
+
+  const rel = Math.max(jsxIdx, jsxsIdx);
+  if (rel === -1) return -1;
+
+  return backStart + rel;
+}
+
+function insertRendererBeforePatientInfo(src) {
+  const marker = "referral-button-container";
+  const markerIdx = src.indexOf(marker);
+  if (markerIdx === -1) return src;
+
+  const rendererName = findReferralRendererName(src);
+  if (!rendererName) return src;
+
+  const winStart = Math.max(0, markerIdx - 80);
+  const winEnd = Math.min(src.length, markerIdx + 30_000);
+
+  let win = src.slice(winStart, winEnd);
+
+  const anchorIdx = win.indexOf(".VIEW_PATIENT_INFORMATION");
+  if (anchorIdx === -1) return src;
+
+  // Remove existing invocation(s) inside this window so we don’t duplicate
+  win = removeAllRendererInvocations(win, rendererName);
+
+  const callStart = findEnclosingReactCallStart(win, anchorIdx);
+  if (callStart === -1) return src;
+
+  // Insert as an array item before the patient-info element
+  win = win.slice(0, callStart) + `${rendererName}(),` + win.slice(callStart);
+
+  return src.slice(0, winStart) + win + src.slice(winEnd);
+}
+
+function cleanupTrailingCommaBeforeArrayClose(src) {
+  return src.replace(/,\s*\]/g, "]");
+}
+
+function modifyGlobMedSourceCode(_sourceCode) {
+  // // 1) move the referral buttons after the breadcrumb
+  let sourceCode = cleanupTrailingCommaBeforeArrayClose(
+    insertRendererBeforePatientInfo(_sourceCode)
+  );
+
+  // 2) Find the button with className `referral-button-container...` and grab its onClick handler name
   const buttonRegex =
     /className:\s*[`'"]referral-button-container[\s\S]*?[`'"][\s\S]{0,400}?onClick:\s*(\w+)/;
   const buttonMatch = sourceCode.match(buttonRegex);
@@ -71,7 +163,14 @@ function modifyGlobMedSourceCode(sourceCode) {
   sourceCode =
     sourceCode.slice(0, windowStart) + segment + sourceCode.slice(windowEnd);
 
-  return `console.log("<<< PATCHED BUNDLE LOADED >>>");window.__PATCHED_BUNDLE__= true;${sourceCode}`;
+  // window.__PATCHED_BUNDLE__= true;
+  return `console.log("<<< PATCHED BUNDLE LOADED >>>");${sourceCode}`;
 }
+
+// const filePath = process.cwd() + "/original-gm-index.js";
+// const sourceCode = await readFile(filePath, "utf8");
+
+// const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
+// await writeFile(mdsFilePath, modifyGlobMedSourceCode(sourceCode));
 
 export default modifyGlobMedSourceCode;
