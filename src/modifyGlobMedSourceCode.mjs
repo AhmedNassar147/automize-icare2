@@ -90,8 +90,35 @@ function cleanupTrailingCommaBeforeArrayClose(src) {
   return src.replace(/,\s*\]/g, "]");
 }
 
-function modifyGlobMedSourceCode(_sourceCode) {
-  // // 1) move the referral buttons after the breadcrumb
+function injectRefetchIntervalNearReferralDetails(sourceCode) {
+  const anchor = '["referral-details"';
+  const idx = sourceCode.indexOf(anchor);
+  if (idx === -1) return sourceCode;
+
+  // Take a small slice after the anchor; tune if needed.
+  const WINDOW = 180;
+  const start = idx;
+  const end = Math.min(sourceCode.length, start + WINDOW);
+  let segment = sourceCode.slice(start, end);
+
+  // Find refetchOnWindowFocus: !1, (with or without spaces)
+  const focusRegex = /refetchOnWindowFocus\s*:\s*!1\s*,/;
+
+  if (!focusRegex.test(segment)) {
+    // If the window is too small, increase WINDOW above.
+    return sourceCode;
+  }
+
+  // Inject right after refetchOnWindowFocus: !1,
+  const injection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 600;if(d.status!=="P")return!1;if(d.canTakeAction&&d.canUpdate)return!1;const k="__GM_REF_POLL__",s=window[k]||(window[k]={n:0});let b=250+s.n*50;b=Math.min(b,500);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
+  segment = segment.replace(focusRegex, (m) => m + injection);
+
+  return sourceCode.slice(0, start) + segment + sourceCode.slice(end);
+}
+
+function modifyGlobMedSourceCode(code) {
+  const _sourceCode = injectRefetchIntervalNearReferralDetails(code);
+
   let sourceCode = cleanupTrailingCommaBeforeArrayClose(
     insertRendererBeforePatientInfo(_sourceCode)
   );
