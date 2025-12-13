@@ -244,7 +244,7 @@
         const secsLeft = parseInt(match?.[2], 10) ?? 0;
 
         if (minsLeft === 0 && secsLeft === 0) {
-          await sleep(380);
+          await sleep(350);
           return {
             ok: true,
             reason: "ready by zero time calculation",
