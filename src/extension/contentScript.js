@@ -244,7 +244,7 @@
         const totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
 
         if (totalMsLeft === 0) {
-          await sleep(480);
+          await sleep(500);
           return {
             ok: true,
             reason: "ready by zero time calculation",
