@@ -214,6 +214,7 @@
 
   async function fetchDetailsOnce(id) {
     try {
+      const t0 = performance.now();
       const r = await fetch(`/referrals/details?_=${Date.now()}`, {
         method: "POST",
         headers: {
@@ -225,6 +226,7 @@
         cache: "no-store",
         credentials: "include",
       });
+      const rtt = performance.now() - t0;
 
       if (!r.ok) return { ok: false, reason: `HTTP ${r.status}` };
 
@@ -232,6 +234,24 @@
       const { canTakeAction, canUpdate, status, message } = j?.data ?? {};
 
       const ok = !!(canTakeAction && canUpdate && status === "P");
+
+      if (!ok && message) {
+        const match = message.match(
+          /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/
+        );
+
+        const minsLeft = parseInt(match?.[1], 10) ?? 0;
+        const secsLeft = parseInt(match?.[2], 10) ?? 0;
+
+        if (minsLeft === 0 && secsLeft === 0) {
+          await sleep(380);
+          return {
+            ok: true,
+            reason: "ready by zero time calculation",
+            message: message || null,
+          };
+        }
+      }
 
       return {
         ok,
@@ -273,7 +293,7 @@
         };
       }
 
-      if (attempts % 5 === 0) {
+      if (attempts % 4 === 0) {
         await sleep(3);
       }
     }
