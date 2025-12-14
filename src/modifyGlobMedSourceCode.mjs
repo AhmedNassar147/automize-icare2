@@ -110,7 +110,7 @@ function injectRefetchIntervalNearReferralDetails(sourceCode) {
   }
 
   // Inject right after refetchOnWindowFocus: !1,
-  const injection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 600;if(d.status!=="P")return!1;if(d.canTakeAction&&d.canUpdate)return!1;const k="__GM_REF_POLL__",s=window[k]||(window[k]={n:0});let b=250+s.n*50;b=Math.min(b,500);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
+  const injection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 600;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=210+s.n*50;b=Math.min(b,500);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
   segment = segment.replace(focusRegex, (m) => m + injection);
 
   return sourceCode.slice(0, start) + segment + sourceCode.slice(end);
