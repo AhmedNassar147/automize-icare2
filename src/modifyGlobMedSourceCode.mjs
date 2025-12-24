@@ -353,7 +353,6 @@ function modifyGlobMedSourceCode(code) {
   if (!section || !section.text) return sourceCode;
 
   let sectionText = section.text;
-  console.log("sectionText", sectionText);
   sectionText = sectionText.replace(/\brow-reverse\b/, "row");
 
   const accept = findAcceptElementBounds(sectionText);
