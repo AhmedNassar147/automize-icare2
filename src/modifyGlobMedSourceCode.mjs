@@ -63,7 +63,7 @@ function insertRendererBeforePatientInfo(src) {
   const markerIdx = src.indexOf(marker);
   if (markerIdx === -1) return src;
 
-  const rendererName = findReferralRendererName(src);
+  const rendererName = findReferralRendererName(src, markerIdx);
   if (!rendererName) return src;
 
   const winStart = Math.max(0, markerIdx - 80);
@@ -90,7 +90,7 @@ function cleanupTrailingCommaBeforeArrayClose(src) {
   return src.replace(/,\s*\]/g, "]");
 }
 
-function injectRefetchIntervalNearReferralDetails(sourceCode) {
+function makeReferralDetailsApiPoll(sourceCode) {
   const anchor = '["referral-details"';
   const idx = sourceCode.indexOf(anchor);
   if (idx === -1) return sourceCode;
@@ -110,30 +110,176 @@ function injectRefetchIntervalNearReferralDetails(sourceCode) {
   }
 
   // Inject right after refetchOnWindowFocus: !1,
-  const injection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=100+s.n*50;b=Math.min(b,500);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
+  const injection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=100+s.n*50;b=Math.min(b,350);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
   segment = segment.replace(focusRegex, (m) => m + injection);
 
   return sourceCode.slice(0, start) + segment + sourceCode.slice(end);
 }
 
-function modifyGlobMedSourceCode(code) {
-  const _sourceCode = injectRefetchIntervalNearReferralDetails(code);
+function findReactCallBoundsEnclosingText(src, text) {
+  const idx = src.indexOf(text);
+  if (idx === -1) return null;
 
-  let sourceCode = cleanupTrailingCommaBeforeArrayClose(
-    insertRendererBeforePatientInfo(_sourceCode)
-  );
+  // Parse one react call starting at objectName + ".jsx(" or ".jsxs("
+  function parseCallFromDot(dotPos, kind) {
+    // find start of identifier before ".jsx"
+    let start = dotPos - 1;
+    while (start >= 0 && /[A-Za-z0-9_$]/.test(src[start])) start--;
+    start++;
 
-  // 2) Find the button with className `referral-button-container...` and grab its onClick handler name
-  const buttonRegex =
-    /className:\s*[`'"]referral-button-container[\s\S]*?[`'"][\s\S]{0,400}?onClick:\s*(\w+)/;
-  const buttonMatch = sourceCode.match(buttonRegex);
-
-  if (!buttonMatch) {
-    // Couldn't find that specific button – don't modify anything
-    return sourceCode;
+    const open = dotPos + (kind === "jsxs" ? 5 : 4); // index of '('
+    let depth = 0;
+    for (let i = open; i < src.length; i++) {
+      const ch = src[i];
+      if (ch === "(") depth++;
+      else if (ch === ")") {
+        depth--;
+        if (depth === 0) {
+          return { start, end: i + 1, text: src.slice(start, i + 1) };
+        }
+      }
+    }
+    return null;
   }
 
-  const handlerName = buttonMatch[1]; // e.g. "Rt"
+  let best = null;
+
+  // Scan backwards and collect candidates whose call contains idx
+  for (let i = idx; i >= 0; i--) {
+    if (src[i] !== ".") continue;
+
+    let kind = null;
+    if (src.startsWith(".jsx(", i)) kind = "jsx";
+    else if (src.startsWith(".jsxs(", i)) kind = "jsxs";
+    else continue;
+
+    const c = parseCallFromDot(i, kind);
+    if (!c) continue;
+
+    // Does this candidate contain the anchor index?
+    if (c.start <= idx && idx < c.end) {
+      // pick the OUTERMOST (largest span)
+      if (!best || c.end - c.start > best.end - best.start) best = c;
+    }
+  }
+
+  return best;
+}
+
+function findAllEnclosingReactCalls(src, anchorIndex) {
+  function parseCallFromDot(dotPos, kind) {
+    // find start of identifier before ".jsx"/".jsxs"
+    let start = dotPos - 1;
+    while (start >= 0 && /[A-Za-z0-9_$]/.test(src[start])) start--;
+    start++;
+
+    const open = dotPos + (kind === "jsxs" ? 5 : 4); // points at '('
+    let depth = 0;
+
+    for (let i = open; i < src.length; i++) {
+      const ch = src[i];
+      if (ch === "(") depth++;
+      else if (ch === ")") {
+        depth--;
+        if (depth === 0)
+          return { start, end: i + 1, text: src.slice(start, i + 1) };
+      }
+    }
+    return null;
+  }
+
+  const out = [];
+  for (let i = anchorIndex; i >= 0; i--) {
+    if (src[i] !== ".") continue;
+
+    let kind = null;
+    if (src.startsWith(".jsx(", i)) kind = "jsx";
+    else if (src.startsWith(".jsxs(", i)) kind = "jsxs";
+    else continue;
+
+    const c = parseCallFromDot(i, kind);
+    if (!c) continue;
+
+    if (c.start <= anchorIndex && anchorIndex < c.end) out.push(c);
+  }
+
+  // smallest first
+  out.sort((a, b) => a.end - a.start - (b.end - b.start));
+  return out;
+}
+
+function findAcceptElementBounds(sectionText) {
+  const idx = sectionText.indexOf('("ACCEPT_REFERRAL")');
+  if (idx === -1) return null;
+
+  const candidates = findAllEnclosingReactCalls(sectionText, idx);
+  if (!candidates.length) return null;
+
+  // Prefer the smallest enclosing call that includes "permission:"
+  const withPermission = candidates.find((c) => c.text.includes("permission:"));
+  return withPermission || candidates[0];
+}
+
+function extractCanTakeActionVar(sectionText) {
+  const re = /([A-Za-z_$][\w$]*)(?:\?\.)?\.canTakeAction\b/;
+  const m = sectionText.match(re);
+  return m ? m[1] : null;
+}
+
+function extractOnClickHandler(acceptText) {
+  // Matches: onClick: Rt   or   onClick:Rt
+  const m = acceptText.match(/onClick\s*:\s*([A-Za-z_$][\w$]*)/);
+  return m ? m[1] : null;
+}
+
+function removeSpanWithOptionalComma(src, start, end) {
+  if (src[end] === ",") return src.slice(0, start) + src.slice(end + 1);
+  if (start > 0 && src[start - 1] === ",")
+    return src.slice(0, start - 1) + src.slice(end);
+  return src.slice(0, start) + src.slice(end);
+}
+
+function moveAcceptButtonToTopLevelChildren(sectionText, acceptButtonObject) {
+  const variableName = extractCanTakeActionVar(sectionText);
+  if (!variableName) return sectionText;
+
+  const guard = `(!!${variableName}&&(${variableName}==null?void 0:${variableName}.status)==="P")&&`;
+
+  // 1) REMOVE original ACCEPT (and swallow adjacent comma)
+  let next = removeSpanWithOptionalComma(
+    sectionText,
+    acceptButtonObject.start,
+    acceptButtonObject.end
+  );
+
+  // 2) INSERT copied ACCEPT at top-level children
+  const objStart = next.indexOf("{");
+  if (objStart === -1) return sectionText;
+
+  const key = "children:[";
+  const ci = next.indexOf(key, objStart);
+  if (ci === -1) return sectionText;
+
+  const insertPos = ci + key.length;
+
+  next =
+    next.slice(0, insertPos) +
+    guard +
+    acceptButtonObject.text +
+    "," +
+    next.slice(insertPos);
+
+  // 3) Cleanup common artifacts
+  next = next.replace(/,\s*\]/g, "]");
+  next = next.replace(/\[\s*,/g, "["); // handles "[,X"
+  next = next.replace(/,\s*,/g, ","); // handles "X,,Y"
+
+  return next;
+}
+
+const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
+  const handlerName = extractOnClickHandler(acceptButton);
+  if (!handlerName) return sourceCode; // safely skip this patch
 
   // 2) Find where that handler starts: "Rt = async (...) => {"
   const handlerStartRegex = new RegExp(
@@ -151,7 +297,7 @@ function modifyGlobMedSourceCode(code) {
   }
 
   // 3) Take a window after the start of the handler (3.5k chars worked for you)
-  const WINDOW_SIZE = 3500;
+  const WINDOW_SIZE = 3600;
   const windowStart = startIndex;
   const windowEnd = Math.min(sourceCode.length, windowStart + WINDOW_SIZE);
   let segment = sourceCode.slice(windowStart, windowEnd);
@@ -190,6 +336,37 @@ function modifyGlobMedSourceCode(code) {
   sourceCode =
     sourceCode.slice(0, windowStart) + segment + sourceCode.slice(windowEnd);
 
+  return sourceCode;
+};
+
+function modifyGlobMedSourceCode(code) {
+  const _sourceCode = makeReferralDetailsApiPoll(code);
+
+  let sourceCode = cleanupTrailingCommaBeforeArrayClose(
+    insertRendererBeforePatientInfo(_sourceCode)
+  );
+
+  const section = findReactCallBoundsEnclosingText(
+    sourceCode,
+    "referral-button-container"
+  );
+  if (!section) return sourceCode;
+
+  let sectionText = section.text;
+
+  const accept = findAcceptElementBounds(sectionText);
+  if (!accept || !accept.text) return sourceCode;
+
+  sectionText = moveAcceptButtonToTopLevelChildren(sectionText, accept);
+
+  // Rebuild full code
+  sourceCode =
+    sourceCode.slice(0, section.start) +
+    sectionText +
+    sourceCode.slice(section.end);
+
+  sourceCode = addFilesFromLocalStorage(sourceCode, accept.text);
+
   // window.__PATCHED_BUNDLE__= true;
   return `console.log("<<< PATCHED BUNDLE LOADED >>>");${sourceCode}`;
 }
@@ -197,7 +374,8 @@ function modifyGlobMedSourceCode(code) {
 // const filePath = process.cwd() + "/original-gm-index.js";
 // const sourceCode = await readFile(filePath, "utf8");
 
+// const modifiedCode = modifyGlobMedSourceCode(sourceCode);
 // const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
-// await writeFile(mdsFilePath, modifyGlobMedSourceCode(sourceCode));
+// await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;
