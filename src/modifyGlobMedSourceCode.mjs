@@ -350,9 +350,11 @@ function modifyGlobMedSourceCode(code) {
     sourceCode,
     "referral-button-container"
   );
-  if (!section) return sourceCode;
+  if (!section || !section.text) return sourceCode;
 
   let sectionText = section.text;
+  console.log("sectionText", sectionText);
+  sectionText = sectionText.replace(/\brow-reverse\b/, "row");
 
   const accept = findAcceptElementBounds(sectionText);
   if (!accept || !accept.text) return sourceCode;
