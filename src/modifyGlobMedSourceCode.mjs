@@ -239,25 +239,49 @@ function removeSpanWithOptionalComma(src, start, end) {
   return src.slice(0, start) + src.slice(end);
 }
 
+function addOrderStyleAfterAcceptLabelCall(acceptText) {
+  // Match: children: <fn>("ACCEPT_REFERRAL")   OR children:<fn>('ACCEPT_REFERRAL')
+  // <fn> can be any identifier: s, t, n, _e, etc.
+  const re =
+    /children\s*:\s*[A-Za-z_$][\w$]*\s*\(\s*(['"])ACCEPT_REFERRAL\1\s*\)\s*,?/;
+
+  const m = acceptText.match(re);
+  if (!m) return acceptText; // pattern not found, don't change
+
+  // Insert *after* the matched children call.
+  // If the match already ended with a comma, we don't add an extra comma.
+  return acceptText.replace(re, (full) => {
+    const endsWithComma = /,\s*$/.test(full);
+    return endsWithComma
+      ? full + "style:{order:2},"
+      : full + ",style:{order:2},";
+  });
+}
+
 function moveAcceptButtonToTopLevelChildren(sectionText, acceptButtonObject) {
   const variableName = extractCanTakeActionVar(sectionText);
   if (!variableName) return sectionText;
 
-  const guard = `(!!${variableName}&&(${variableName}==null?void 0:${variableName}.status)==="P")&&`;
+  const guard =
+    `(!!${variableName}&&(` +
+    `${variableName}==null?void 0:${variableName}.status` +
+    `)==="P")&&`;
 
-  // 1) REMOVE original ACCEPT (and swallow adjacent comma)
+  // 1) Remove original ACCEPT (swallow adjacent comma safely)
   let next = removeSpanWithOptionalComma(
     sectionText,
     acceptButtonObject.start,
     acceptButtonObject.end
   );
 
-  // 2) INSERT copied ACCEPT at top-level children
-  const objStart = next.indexOf("{");
-  if (objStart === -1) return sectionText;
+  // 2) Create the copied ACCEPT with order style
+  const acceptWithOrder = addOrderStyleAfterAcceptLabelCall(
+    acceptButtonObject.text
+  );
 
+  // 3) Insert into top-level children array
   const key = "children:[";
-  const ci = next.indexOf(key, objStart);
+  const ci = next.indexOf(key);
   if (ci === -1) return sectionText;
 
   const insertPos = ci + key.length;
@@ -265,14 +289,14 @@ function moveAcceptButtonToTopLevelChildren(sectionText, acceptButtonObject) {
   next =
     next.slice(0, insertPos) +
     guard +
-    acceptButtonObject.text +
+    acceptWithOrder +
     "," +
     next.slice(insertPos);
 
-  // 3) Cleanup common artifacts
+  // 4) Cleanup common artifacts
   next = next.replace(/,\s*\]/g, "]");
-  next = next.replace(/\[\s*,/g, "["); // handles "[,X"
-  next = next.replace(/,\s*,/g, ","); // handles "X,,Y"
+  next = next.replace(/\[\s*,/g, "[");
+  next = next.replace(/,\s*,/g, ",");
 
   return next;
 }
@@ -353,7 +377,6 @@ function modifyGlobMedSourceCode(code) {
   if (!section || !section.text) return sourceCode;
 
   let sectionText = section.text;
-  sectionText = sectionText.replace(/\bflex-end\b/, "flex-end row-reverse");
 
   const accept = findAcceptElementBounds(sectionText);
   if (!accept || !accept.text) return sourceCode;
