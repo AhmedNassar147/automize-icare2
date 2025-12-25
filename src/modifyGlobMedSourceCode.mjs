@@ -4,6 +4,7 @@
  *
  */
 // import { readFile, writeFile } from "fs/promises";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 
 function findReferralRendererName(src, markerIdx) {
   const marker = "referral-button-container";
@@ -90,7 +91,7 @@ function cleanupTrailingCommaBeforeArrayClose(src) {
   return src.replace(/,\s*\]/g, "]");
 }
 
-function makeReferralDetailsApiPoll(sourceCode) {
+function makeReferralDetailsApiPoll(sourceCode, refetchType) {
   const anchor = '["referral-details"';
   const idx = sourceCode.indexOf(anchor);
   if (idx === -1) return sourceCode;
@@ -101,17 +102,19 @@ function makeReferralDetailsApiPoll(sourceCode) {
   const end = Math.min(sourceCode.length, start + WINDOW);
   let segment = sourceCode.slice(start, end);
 
-  // Find refetchOnWindowFocus: !1, (with or without spaces)
-  const focusRegex = /refetchOnWindowFocus\s*:\s*!1\s*,/;
+  // Match either !0 or !1
+  const focusRegex = /refetchOnWindowFocus\s*:\s*!\s*[01]\s*,/;
 
-  if (!focusRegex.test(segment)) {
-    // If the window is too small, increase WINDOW above.
-    return sourceCode;
+  if (!focusRegex.test(segment)) return sourceCode;
+
+  if (refetchType === "focus") {
+    // force focus refetch on
+    segment = segment.replace(focusRegex, (m) => m.replace(/!\s*[01]/, "!0"));
+  } else {
+    // Inject right after refetchOnWindowFocus: !1,
+    const pollInjection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=165+s.n*48;b=Math.min(b,460);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
+    segment = segment.replace(focusRegex, (m) => m + pollInjection);
   }
-
-  // Inject right after refetchOnWindowFocus: !1,
-  const injection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=100+s.n*50;b=Math.min(b,350);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
-  segment = segment.replace(focusRegex, (m) => m + injection);
 
   return sourceCode.slice(0, start) + segment + sourceCode.slice(end);
 }
@@ -363,8 +366,17 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   return sourceCode;
 };
 
+// REFETCH_TYPE = "poll" | "focus";
+
 function modifyGlobMedSourceCode(code) {
-  const _sourceCode = makeReferralDetailsApiPoll(code);
+  // const REFETCH_TYPE = "";
+  const { REFETCH_TYPE } = process.env;
+  let _sourceCode = code;
+
+  if (REFETCH_TYPE) {
+    createConsoleMessage(`📋 REFETCH_TYPE => ${REFETCH_TYPE}`, "info");
+    _sourceCode = makeReferralDetailsApiPoll(_sourceCode, REFETCH_TYPE);
+  }
 
   let sourceCode = cleanupTrailingCommaBeforeArrayClose(
     insertRendererBeforePatientInfo(_sourceCode)
@@ -381,13 +393,15 @@ function modifyGlobMedSourceCode(code) {
   const accept = findAcceptElementBounds(sectionText);
   if (!accept || !accept.text) return sourceCode;
 
-  sectionText = moveAcceptButtonToTopLevelChildren(sectionText, accept);
+  if (REFETCH_TYPE === "poll") {
+    sectionText = moveAcceptButtonToTopLevelChildren(sectionText, accept);
 
-  // Rebuild full code
-  sourceCode =
-    sourceCode.slice(0, section.start) +
-    sectionText +
-    sourceCode.slice(section.end);
+    // Rebuild full code
+    sourceCode =
+      sourceCode.slice(0, section.start) +
+      sectionText +
+      sourceCode.slice(section.end);
+  }
 
   sourceCode = addFilesFromLocalStorage(sourceCode, accept.text);
 
