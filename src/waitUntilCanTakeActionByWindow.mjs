@@ -36,7 +36,7 @@ async function waitUntilCanTakeActionByWindow({
 
         const now = ctx.currentTime;
         o.start(now);
-        o.stop(now + 0.06);
+        o.stop(now + 0.05);
       };
 
       document.body.appendChild(btn);
