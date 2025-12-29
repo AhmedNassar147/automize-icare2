@@ -37,6 +37,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
   currentPage,
   startingPageUrl,
   noCursor,
+  noBundleCheck,
 }) => {
   const userName = process.env.CLIENT_NAME;
   const password = process.env.CLIENT_PASSWORD;
@@ -149,8 +150,10 @@ const makeUserLoggedInOrOpenHomePage = async ({
         hasEnteredStartingPage || (await checkHomePageFullyLoaded(page));
 
       if (isHomeLoaded) {
-        createConsoleMessage(`✅ User ${userName} is in home page.`, "info");
-        await patchBundleFromPage(page);
+        if (!noBundleCheck) {
+          createConsoleMessage(`✅ User ${userName} is in home page.`, "info");
+          await patchBundleFromPage(page);
+        }
 
         return {
           newPage: page,

@@ -16,14 +16,24 @@ async function waitUntilCanTakeActionByWindow({
       btn.innerText = buttonId;
       btn.id = buttonId;
       btn.onclick = () => {
-        try {
-          speechSynthesis.cancel();
-          const u = new SpeechSynthesisUtterance("Accept Accept");
-          u.lang = "en-US";
-          u.rate = 1;
-          u.volume = 1;
-          speechSynthesis.speak(u);
-        } catch {}
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        ctx.resume?.();
+
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+
+        o.type = "sine";
+        o.frequency.value = 880;
+        g.gain.value = 0.3;
+
+        o.connect(g);
+        g.connect(ctx.destination);
+
+        const startAt = ctx.currentTime;
+        const duration = 0.2;
+
+        o.start(startAt);
+        o.stop(startAt + duration);
       };
       document.body.appendChild(btn);
 

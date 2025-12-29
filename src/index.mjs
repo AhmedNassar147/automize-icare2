@@ -367,13 +367,14 @@ const currentProfile = "Profile 1";
           },
         });
 
-        const remainingMs = referralEndTimestamp - Date.now();
-
-        const [page] = await makeUserLoggedInOrOpenHomePage({
+        const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
           browser,
           startingPageUrl: HOME_PAGE_URL,
           noCursor: true,
+          noBundleCheck: true,
         });
+
+        const remainingMs = referralEndTimestamp - Date.now();
 
         const { reason, elapsedMs, message, attempts } =
           await waitUntilCanTakeActionByWindow({
@@ -385,16 +386,10 @@ const currentProfile = "Profile 1";
         await closePageSafely(page);
 
         createConsoleMessage(
-          `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${
-            message || ""
-          }`,
+          `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message}`,
           "warn"
         );
-        if (remainingMs > 0) {
-          setTimeout(continueFetchingPatientsIfPaused, remainingMs);
-        } else {
-          continueFetchingPatientsIfPaused();
-        }
+        continueFetchingPatientsIfPaused();
       } catch (err) {
         createConsoleMessage(err, "error", "patientAccepted broadcast failed");
       }
