@@ -261,10 +261,11 @@ function addOrderStyleAfterAcceptLabelCall(acceptText) {
   });
 }
 
-function moveAcceptButtonToTopLevelChildren(sectionText, acceptButtonObject) {
-  const variableName = extractCanTakeActionVar(sectionText);
-  if (!variableName) return sectionText;
-
+function moveAcceptButtonToTopLevelChildren(
+  sectionText,
+  variableName,
+  acceptButtonObject
+) {
   const guard =
     `(!!${variableName}&&(` +
     `${variableName}==null?void 0:${variableName}.status` +
@@ -390,18 +391,37 @@ function modifyGlobMedSourceCode(code) {
 
   let sectionText = section.text;
 
-  const accept = findAcceptElementBounds(sectionText);
+  const variableName = extractCanTakeActionVar(sectionText);
+  if (!variableName) return sectionText;
+
+  let accept = findAcceptElementBounds(sectionText);
   if (!accept || !accept.text) return sourceCode;
 
-  if (REFETCH_TYPE === "poll") {
-    sectionText = moveAcceptButtonToTopLevelChildren(sectionText, accept);
+  if (!REFETCH_TYPE) {
+    const pattern = new RegExp(
+      `${variableName}\\s*&&\\s*\\(\\s*${variableName}\\s*==\\s*null\\s*\\?\\s*void\\s+0\\s*:\\s*${variableName}\\.status\\s*\\)\\s*===\\s*"P"`,
+      "g"
+    );
 
-    // Rebuild full code
-    sourceCode =
-      sourceCode.slice(0, section.start) +
-      sectionText +
-      sourceCode.slice(section.end);
+    sectionText = sectionText.replace(pattern, `${variableName}?.status==="P"`);
+    sectionText = sectionText.replace(`${variableName}.canTakeAction`, "!0");
+    sectionText = sectionText.replace(`${variableName}.canUpdate`, "!0");
+  } else if (REFETCH_TYPE === "poll") {
+    accept = findAcceptElementBounds(sectionText);
+
+    sectionText = moveAcceptButtonToTopLevelChildren(
+      sectionText,
+      variableName,
+      accept
+    );
   }
+
+  if (!accept || !accept.text) return sourceCode;
+
+  sourceCode =
+    sourceCode.slice(0, section.start) +
+    sectionText +
+    sourceCode.slice(section.end);
 
   sourceCode = addFilesFromLocalStorage(sourceCode, accept.text);
 
@@ -413,6 +433,7 @@ function modifyGlobMedSourceCode(code) {
 // const sourceCode = await readFile(filePath, "utf8");
 
 // const modifiedCode = modifyGlobMedSourceCode(sourceCode);
+// console.log("modifiedCode", modifiedCode);
 // const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
 // await writeFile(mdsFilePath, modifiedCode);
 
