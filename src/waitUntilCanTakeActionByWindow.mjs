@@ -15,7 +15,6 @@ async function waitUntilCanTakeActionByWindow({
         window.webkitAudioContext)();
 
       const btn = document.createElement("button");
-      btn.id = "alert___btn";
       btn.textContent = "alert";
       btn.onclick = async () => {
         const ctx = window.__beepCtx;
@@ -30,19 +29,20 @@ async function waitUntilCanTakeActionByWindow({
 
         o.type = "sine";
         o.frequency.value = 880;
-        g.gain.value = 0.3;
+        g.gain.value = 0.5;
 
         o.connect(g);
         g.connect(ctx.destination);
 
         const now = ctx.currentTime;
         o.start(now);
-        o.stop(now + 0.2);
+        o.stop(now + 0.06);
       };
 
       document.body.appendChild(btn);
 
       if (!Number.isFinite(remainingMs) || remainingMs <= 0) {
+        btn.click();
         return {
           isOk: true,
           reason: `invalid remainingMs=${remainingMs}`,
@@ -96,6 +96,8 @@ async function waitUntilCanTakeActionByWindow({
         const result = await fetchDetailsOnce();
 
         if (result.ok) {
+          btn.click();
+
           return {
             isOk: true,
             reason: "ready",

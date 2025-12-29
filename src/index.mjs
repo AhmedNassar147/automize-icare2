@@ -384,7 +384,7 @@ const currentProfile = "Profile 1";
             remainingMs,
           });
 
-        await sleep(10_000);
+        await sleep(12_000);
         await closePageSafely(page);
 
         createConsoleMessage(
