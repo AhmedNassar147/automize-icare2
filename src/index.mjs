@@ -384,8 +384,7 @@ const currentProfile = "Profile 1";
             remainingMs,
           });
 
-        await page.click("#alert___btn");
-        await sleep(8_000);
+        await sleep(10_000);
         await closePageSafely(page);
 
         createConsoleMessage(
