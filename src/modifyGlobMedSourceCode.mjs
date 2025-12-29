@@ -391,32 +391,17 @@ function modifyGlobMedSourceCode(code) {
 
   let sectionText = section.text;
 
-  const variableName = extractCanTakeActionVar(sectionText);
-  if (!variableName) return sectionText;
-
   let accept = findAcceptElementBounds(sectionText);
   if (!accept || !accept.text) return sourceCode;
 
-  if (!REFETCH_TYPE) {
-    const pattern = new RegExp(
-      `${variableName}\\s*&&\\s*\\(\\s*${variableName}\\s*==\\s*null\\s*\\?\\s*void\\s+0\\s*:\\s*${variableName}\\.status\\s*\\)\\s*===\\s*"P"`,
-      "g"
-    );
+  const variableName = extractCanTakeActionVar(sectionText);
+  if (!variableName) return sourceCode;
 
-    sectionText = sectionText.replace(pattern, `!0`);
-    sectionText = sectionText.replace(`${variableName}.canTakeAction`, "!0");
-    sectionText = sectionText.replace(`${variableName}.canUpdate`, "!0");
-  } else if (REFETCH_TYPE === "poll") {
-    accept = findAcceptElementBounds(sectionText);
-
-    sectionText = moveAcceptButtonToTopLevelChildren(
-      sectionText,
-      variableName,
-      accept
-    );
-  }
-
-  if (!accept || !accept.text) return sourceCode;
+  sectionText = moveAcceptButtonToTopLevelChildren(
+    sectionText,
+    variableName,
+    accept
+  );
 
   sourceCode =
     sourceCode.slice(0, section.start) +

@@ -33,7 +33,7 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
-// import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 
 import {
   waitingPatientsFolderDirectory,
@@ -45,12 +45,12 @@ import {
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
-  // HOME_PAGE_URL,
+  HOME_PAGE_URL,
 } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
-// import closePageSafely from "./closePageSafely.mjs";
-// import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
+import closePageSafely from "./closePageSafely.mjs";
+import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -367,30 +367,27 @@ const currentProfile = "Profile 1";
           },
         });
 
-        // const [page] = await makeUserLoggedInOrOpenHomePage({
-        //   browser,
-        //   startingPageUrl: HOME_PAGE_URL,
-        //   noCursor: true,
-        // });
-
-        // const { reason, elapsedMs } = await waitUntilCanTakeActionByWindow({
-        //   page,
-        //   referralId,
-        //   remainingMs,
-        // });
-
-        // const messageStartTime = Date.now();
-        // await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-        //   message: `*Accept ${referralId}*`,
-        // });
-        // const messageTime = Date.now() - messageStartTime;
-
-        // await closePageSafely(page);
-
         const remainingMs = referralEndTimestamp - Date.now();
 
+        const [page] = await makeUserLoggedInOrOpenHomePage({
+          browser,
+          startingPageUrl: HOME_PAGE_URL,
+          noCursor: true,
+        });
+
+        const { reason, elapsedMs, message, attempts } =
+          await waitUntilCanTakeActionByWindow({
+            page,
+            referralId,
+            remainingMs,
+          });
+
+        await closePageSafely(page);
+
         createConsoleMessage(
-          `✅ Patient=${referralId} remainingMs=${remainingMs}`,
+          `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${
+            message || ""
+          }`,
           "warn"
         );
         if (remainingMs > 0) {
