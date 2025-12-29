@@ -51,6 +51,7 @@ import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
+import sleep from "./sleep.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -383,6 +384,8 @@ const currentProfile = "Profile 1";
             remainingMs,
           });
 
+        await page.click("#alert___btn");
+        await sleep(8_000);
         await closePageSafely(page);
 
         createConsoleMessage(
