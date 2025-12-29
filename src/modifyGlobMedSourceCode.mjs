@@ -403,7 +403,7 @@ function modifyGlobMedSourceCode(code) {
       "g"
     );
 
-    sectionText = sectionText.replace(pattern, `${variableName}?.status==="P"`);
+    sectionText = sectionText.replace(pattern, `!0`);
     sectionText = sectionText.replace(`${variableName}.canTakeAction`, "!0");
     sectionText = sectionText.replace(`${variableName}.canUpdate`, "!0");
   } else if (REFETCH_TYPE === "poll") {
