@@ -7,64 +7,9 @@ async function waitUntilCanTakeActionByWindow({
   page,
   referralId,
   remainingMs,
-  reqTimeoutMs = 600,
-  minTimeoutMs = 120,
-  rttPadMs = 60,
 }) {
   return await page.evaluate(
-    async ({
-      globMedHeaders,
-      referralId,
-      remainingMs,
-      reqTimeoutMs,
-      minTimeoutMs,
-      rttPadMs,
-    }) => {
-      async function fetchDetailsOnce(id, timeoutMs) {
-        const ctrl = new AbortController();
-        const t0 = performance.now();
-        const timer = setTimeout(() => ctrl.abort(), Math.max(20, timeoutMs));
-        try {
-          const r = await fetch(`/referrals/details?_=${Date.now()}`, {
-            method: "POST",
-            headers: {
-              ...globMedHeaders,
-              "Cache-Control": "no-store",
-              Pragma: "no-cache",
-            },
-            body: JSON.stringify({ idReferral: id }),
-            cache: "no-store",
-            credentials: "include",
-            signal: ctrl.signal,
-          });
-          const rtt = performance.now() - t0;
-          if (!r.ok) return { ok: false, rtt, reason: `HTTP ${r.status}` };
-
-          const j = await r.json().catch(() => null);
-          const { message, canTakeAction, canUpdate, status } = j?.data ?? {};
-          let ok = !!(canTakeAction && canUpdate && status === "P");
-
-          return {
-            ok,
-            rtt,
-            reason: ok ? "ready" : "not-ready",
-            message,
-          };
-        } catch (e) {
-          const rtt = performance.now() - t0;
-          const isAbort = e?.name === "AbortError";
-          return {
-            ok: false,
-            rtt,
-            reason: isAbort ? "timeout" : e?.name || "err",
-          };
-        } finally {
-          clearTimeout(timer);
-        }
-      }
-
-      const tStart = performance.now();
-
+    async ({ globMedHeaders, referralId, remainingMs }) => {
       if (!Number.isFinite(remainingMs) || remainingMs <= 0) {
         return {
           isOk: true,
@@ -74,41 +19,62 @@ async function waitUntilCanTakeActionByWindow({
         };
       }
 
+      async function fetchDetailsOnce() {
+        try {
+          const r = await fetch(`/referrals/details?_=${Date.now()}`, {
+            method: "POST",
+            headers: {
+              ...globMedHeaders,
+              "Cache-Control": "no-store",
+              Pragma: "no-cache",
+            },
+            body: JSON.stringify({ idReferral: referralId }),
+            cache: "no-store",
+            credentials: "include",
+          });
+
+          if (!r.ok) return { ok: false, reason: `HTTP ${r.status}` };
+
+          const j = await r.json().catch(() => null);
+          const { canTakeAction, canUpdate, status, message } = j?.data ?? {};
+
+          const ok = !!(canTakeAction && canUpdate && status === "P");
+
+          return {
+            ok,
+            reason: ok ? "ready" : "not-ready",
+            message: message || null,
+          };
+        } catch (e) {
+          return {
+            ok: false,
+            reason: e?.name || "err in catch",
+          };
+        }
+      }
+
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      const tStart = performance.now();
       let attempts = 0;
 
-      // EMA seed
-      const seedRtt = (navigator.connection?.rtt ?? 0) | 0;
-      let emaRtt =
-        seedRtt > 0
-          ? Math.min(Math.max(minTimeoutMs, seedRtt), reqTimeoutMs)
-          : Math.max(minTimeoutMs, 280);
-
-      const ALPHA = 0.35;
-
       while (true) {
-        const expected = Math.max(
-          minTimeoutMs,
-          Math.min(reqTimeoutMs, Math.round(emaRtt + rttPadMs))
-        );
         attempts++;
 
-        const { ok, reason, message, rtt } = await fetchDetailsOnce(
-          referralId,
-          expected
-        );
+        const result = await fetchDetailsOnce();
 
-        if (ok) {
+        if (result.ok) {
           return {
             isOk: true,
-            reason: `ready (${reason}) attempts=${attempts}`,
-            message,
+            reason: "ready",
+            message: result.message,
             elapsedMs: Math.round(performance.now() - tStart),
+            attempts,
           };
         }
 
-        if (rtt) {
-          const clamped = Math.min(Math.max(rtt, minTimeoutMs), reqTimeoutMs);
-          emaRtt = ALPHA * clamped + (1 - ALPHA) * emaRtt;
+        if (attempts % 6 === 0) {
+          await sleep(7);
         }
       }
     },
@@ -116,9 +82,6 @@ async function waitUntilCanTakeActionByWindow({
       globMedHeaders,
       referralId,
       remainingMs,
-      reqTimeoutMs,
-      minTimeoutMs,
-      rttPadMs,
     }
   );
 }

@@ -3,12 +3,12 @@
  * Helper: `modifyGlobMedSourceCode`.
  *
  */
-// import { readFile, writeFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 
-function findReferralRendererName(src, markerIdx) {
-  const marker = "referral-button-container";
+const referralButtonMarker = "referral-button-container";
 
+function findReferralRendererName(src, markerIdx) {
   const re =
     /(^|[^\w$])([A-Za-z_$][\w$]*)\s*=\s*\(\s*\)\s*=>\s*p\.jsx?s?\s*\(/gm;
 
@@ -22,7 +22,7 @@ function findReferralRendererName(src, markerIdx) {
 
     // Check a forward window from this renderer start includes the marker
     const snippet = src.slice(start, Math.min(src.length, start + 20000));
-    if (!snippet.includes(marker)) continue;
+    if (!snippet.includes(referralButtonMarker)) continue;
 
     // pick the closest one before marker
     if (start > bestStart) {
@@ -59,13 +59,143 @@ function findEnclosingReactCallStart(src, anchorIdx) {
   return backStart + rel;
 }
 
+const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
+  const handlerName = extractOnClickHandler(acceptButton);
+  if (!handlerName) return { sourceCode }; // safely skip this patch
+
+  // 2) Find where that handler starts: "Rt = async (...) => {"
+  const handlerStartRegex = new RegExp(
+    handlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{"
+  );
+  const startMatch = sourceCode.match(handlerStartRegex);
+
+  if (!startMatch) {
+    return { sourceCode };
+  }
+
+  const startIndex = startMatch.index;
+  if (startIndex == null || startIndex < 0) {
+    return { sourceCode };
+  }
+
+  // 3) Take a window after the start of the handler (3.5k chars worked for you)
+  const WINDOW_SIZE = 3600;
+  const windowStart = startIndex;
+  const windowEnd = Math.min(sourceCode.length, windowStart + WINDOW_SIZE);
+  let segment = sourceCode.slice(windowStart, windowEnd);
+
+  // 4) Inside that segment, find which variable is assigned to `files:`
+  const filesVarRegex = /files:\s*([A-Za-z_$][\w$]*)/;
+  const filesMatch = segment.match(filesVarRegex);
+
+  if (!filesMatch) {
+    // No `files: <var>` in this slice – bail out
+    return { sourceCode };
+  }
+
+  const filesVarName = filesMatch[1]; // e.g. "Ot"
+
+  // 5) Build a regex that finds `<filesVarName> = await Promise.all(...)`
+  //    We capture the Promise.all(...) part as group 1 so we can reuse it.
+  const promiseRegex = new RegExp(
+    filesVarName + "\\s*=\\s*await\\s*(Promise\\.all\\([\\s\\S]*?\\));"
+  );
+
+  if (!promiseRegex.test(segment)) {
+    // No `<filesVarName> = await Promise.all(...)` in this slice – bail out
+    return { sourceCode };
+  }
+
+  // 6) Replace with: <var> = JSON.parse(...) || await Promise.all(...)
+  segment = segment.replace(
+    promiseRegex,
+    filesVarName +
+      '=JSON.parse(localStorage.getItem("GM__FILS")||"null")||' +
+      "(await $1);"
+  );
+
+  // 7) Rebuild the sourceCode with the patched segment
+  sourceCode =
+    sourceCode.slice(0, windowStart) + segment + sourceCode.slice(windowEnd);
+
+  return {
+    sourceCode,
+    segment,
+  };
+};
+
+const getSnakbarVariables = (handlerSegment) => {
+  const anchorRe =
+    /([A-Za-z_$][\w$]*)\s*\(\s*([A-Za-z_$][\w$]*)\s*\(\s*\{\s*message\s*:\s*[^,}]+,\s*type\s*:\s*(['"])error\3[^}]*\}\s*\)\s*\)\s*;?/;
+
+  // l(Qr({ message: Qe.message, type: "error" }));
+  const m = handlerSegment.match(anchorRe);
+  if (!m) return {};
+  const dispatchName = m[1];
+  const actionName = m[2];
+
+  return {
+    dispatchName,
+    actionName,
+  };
+};
+
 function insertRendererBeforePatientInfo(src) {
-  const marker = "referral-button-container";
-  const markerIdx = src.indexOf(marker);
-  if (markerIdx === -1) return src;
+  const section = findReactCallBoundsEnclosingText(src, referralButtonMarker);
+  if (!section || !section.text)
+    return { src, patched: false, reason: "didn't find section" };
+
+  let sectionText = section.text;
+
+  const variableName = extractCanTakeActionVar(sectionText);
+  if (!variableName)
+    return { src, patched: false, reason: "didn't find variableName" };
+
+  const pattern = new RegExp(
+    `${variableName}\\s*&&\\s*\\(\\s*${variableName}\\s*==\\s*null\\s*\\?\\s*void\\s+0\\s*:\\s*${variableName}\\.status\\s*\\)\\s*===\\s*"P"`,
+    "g"
+  );
+
+  sectionText = sectionText.replace(pattern, `!0`);
+  sectionText = sectionText.replace(`${variableName}.canTakeAction`, "!0");
+  sectionText = sectionText.replace(`${variableName}.canUpdate`, "!0");
+
+  let accept = findAcceptElementBounds(sectionText);
+  if (!accept || !accept.text) {
+    return { src, patched: false, reason: "didn't find accept button" };
+  }
+
+  src = src.slice(0, section.start) + sectionText + src.slice(section.end);
+
+  const { sourceCode, segment: handlerSegment } = addFilesFromLocalStorage(
+    src,
+    accept.text
+  );
+
+  const { actionName, dispatchName } = getSnakbarVariables(handlerSegment);
+
+  if (!actionName || !dispatchName) {
+    return {
+      src,
+      patched: false,
+      reason: "didn't find snakbar actionName or dispatchName",
+    };
+  }
+
+  src = sourceCode;
+
+  const markerIdx = src.indexOf(referralButtonMarker);
+  if (markerIdx === -1)
+    return {
+      src,
+      patched: false,
+      reason: "didn't find markerIdx",
+    };
 
   const rendererName = findReferralRendererName(src, markerIdx);
-  if (!rendererName) return src;
+  if (!rendererName) {
+    return { src, patched: false, reason: "didn't find rendererName" };
+  }
 
   const winStart = Math.max(0, markerIdx - 80);
   const winEnd = Math.min(src.length, markerIdx + 30_000);
@@ -73,18 +203,69 @@ function insertRendererBeforePatientInfo(src) {
   let win = src.slice(winStart, winEnd);
 
   const anchorIdx = win.indexOf(".VIEW_PATIENT_INFORMATION");
-  if (anchorIdx === -1) return src;
+  if (anchorIdx === -1)
+    return {
+      src,
+      patched: false,
+      reason: "didn't find VIEW_PATIENT_INFORMATION",
+    };
 
   // Remove existing invocation(s) inside this window so we don’t duplicate
   win = removeAllRendererInvocations(win, rendererName);
 
   const callStart = findEnclosingReactCallStart(win, anchorIdx);
-  if (callStart === -1) return src;
+  if (callStart === -1)
+    return {
+      src,
+      patched: false,
+      reason: "didn't find callStart",
+    };
+
+  const fireSnakbarLiteral = (msg, type = "error") =>
+    `${dispatchName}(${actionName}({message:${JSON.stringify(
+      msg
+    )},type:${JSON.stringify(type)}}))`;
+
+  const WS_INJECT = `(()=>{try{
+const CFG={u:"wss://localhost:8443/",rs:600,rm:1e4,ka:25e3,g:2};
+const K="__GM_WS__",st=window[K]||(window[K]={});
+if(st.ws&&(st.ws.readyState===0||st.ws.readyState===1))return null;
+const log=(...a)=>console.log("[dash-ws]",...a),err=(...a)=>console.error("[dash-ws]",...a);
+const clearTimers=()=>{try{st.t&&clearTimeout(st.t)}catch{}st.t=null;try{st.k&&clearInterval(st.k)}catch{}st.k=null};
+const closeAll=()=>{try{st.ws&&st.ws.close()}catch{}st.ws=null};
+const sched=ms=>{clearTimers();st.t=setTimeout(conn,ms)};
+const backoff=()=>{st.d=st.d?Math.min((st.d*1.6)|0,CFG.rm):CFG.rs;return st.d};
+const onMsg=ev=>{let m;try{m=JSON.parse(typeof ev.data==="string"?ev.data:"")}catch{return}
+if(!m||typeof m!=="object")return;
+if(m.type==="accept-action"){try{${fireSnakbarLiteral(
+    "Accept",
+    "success"
+  )}}catch(e){try{${dispatchName}(${actionName}({message:String((e&&e.message)||e),type:"error"}))}catch{}}}};
+const conn=()=>{try{
+clearTimers();closeAll();
+const ws=new WebSocket(CFG.u);st.ws=ws;
+ws.addEventListener("open",()=>{st.d=0;log("open");
+st.k=setInterval(()=>{try{ws.readyState===1&&ws.send('{"type":"ping"}')}catch{}},CFG.ka)});
+ws.addEventListener("message",onMsg);
+ws.addEventListener("close",()=>{log("close");sched(backoff())});
+ws.addEventListener("error",()=>{closeAll();sched(backoff())});
+}catch(e){try{${dispatchName}(${actionName}({message:"conn err =>"+String((e&&e.message)||e),type:"error"}))}catch{}sched(backoff())}};
+clearTimers();conn();return null;
+}catch(e){try{${dispatchName}(${actionName}({message:"init failed =>"+String((e&&e.message)||e),type:"error"}))}catch{}return null}})(),`;
+
+  // console.log("win.slice(0, callStart)", win.slice(0, callStart));
 
   // Insert as an array item before the patient-info element
-  win = win.slice(0, callStart) + `${rendererName}(),` + win.slice(callStart);
+  win =
+    win.slice(0, callStart) +
+    WS_INJECT +
+    `${rendererName}(),` +
+    win.slice(callStart);
 
-  return src.slice(0, winStart) + win + src.slice(winEnd);
+  return {
+    src: src.slice(0, winStart) + win + src.slice(winEnd),
+    patched: true,
+  };
 }
 
 function cleanupTrailingCommaBeforeArrayClose(src) {
@@ -261,112 +442,6 @@ function addOrderStyleAfterAcceptLabelCall(acceptText) {
   });
 }
 
-function moveAcceptButtonToTopLevelChildren(
-  sectionText,
-  variableName,
-  acceptButtonObject
-) {
-  const guard =
-    `(!!${variableName}&&(` +
-    `${variableName}==null?void 0:${variableName}.status` +
-    `)==="P")&&`;
-
-  // 1) Remove original ACCEPT (swallow adjacent comma safely)
-  let next = removeSpanWithOptionalComma(
-    sectionText,
-    acceptButtonObject.start,
-    acceptButtonObject.end
-  );
-
-  // 2) Create the copied ACCEPT with order style
-  const acceptWithOrder = addOrderStyleAfterAcceptLabelCall(
-    acceptButtonObject.text
-  );
-
-  // 3) Insert into top-level children array
-  const key = "children:[";
-  const ci = next.indexOf(key);
-  if (ci === -1) return sectionText;
-
-  const insertPos = ci + key.length;
-
-  next =
-    next.slice(0, insertPos) +
-    guard +
-    acceptWithOrder +
-    "," +
-    next.slice(insertPos);
-
-  // 4) Cleanup common artifacts
-  next = next.replace(/,\s*\]/g, "]");
-  next = next.replace(/\[\s*,/g, "[");
-  next = next.replace(/,\s*,/g, ",");
-
-  return next;
-}
-
-const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
-  const handlerName = extractOnClickHandler(acceptButton);
-  if (!handlerName) return sourceCode; // safely skip this patch
-
-  // 2) Find where that handler starts: "Rt = async (...) => {"
-  const handlerStartRegex = new RegExp(
-    handlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{"
-  );
-  const startMatch = sourceCode.match(handlerStartRegex);
-
-  if (!startMatch) {
-    return sourceCode;
-  }
-
-  const startIndex = startMatch.index;
-  if (startIndex == null || startIndex < 0) {
-    return sourceCode;
-  }
-
-  // 3) Take a window after the start of the handler (3.5k chars worked for you)
-  const WINDOW_SIZE = 3600;
-  const windowStart = startIndex;
-  const windowEnd = Math.min(sourceCode.length, windowStart + WINDOW_SIZE);
-  let segment = sourceCode.slice(windowStart, windowEnd);
-
-  // 4) Inside that segment, find which variable is assigned to `files:`
-  const filesVarRegex = /files:\s*([A-Za-z_$][\w$]*)/;
-  const filesMatch = segment.match(filesVarRegex);
-
-  if (!filesMatch) {
-    // No `files: <var>` in this slice – bail out
-    return sourceCode;
-  }
-
-  const filesVarName = filesMatch[1]; // e.g. "Ot"
-
-  // 5) Build a regex that finds `<filesVarName> = await Promise.all(...)`
-  //    We capture the Promise.all(...) part as group 1 so we can reuse it.
-  const promiseRegex = new RegExp(
-    filesVarName + "\\s*=\\s*await\\s*(Promise\\.all\\([\\s\\S]*?\\));"
-  );
-
-  if (!promiseRegex.test(segment)) {
-    // No `<filesVarName> = await Promise.all(...)` in this slice – bail out
-    return sourceCode;
-  }
-
-  // 6) Replace with: <var> = JSON.parse(...) || await Promise.all(...)
-  segment = segment.replace(
-    promiseRegex,
-    filesVarName +
-      '=JSON.parse(localStorage.getItem("GM__FILS")||"null")||' +
-      "(await $1);"
-  );
-
-  // 7) Rebuild the sourceCode with the patched segment
-  sourceCode =
-    sourceCode.slice(0, windowStart) + segment + sourceCode.slice(windowEnd);
-
-  return sourceCode;
-};
-
 // REFETCH_TYPE = "poll" | "focus";
 
 function modifyGlobMedSourceCode(code) {
@@ -379,62 +454,77 @@ function modifyGlobMedSourceCode(code) {
     _sourceCode = makeReferralDetailsApiPoll(_sourceCode, REFETCH_TYPE);
   }
 
-  let sourceCode = cleanupTrailingCommaBeforeArrayClose(
-    insertRendererBeforePatientInfo(_sourceCode)
-  );
+  const { src, patched, reason } = insertRendererBeforePatientInfo(_sourceCode);
+  const sourceCode = cleanupTrailingCommaBeforeArrayClose(src);
 
-  const section = findReactCallBoundsEnclosingText(
-    sourceCode,
-    "referral-button-container"
-  );
-  if (!section || !section.text) return sourceCode;
-
-  let sectionText = section.text;
-
-  const variableName = extractCanTakeActionVar(sectionText);
-  if (!variableName) return sectionText;
-
-  let accept = findAcceptElementBounds(sectionText);
-  if (!accept || !accept.text) return sourceCode;
-
-  if (!REFETCH_TYPE) {
-    const pattern = new RegExp(
-      `${variableName}\\s*&&\\s*\\(\\s*${variableName}\\s*==\\s*null\\s*\\?\\s*void\\s+0\\s*:\\s*${variableName}\\.status\\s*\\)\\s*===\\s*"P"`,
-      "g"
-    );
-
-    sectionText = sectionText.replace(pattern, `!0`);
-    sectionText = sectionText.replace(`${variableName}.canTakeAction`, "!0");
-    sectionText = sectionText.replace(`${variableName}.canUpdate`, "!0");
-  } else if (REFETCH_TYPE === "poll") {
-    accept = findAcceptElementBounds(sectionText);
-
-    sectionText = moveAcceptButtonToTopLevelChildren(
-      sectionText,
-      variableName,
-      accept
-    );
+  if (patched) {
+    // window.__PATCHED_BUNDLE__= true;
+    return `console.log("<<< PATCHED BUNDLE LOADED >>>");${sourceCode}`;
   }
 
-  if (!accept || !accept.text) return sourceCode;
-
-  sourceCode =
-    sourceCode.slice(0, section.start) +
-    sectionText +
-    sourceCode.slice(section.end);
-
-  sourceCode = addFilesFromLocalStorage(sourceCode, accept.text);
-
-  // window.__PATCHED_BUNDLE__= true;
-  return `console.log("<<< PATCHED BUNDLE LOADED >>>");${sourceCode}`;
+  return `console.log("XXXXX NOT PATCHED => ${reason} XXXXX");${sourceCode}`;
 }
 
-// const filePath = process.cwd() + "/original-gm-index.js";
-// const sourceCode = await readFile(filePath, "utf8");
+const filePath = process.cwd() + "/original-gm-index.js";
+const sourceCode = await readFile(filePath, "utf8");
 
-// const modifiedCode = modifyGlobMedSourceCode(sourceCode);
+const modifiedCode = modifyGlobMedSourceCode(sourceCode);
 // console.log("modifiedCode", modifiedCode);
-// const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
-// await writeFile(mdsFilePath, modifiedCode);
+const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
+await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;
+
+// function moveAcceptButtonToTopLevelChildren(
+//   sectionText,
+//   variableName,
+//   acceptButtonObject
+// ) {
+//   const guard =
+//     `(!!${variableName}&&(` +
+//     `${variableName}==null?void 0:${variableName}.status` +
+//     `)==="P")&&`;
+
+//   // 1) Remove original ACCEPT (swallow adjacent comma safely)
+//   let next = removeSpanWithOptionalComma(
+//     sectionText,
+//     acceptButtonObject.start,
+//     acceptButtonObject.end
+//   );
+
+//   // 2) Create the copied ACCEPT with order style
+//   const acceptWithOrder = addOrderStyleAfterAcceptLabelCall(
+//     acceptButtonObject.text
+//   );
+
+//   // 3) Insert into top-level children array
+//   const key = "children:[";
+//   const ci = next.indexOf(key);
+//   if (ci === -1) return sectionText;
+
+//   const insertPos = ci + key.length;
+
+//   next =
+//     next.slice(0, insertPos) +
+//     guard +
+//     acceptWithOrder +
+//     "," +
+//     next.slice(insertPos);
+
+//   // 4) Cleanup common artifacts
+//   next = next.replace(/,\s*\]/g, "]");
+//   next = next.replace(/\[\s*,/g, "[");
+//   next = next.replace(/,\s*,/g, ",");
+
+//   return next;
+// }
+
+//  else if (REFETCH_TYPE === "poll") {
+//   accept = findAcceptElementBounds(sectionText);
+
+//   sectionText = moveAcceptButtonToTopLevelChildren(
+//     sectionText,
+//     variableName,
+//     accept
+//   );
+// }
