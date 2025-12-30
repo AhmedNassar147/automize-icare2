@@ -3,7 +3,7 @@
  * Helper: `modifyGlobMedSourceCode`.
  *
  */
-import { readFile, writeFile } from "fs/promises";
+// import { readFile, writeFile } from "fs/promises";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const referralButtonMarker = "referral-button-container";
@@ -465,13 +465,13 @@ function modifyGlobMedSourceCode(code) {
   return `console.log("XXXXX NOT PATCHED => ${reason} XXXXX");${sourceCode}`;
 }
 
-const filePath = process.cwd() + "/original-gm-index.js";
-const sourceCode = await readFile(filePath, "utf8");
+// const filePath = process.cwd() + "/original-gm-index.js";
+// const sourceCode = await readFile(filePath, "utf8");
 
-const modifiedCode = modifyGlobMedSourceCode(sourceCode);
-// console.log("modifiedCode", modifiedCode);
-const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
-await writeFile(mdsFilePath, modifiedCode);
+// const modifiedCode = modifyGlobMedSourceCode(sourceCode);
+// // console.log("modifiedCode", modifiedCode);
+// const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
+// await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;
 
