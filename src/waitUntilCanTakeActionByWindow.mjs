@@ -10,39 +10,7 @@ async function waitUntilCanTakeActionByWindow({
 }) {
   return await page.evaluate(
     async ({ globMedHeaders, referralId, remainingMs }) => {
-      // Create a single AudioContext and reuse it
-      window.__beepCtx = new (window.AudioContext ||
-        window.webkitAudioContext)();
-
-      const btn = document.createElement("button");
-      btn.textContent = "alert";
-      btn.onclick = async () => {
-        const ctx = window.__beepCtx;
-
-        // Must be resumed inside a user gesture (this click is trusted if Puppeteer clicks)
-        if (ctx.state !== "running") {
-          await ctx.resume();
-        }
-
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-
-        o.type = "sine";
-        o.frequency.value = 880;
-        g.gain.value = 0.5;
-
-        o.connect(g);
-        g.connect(ctx.destination);
-
-        const now = ctx.currentTime;
-        o.start(now);
-        o.stop(now + 0.05);
-      };
-
-      document.body.appendChild(btn);
-
       if (!Number.isFinite(remainingMs) || remainingMs <= 0) {
-        btn.click();
         return {
           isOk: true,
           reason: `invalid remainingMs=${remainingMs}`,
@@ -96,8 +64,6 @@ async function waitUntilCanTakeActionByWindow({
         const result = await fetchDetailsOnce();
 
         if (result.ok) {
-          btn.click();
-
           return {
             isOk: true,
             reason: "ready",
@@ -107,8 +73,8 @@ async function waitUntilCanTakeActionByWindow({
           };
         }
 
-        if (attempts % 7 === 0) {
-          await sleep(1);
+        if (attempts % 6 === 0) {
+          await sleep(7);
         }
       }
     },

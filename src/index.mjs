@@ -51,6 +51,7 @@ import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
+import { createBeeper, makeSinePcm16 } from "./beeper.mjs";
 import sleep from "./sleep.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
@@ -162,6 +163,8 @@ const currentProfile = "Profile 1";
 
     // Launch browser with a fixed profile
     const profilePath = `${USER_PROFILE_PATH}/${currentProfile}`;
+
+    const PCM = makeSinePcm16();
 
     browser = await puppeteer.launch({
       headless: false,
@@ -375,6 +378,8 @@ const currentProfile = "Profile 1";
           noBundleCheck: true,
         });
 
+        const beeper = createBeeper(PCM);
+
         const remainingMs = referralEndTimestamp - Date.now();
 
         const { reason, elapsedMs, message, attempts } =
@@ -384,8 +389,10 @@ const currentProfile = "Profile 1";
             remainingMs,
           });
 
-        await sleep(12_000);
+        beeper.beep();
         await closePageSafely(page);
+        await sleep(500);
+        beeper.close();
 
         createConsoleMessage(
           `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message}`,
