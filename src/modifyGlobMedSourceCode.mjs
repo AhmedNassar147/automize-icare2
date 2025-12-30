@@ -238,7 +238,7 @@ const backoff=()=>{st.d=st.d?Math.min((st.d*1.6)|0,CFG.rm):CFG.rs;return st.d};
 const onMsg=ev=>{let m;try{m=JSON.parse(typeof ev.data==="string"?ev.data:"")}catch{return}
 if(!m||typeof m!=="object")return;
 if(m.type==="accept-action"){try{${fireSnakbarLiteral(
-    "Accept",
+    "Accept Referral Case",
     "success"
   )}}catch(e){try{${dispatchName}(${actionName}({message:String((e&&e.message)||e),type:"error"}))}catch{}}}};
 const conn=()=>{try{
@@ -252,8 +252,6 @@ ws.addEventListener("error",()=>{closeAll();sched(backoff())});
 }catch(e){try{${dispatchName}(${actionName}({message:"conn err =>"+String((e&&e.message)||e),type:"error"}))}catch{}sched(backoff())}};
 clearTimers();conn();return null;
 }catch(e){try{${dispatchName}(${actionName}({message:"init failed =>"+String((e&&e.message)||e),type:"error"}))}catch{}return null}})(),`;
-
-  // console.log("win.slice(0, callStart)", win.slice(0, callStart));
 
   // Insert as an array item before the patient-info element
   win =
