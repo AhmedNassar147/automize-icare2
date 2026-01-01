@@ -256,7 +256,7 @@ clearTimers();conn();return null;
   // Insert as an array item before the patient-info element
   win =
     win.slice(0, callStart) +
-    WS_INJECT +
+    // WS_INJECT +
     `${rendererName}(),` +
     win.slice(callStart);
 
