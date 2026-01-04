@@ -33,6 +33,7 @@ import sendMessageUsingWhatsapp, {
 } from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
+import processCollectReferralWeeklySummary from "./processCollectReferralWeeklySummary.mjs";
 // import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 
 import {
@@ -86,6 +87,7 @@ const currentProfile = "Profile 1";
     HOST,
     PORT,
     CLIENT_NAME,
+    WEEKLY_REPORT_GENERATED_AT,
   } = process.env;
 
   let server;
@@ -238,6 +240,28 @@ const currentProfile = "Profile 1";
             err.message || err,
             "error",
             "[CRON] Summary job Failure"
+          );
+        }
+      },
+      { timezone: "Asia/Riyadh" }
+    );
+
+    // Summary cron
+    cron.schedule(
+      WEEKLY_REPORT_GENERATED_AT,
+      async () => {
+        createConsoleMessage("✅ Starting weekly report job", "info");
+        try {
+          await processCollectReferralWeeklySummary(
+            browser,
+            sendWhatsappMessage
+          );
+          createConsoleMessage("✅ weekly report job done.", "info");
+        } catch (err) {
+          createConsoleMessage(
+            err.message || err,
+            "error",
+            "weekly report job Failure"
           );
         }
       },

@@ -10,6 +10,7 @@ import checkPathExists from "./checkPathExists.mjs";
 import writePatientData from "./writePatientData.mjs";
 import unlinkAllFastGlob from "./unlinkAllFastGlob.mjs";
 import waitMinutesThenRun from "./waitMinutesThenRun.mjs";
+import createConsoleMessage from "./createConsoleMessage.mjs";
 import {
   COLLECTD_PATIENTS_FILE_NAME,
   USER_MESSAGES,
@@ -19,7 +20,12 @@ import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
 } from "./constants.mjs";
-import createConsoleMessage from "./createConsoleMessage.mjs";
+import {
+  createPatientRowKey,
+  getWeeklyHistoryPatient,
+  insertWeeklyHistoryPatients,
+  updateWeeklyHistoryPatients,
+} from "./db.mjs";
 
 async function safeWritePatientData(data, retries = 3, delay = 200) {
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -85,6 +91,27 @@ class PatientStore extends EventEmitter {
     return this.cachedPatientsArray;
   }
 
+  async addPatients(patients) {
+    const newPatients = Array.isArray(patients) ? patients : [patients];
+    const added = [];
+
+    for (const patient of newPatients) {
+      const key = this.keyExtractor(patient);
+      if (key && !this.patientsById.has(key)) {
+        const { files, ...patientData } = patient;
+        this.patientsById.set(key, patientData);
+        added.push(patient);
+      }
+    }
+
+    if (added.length) {
+      this.invalidateCache();
+      insertWeeklyHistoryPatients(added);
+      this.emit("patientsAdded", added);
+      await safeWritePatientData(this.getAllPatients());
+    }
+  }
+
   async scheduleAllInitialPatients() {
     const allPatients = this.getAllPatients();
 
@@ -103,9 +130,7 @@ class PatientStore extends EventEmitter {
       }
 
       const isRejection = userActionName === USER_ACTION_TYPES.REJECT;
-      const canProcess = isRejection
-        ? true
-        : this.calculateCanStillProcessPatient(patient);
+      const canProcess = this.calculateCanStillProcessPatient(patient);
 
       if (!canProcess) continue;
 
@@ -123,24 +148,8 @@ class PatientStore extends EventEmitter {
     }
   }
 
-  async addPatients(patients) {
-    const newPatients = Array.isArray(patients) ? patients : [patients];
-    const added = [];
-
-    for (const patient of newPatients) {
-      const key = this.keyExtractor(patient);
-      if (key && !this.patientsById.has(key)) {
-        const { files, ...patientData } = patient;
-        this.patientsById.set(key, patientData);
-        added.push(patient);
-      }
-    }
-
-    if (added.length) {
-      this.invalidateCache();
-      this.emit("patientsAdded", added);
-      await safeWritePatientData(this.getAllPatients());
-    }
+  getPatientByReferralId(referralId) {
+    return this.patientsById.get(referralId);
   }
 
   async removePatientByReferralId(referralId) {
@@ -255,7 +264,9 @@ class PatientStore extends EventEmitter {
         success: false,
         message: isAccepting
           ? USER_MESSAGES.alreadyScheduledAccept
-          : USER_MESSAGES.alreadyScheduledReject,
+          : this.goingPatientsToBeRejected.has(referralId)
+          ? USER_MESSAGES.alreadyScheduledReject
+          : USER_MESSAGES.scheduleRejectSuccess,
       };
     }
 
@@ -280,14 +291,34 @@ class PatientStore extends EventEmitter {
     this.patientTimers.set(referralId, timer);
 
     if (!skipResetingPatient) {
+      const rowKey = createPatientRowKey(patient);
+      const storedPatient = getWeeklyHistoryPatient(rowKey);
+
+      const providerAction = [
+        ...new Set(
+          [
+            storedPatient?.providerAction,
+            isAccepting ? "accepted" : "rejected",
+          ].filter(Boolean)
+        ),
+      ].join(" then ");
+
       const updatedPatient = {
         ...patient,
         scheduledAt,
         isSuperAcceptance,
+        providerAction,
+        isReceived: "yes",
+        isSent: "yes",
         userActionName: isAccepting
           ? USER_ACTION_TYPES.ACCEPT
           : USER_ACTION_TYPES.REJECT,
       };
+
+      updateWeeklyHistoryPatients({
+        ...updatedPatient,
+        rowKey,
+      });
 
       this.patientsById.set(referralId, updatedPatient);
       this.invalidateCache();
@@ -332,10 +363,6 @@ class PatientStore extends EventEmitter {
     });
   }
 
-  has(referralId) {
-    return this.patientsById.has(referralId);
-  }
-
   async cancelPatient(referralId) {
     const isAccepted = this.goingPatientsToBeAccepted.has(referralId);
     const isRejected = this.goingPatientsToBeRejected.has(referralId);
@@ -362,6 +389,19 @@ class PatientStore extends EventEmitter {
         userActionName: "",
       };
 
+      const actionNames = [
+        ...new Set(
+          [updatedPatient?.providerAction, "cancelled"].filter(Boolean)
+        ),
+      ].join(" then ");
+
+      updateWeeklyHistoryPatients({
+        ...updatedPatient,
+        rowKey: createPatientRowKey(updatedPatient),
+        isSent: "yes",
+        isReceived: "yes",
+        providerAction: actionNames,
+      });
       this.patientsById.set(referralId, updatedPatient);
       this.invalidateCache();
 
@@ -371,6 +411,10 @@ class PatientStore extends EventEmitter {
     }
 
     return { success: true, message: USER_MESSAGES.cancelSuccess };
+  }
+
+  has(referralId) {
+    return this.patientsById.has(referralId);
   }
 
   size() {

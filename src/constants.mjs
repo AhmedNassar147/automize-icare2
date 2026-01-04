@@ -92,6 +92,8 @@ export const CONFIRMATION_TYPES = {
   ACCEPT: ["accept", "1"],
   REJECT: ["reject", "00"],
   CANCEL: ["cancel", "0"],
+  SENT_NO_REPLY: ["sent-with-no-reply", "-1"],
+  RECEIVED_NO_REPLY: ["received-with-no-reply", "-2"],
 };
 
 export const homePageTableSelector = "table.MuiTable-root";
@@ -137,3 +139,25 @@ export const BLOCK_PATHS = new Set([
 
 // https://referralprogram.globemedsaudi.com/referrals/358375/notes
 export const NOTES_PATH_RE = /^\/referrals\/[^/]+\/notes$/; // /referrals/358358/notes
+
+export const excelColumns = [
+  { header: "order", key: "order", width: 12 },
+  { header: "Referral Date", key: "referralDate", width: 24 },
+  { header: "GMS Referral Id", key: "idReferral", width: 20 },
+  { header: "MOH Referral Nb", key: "ihalatyReference", width: 20 },
+  { header: "Patient Name", key: "adherentName", width: 37 },
+  { header: "National ID", key: "adherentNationalId", width: 20 },
+  { header: "Referral Type", key: "referralType", width: 20 },
+  { header: "Referral Reason", key: "referralReason", width: 28 },
+  { header: "Source Zone", key: "sourceZone", width: 15 },
+  { header: "Assigned Provider", key: "assignedProvider", width: 52 },
+];
+
+export const weeklySummaryexcelColumns = [
+  ...excelColumns,
+  { header: "sent", key: "isSent", width: 20 },
+  { header: "received", key: "isReceived", width: 20 },
+  { header: "providerAction", key: "providerAction", width: 20 },
+  { header: "payerAction", key: "payerAction", width: 20 },
+  { header: "isAdmitted", key: "isAdmitted", width: 20 },
+];

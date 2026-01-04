@@ -10,6 +10,8 @@ const EMOJIS = {
   ACCEPT: "✅ *Acceptence:*",
   REJECT: "❌ *Rejection:*",
   CANCEL: "↩️ *Cancellation:*",
+  SENT_NO_REPLY: "⚠️ *sent with no reply:*",
+  RECEIVED_NO_REPLY: "⚠️ *received with no reply:*",
 };
 
 const createConfirmationMessage = () =>
