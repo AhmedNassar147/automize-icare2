@@ -232,7 +232,7 @@ export const initializeClient = async (
           isSentAndReceivedWithoutReply,
         } = validateReplyText(body);
 
-        const { patient } = this.findPatientByReferralId(referralId);
+        const { patient } = patientsStore.findPatientByReferralId(referralId);
 
         const rowKey = createPatientRowKey(patient);
         const storedPatient = getWeeklyHistoryPatient(rowKey);
