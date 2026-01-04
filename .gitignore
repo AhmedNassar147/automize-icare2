@@ -8,6 +8,7 @@
 /.env
 /fingerprint.json
 /patients.db
+/patientsWeeklyHistory.db
 /abc.js
 /tries.mjs
 /details-page-min.js
