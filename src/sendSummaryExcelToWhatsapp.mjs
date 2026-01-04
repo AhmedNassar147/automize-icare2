@@ -1,0 +1,126 @@
+/*
+ *
+ * Helper: `sendSummaryExcelToWhatsapp`.
+ *
+ */
+import ExcelJS from "exceljs";
+import { writeFile } from "fs/promises";
+import createConsoleMessage from "./createConsoleMessage.mjs";
+import {
+  generatedSummaryFolderPath,
+  excelColumns,
+  weeklySummaryexcelColumns,
+} from "./constants.mjs";
+
+const sendSummaryExcelToWhatsapp = async (
+  sendWhatsappMessage,
+  allPatients,
+  isWeeklySummary
+) => {
+  if (!allPatients?.length) {
+    createConsoleMessage("There is no new patients for past week", "info");
+    return false;
+  }
+
+  const { CLIENT_ID, CLIENT_WHATSAPP_NUMBER } = process.env;
+
+  const preparedPatients = allPatients
+    .sort((a, b) => {
+      const dateA = new Date(a["referralDate"]);
+      const dateB = new Date(b["referralDate"]);
+      return dateB - dateA;
+    })
+    .map((item, index) => ({
+      order: index + 1,
+      ...item,
+    }));
+
+  const dates = preparedPatients.map(
+    ({ referralDate }) => new Date(referralDate)
+  );
+
+  const [minDate, maxDate] = [
+    new Date(Math.min(...dates)),
+    new Date(Math.max(...dates)),
+  ].map((date) => {
+    const [splitedDate] = date.toISOString().split("T");
+    return splitedDate.split("-").reverse().join("_");
+  });
+
+  const fileTitle = `from-${minDate}-to-${maxDate}`;
+  const fullFileTitle = `${CLIENT_ID}-${
+    isWeeklySummary ? "report" : "admitted"
+  }-${fileTitle}`;
+
+  const jsonData = JSON.stringify(preparedPatients, null, 2);
+
+  await writeFile(
+    `${generatedSummaryFolderPath}/${fullFileTitle}.json`,
+    jsonData,
+    "utf8"
+  );
+
+  const workbook = new ExcelJS.Workbook();
+  let sheet = null;
+
+  try {
+    sheet = workbook.addWorksheet(fileTitle);
+  } catch (error) {
+    createConsoleMessage(
+      error,
+      "error",
+      `ERROR workbook.addWorksheet fullFileTitle=${fullFileTitle}`
+    );
+  }
+
+  if (!sheet) {
+    createConsoleMessage("NO SHEEET", "error");
+    return false;
+  }
+
+  sheet.columns = isWeeklySummary ? weeklySummaryexcelColumns : excelColumns;
+
+  preparedPatients.forEach((row) => sheet.addRow(row));
+
+  sheet.getRow(1).eachCell((cell) => {
+    cell.font = {
+      name: "Arial",
+      size: 14,
+      bold: true,
+    };
+    cell.alignment = {
+      horizontal: "center",
+      vertical: "middle", // optional, to center vertically too
+    };
+  });
+
+  sheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.font = {
+        name: "Arial",
+        size: 11,
+        bold: false,
+      };
+      cell.alignment = {
+        horizontal: "center",
+        vertical: "middle", // optional, to center vertically too
+      };
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+
+  await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+    files: [
+      {
+        fileName: fullFileTitle,
+        fileBase64: buffer.toString("base64"),
+        extension: "xlsx",
+      },
+    ],
+  });
+
+  return true;
+};
+
+export default sendSummaryExcelToWhatsapp;

@@ -3,51 +3,124 @@
  */
 import Database from "better-sqlite3";
 
-const filePath = process.cwd() + "/patients.db";
-const db = new Database(filePath);
+const patientsDbFilePath = `${process.cwd()}/patients.db`;
+const weeklyHistoryFilePath = `${process.cwd()}/patientsWeeklyHistory.db`;
 
-// Create table
-db.prepare(
-  `
-  CREATE TABLE IF NOT EXISTS patients (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    rowKey TEXT NOT NULL UNIQUE,        -- referralId-nationalId
-    referralDate TEXT NOT NULL,
-    referralId TEXT NOT NULL,
-    referenceId TEXT DEFAULT '',
-    patientName TEXT NOT NULL,
-    nationalId TEXT NOT NULL,
-    referralType TEXT,
-    referralReason TEXT,
-    sourceZone TEXT,
-    provider TEXT,
-    tabName TEXT DEFAULT '',
-    paid INTEGER DEFAULT 0,     -- 0 = false, 1 = true
-    createdAt TEXT DEFAULT (datetime('now')),
-    updatedAt TEXT
-  )
-`
-).run();
+const db = new Database(patientsDbFilePath);
+const weeklyHistoryDb = new Database(weeklyHistoryFilePath);
 
-// Indexes
-db.prepare(`CREATE INDEX IF NOT EXISTS idx_rowKey ON patients(rowKey)`).run();
-db.prepare(
-  `CREATE INDEX IF NOT EXISTS idx_referralId ON patients(referralId)`
-).run();
-db.prepare(`CREATE INDEX IF NOT EXISTS idx_paid ON patients(paid)`).run();
+// Optional but generally sensible for SQLite apps
+// db.pragma("journal_mode = WAL");
+// weeklyHistoryDb.pragma("journal_mode = WAL");
 
-const getPatientStatement = db.prepare(
-  `SELECT * FROM patients WHERE rowKey = ?`
-);
+(() => {
+  [db, weeklyHistoryDb].forEach((database) => {
+    database
+      .prepare(
+        `
+        CREATE TABLE IF NOT EXISTS patients (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          rowKey TEXT NOT NULL UNIQUE,        -- referralId-nationalId
+          referralDate TEXT NOT NULL,
+          referralId TEXT NOT NULL,
+          referenceId TEXT DEFAULT '',
+          patientName TEXT NOT NULL,
+          nationalId TEXT NOT NULL,
+          referralType TEXT,
+          referralReason TEXT,
+          sourceZone TEXT,
+          provider TEXT,
+          isSent TEXT,                        -- yes/no (kept as TEXT per your original)
+          isReceived TEXT,                    -- yes/no (kept as TEXT per your original)
+          providerAction TEXT,                -- Accept, Reject, no reply, late reply
+          payerAction TEXT,             -- confirmed or dropped
+          isAdmitted TEXT,                    -- yes/no
+          tabName TEXT DEFAULT '',
+          paid INTEGER DEFAULT 0,             -- 0 = false, 1 = true
+          createdAt TEXT DEFAULT (datetime('now')),
+          updatedAt TEXT
+        )
+      `
+      )
+      .run();
 
+    // Indexes
+    database
+      .prepare(`CREATE INDEX IF NOT EXISTS idx_rowKey ON patients(rowKey)`)
+      .run();
+    database
+      .prepare(
+        `CREATE INDEX IF NOT EXISTS idx_referralId ON patients(referralId)`
+      )
+      .run();
+    database
+      .prepare(`CREATE INDEX IF NOT EXISTS idx_paid ON patients(paid)`)
+      .run();
+  });
+})();
+
+/**
+ * Helpers
+ */
+
+// Build a rowKey from either API-shaped or DB-shaped objects
 const createPatientRowKey = (patient) => {
-  const { idReferral, adherentNationalId, adherentId } = patient;
+  if (!patient) return "";
 
-  return `${idReferral}-${adherentNationalId || adherentId}`;
+  if (patient.rowKey) return String(patient.rowKey);
+
+  const referralId = patient.idReferral ?? patient.referralId ?? "";
+  const nationalId =
+    patient.adherentNationalId ??
+    patient.nationalId ??
+    patient.adherentId ??
+    "";
+
+  return `${referralId}-${nationalId}`;
 };
 
-// Prepared insert (no createdAt, SQLite auto-fills)
-const insertStatement = db.prepare(`
+const getPatientStatement = (database) =>
+  database.prepare(`SELECT * FROM patients WHERE rowKey = ?`);
+
+const toDbRow = (oldRow, patient) => {
+  // Merge while supporting BOTH naming styles:
+  // - API: idReferral, ihalatyReference, adherentName, adherentNationalId, sourceProvider, assignedProvider
+  // - DB:  referralId, referenceId, patientName, nationalId, provider
+  const merged = { ...(oldRow || {}), ...(patient || {}) };
+
+  const referralId = merged.idReferral ?? merged.referralId;
+  const referenceId = merged.ihalatyReference ?? merged.referenceId ?? 0;
+  const nationalId =
+    merged.adherentNationalId ?? merged.nationalId ?? merged.adherentId;
+
+  const rowKey = merged.rowKey ?? `${referralId}-${nationalId}`;
+
+  return {
+    rowKey,
+    referralDate: merged.referralDate,
+    referralId,
+    referenceId,
+    patientName: merged.adherentName ?? merged.patientName,
+    nationalId,
+    referralType: merged.referralType ?? null,
+    referralReason: merged.referralReason ?? null,
+    sourceZone: merged.sourceZone ?? null,
+    provider:
+      merged.sourceProvider ??
+      merged.assignedProvider ??
+      merged.provider ??
+      null,
+    tabName: merged.tabName ?? "",
+    paid: merged.paid ? 1 : 0,
+    isSent: merged.isSent ?? null,
+    isReceived: merged.isReceived ?? null,
+    providerAction: merged.providerAction ?? null,
+    payerAction: merged.payerAction ?? null,
+    isAdmitted: merged.isAdmitted ?? null,
+  };
+};
+
+const insertPatientSQL = `
   INSERT INTO patients (
     rowKey,
     referralDate,
@@ -60,7 +133,13 @@ const insertStatement = db.prepare(`
     sourceZone,
     provider,
     tabName,
-    paid
+    paid,
+    isSent,
+    isReceived,
+    providerAction,
+    payerAction,
+    isAdmitted,
+    updatedAt
   ) VALUES (
     @rowKey,
     @referralDate,
@@ -73,23 +152,35 @@ const insertStatement = db.prepare(`
     @sourceZone,
     @provider,
     @tabName,
-    @paid
+    @paid,
+    @isSent,
+    @isReceived,
+    @providerAction,
+    @payerAction,
+    @isAdmitted,
+    datetime('now')
   )
   ON CONFLICT(rowKey) DO UPDATE SET
-    referralDate   = excluded.referralDate,
-    referralId     = excluded.referralId,
-    referenceId    = excluded.referenceId,
-    patientName    = excluded.patientName,
-    nationalId     = excluded.nationalId,
-    referralType   = excluded.referralType,
-    referralReason = excluded.referralReason,
-    sourceZone     = excluded.sourceZone,
-    provider       = excluded.provider,
-    tabName        = excluded.tabName,
-    paid           = excluded.paid
-`);
+    referralDate      = COALESCE(excluded.referralDate, referralDate),
+    referralId        = COALESCE(excluded.referralId, referralId),
+    referenceId       = COALESCE(excluded.referenceId, referenceId),
+    patientName       = COALESCE(excluded.patientName, patientName),
+    nationalId        = COALESCE(excluded.nationalId, nationalId),
+    referralType      = COALESCE(excluded.referralType, referralType),
+    referralReason    = COALESCE(excluded.referralReason, referralReason),
+    sourceZone        = COALESCE(excluded.sourceZone, sourceZone),
+    provider          = COALESCE(excluded.provider, provider),
+    tabName           = COALESCE(excluded.tabName, tabName),
+    paid              = COALESCE(excluded.paid, paid),
+    isSent            = COALESCE(excluded.isSent, isSent),
+    isReceived        = COALESCE(excluded.isReceived, isReceived),
+    providerAction    = COALESCE(excluded.providerAction, providerAction),
+    payerAction       = COALESCE(excluded.payerAction, payerAction),
+    isAdmitted        = COALESCE(excluded.isAdmitted, isAdmitted),
+    updatedAt         = datetime('now')
+`;
 
-const updateStatement = db.prepare(`
+const updatePatientSQL = `
   UPDATE patients SET
     referralDate = @referralDate,
     referralId = @referralId,
@@ -102,121 +193,157 @@ const updateStatement = db.prepare(`
     provider = @provider,
     tabName = @tabName,
     paid = @paid,
+    isSent = @isSent,
+    isReceived = @isReceived,
+    providerAction = @providerAction,
+    payerAction = @payerAction,
+    isAdmitted = @isAdmitted,
     updatedAt = datetime('now')
   WHERE rowKey = @rowKey
-`);
+`;
 
-const deleteStatement = db.prepare(`DELETE FROM patients WHERE rowKey = ?`);
+const deletePatientSQL = `DELETE FROM patients WHERE rowKey = ?`;
+const allPatientsSQL = `SELECT * FROM patients`;
 
-const allPatientsStatement = db.prepare("SELECT * FROM patients");
+const allPatientsStatement = db.prepare(allPatientsSQL);
+const insertStatement = db.prepare(insertPatientSQL);
+const updateStatement = db.prepare(updatePatientSQL);
+const deleteStatement = db.prepare(deletePatientSQL);
 
-const processInsertionOrUpdateOnRecord = (patient, sqlStatement, isUpdate) => {
+const allWeeklyPatientsStatement = weeklyHistoryDb.prepare(allPatientsSQL);
+const insertWeeklyStatement = weeklyHistoryDb.prepare(insertPatientSQL);
+const updateWeeklyStatement = weeklyHistoryDb.prepare(updatePatientSQL);
+const deleteWeeklyStatement = weeklyHistoryDb.prepare(deletePatientSQL);
+
+const processInsertionOrUpdateOnRecord = (
+  database,
+  patient,
+  sqlStatement,
+  isUpdate
+) => {
   if (!patient) return null;
 
-  let oldPatientData = {};
+  let oldRow = null;
   if (isUpdate) {
-    oldPatientData = getPatientStatement.get(createPatientRowKey(patient));
+    const rowKey = createPatientRowKey(patient);
+    if (rowKey) oldRow = getPatientStatement(database).get(rowKey) || null;
   }
 
-  const {
-    idReferral,
-    ihalatyReference,
-    adherentId,
-    adherentName,
-    adherentNationalId,
-    referralDate,
-    referralType,
-    referralReason,
-    sourceZone,
-    sourceProvider,
-    assignedProvider,
-    paid,
-    tabName,
-  } = { ...oldPatientData, ...patient };
+  const dbRow = toDbRow(oldRow, patient);
 
-  const nationalId = adherentNationalId || adherentId;
-  const rowKey = `${idReferral}-${nationalId}`;
+  // Minimal sanity checks for NOT NULL columns
+  if (
+    !dbRow.rowKey ||
+    !dbRow.referralDate ||
+    !dbRow.referralId ||
+    !dbRow.patientName ||
+    !dbRow.nationalId
+  ) {
+    throw new Error(
+      `Missing required patient fields. rowKey=${dbRow.rowKey}, referralDate=${dbRow.referralDate}, referralId=${dbRow.referralId}, patientName=${dbRow.patientName}, nationalId=${dbRow.nationalId}`
+    );
+  }
 
-  return sqlStatement.run({
-    rowKey,
-    referralDate,
-    referralId: idReferral,
-    referenceId: ihalatyReference,
-    patientName: adherentName,
-    nationalId,
-    referralType,
-    referralReason,
-    sourceZone,
-    provider: sourceProvider || assignedProvider,
-    tabName,
-    paid: paid ? 1 : 0,
-  });
+  return sqlStatement.run(dbRow);
 };
 
-const insertManyPatients = db.transaction((patients) => {
-  return patients.map((p) =>
-    processInsertionOrUpdateOnRecord(p, insertStatement)
-  );
-});
+/**
+ * Public API (insert / update / delete)
+ */
 
-const updateManyPatients = db.transaction((patients) => {
-  return patients.map((p) =>
-    processInsertionOrUpdateOnRecord(p, updateStatement, true)
-  );
-});
-
-const deleteManyPatients = db.transaction((ids) => {
-  return ids.map((id) => deleteStatement.run(id));
-});
-
-// Insert many
-const insertPatients = (oneOrMorePatients) => {
+const __insertPatients = (database, insertStatement) => (oneOrMorePatients) => {
   const patients = (
     Array.isArray(oneOrMorePatients) ? oneOrMorePatients : [oneOrMorePatients]
   ).filter(Boolean);
-
   if (!patients.length) return;
 
   if (patients.length === 1) {
-    return processInsertionOrUpdateOnRecord(patients[0], insertStatement);
+    return processInsertionOrUpdateOnRecord(
+      database,
+      patients[0],
+      insertStatement,
+      false
+    );
   }
 
-  return insertManyPatients(patients);
+  const trx = database.transaction((items) =>
+    items.map((p) =>
+      processInsertionOrUpdateOnRecord(database, p, insertStatement, false)
+    )
+  );
+  return trx(patients);
 };
 
-const updatePatients = (oneOrMorePatients) => {
+const __updatePatients = (database, updateStatement) => (oneOrMorePatients) => {
   const patients = (
     Array.isArray(oneOrMorePatients) ? oneOrMorePatients : [oneOrMorePatients]
   ).filter(Boolean);
-
   if (!patients.length) return;
 
   if (patients.length === 1) {
-    return processInsertionOrUpdateOnRecord(patients[0], updateStatement, true);
+    return processInsertionOrUpdateOnRecord(
+      database,
+      patients[0],
+      updateStatement,
+      true
+    );
   }
 
-  return updateManyPatients(patients);
+  const trx = database.transaction((items) =>
+    items.map((p) =>
+      processInsertionOrUpdateOnRecord(database, p, updateStatement, true)
+    )
+  );
+  return trx(patients);
 };
 
-const deletePatients = (patientIds) => {
+const __deletePatients = (database, deleteStatement) => (patientIds) => {
   const ids = (Array.isArray(patientIds) ? patientIds : [patientIds]).filter(
     Boolean
   );
-
   if (!ids.length) return;
 
   if (ids.length === 1) {
     return deleteStatement.run(ids[0]);
   }
 
-  return deleteManyPatients(ids);
+  const trx = database.transaction((items) =>
+    items.map((id) => deleteStatement.run(id))
+  );
+  return trx(ids);
 };
 
+const insertPatients = __insertPatients(db, insertStatement);
+const updatePatients = __updatePatients(db, updateStatement);
+const deletePatients = __deletePatients(db, deleteStatement);
+
+const insertWeeklyHistoryPatients = __insertPatients(
+  weeklyHistoryDb,
+  insertWeeklyStatement
+);
+const updateWeeklyHistoryPatients = __updatePatients(
+  weeklyHistoryDb,
+  updateWeeklyStatement
+);
+const deleteWeeklyHistoryPatients = __deletePatients(
+  weeklyHistoryDb,
+  deleteWeeklyStatement
+);
+const getWeeklyHistoryPatient = (rowKey) =>
+  getPatientStatement(weeklyHistoryDb).get(rowKey) || null;
+
 export {
+  createPatientRowKey,
   db,
+  allPatientsStatement,
   insertPatients,
   updatePatients,
   deletePatients,
-  allPatientsStatement,
-  createPatientRowKey,
+  weeklyHistoryDb,
+  allWeeklyPatientsStatement,
+  insertWeeklyHistoryPatients,
+  updateWeeklyHistoryPatients,
+  deleteWeeklyHistoryPatients,
+  toDbRow,
+  getWeeklyHistoryPatient,
 };

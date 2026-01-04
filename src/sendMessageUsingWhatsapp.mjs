@@ -11,6 +11,11 @@ import normalizePhoneNumber from "./normalizePhoneNumber.mjs";
 import validateReplyText from "./validateReplyText.mjs";
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
+import {
+  createPatientRowKey,
+  getWeeklyHistoryPatient,
+  updateWeeklyHistoryPatients,
+} from "./db.mjs";
 
 const { Client, LocalAuth, MessageMedia } = pkg;
 
@@ -196,16 +201,6 @@ export const initializeClient = async (
           return;
         }
 
-        const { isAcceptance, isSuperAcceptance, isCancellation, isRejection } =
-          validateReplyText(body);
-
-        if (!isAcceptance && !isCancellation && !isRejection) {
-          await message.reply(
-            `⚠️ Please select a patient card and reply with:\n${createConfirmationMessage()}`
-          );
-          return;
-        }
-
         if (!message.hasQuotedMsg) {
           await message.reply(
             `⚠️ Please reply to a *patient card* message with:\n${createConfirmationMessage()}`
@@ -227,13 +222,72 @@ export const initializeClient = async (
           return;
         }
 
+        const {
+          isAcceptance,
+          isSuperAcceptance,
+          isCancellation,
+          isRejection,
+          actionName,
+          isSentWithoutReply,
+          isSentAndReceivedWithoutReply,
+        } = validateReplyText(body);
+
+        const { patient } = this.findPatientByReferralId(referralId);
+
+        const rowKey = createPatientRowKey(patient);
+        const storedPatient = getWeeklyHistoryPatient(rowKey);
+
+        if (isSentWithoutReply || isSentAndReceivedWithoutReply) {
+          const actionNames = [
+            ...new Set(
+              [storedPatient?.providerAction, "no reply"].filter(Boolean)
+            ),
+          ].join(" then ");
+
+          updateWeeklyHistoryPatients({
+            ...patient,
+            rowKey,
+            isSent: "yes",
+            isReceived: isSentAndReceivedWithoutReply ? "yes" : "no",
+            providerAction: actionNames,
+          });
+
+          const prefix = "✅";
+          const messageReply = `${prefix} (Referral ID: ${referralId})  ${actionName}`;
+
+          await quotedMsg.reply(messageReply);
+
+          createConsoleMessage(messageReply, "info");
+          return;
+        }
+
+        if (!isAcceptance && !isCancellation && !isRejection) {
+          await message.reply(
+            `⚠️ Please select a patient card and reply with:\n${createConfirmationMessage()}`
+          );
+          return;
+        }
+
         const scheduledAt = Date.now();
-        const validation = !isAcceptance
-          ? { success: true }
-          : patientsStore.canStillProcessPatient(referralId);
+
+        const validation = patientsStore.canStillProcessPatient(referralId);
 
         if (!validation.success) {
           await quotedMsg.reply(validation.message);
+
+          const actionNames = [
+            ...new Set(
+              [storedPatient?.providerAction, actionName].filter(Boolean)
+            ),
+          ].join(" then ");
+
+          updateWeeklyHistoryPatients({
+            ...patient,
+            rowKey,
+            isSent: "yes",
+            isReceived: "yes",
+            providerAction: `${actionNames} with late reply`,
+          });
           return;
         }
 

@@ -3,8 +3,6 @@
  * Helper: `processCollectReferralSummary`.
  *
  */
-import ExcelJS from "exceljs";
-import { writeFile } from "fs/promises";
 import closePageSafely from "./closePageSafely.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import {
@@ -12,42 +10,10 @@ import {
   createPatientRowKey,
   insertPatients,
 } from "./db.mjs";
-import {
-  HOME_PAGE_URL,
-  generatedSummaryFolderPath,
-  globMedHeaders,
-  baseGlobMedAPiUrl,
-} from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
-
-const excelColumns = [
-  { header: "order", key: "order", width: 12 },
-  { header: "Referral Date", key: "referralDate", width: 24 },
-  { header: "GMS Referral Id", key: "idReferral", width: 20 },
-  { header: "MOH Referral Nb", key: "ihalatyReference", width: 20 },
-  { header: "Patient Name", key: "adherentName", width: 37 },
-  { header: "National ID", key: "adherentNationalId", width: 20 },
-  { header: "Referral Type", key: "referralType", width: 20 },
-  { header: "Referral Reason", key: "referralReason", width: 28 },
-  { header: "Source Zone", key: "sourceZone", width: 15 },
-  { header: "Assigned Provider", key: "assignedProvider", width: 52 },
-];
-
-const globMedBodyData = {
-  pageSize: 50_000,
-  pageNumber: 1,
-  providerZone: [],
-  providerName: [],
-  specialtyCode: [],
-  referralTypeCode: [],
-  referralReasonCode: [],
-  genericSearch: "",
-  // startDate: "2025-08-01",
-  // endDate: "2025-08-30",
-  sortOrder: "asc",
-};
-
-const categoryReferences = ["admitted", "discharged"];
+import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
+import sendSummaryExcelToWhatsapp from "./sendSummaryExcelToWhatsapp.mjs";
+import { HOME_PAGE_URL } from "./constants.mjs";
 
 const processCollectReferralSummary = async (
   browser,
@@ -68,107 +34,11 @@ const processCollectReferralSummary = async (
     return;
   }
 
-  let endDate = firstSummaryReportEndsAt;
-
-  if (!firstSummaryReportEndsAt) {
-    const date = new Date();
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-
-    endDate = `${yyyy}-${mm}-${dd}`;
-  }
-
-  const tabsResults = await page.evaluate(
-    async ({
-      baseGlobMedAPiUrl,
-      globMedHeaders,
-      categoryReferences,
-      globMedBodyData,
-      firstSummaryReportStartsAt,
-      endDate,
-    }) => {
-      const responses = await Promise.allSettled(
-        categoryReferences.map(async (categoryReference) => {
-          try {
-            const res = await fetch(`${baseGlobMedAPiUrl}/listing`, {
-              method: "POST",
-              headers: globMedHeaders,
-              body: JSON.stringify({
-                ...globMedBodyData,
-                categoryReference,
-                startDate: firstSummaryReportStartsAt || undefined,
-                endDate: firstSummaryReportStartsAt ? endDate : undefined,
-              }),
-            });
-
-            if (!res.ok) {
-              return {
-                success: false,
-                error: `Status ${res.status}`,
-                categoryReference,
-              };
-            }
-
-            const data = await res.json();
-
-            const { data: response, errorMessage } = data;
-            const { result } = response || {};
-
-            return {
-              categoryReference,
-              success: true,
-              data: result || [],
-              error: errorMessage,
-            };
-          } catch (err) {
-            return {
-              success: false,
-              error: `Capture error: ${err.message}`,
-              categoryReference,
-            };
-          }
-        })
-      );
-
-      return responses.reduce(
-        (acc, result) => {
-          const { categoryReference, data, error } = result.value || {};
-          if (error) {
-            acc.errors.push(
-              `❌ ${categoryReference} request error: ${error || "NOT DATA"}`
-            );
-          } else {
-            if (data?.length) {
-              acc.patients.push(
-                ...data.map((patient) => ({
-                  ...patient,
-                  tabName: categoryReference,
-                  paid: 0,
-                }))
-              );
-            }
-          }
-
-          return acc;
-        },
-        {
-          patients: [],
-          errors: [],
-        }
-      );
-    },
-    {
-      categoryReferences,
-      globMedHeaders,
-      baseGlobMedAPiUrl,
-      globMedBodyData,
-      firstSummaryReportStartsAt,
-      endDate,
-    }
-  );
-
-  const { patients: apisPatients, errors } = tabsResults;
+  const { patients: apisPatients, errors } = await getSummaryFromTabs({
+    page,
+    reportStartsAt: firstSummaryReportStartsAt,
+    reportEndsAt: firstSummaryReportEndsAt,
+  });
 
   if (errors.length) {
     errors.forEach((error) =>
@@ -179,16 +49,13 @@ const processCollectReferralSummary = async (
   }
 
   const allPatients = allPatientsStatement.all();
-  const allPatientKeys = allPatients.map(({ rowKey }) => rowKey);
 
-  const allNewPatients = allPatientKeys.length
-    ? apisPatients
-        .filter((patient) => {
-          const rowKey = createPatientRowKey(patient);
-          return !allPatientKeys.includes(rowKey);
-        })
-        .filter(Boolean)
-    : apisPatients;
+  const allPatientKeySet = new Set(allPatients.map((p) => p.rowKey));
+
+  const allNewPatients = apisPatients.filter((patient) => {
+    const rowKey = createPatientRowKey(patient);
+    return rowKey && !allPatientKeySet.has(rowKey);
+  });
 
   // console.log({
   //   firstSummaryReportStartsAt,
@@ -198,109 +65,15 @@ const processCollectReferralSummary = async (
   //   allPatientKeys: allPatientKeys.length,
   // });
 
-  if (!allNewPatients?.length) {
-    createConsoleMessage("There is no new patients for past week", "info");
-    await closePageSafely(page);
-    return;
-  }
-
-  const preparedPatients = allNewPatients
-    .sort((a, b) => {
-      const dateA = new Date(a["referralDate"]);
-      const dateB = new Date(b["referralDate"]);
-      return dateB - dateA;
-    })
-    .map((item, index) => ({
-      order: index + 1,
-      ...item,
-    }));
-
-  const dates = preparedPatients.map(
-    ({ referralDate }) => new Date(referralDate)
+  const isSent = await sendSummaryExcelToWhatsapp(
+    sendWhatsappMessage,
+    allNewPatients
   );
 
-  const [minDate, maxDate] = [
-    new Date(Math.min(...dates)),
-    new Date(Math.max(...dates)),
-  ].map((date) => {
-    const [splitedDate] = date.toISOString().split("T");
-    return splitedDate.split("-").reverse().join("_");
-  });
-
-  const fileTitle = `from-${minDate}-to-${maxDate}`;
-  const fullFileTitle = `admitted-${fileTitle}`;
-
-  const jsonData = JSON.stringify(preparedPatients, null, 2);
-
-  await writeFile(
-    `${generatedSummaryFolderPath}/${fullFileTitle}.json`,
-    jsonData,
-    "utf8"
-  );
-
-  const workbook = new ExcelJS.Workbook();
-  let sheet = null;
-
-  try {
-    sheet = workbook.addWorksheet(fileTitle);
-  } catch (error) {
-    createConsoleMessage(
-      error,
-      "error",
-      `ERROR workbook.addWorksheet fileTitle=${fileTitle}`
-    );
+  if (isSent) {
+    insertPatients(allNewPatients);
+    createConsoleMessage(`all new patients length is ${allNewPatients.length}`);
   }
-
-  if (!sheet) {
-    createConsoleMessage("NO SHEEET", "error");
-    await closePageSafely(page);
-    return;
-  }
-
-  sheet.columns = excelColumns;
-
-  preparedPatients.forEach((row) => sheet.addRow(row));
-
-  sheet.getRow(1).eachCell((cell) => {
-    cell.font = {
-      name: "Arial",
-      size: 14,
-      bold: true,
-    };
-    cell.alignment = {
-      horizontal: "center",
-      vertical: "middle", // optional, to center vertically too
-    };
-  });
-
-  sheet.eachRow((row) => {
-    row.eachCell((cell) => {
-      cell.font = {
-        name: "Arial",
-        size: 12,
-        bold: false,
-      };
-      cell.alignment = {
-        horizontal: "center",
-        vertical: "middle", // optional, to center vertically too
-      };
-    });
-  });
-
-  const buffer = await workbook.xlsx.writeBuffer();
-
-  await sendWhatsappMessage(process.env.CLIENT_WHATSAPP_NUMBER, {
-    files: [
-      {
-        fileName: fullFileTitle,
-        fileBase64: buffer.toString("base64"),
-        extension: "xlsx",
-      },
-    ],
-  });
-
-  insertPatients(allNewPatients);
-  createConsoleMessage(`all new patients length is ${allNewPatients.length}`);
 
   await closePageSafely(page);
 };
