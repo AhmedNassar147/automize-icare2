@@ -205,6 +205,27 @@ const updatePatientSQL = `
 const deletePatientSQL = `DELETE FROM patients WHERE rowKey = ?`;
 const allPatientsSQL = `SELECT * FROM patients`;
 
+const ensureColumn = (database, table, colName, colDef) => {
+  const cols = database.prepare(`PRAGMA table_info(${table})`).all();
+  const has = cols.some((c) => c.name === colName);
+  if (!has) {
+    database
+      .prepare(`ALTER TABLE ${table} ADD COLUMN ${colName} ${colDef}`)
+      .run();
+  }
+};
+
+const migratePatientsTable = (database) => {
+  ensureColumn(database, "patients", "isSent", "TEXT");
+  ensureColumn(database, "patients", "isReceived", "TEXT");
+  ensureColumn(database, "patients", "providerAction", "TEXT");
+  ensureColumn(database, "patients", "payerAction", "TEXT");
+  ensureColumn(database, "patients", "isAdmitted", "TEXT");
+};
+
+migratePatientsTable(db);
+migratePatientsTable(weeklyHistoryDb);
+
 const allPatientsStatement = db.prepare(allPatientsSQL);
 const insertStatement = db.prepare(insertPatientSQL);
 const updateStatement = db.prepare(updatePatientSQL);
@@ -331,27 +352,6 @@ const deleteWeeklyHistoryPatients = __deletePatients(
 );
 const getWeeklyHistoryPatient = (rowKey) =>
   getPatientStatement(weeklyHistoryDb).get(rowKey) || null;
-
-const ensureColumn = (database, table, colName, colDef) => {
-  const cols = database.prepare(`PRAGMA table_info(${table})`).all();
-  const has = cols.some((c) => c.name === colName);
-  if (!has) {
-    database
-      .prepare(`ALTER TABLE ${table} ADD COLUMN ${colName} ${colDef}`)
-      .run();
-  }
-};
-
-const migratePatientsTable = (database) => {
-  ensureColumn(database, "patients", "isSent", "TEXT");
-  ensureColumn(database, "patients", "isReceived", "TEXT");
-  ensureColumn(database, "patients", "providerAction", "TEXT");
-  ensureColumn(database, "patients", "payerAction", "TEXT");
-  ensureColumn(database, "patients", "isAdmitted", "TEXT");
-};
-
-migratePatientsTable(db);
-migratePatientsTable(weeklyHistoryDb);
 
 export {
   createPatientRowKey,
