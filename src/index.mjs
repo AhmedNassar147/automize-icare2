@@ -34,7 +34,7 @@ import sendMessageUsingWhatsapp, {
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
 import processCollectReferralWeeklySummary from "./processCollectReferralWeeklySummary.mjs";
-// import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 
 import {
   waitingPatientsFolderDirectory,
@@ -46,12 +46,13 @@ import {
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
-  // HOME_PAGE_URL,
+  HOME_PAGE_URL,
 } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
-// import closePageSafely from "./closePageSafely.mjs";
-// import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
+import closePageSafely from "./closePageSafely.mjs";
+import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
+import sleep from "./sleep.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -88,6 +89,7 @@ const currentProfile = "Profile 1";
     PORT,
     CLIENT_NAME,
     WEEKLY_REPORT_GENERATED_AT,
+    WAIT_FOR_ACCEPT_MS,
   } = process.env;
 
   let server;
@@ -271,7 +273,7 @@ const currentProfile = "Profile 1";
     // ---------- HTTPS + Express (DELETE only) ----------
     const app = express();
     app.use(express.json());
-    // app.disable("x-powered-by");
+    app.disable("x-powered-by");
     app.set("trust proxy", 1);
 
     app.delete("/patients/:referralId", async (req, res) => {
@@ -368,6 +370,65 @@ const currentProfile = "Profile 1";
     wss.on("close", () => clearInterval(pingInterval));
 
     // Broadcast only when timers fire
+    // patientsStore.on("patientAccepted", async (patient) => {
+    //   try {
+    //     const { referralId, referralEndTimestamp, providerName } = patient;
+
+    //     const acceptanceFilePath = path.join(
+    //       generatedPdfsPathForAcceptance,
+    //       `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
+    //     );
+
+    //     const filebase64 = await pdfToBase64(acceptanceFilePath);
+
+    //     broadcast({
+    //       type: "accept",
+    //       data: {
+    //         referralId,
+    //         acceptanceFileBase64: filebase64,
+    //         referralEndTimestamp,
+    //         providerName,
+    //         clientName: CLIENT_NAME,
+    //         fileName: `accept-${referralId}.pdf`,
+    //       },
+    //     });
+
+    //     // const [page] = await makeUserLoggedInOrOpenHomePage({
+    //     //   browser,
+    //     //   startingPageUrl: HOME_PAGE_URL,
+    //     //   noCursor: true,
+    //     // });
+
+    //     // const { reason, elapsedMs } = await waitUntilCanTakeActionByWindow({
+    //     //   page,
+    //     //   referralId,
+    //     //   remainingMs,
+    //     // });
+
+    //     // const messageStartTime = Date.now();
+    //     // await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+    //     //   message: `*Accept ${referralId}*`,
+    //     // });
+    //     // const messageTime = Date.now() - messageStartTime;
+
+    //     // await closePageSafely(page);
+
+    //     const remainingMs = referralEndTimestamp - Date.now();
+
+    //     createConsoleMessage(
+    //       `✅ Patient=${referralId} remainingMs=${remainingMs}`,
+    //       "warn"
+    //     );
+    //     if (remainingMs > 0) {
+    //       setTimeout(continueFetchingPatientsIfPaused, remainingMs);
+    //     } else {
+    //       continueFetchingPatientsIfPaused();
+    //     }
+    //   } catch (err) {
+    //     createConsoleMessage(err, "error", "patientAccepted broadcast failed");
+    //   }
+    // });
+
     patientsStore.on("patientAccepted", async (patient) => {
       try {
         const { referralId, referralEndTimestamp, providerName } = patient;
@@ -391,45 +452,45 @@ const currentProfile = "Profile 1";
           },
         });
 
-        // const [page] = await makeUserLoggedInOrOpenHomePage({
-        //   browser,
-        //   startingPageUrl: HOME_PAGE_URL,
-        //   noCursor: true,
-        // });
-
-        // const { reason, elapsedMs } = await waitUntilCanTakeActionByWindow({
-        //   page,
-        //   referralId,
-        //   remainingMs,
-        // });
-
-        // const messageStartTime = Date.now();
-        // await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-        //   message: `*Accept ${referralId}*`,
-        // });
-        // const messageTime = Date.now() - messageStartTime;
-
-        // await closePageSafely(page);
+        const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
+          browser,
+          startingPageUrl: HOME_PAGE_URL,
+          noCursor: true,
+          noBundleCheck: true,
+        });
 
         const remainingMs = referralEndTimestamp - Date.now();
 
+        const { reason, elapsedMs, message, attempts } =
+          await waitUntilCanTakeActionByWindow({
+            page,
+            referralId,
+            remainingMs,
+          });
+
+        const waitTime = WAIT_FOR_ACCEPT_MS * 1000;
+        await sleep(WAIT_FOR_ACCEPT_MS * 1000);
+        await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+          message: `*Accept ${referralId}* _waitTime=${waitTime / 1000}s_`,
+        });
+
+        await closePageSafely(page);
+
         createConsoleMessage(
-          `✅ Patient=${referralId} remainingMs=${remainingMs}`,
+          `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message}`,
           "warn"
         );
-        if (remainingMs > 0) {
-          setTimeout(continueFetchingPatientsIfPaused, remainingMs);
-        } else {
-          continueFetchingPatientsIfPaused();
-        }
+        continueFetchingPatientsIfPaused();
       } catch (err) {
         createConsoleMessage(err, "error", "patientAccepted broadcast failed");
       }
     });
 
-    // patientsStore.on("patientRejected", (patient) => {
-    //   broadcast({ type: "reject", data: patient });
-    // });
+    patientsStore.on("patientRejected", (patient) => {
+      const { referralEndTimestamp } = patient;
+      const remainingMs = referralEndTimestamp - Date.now();
+      setTimeout(continueFetchingPatientsIfPaused, remainingMs);
+    });
 
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {

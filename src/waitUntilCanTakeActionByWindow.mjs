@@ -74,7 +74,7 @@ async function waitUntilCanTakeActionByWindow({
         }
 
         if (attempts % 6 === 0) {
-          await sleep(7);
+          await sleep(0);
         }
       }
     },

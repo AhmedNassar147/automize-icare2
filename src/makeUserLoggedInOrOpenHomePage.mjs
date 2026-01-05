@@ -18,9 +18,9 @@ const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
 
 const checkHomePageFullyLoaded = async (page) => {
   try {
-    await waitForHomeLink(page, 10_000);
+    await waitForHomeLink(page, 15_000);
     await page.waitForSelector(homePageTableSelector, {
-      timeout: 13_000,
+      timeout: 15_000,
     });
     return true;
   } catch (err) {
@@ -37,19 +37,12 @@ const makeUserLoggedInOrOpenHomePage = async ({
   currentPage,
   startingPageUrl,
   noCursor,
+  noBundleCheck,
 }) => {
   const userName = process.env.CLIENT_NAME;
   const password = process.env.CLIENT_PASSWORD;
 
   let page = currentPage || (await browser.newPage());
-
-  if (!currentPage && page) {
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, "webdriver", {
-        get: () => false,
-      });
-    });
-  }
 
   let cursor;
 
@@ -84,7 +77,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
         if (pageUrl.toLowerCase().includes(startingPageUrl.toLowerCase())) {
           await page.waitForSelector(homePageTableSelector, {
-            timeout: 13_000,
+            timeout: 15_000,
           });
 
           hasEnteredStartingPage = true;
@@ -157,8 +150,10 @@ const makeUserLoggedInOrOpenHomePage = async ({
         hasEnteredStartingPage || (await checkHomePageFullyLoaded(page));
 
       if (isHomeLoaded) {
-        createConsoleMessage(`✅ User ${userName} is in home page.`, "info");
-        await patchBundleFromPage(page);
+        if (!noBundleCheck) {
+          createConsoleMessage(`✅ User ${userName} is in home page.`, "info");
+          await patchBundleFromPage(page);
+        }
 
         return {
           newPage: page,
