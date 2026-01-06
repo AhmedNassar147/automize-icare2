@@ -468,7 +468,9 @@ function modifyGlobMedSourceCode(code) {
     reason,
   } = makeReferralDetailsApiPoll(_sourceCode, REFETCH_TYPE);
 
-  _sourceCode = disableReferralLoadingNearBreadcrumb(srccode, loadingVariable);
+  _sourceCode = srccode;
+
+  // _sourceCode = disableReferralLoadingNearBreadcrumb(srccode, loadingVariable);
 
   let sourceCode = cleanupTrailingCommaBeforeArrayClose(
     insertRendererBeforePatientInfo(_sourceCode, loadingVariable)
