@@ -91,69 +91,32 @@ function cleanupTrailingCommaBeforeArrayClose(src) {
   return src.replace(/,\s*\]/g, "]");
 }
 
-function extractIsLoadingVar(segment) {
-  const m = segment.match(/\bisLoading\s*:\s*([A-Za-z_$][\w$]*)\b/);
-  return m ? m[1] : null;
-}
-
 function makeReferralDetailsApiPoll(sourceCode, refetchType) {
   const anchor = '["referral-details"';
   const idx = sourceCode.indexOf(anchor);
-  if (idx === -1) {
-    return {
-      sourceCode,
-      loadingVariable: null,
-      patched: false,
-      reason: "ReferralDetailsApiPoll: no anchor",
-    };
-  }
+  if (idx === -1) return sourceCode;
 
   // Take a small slice after the anchor; tune if needed.
   const WINDOW = 180;
-  const start = idx - 17;
+  const start = idx;
   const end = Math.min(sourceCode.length, start + WINDOW);
   let segment = sourceCode.slice(start, end);
 
   // Match either !0 or !1
   const focusRegex = /refetchOnWindowFocus\s*:\s*!\s*[01]\s*,/;
 
-  if (!focusRegex.test(segment)) {
-    return {
-      sourceCode,
-      loadingVariable: null,
-      patched: false,
-      reason: "ReferralDetailsApiPoll: no focusRegex",
-    };
+  if (!focusRegex.test(segment)) return sourceCode;
+
+  if (refetchType === "focus") {
+    // force focus refetch on
+    segment = segment.replace(focusRegex, (m) => m.replace(/!\s*[01]/, "!0"));
+  } else {
+    // Inject right after refetchOnWindowFocus: !1,
+    const pollInjection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=165+s.n*48;b=Math.min(b,460);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
+    segment = segment.replace(focusRegex, (m) => m + pollInjection);
   }
 
-  const loadingVariable = extractIsLoadingVar(segment);
-
-  if (!loadingVariable) {
-    return {
-      sourceCode,
-      loadingVariable,
-      patched: false,
-      reason: "ReferralDetailsApiPoll: no loadingVariable",
-    };
-  }
-
-  // if (refetchType === "focus") {
-  //   // force focus refetch on
-  //   segment = segment.replace(focusRegex, (m) => m.replace(/!\s*[01]/, "!0"));
-  // } else {
-  //   // Inject right after refetchOnWindowFocus: !1,
-  //   const pollInjection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=165+s.n*48;b=Math.min(b,460);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
-  //   segment = segment.replace(focusRegex, (m) => m + pollInjection);
-  // }
-
-  const pollInjection = `refetchInterval:d=>{const t=+window.fetchOnceTime||0;if(!t)return!1;const k="__GM_REFETCH_ONCE__";if(window[k])return!1;window[k]=1;return t;},`;
-  segment = segment.replace(focusRegex, (m) => m + pollInjection);
-
-  return {
-    sourceCode: sourceCode.slice(0, start) + segment + sourceCode.slice(end),
-    loadingVariable,
-    patched: true,
-  };
+  return sourceCode.slice(0, start) + segment + sourceCode.slice(end);
 }
 
 function findReactCallBoundsEnclosingText(src, text) {
@@ -404,51 +367,6 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   return sourceCode;
 };
 
-function disableReferralLoadingNearBreadcrumb(src, loadingVar) {
-  const anchor = '"REFERRAL_DETAILS")';
-  const idx = src.indexOf(anchor);
-  if (idx === -1) return src;
-
-  // Window bounds
-  const start = Math.max(0, idx - 175);
-  const end = Math.min(src.length, idx + 600);
-
-  let segment = src.slice(start, end);
-
-  // Match:  <A>||<B> ? p.jsx( ... ) :   (spaces optional)
-  // We only replace B (the second var) with !1.
-  //
-  // Examples matched:
-  //   return sr||cr?p.jsx(yC,{}):p.jsxs(...)
-  //   return Ab || Cd ? p.jsx(Xy,{}) : ...
-  //
-  const re =
-    /(\b[A-Za-z_$][\w$]*\b)\s*\|\|\s*(\b[A-Za-z_$][\w$]*\b)\s*\?\s*[A-Za-z_$][\w$]*\.jsx\(/;
-
-  const m = segment.match(re);
-  if (!m) return src;
-
-  const firstVar = m[1]; // was "sr" in your example, but can be anything
-
-  const pairRe = new RegExp(
-    `\\b${firstVar}\\b\\s*\\|\\|\\s*\\b${loadingVar}\\b`
-  );
-
-  segment = segment.replace(pairRe, `${firstVar} || !1`);
-
-  // Rebuild source
-  return src.slice(0, start) + segment + src.slice(end);
-}
-
-function makeNotVarRegex(varName) {
-  // Matches:
-  //   !cr&&
-  //   !cr&&!0
-  //   !cr?
-  //   !cr )
-  return new RegExp(`!\\s*${varName}\\s*(?=&&|\\?|!|\\))`, "g");
-}
-
 // REFETCH_TYPE = "poll" | "focus";
 
 function modifyGlobMedSourceCode(code) {
@@ -456,24 +374,13 @@ function modifyGlobMedSourceCode(code) {
   const { REFETCH_TYPE } = process.env;
   let _sourceCode = code;
 
-  // if (REFETCH_TYPE) {
-  // createConsoleMessage(`📋 REFETCH_TYPE => ${REFETCH_TYPE}`, "info");
-  // _sourceCode = makeReferralDetailsApiPoll(_sourceCode, REFETCH_TYPE);
-  // }
-
-  const {
-    loadingVariable,
-    patched,
-    sourceCode: srccode,
-    reason,
-  } = makeReferralDetailsApiPoll(_sourceCode, REFETCH_TYPE);
-
-  _sourceCode = srccode;
-
-  // _sourceCode = disableReferralLoadingNearBreadcrumb(srccode, loadingVariable);
+  if (REFETCH_TYPE) {
+    createConsoleMessage(`📋 REFETCH_TYPE => ${REFETCH_TYPE}`, "info");
+    _sourceCode = makeReferralDetailsApiPoll(_sourceCode, REFETCH_TYPE);
+  }
 
   let sourceCode = cleanupTrailingCommaBeforeArrayClose(
-    insertRendererBeforePatientInfo(_sourceCode, loadingVariable)
+    insertRendererBeforePatientInfo(_sourceCode)
   );
 
   const section = findReactCallBoundsEnclosingText(
@@ -510,9 +417,6 @@ function modifyGlobMedSourceCode(code) {
   }
 
   if (!accept || !accept.text) return sourceCode;
-
-  const guardRegex = makeNotVarRegex(loadingVariable);
-  sectionText = sectionText.replace(guardRegex, "!0");
 
   sourceCode =
     sourceCode.slice(0, section.start) +
