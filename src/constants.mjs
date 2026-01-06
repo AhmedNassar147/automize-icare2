@@ -157,7 +157,7 @@ export const weeklySummaryexcelColumns = [
   ...excelColumns,
   { header: "sent", key: "isSent", width: 20 },
   { header: "received", key: "isReceived", width: 20 },
-  { header: "providerAction", key: "providerAction", width: 20 },
+  { header: "providerAction", key: "providerAction", width: 35 },
   { header: "payerAction", key: "payerAction", width: 20 },
   { header: "isAdmitted", key: "isAdmitted", width: 20 },
 ];

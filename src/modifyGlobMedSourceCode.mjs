@@ -107,14 +107,17 @@ function makeReferralDetailsApiPoll(sourceCode, refetchType) {
 
   if (!focusRegex.test(segment)) return sourceCode;
 
-  if (refetchType === "focus") {
-    // force focus refetch on
-    segment = segment.replace(focusRegex, (m) => m.replace(/!\s*[01]/, "!0"));
-  } else {
-    // Inject right after refetchOnWindowFocus: !1,
-    const pollInjection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=165+s.n*48;b=Math.min(b,460);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
-    segment = segment.replace(focusRegex, (m) => m + pollInjection);
-  }
+  // if (refetchType === "focus") {
+  //   // force focus refetch on
+  //   segment = segment.replace(focusRegex, (m) => m.replace(/!\s*[01]/, "!0"));
+  // } else {
+  //   // Inject right after refetchOnWindowFocus: !1,
+  //   const pollInjection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=165+s.n*48;b=Math.min(b,460);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
+  //   segment = segment.replace(focusRegex, (m) => m + pollInjection);
+  // }
+
+  const pollInjection = `refetchInterval:d=>{const t=+window.fetchOnceTime||0;if(!t)return!1;const k="__GM_REFETCH_ONCE__";if(window[k])return!1;window[k]=1;return t;},`;
+  segment = segment.replace(focusRegex, (m) => m + pollInjection);
 
   return sourceCode.slice(0, start) + segment + sourceCode.slice(end);
 }
@@ -374,10 +377,12 @@ function modifyGlobMedSourceCode(code) {
   const { REFETCH_TYPE } = process.env;
   let _sourceCode = code;
 
-  if (REFETCH_TYPE) {
-    createConsoleMessage(`📋 REFETCH_TYPE => ${REFETCH_TYPE}`, "info");
-    _sourceCode = makeReferralDetailsApiPoll(_sourceCode, REFETCH_TYPE);
-  }
+  // if (REFETCH_TYPE) {
+  // createConsoleMessage(`📋 REFETCH_TYPE => ${REFETCH_TYPE}`, "info");
+  // _sourceCode = makeReferralDetailsApiPoll(_sourceCode, REFETCH_TYPE);
+  // }
+
+  _sourceCode = makeReferralDetailsApiPoll(_sourceCode, REFETCH_TYPE);
 
   let sourceCode = cleanupTrailingCommaBeforeArrayClose(
     insertRendererBeforePatientInfo(_sourceCode)
