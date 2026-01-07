@@ -11,7 +11,7 @@ const createSendLockedMessage =
   (sendWhatsappMessage, patientsStore, clientPhoneNumber, patient) =>
   async (message) => {
     if (patient) {
-      patientsStore.setLastGoingToBeAcceptedPatient({
+      patientsStore.setLastActionablePatient({
         ...patient,
         hasLockMessageSent: true,
       });
@@ -39,7 +39,7 @@ async function handleLockedOutRetry({
   const candidateNextAttempt = now + Number(lockSleepTime || 0);
 
   // Try to get last patient and a numeric deadline if present
-  const lastPatient = patientsStore?.getLastGoingToBeAcceptedPatient?.();
+  const lastPatient = patientsStore?.getLastActionablePatient?.();
 
   const sendMessage = createSendLockedMessage(
     sendWhatsappMessage,

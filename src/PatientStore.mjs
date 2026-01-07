@@ -57,18 +57,23 @@ class PatientStore extends EventEmitter {
     this.patientTimers = new Map();
     this.cachedPatientsArray = null;
     this.pauseFetchingPatients = pauseFetchingPatients;
-    this.lastGoingToBeAcceptedPatient = null;
+    this.lastActionablePatient = null;
 
     for (const patient of initialPatients) {
       if (!patient) continue;
       const key = this.keyExtractor(patient);
       if (!key) continue;
       const { userActionName } = patient;
-      const isAcceptanceAction = userActionName === USER_ACTION_TYPES.ACCEPT;
+
+      const isActionableCase = [
+        USER_ACTION_TYPES.ACCEPT,
+        USER_ACTION_TYPES.REJECT,
+      ].includes(userActionName);
+
       const canProcess = this.calculateCanStillProcessPatient(patient);
 
-      if (isAcceptanceAction && !canProcess) {
-        this.lastGoingToBeAcceptedPatient = patient;
+      if (isActionableCase && !canProcess) {
+        this.lastActionablePatient = patient;
       }
 
       this.patientsById.set(key, patient);
@@ -277,7 +282,7 @@ class PatientStore extends EventEmitter {
           ? { ...patient, isSuperAcceptance }
           : patient;
 
-        this.lastGoingToBeAcceptedPatient = isAccepting ? currentPatient : null;
+        this.lastActionablePatient = currentPatient;
         this.pauseFetchingPatients?.();
         actionSet.delete(referralId);
         this.patientTimers.delete(referralId);
@@ -406,7 +411,6 @@ class PatientStore extends EventEmitter {
       this.invalidateCache();
 
       const data = this.getAllPatients();
-
       await safeWritePatientData(data);
     }
 
@@ -435,12 +439,12 @@ class PatientStore extends EventEmitter {
     ]);
   }
 
-  getLastGoingToBeAcceptedPatient() {
-    return this.lastGoingToBeAcceptedPatient;
+  getLastActionablePatient() {
+    return this.lastActionablePatient;
   }
 
-  setLastGoingToBeAcceptedPatient(patient) {
-    this.lastGoingToBeAcceptedPatient = patient;
+  setLastActionablePatient(patient) {
+    this.lastActionablePatient = patient;
   }
   // cancelHomePageForceReload() {
   //   this.removeAllListeners("forceReloadHomePage");

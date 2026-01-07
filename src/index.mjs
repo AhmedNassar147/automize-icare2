@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import fs from "node:fs";
-import { unlink, readFile } from "node:fs/promises";
+import { unlink } from "node:fs/promises";
 import path from "node:path";
 import https from "node:https";
 import express from "express";
@@ -34,7 +34,7 @@ import sendMessageUsingWhatsapp, {
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
 import processCollectReferralWeeklySummary from "./processCollectReferralWeeklySummary.mjs";
-import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+import handleCaseAcceptanceOrRejection from "./handleCaseAcceptanceOrRejection.mjs";
 
 import {
   waitingPatientsFolderDirectory,
@@ -50,9 +50,6 @@ import {
 } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
-import closePageSafely from "./closePageSafely.mjs";
-import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
-import sleep from "./sleep.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -87,9 +84,7 @@ const currentProfile = "Profile 1";
     KEY_PATH,
     HOST,
     PORT,
-    CLIENT_NAME,
     WEEKLY_REPORT_GENERATED_AT,
-    WAIT_FOR_ACCEPT_MS,
   } = process.env;
 
   let server;
@@ -144,11 +139,6 @@ const currentProfile = "Profile 1";
     } catch {}
 
     process.exit(0);
-  }
-
-  async function pdfToBase64(filePath) {
-    const buf = await readFile(filePath);
-    return buf.toString("base64");
   }
 
   try {
@@ -369,128 +359,25 @@ const currentProfile = "Profile 1";
 
     wss.on("close", () => clearInterval(pingInterval));
 
-    // Broadcast only when timers fire
-    // patientsStore.on("patientAccepted", async (patient) => {
-    //   try {
-    //     const { referralId, referralEndTimestamp, providerName } = patient;
+    patientsStore.on(
+      "patientAccepted",
+      handleCaseAcceptanceOrRejection({
+        actionType: USER_ACTION_TYPES.ACCEPT,
+        broadcast,
+        sendWhatsappMessage,
+        continueFetchingPatientsIfPaused,
+      })
+    );
 
-    //     const acceptanceFilePath = path.join(
-    //       generatedPdfsPathForAcceptance,
-    //       `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
-    //     );
-
-    //     const filebase64 = await pdfToBase64(acceptanceFilePath);
-
-    //     broadcast({
-    //       type: "accept",
-    //       data: {
-    //         referralId,
-    //         acceptanceFileBase64: filebase64,
-    //         referralEndTimestamp,
-    //         providerName,
-    //         clientName: CLIENT_NAME,
-    //         fileName: `accept-${referralId}.pdf`,
-    //       },
-    //     });
-
-    //     // const [page] = await makeUserLoggedInOrOpenHomePage({
-    //     //   browser,
-    //     //   startingPageUrl: HOME_PAGE_URL,
-    //     //   noCursor: true,
-    //     // });
-
-    //     // const { reason, elapsedMs } = await waitUntilCanTakeActionByWindow({
-    //     //   page,
-    //     //   referralId,
-    //     //   remainingMs,
-    //     // });
-
-    //     // const messageStartTime = Date.now();
-    //     // await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-    //     //   message: `*Accept ${referralId}*`,
-    //     // });
-    //     // const messageTime = Date.now() - messageStartTime;
-
-    //     // await closePageSafely(page);
-
-    //     const remainingMs = referralEndTimestamp - Date.now();
-
-    //     createConsoleMessage(
-    //       `✅ Patient=${referralId} remainingMs=${remainingMs}`,
-    //       "warn"
-    //     );
-    //     if (remainingMs > 0) {
-    //       setTimeout(continueFetchingPatientsIfPaused, remainingMs);
-    //     } else {
-    //       continueFetchingPatientsIfPaused();
-    //     }
-    //   } catch (err) {
-    //     createConsoleMessage(err, "error", "patientAccepted broadcast failed");
-    //   }
-    // });
-
-    patientsStore.on("patientAccepted", async (patient) => {
-      try {
-        const { referralId, referralEndTimestamp, providerName } = patient;
-
-        const acceptanceFilePath = path.join(
-          generatedPdfsPathForAcceptance,
-          `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
-        );
-
-        const filebase64 = await pdfToBase64(acceptanceFilePath);
-
-        broadcast({
-          type: "accept",
-          data: {
-            referralId,
-            acceptanceFileBase64: filebase64,
-            referralEndTimestamp,
-            providerName,
-            clientName: CLIENT_NAME,
-            fileName: `accept-${referralId}.pdf`,
-          },
-        });
-
-        const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
-          browser,
-          startingPageUrl: HOME_PAGE_URL,
-          noCursor: true,
-          noBundleCheck: true,
-        });
-
-        const remainingMs = referralEndTimestamp - Date.now();
-
-        const { reason, elapsedMs, message, attempts } =
-          await waitUntilCanTakeActionByWindow({
-            page,
-            referralId,
-            remainingMs,
-          });
-
-        const waitTime = WAIT_FOR_ACCEPT_MS * 1000;
-        await sleep(WAIT_FOR_ACCEPT_MS * 1000);
-        await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-          message: `*Accept ${referralId}* _waitTime=${waitTime / 1000}s_`,
-        });
-
-        await closePageSafely(page);
-
-        createConsoleMessage(
-          `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message}`,
-          "warn"
-        );
-        continueFetchingPatientsIfPaused();
-      } catch (err) {
-        createConsoleMessage(err, "error", "patientAccepted broadcast failed");
-      }
-    });
-
-    patientsStore.on("patientRejected", (patient) => {
-      const { referralEndTimestamp } = patient;
-      const remainingMs = referralEndTimestamp - Date.now();
-      setTimeout(continueFetchingPatientsIfPaused, remainingMs);
-    });
+    patientsStore.on(
+      "patientRejected",
+      handleCaseAcceptanceOrRejection({
+        actionType: USER_ACTION_TYPES.REJECT,
+        broadcast,
+        sendWhatsappMessage,
+        continueFetchingPatientsIfPaused,
+      })
+    );
 
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {
