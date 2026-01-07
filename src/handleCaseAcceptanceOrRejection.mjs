@@ -28,6 +28,7 @@ const handleCaseAcceptanceOrRejection =
     broadcast,
     sendWhatsappMessage,
     continueFetchingPatientsIfPaused,
+    browser,
   }) =>
   async (patient) => {
     const { referralId, referralEndTimestamp, providerName } = patient;

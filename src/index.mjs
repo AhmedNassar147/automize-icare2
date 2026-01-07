@@ -362,6 +362,7 @@ const currentProfile = "Profile 1";
     patientsStore.on(
       "patientAccepted",
       handleCaseAcceptanceOrRejection({
+        browser,
         actionType: USER_ACTION_TYPES.ACCEPT,
         broadcast,
         sendWhatsappMessage,
@@ -372,6 +373,7 @@ const currentProfile = "Profile 1";
     patientsStore.on(
       "patientRejected",
       handleCaseAcceptanceOrRejection({
+        browser,
         actionType: USER_ACTION_TYPES.REJECT,
         broadcast,
         sendWhatsappMessage,
