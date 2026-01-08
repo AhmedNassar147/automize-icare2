@@ -153,10 +153,29 @@ const processCollectReferralWeeklySummary = async (
         acc.fullPatients.push(newPatient);
       } else {
         acc.fullPatients = acc.fullPatients.map((existingPatient) => {
-          const { rowKey: existingRowKey } = existingPatient;
+          const {
+            rowKey: existingRowKey,
+            referralId,
+            referenceId,
+            patientName,
+            nationalId,
+            provider,
+            ...otherData
+          } = existingPatient;
+
+          const patient = {
+            rowKey: existingRowKey,
+            idReferral: referralId,
+            ihalatyReference: referenceId,
+            adherentName: patientName,
+            adherentNationalId: nationalId,
+            sourceProvider: provider,
+            ...otherData,
+          };
+
           if (!apisPatientsKeys.includes(existingRowKey)) {
             return {
-              ...existingPatient,
+              ...patient,
               payerAction: "dropped",
               isAdmitted: "no",
               typeX: "!apisPatientsKeys.includes(existingRowKey)",
@@ -164,7 +183,7 @@ const processCollectReferralWeeklySummary = async (
           }
 
           return {
-            ...existingPatient,
+            ...patient,
             ...(existingRowKey !== rowKey
               ? null
               : {
