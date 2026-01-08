@@ -20,6 +20,7 @@ import {
   HOME_PAGE_URL,
   TABS_COLLECTION_TYPES,
   PATIENT_SECTIONS_STATUS,
+  generatedSummaryFolderPath,
 } from "./constants.mjs";
 
 const { DISCHARGED, ACCEPTED, ADMITTED } = TABS_COLLECTION_TYPES;
@@ -142,6 +143,7 @@ const processCollectReferralWeeklySummary = async (
         const newPatient = {
           ...patient,
           ...itemBaseData,
+          typeX: "!weeklyPatientstKeys",
         };
 
         acc.newPatients.push(newPatient);
@@ -154,6 +156,7 @@ const processCollectReferralWeeklySummary = async (
               ...existingPatient,
               payerAction: "dropped",
               isAdmitted: "no",
+              typeX: "!apisPatientsKeys.includes(existingRowKey)",
             };
           }
 
@@ -163,6 +166,7 @@ const processCollectReferralWeeklySummary = async (
               ? null
               : {
                   ...itemBaseData,
+                  typeX: "null",
                   providerAction:
                     existingPatient.providerAction ||
                     itemBaseData.providerAction,
@@ -179,18 +183,27 @@ const processCollectReferralWeeklySummary = async (
     }
   );
 
-  const isSent = await sendSummaryExcelToWhatsapp(
-    sendWhatsappMessage,
-    fullPatients,
-    true
+  await writeFile(
+    `${generatedSummaryFolderPath}/abc.json`,
+    {
+      newPatients,
+      fullPatients,
+    },
+    "utf8"
   );
 
-  if (isSent) {
-    insertWeeklyHistoryPatients(newPatients);
-    createConsoleMessage(
-      `weekly report: all newPatients=${newPatients.length} where fullPatients=${fullPatients.length}`
-    );
-  }
+  // const isSent = await sendSummaryExcelToWhatsapp(
+  //   sendWhatsappMessage,
+  //   fullPatients,
+  //   true
+  // );
+
+  // if (isSent) {
+  //   insertWeeklyHistoryPatients(newPatients);
+  //   createConsoleMessage(
+  //     `weekly report: all newPatients=${newPatients.length} where fullPatients=${fullPatients.length}`
+  //   );
+  // }
 
   await closePageSafely(page);
 };
