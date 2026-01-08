@@ -8,7 +8,6 @@ import closePageSafely from "./closePageSafely.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import {
   weeklyHistoryDb,
-  toDbRow,
   createPatientRowKey,
   insertWeeklyHistoryPatients,
 } from "./db.mjs";
@@ -20,7 +19,6 @@ import {
   HOME_PAGE_URL,
   TABS_COLLECTION_TYPES,
   PATIENT_SECTIONS_STATUS,
-  generatedSummaryFolderPath,
 } from "./constants.mjs";
 
 const { DISCHARGED, ACCEPTED, ADMITTED } = TABS_COLLECTION_TYPES;
@@ -108,7 +106,9 @@ const processCollectReferralWeeklySummary = async (
     "info"
   );
 
-  const weeklyPatientstKeys = weeklyPatients.map(({ rowKey }) => rowKey);
+  const weeklyPatientstKeys = weeklyPatients
+    .map((item) => item?.rowKey)
+    .filter(Boolean);
   const apisPatientsKeys = apisPatients.map((patient) =>
     createPatientRowKey(patient)
   );
@@ -139,7 +139,10 @@ const processCollectReferralWeeklySummary = async (
         isAdmitted: isAdmittedString,
       };
 
-      if (!weeklyPatientstKeys.includes(rowKey)) {
+      if (
+        !weeklyPatientstKeys.length ||
+        !weeklyPatientstKeys.includes(rowKey)
+      ) {
         const newPatient = {
           ...patient,
           ...itemBaseData,
@@ -147,7 +150,7 @@ const processCollectReferralWeeklySummary = async (
         };
 
         acc.newPatients.push(newPatient);
-        acc.fullPatients.push(toDbRow({}, newPatient));
+        acc.fullPatients.push(newPatient);
       } else {
         acc.fullPatients = acc.fullPatients.map((existingPatient) => {
           const { rowKey: existingRowKey } = existingPatient;
@@ -183,27 +186,18 @@ const processCollectReferralWeeklySummary = async (
     }
   );
 
-  await writeFile(
-    `${generatedSummaryFolderPath}/abc.json`,
-    {
-      newPatients,
-      fullPatients,
-    },
-    "utf8"
+  const isSent = await sendSummaryExcelToWhatsapp(
+    sendWhatsappMessage,
+    fullPatients,
+    true
   );
 
-  // const isSent = await sendSummaryExcelToWhatsapp(
-  //   sendWhatsappMessage,
-  //   fullPatients,
-  //   true
-  // );
-
-  // if (isSent) {
-  //   insertWeeklyHistoryPatients(newPatients);
-  //   createConsoleMessage(
-  //     `weekly report: all newPatients=${newPatients.length} where fullPatients=${fullPatients.length}`
-  //   );
-  // }
+  if (isSent) {
+    insertWeeklyHistoryPatients(newPatients);
+    createConsoleMessage(
+      `weekly report: all newPatients=${newPatients.length} where fullPatients=${fullPatients.length}`
+    );
+  }
 
   await closePageSafely(page);
 };
