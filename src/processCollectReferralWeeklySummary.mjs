@@ -147,7 +147,7 @@ const processCollectReferralWeeklySummary = async (
         acc.newPatients.push(newPatient);
         acc.fullPatients.push(toDbRow({}, newPatient));
       } else {
-        acc = acc.map((existingPatient) => {
+        acc.fullPatients = acc.fullPatients.map((existingPatient) => {
           const { rowKey: existingRowKey } = existingPatient;
           if (!apisPatientsKeys.includes(existingRowKey)) {
             return {
