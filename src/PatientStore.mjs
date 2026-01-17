@@ -283,7 +283,7 @@ class PatientStore extends EventEmitter {
           : patient;
 
         this.lastActionablePatient = currentPatient;
-        this.pauseFetchingPatients?.();
+        // this.pauseFetchingPatients?.();
         actionSet.delete(referralId);
         this.patientTimers.delete(referralId);
         this.emit(eventName, currentPatient);

@@ -79,14 +79,18 @@ const handleCaseAcceptanceOrRejection =
           remainingMs,
         });
 
+      let beepRes = {};
       const waitTime = WAIT_FOR_ACCEPT_MS * 1000;
-      await sleep(waitTime);
-      // await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-      //   message: `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`,
-      // });
 
-      const beepRes = await makeBeep("0x40");
+      if (waitTime) {
+        await sleep(waitTime);
 
+        // await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+        //   message: `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`,
+        // });
+
+        beepRes = await makeBeep("0x40");
+      }
       await closePageSafely(page);
 
       createConsoleMessage(
@@ -94,14 +98,14 @@ const handleCaseAcceptanceOrRejection =
         "warn"
       );
 
-      continueFetchingPatientsIfPaused();
+      // continueFetchingPatientsIfPaused();
     } catch (error) {
       createConsoleMessage(
         error,
         "error",
         `failed when ${actionType} patient=${referralId}`
       );
-      continueFetchingPatientsIfPaused();
+      // continueFetchingPatientsIfPaused();
     }
   };
 
