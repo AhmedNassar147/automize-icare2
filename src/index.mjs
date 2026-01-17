@@ -19,6 +19,7 @@ import cron from "node-cron";
 import PatientStore from "./PatientStore.mjs";
 import readJsonFile from "./readJsonFile.mjs";
 import checkPathExists from "./checkPathExists.mjs";
+import makeBeep from "./makeBeep.mjs";
 
 import waitForWaitingCountWithInterval, {
   continueFetchingPatientsIfPaused,

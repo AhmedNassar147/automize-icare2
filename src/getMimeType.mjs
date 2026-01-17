@@ -4,6 +4,8 @@
  *
  */
 const getMimeType = (extension) => {
+  extension = extension || "";
+
   switch (extension.toLowerCase()) {
     case "pdf":
       return "application/pdf";

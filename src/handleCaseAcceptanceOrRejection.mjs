@@ -9,13 +9,14 @@ import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs
 import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
+import sleep from "./sleep.mjs";
+import makeBeep from "./makeBeep.mjs";
 import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
   HOME_PAGE_URL,
   USER_ACTION_TYPES,
 } from "./constants.mjs";
-import sleep from "./sleep.mjs";
 
 async function pdfToBase64(filePath) {
   const buf = await readFile(filePath);
@@ -79,15 +80,17 @@ const handleCaseAcceptanceOrRejection =
         });
 
       const waitTime = WAIT_FOR_ACCEPT_MS * 1000;
-      await sleep(WAIT_FOR_ACCEPT_MS * 1000);
-      await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-        message: `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`,
-      });
+      await sleep(waitTime);
+      // await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+      //   message: `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`,
+      // });
+
+      const beepRes = await makeBeep("0x40");
 
       await closePageSafely(page);
 
       createConsoleMessage(
-        `✅ actionType=${actionType} patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message}`,
+        `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} beep.elapsedMs=${beepRes?.elapsedMs} beep.exitCode=${beepRes?.exitCode}`,
         "warn"
       );
 
