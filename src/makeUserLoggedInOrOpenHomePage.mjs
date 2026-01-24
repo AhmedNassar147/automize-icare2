@@ -18,9 +18,9 @@ const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
 
 const checkHomePageFullyLoaded = async (page) => {
   try {
-    await waitForHomeLink(page, 15_000);
+    await waitForHomeLink(page, 20_000);
     await page.waitForSelector(homePageTableSelector, {
-      timeout: 15_000,
+      timeout: 20_000,
     });
     return true;
   } catch (err) {
@@ -53,7 +53,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
         : createCursor(
             page,
             { x: 180 + Math.random(), y: 250 + Math.random() * 20 },
-            false
+            false,
           );
   }
 
@@ -77,7 +77,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
 
         if (pageUrl.toLowerCase().includes(startingPageUrl.toLowerCase())) {
           await page.waitForSelector(homePageTableSelector, {
-            timeout: 15_000,
+            timeout: 20_000,
           });
 
           hasEnteredStartingPage = true;
@@ -110,7 +110,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
             createConsoleMessage(
               error.message,
               "error",
-              `🛑 AFTER SUBMITTING LOGIN ...`
+              `🛑 AFTER SUBMITTING LOGIN ...`,
             );
           }
         }
@@ -165,7 +165,7 @@ const makeUserLoggedInOrOpenHomePage = async ({
       createConsoleMessage(
         error.message,
         "error",
-        `❌ Attempt #${retries + 1} failed`
+        `❌ Attempt #${retries + 1} failed`,
       );
     }
 

@@ -10,7 +10,7 @@ import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs
 import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
-import makeBeep from "./makeBeep.mjs";
+// import makeBeep from "./makeBeep.mjs";
 import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
@@ -85,17 +85,17 @@ const handleCaseAcceptanceOrRejection =
       if (waitTime) {
         await sleep(waitTime);
 
-        // await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-        //   message: `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`,
-        // });
+        await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+          message: `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`,
+        });
 
-        beepRes = await makeBeep("0x40");
+        // beepRes = await makeBeep("0x40");
       }
       await closePageSafely(page);
 
       createConsoleMessage(
         `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} beep.elapsedMs=${beepRes?.elapsedMs} beep.exitCode=${beepRes?.exitCode}`,
-        "warn"
+        "warn",
       );
 
       // continueFetchingPatientsIfPaused();
@@ -103,7 +103,7 @@ const handleCaseAcceptanceOrRejection =
       createConsoleMessage(
         error,
         "error",
-        `failed when ${actionType} patient=${referralId}`
+        `failed when ${actionType} patient=${referralId}`,
       );
       // continueFetchingPatientsIfPaused();
     }
