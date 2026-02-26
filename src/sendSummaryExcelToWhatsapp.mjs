@@ -135,11 +135,13 @@ const sendSummaryExcelToWhatsapp = async (
   styleSheet(sheet);
 
   if (isMonthlySummary && monthlySummarySheet) {
-    const data = preparedPatients.reduce(
+    const data = allPatients.reduce(
       (acc, patient) => {
         if (patient.isConfirmed === "yes") {
           acc.confirmed += 1;
-        } else if (patient.isAdmitted === "yes") {
+        }
+
+        if (patient.isAdmitted === "yes") {
           acc.admitted += 1;
         }
         return acc;
