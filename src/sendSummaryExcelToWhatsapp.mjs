@@ -10,13 +10,23 @@ import {
   generatedSummaryFolderPath,
   excelColumns,
   weeklySummaryexcelColumns,
+  monthlySummaryexcelColumns,
+  SUMMARY_TYPES,
 } from "./constants.mjs";
+
+const columns = {
+  [SUMMARY_TYPES.NORMAL]: excelColumns,
+  [SUMMARY_TYPES.WEEKLY]: weeklySummaryexcelColumns,
+  [SUMMARY_TYPES.MONTHLY]: monthlySummaryexcelColumns,
+};
 
 const sendSummaryExcelToWhatsapp = async (
   sendWhatsappMessage,
   allPatients,
-  isWeeklySummary
+  summaryType = SUMMARY_TYPES.NORMAL,
 ) => {
+  const isNormalSummary = summaryType === SUMMARY_TYPES.NORMAL;
+
   if (!allPatients?.length) {
     createConsoleMessage("There is no new patients for past week", "info");
     return false;
@@ -36,7 +46,7 @@ const sendSummaryExcelToWhatsapp = async (
     }));
 
   const dates = preparedPatients.map(
-    ({ referralDate }) => new Date(referralDate)
+    ({ referralDate }) => new Date(referralDate),
   );
 
   const [minDate, maxDate] = [
@@ -49,7 +59,7 @@ const sendSummaryExcelToWhatsapp = async (
 
   const fileTitle = `from-${minDate}-to-${maxDate}`;
   const fullFileTitle = `${CLIENT_ID}-${
-    isWeeklySummary ? "report" : "admitted"
+    isNormalSummary ? "admitted" : "report"
   }-${fileTitle}`;
 
   const jsonData = JSON.stringify(preparedPatients, null, 2);
@@ -57,7 +67,7 @@ const sendSummaryExcelToWhatsapp = async (
   await writeFile(
     `${generatedSummaryFolderPath}/${fullFileTitle}.json`,
     jsonData,
-    "utf8"
+    "utf8",
   );
 
   const workbook = new ExcelJS.Workbook();
@@ -69,7 +79,7 @@ const sendSummaryExcelToWhatsapp = async (
     createConsoleMessage(
       error,
       "error",
-      `ERROR workbook.addWorksheet fullFileTitle=${fullFileTitle}`
+      `ERROR workbook.addWorksheet fullFileTitle=${fullFileTitle}`,
     );
   }
 
@@ -78,7 +88,7 @@ const sendSummaryExcelToWhatsapp = async (
     return false;
   }
 
-  sheet.columns = isWeeklySummary ? weeklySummaryexcelColumns : excelColumns;
+  sheet.columns = columns[summaryType];
 
   preparedPatients.forEach((row) => sheet.addRow(row));
 

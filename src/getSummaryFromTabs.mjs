@@ -100,7 +100,7 @@ const getSummaryFromTabs = async ({
               categoryReference,
             };
           }
-        })
+        }),
       );
 
       return responses.reduce(
@@ -114,7 +114,7 @@ const getSummaryFromTabs = async ({
                 isRejectedRequest ? "rejected" : "error"
               }: ${
                 error || result.reason?.message || result.reason || "NOT DATA"
-              }`
+              }`,
             );
           } else {
             if (data?.length) {
@@ -123,7 +123,7 @@ const getSummaryFromTabs = async ({
                   ...patient,
                   tabName: categoryReference,
                   paid: 0,
-                }))
+                })),
               );
             }
           }
@@ -133,7 +133,7 @@ const getSummaryFromTabs = async ({
         {
           patients: [],
           errors: [],
-        }
+        },
       );
     },
     {
@@ -143,7 +143,7 @@ const getSummaryFromTabs = async ({
       globMedBodyData,
       reportStartsAt,
       endDate,
-    }
+    },
   );
 
   return tabsResults;

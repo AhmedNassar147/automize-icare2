@@ -19,7 +19,6 @@ import cron from "node-cron";
 import PatientStore from "./PatientStore.mjs";
 import readJsonFile from "./readJsonFile.mjs";
 import checkPathExists from "./checkPathExists.mjs";
-import makeBeep from "./makeBeep.mjs";
 
 import waitForWaitingCountWithInterval, {
   continueFetchingPatientsIfPaused,
@@ -35,6 +34,7 @@ import sendMessageUsingWhatsapp, {
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
 import processCollectReferralWeeklySummary from "./processCollectReferralWeeklySummary.mjs";
+import processCollectRefferalMonthlySummary from "./processCollectRefferalMonthlySummary.mjs";
 import handleCaseAcceptanceOrRejection from "./handleCaseAcceptanceOrRejection.mjs";
 
 import {
@@ -47,7 +47,6 @@ import {
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
-  HOME_PAGE_URL,
 } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
@@ -86,6 +85,7 @@ const currentProfile = "Profile 1";
     HOST,
     PORT,
     WEEKLY_REPORT_GENERATED_AT,
+    MONTHLY_REPORT_GENERATED_AT,
   } = process.env;
 
   let server;
@@ -170,7 +170,7 @@ const currentProfile = "Profile 1";
     // Restore collected patients, bootstrap store
     const collectedPatients = await readJsonFile(
       COLLECTD_PATIENTS_FULL_FILE_PATH,
-      true
+      true,
     );
 
     // const _collectedPatients = collectedPatients.map((item, index) => {
@@ -189,7 +189,7 @@ const currentProfile = "Profile 1";
 
     const patientsStore = new PatientStore(
       collectedPatients || [],
-      pauseFetchingPatients
+      pauseFetchingPatients,
     );
 
     await patientsStore.scheduleAllInitialPatients();
@@ -202,8 +202,8 @@ const currentProfile = "Profile 1";
       "patientsAdded",
       processSendCollectedPatientsToWhatsapp(
         sendWhatsappMessage,
-        EXECLUDE_WHATSAPP_MSG_FOOTER === "Y"
-      )
+        EXECLUDE_WHATSAPP_MSG_FOOTER === "Y",
+      ),
     );
 
     // Background collector
@@ -225,18 +225,18 @@ const currentProfile = "Profile 1";
             browser,
             sendWhatsappMessage,
             FIRST_SUMMARY_REPORT_STARTS_AT,
-            SUMMARY_REPORT_ENDS_AT
+            SUMMARY_REPORT_ENDS_AT,
           );
           createConsoleMessage("✅ [CRON] Summary job done.", "info");
         } catch (err) {
           createConsoleMessage(
             err.message || err,
             "error",
-            "[CRON] Summary job Failure"
+            "[CRON] Summary job Failure",
           );
         }
       },
-      { timezone: "Asia/Riyadh" }
+      { timezone: "Asia/Riyadh" },
     );
 
     // Summary cron
@@ -247,18 +247,40 @@ const currentProfile = "Profile 1";
         try {
           await processCollectReferralWeeklySummary(
             browser,
-            sendWhatsappMessage
+            sendWhatsappMessage,
           );
           createConsoleMessage("✅ weekly report job done.", "info");
         } catch (err) {
           createConsoleMessage(
             err.message || err,
             "error",
-            "weekly report job Failure"
+            "weekly report job Failure",
           );
         }
       },
-      { timezone: "Asia/Riyadh" }
+      { timezone: "Asia/Riyadh" },
+    );
+
+    // Summary cron
+    cron.schedule(
+      MONTHLY_REPORT_GENERATED_AT,
+      async () => {
+        createConsoleMessage("✅ Starting monthly report job", "info");
+        try {
+          await processCollectRefferalMonthlySummary(
+            browser,
+            sendWhatsappMessage,
+          );
+          createConsoleMessage("✅ monthly report job done.", "info");
+        } catch (err) {
+          createConsoleMessage(
+            err.message || err,
+            "error",
+            "monthly report job Failure",
+          );
+        }
+      },
+      { timezone: "Asia/Riyadh" },
     );
 
     // ---------- HTTPS + Express (DELETE only) ----------
@@ -279,25 +301,24 @@ const currentProfile = "Profile 1";
         // Delete generated PDFs if present
         const acceptanceFilePath = path.join(
           generatedPdfsPathForAcceptance,
-          `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
+          `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`,
         );
         const rejectionFilePath = path.join(
           generatedPdfsPathForRejection,
-          `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`
+          `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`,
         );
 
         await Promise.allSettled([
           checkPathExists(acceptanceFilePath).then(
-            (exists) => exists && unlink(acceptanceFilePath)
+            (exists) => exists && unlink(acceptanceFilePath),
           ),
           checkPathExists(rejectionFilePath).then(
-            (exists) => exists && unlink(rejectionFilePath)
+            (exists) => exists && unlink(rejectionFilePath),
           ),
         ]);
 
-        const result = await patientsStore.removePatientByReferralId(
-          referralId
-        );
+        const result =
+          await patientsStore.removePatientByReferralId(referralId);
 
         continueFetchingPatientsIfPaused();
         return res.status(result.success ? 200 : 404).json(result);
@@ -305,7 +326,7 @@ const currentProfile = "Profile 1";
         createConsoleMessage(
           err,
           "error",
-          "DELETE /patients/:referralId error"
+          "DELETE /patients/:referralId error",
         );
         return res
           .status(500)
@@ -368,7 +389,7 @@ const currentProfile = "Profile 1";
         broadcast,
         sendWhatsappMessage,
         continueFetchingPatientsIfPaused,
-      })
+      }),
     );
 
     patientsStore.on(
@@ -379,14 +400,14 @@ const currentProfile = "Profile 1";
         broadcast,
         sendWhatsappMessage,
         continueFetchingPatientsIfPaused,
-      })
+      }),
     );
 
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {
       createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`);
       createConsoleMessage(
-        `DELETE: https://${HOST}:${PORT}/patients/:referralId`
+        `DELETE: https://${HOST}:${PORT}/patients/:referralId`,
       );
     });
 

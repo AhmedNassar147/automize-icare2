@@ -19,6 +19,7 @@ import {
   HOME_PAGE_URL,
   TABS_COLLECTION_TYPES,
   PATIENT_SECTIONS_STATUS,
+  SUMMARY_TYPES,
 } from "./constants.mjs";
 
 const { DISCHARGED, ACCEPTED, ADMITTED } = TABS_COLLECTION_TYPES;
@@ -46,7 +47,7 @@ const getLastThursdayToWednesdayRange = (baseDate = new Date()) => {
 
 const processCollectReferralWeeklySummary = async (
   browser,
-  sendWhatsappMessage
+  sendWhatsappMessage,
 ) => {
   const { newPage: page, isLoggedIn } = await makeUserLoggedInOrOpenHomePage({
     browser,
@@ -56,7 +57,7 @@ const processCollectReferralWeeklySummary = async (
   if (!isLoggedIn) {
     createConsoleMessage(
       "User is not logged in, cannot collect referral weekly summary.",
-      "error"
+      "error",
     );
     return;
   }
@@ -78,8 +79,8 @@ const processCollectReferralWeeklySummary = async (
       createConsoleMessage(
         error,
         "error",
-        "processCollectReferralWeeklySummary"
-      )
+        "processCollectReferralWeeklySummary",
+      ),
     );
     await closePageSafely(page);
     return;
@@ -88,7 +89,6 @@ const processCollectReferralWeeklySummary = async (
   // IMPORTANT: access the database from the statement.
   // better-sqlite3 prepared statements have `.reader`, `.all()`, etc.
   // But to create a new query, you need the database instance.
-  // If you don't have it here, export `weeklyHistoryDb` (or `db`) from db.mjs.
   const weeklyPatients = weeklyHistoryDb
     .prepare(
       `
@@ -96,21 +96,21 @@ const processCollectReferralWeeklySummary = async (
       FROM patients
       WHERE referralDate >= ? AND referralDate <= ?
       ORDER BY referralDate ASC
-    `
+    `,
     )
     .all(start, end)
     .filter(Boolean);
 
   createConsoleMessage(
     `Collected ${weeklyPatients.length} referred patients from ${start} to ${end}.`,
-    "info"
+    "info",
   );
 
   const weeklyPatientstKeys = weeklyPatients
     .map((item) => item?.rowKey)
     .filter(Boolean);
   const apisPatientsKeys = apisPatients.map((patient) =>
-    createPatientRowKey(patient)
+    createPatientRowKey(patient),
   );
 
   const checkTabType = (tabName, type) =>
@@ -202,19 +202,19 @@ const processCollectReferralWeeklySummary = async (
     {
       fullPatients: weeklyPatients,
       newPatients: [],
-    }
+    },
   );
 
   const isSent = await sendSummaryExcelToWhatsapp(
     sendWhatsappMessage,
     fullPatients,
-    true
+    SUMMARY_TYPES.WEEKLY,
   );
 
   if (isSent) {
     insertWeeklyHistoryPatients(newPatients);
     createConsoleMessage(
-      `weekly report: all newPatients=${newPatients.length} where fullPatients=${fullPatients.length}`
+      `weekly report: all newPatients=${newPatients.length} where fullPatients=${fullPatients.length}`,
     );
   }
 

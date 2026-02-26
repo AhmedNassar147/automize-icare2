@@ -161,3 +161,15 @@ export const weeklySummaryexcelColumns = [
   { header: "payerAction", key: "payerAction", width: 20 },
   { header: "isAdmitted", key: "isAdmitted", width: 20 },
 ];
+
+export const monthlySummaryexcelColumns = [
+  ...excelColumns,
+  { header: "isConfirmed", key: "isConfirmed", width: 20 },
+  { header: "isAdmitted", key: "isAdmitted", width: 20 },
+];
+
+export const SUMMARY_TYPES = {
+  NORMAL: "NORMAL",
+  WEEKLY: "WEEKLY",
+  MONTHLY: "MONTHLY",
+};

@@ -13,13 +13,13 @@ import {
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
 import sendSummaryExcelToWhatsapp from "./sendSummaryExcelToWhatsapp.mjs";
-import { HOME_PAGE_URL } from "./constants.mjs";
+import { HOME_PAGE_URL, SUMMARY_TYPES } from "./constants.mjs";
 
 const processCollectReferralSummary = async (
   browser,
   sendWhatsappMessage,
   firstSummaryReportStartsAt,
-  firstSummaryReportEndsAt
+  firstSummaryReportEndsAt,
 ) => {
   const { newPage: page, isLoggedIn } = await makeUserLoggedInOrOpenHomePage({
     browser,
@@ -29,7 +29,7 @@ const processCollectReferralSummary = async (
   if (!isLoggedIn) {
     createConsoleMessage(
       "User is not logged in, cannot collect referral summary.",
-      "error"
+      "error",
     );
     return;
   }
@@ -42,7 +42,7 @@ const processCollectReferralSummary = async (
 
   if (errors.length) {
     errors.forEach((error) =>
-      createConsoleMessage(error, "error", "processCollectReferralSummary")
+      createConsoleMessage(error, "error", "processCollectReferralSummary"),
     );
     await closePageSafely(page);
     return;
@@ -67,7 +67,8 @@ const processCollectReferralSummary = async (
 
   const isSent = await sendSummaryExcelToWhatsapp(
     sendWhatsappMessage,
-    allNewPatients
+    allNewPatients,
+    SUMMARY_TYPES.NORMAL,
   );
 
   if (isSent) {
