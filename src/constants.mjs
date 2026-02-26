@@ -168,6 +168,11 @@ export const monthlySummaryexcelColumns = [
   { header: "isAdmitted", key: "isAdmitted", width: 20 },
 ];
 
+export const monthlySummaryBookexcelColumns = [
+  { header: "Confirmed", key: "confirmed", width: 30 },
+  { header: "Admitted", key: "admitted", width: 30 },
+];
+
 export const SUMMARY_TYPES = {
   NORMAL: "NORMAL",
   WEEKLY: "WEEKLY",

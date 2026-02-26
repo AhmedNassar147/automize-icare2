@@ -11,6 +11,7 @@ import {
   excelColumns,
   weeklySummaryexcelColumns,
   monthlySummaryexcelColumns,
+  monthlySummaryBookexcelColumns,
   SUMMARY_TYPES,
 } from "./constants.mjs";
 
@@ -18,6 +19,34 @@ const columns = {
   [SUMMARY_TYPES.NORMAL]: excelColumns,
   [SUMMARY_TYPES.WEEKLY]: weeklySummaryexcelColumns,
   [SUMMARY_TYPES.MONTHLY]: monthlySummaryexcelColumns,
+};
+
+const styleSheet = (sheet) => {
+  sheet.getRow(1).eachCell((cell) => {
+    cell.font = {
+      name: "Arial",
+      size: 14,
+      bold: true,
+    };
+    cell.alignment = {
+      horizontal: "center",
+      vertical: "middle", // optional, to center vertically too
+    };
+  });
+
+  sheet.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.font = {
+        name: "Arial",
+        size: 11,
+        bold: false,
+      };
+      cell.alignment = {
+        horizontal: "center",
+        vertical: "middle", // optional, to center vertically too
+      };
+    });
+  });
 };
 
 const sendSummaryExcelToWhatsapp = async (
@@ -80,9 +109,14 @@ const sendSummaryExcelToWhatsapp = async (
 
   const workbook = new ExcelJS.Workbook();
   let sheet = null;
+  let monthlySummarySheet = null;
 
   try {
     sheet = workbook.addWorksheet(fileTitle);
+
+    if (isMonthlySummary) {
+      monthlySummarySheet = workbook.addWorksheet("monthly-summary");
+    }
   } catch (error) {
     createConsoleMessage(
       error,
@@ -97,34 +131,28 @@ const sendSummaryExcelToWhatsapp = async (
   }
 
   sheet.columns = columns[summaryType];
-
   preparedPatients.forEach((row) => sheet.addRow(row));
+  styleSheet(sheet);
 
-  sheet.getRow(1).eachCell((cell) => {
-    cell.font = {
-      name: "Arial",
-      size: 14,
-      bold: true,
-    };
-    cell.alignment = {
-      horizontal: "center",
-      vertical: "middle", // optional, to center vertically too
-    };
-  });
-
-  sheet.eachRow((row) => {
-    row.eachCell((cell) => {
-      cell.font = {
-        name: "Arial",
-        size: 11,
-        bold: false,
-      };
-      cell.alignment = {
-        horizontal: "center",
-        vertical: "middle", // optional, to center vertically too
-      };
-    });
-  });
+  if (isMonthlySummary && monthlySummarySheet) {
+    const data = preparedPatients.reduce(
+      (acc, patient) => {
+        if (patient.isConfirmed === "yes") {
+          acc.confirmed += 1;
+        } else if (patient.isAdmitted === "yes") {
+          acc.admitted += 1;
+        }
+        return acc;
+      },
+      {
+        admitted: 0,
+        confirmed: 0,
+      },
+    );
+    monthlySummarySheet.columns = monthlySummaryBookexcelColumns;
+    monthlySummarySheet.addRow(data);
+    styleSheet(monthlySummarySheet);
+  }
 
   const buffer = await workbook.xlsx.writeBuffer();
 
