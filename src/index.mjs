@@ -262,26 +262,28 @@ const currentProfile = "Profile 1";
     );
 
     // Summary cron
-    cron.schedule(
-      MONTHLY_REPORT_GENERATED_AT,
-      async () => {
-        createConsoleMessage("✅ Starting monthly report job", "info");
-        try {
-          await processCollectRefferalMonthlySummary(
-            browser,
-            sendWhatsappMessage,
-          );
-          createConsoleMessage("✅ monthly report job done.", "info");
-        } catch (err) {
-          createConsoleMessage(
-            err.message || err,
-            "error",
-            "monthly report job Failure",
-          );
-        }
-      },
-      { timezone: "Asia/Riyadh" },
-    );
+    if (MONTHLY_REPORT_GENERATED_AT) {
+      cron.schedule(
+        MONTHLY_REPORT_GENERATED_AT,
+        async () => {
+          createConsoleMessage("✅ Starting monthly report job", "info");
+          try {
+            await processCollectRefferalMonthlySummary(
+              browser,
+              sendWhatsappMessage,
+            );
+            createConsoleMessage("✅ monthly report job done.", "info");
+          } catch (err) {
+            createConsoleMessage(
+              err.message || err,
+              "error",
+              "monthly report job Failure",
+            );
+          }
+        },
+        { timezone: "Asia/Riyadh" },
+      );
+    }
 
     // ---------- HTTPS + Express (DELETE only) ----------
     const app = express();

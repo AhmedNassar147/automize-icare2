@@ -26,13 +26,14 @@ const sendSummaryExcelToWhatsapp = async (
   summaryType = SUMMARY_TYPES.NORMAL,
 ) => {
   const isNormalSummary = summaryType === SUMMARY_TYPES.NORMAL;
+  const isMonthlySummary = summaryType === SUMMARY_TYPES.MONTHLY;
 
   if (!allPatients?.length) {
     createConsoleMessage("There is no new patients for past week", "info");
     return false;
   }
 
-  const { CLIENT_ID, CLIENT_WHATSAPP_NUMBER } = process.env;
+  const { CLIENT_ID, CLIENT_WHATSAPP_NUMBER, BRANCH_NAME } = process.env;
 
   const preparedPatients = allPatients
     .sort((a, b) => {
@@ -58,9 +59,16 @@ const sendSummaryExcelToWhatsapp = async (
   });
 
   const fileTitle = `from-${minDate}-to-${maxDate}`;
-  const fullFileTitle = `${CLIENT_ID}-${
-    isNormalSummary ? "admitted" : "report"
-  }-${fileTitle}`;
+
+  const fullFileTitle =
+    [CLIENT_ID, BRANCH_NAME].filter(Boolean).join("-") +
+    `-${
+      isNormalSummary
+        ? "admitted"
+        : isMonthlySummary
+          ? "monthly-report"
+          : "weekly-report"
+    }-${fileTitle}`;
 
   const jsonData = JSON.stringify(preparedPatients, null, 2);
 
