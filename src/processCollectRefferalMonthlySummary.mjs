@@ -21,16 +21,24 @@ const { DISCHARGED, ADMITTED, CONFIRMED } = TABS_COLLECTION_TYPES;
 const checkTabType = (tabName, type) =>
   tabName === PATIENT_SECTIONS_STATUS[type].categoryReference;
 
-const getCurrentMonthRange = () => {
+const getMonthRange = (useCurrentMonth) => {
   const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  const dateMonth = now.getMonth();
+
+  const monthForFirst = useCurrentMonth ? dateMonth : dateMonth - 1;
+  const monthForLast = useCurrentMonth ? dateMonth + 1 : dateMonth;
+
+  const first = new Date(now.getFullYear(), monthForFirst, 1);
+  const last = new Date(now.getFullYear(), monthForLast, 0);
 
   return {
     startDate: getFormattedDateForSummary(first),
     endDate: getFormattedDateForSummary(last),
   };
 };
+
+const useCurrentMonth = false; // Set to true to use the current month instead of the previous month
 
 const processCollectRefferalMonthlySummary = async (
   browser,
@@ -49,7 +57,7 @@ const processCollectRefferalMonthlySummary = async (
     return;
   }
 
-  const { startDate, endDate } = getCurrentMonthRange(new Date());
+  const { startDate, endDate } = getMonthRange(useCurrentMonth);
 
   console.log({
     startDate,
