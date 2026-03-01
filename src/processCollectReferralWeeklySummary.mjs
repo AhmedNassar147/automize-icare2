@@ -69,6 +69,7 @@ const processCollectReferralWeeklySummary = async (
     : getLastThursdayToWednesdayRange(new Date());
 
   console.log("summaryStart => summaryEnd", summaryStart, summaryEnd);
+  console.log("start, end", start, end);
 
   const { patients: apisPatients, errors } = await getSummaryFromTabs({
     page,
