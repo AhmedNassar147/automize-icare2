@@ -13,6 +13,7 @@ import {
 } from "./db.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
+import getMonthDateRange from "./getMonthDateRange.mjs";
 import getFormattedDateForSummary from "./getFormattedDateForSummary.mjs";
 import sendSummaryExcelToWhatsapp from "./sendSummaryExcelToWhatsapp.mjs";
 import {
@@ -22,7 +23,7 @@ import {
   SUMMARY_TYPES,
 } from "./constants.mjs";
 
-const { DISCHARGED, ACCEPTED, ADMITTED } = TABS_COLLECTION_TYPES;
+const { DISCHARGED, ACCEPTED, ADMITTED, CONFIRMED } = TABS_COLLECTION_TYPES;
 
 const getLastThursdayToWednesdayRange = (baseDate = new Date()) => {
   // baseDate should be the Thursday run time
@@ -48,6 +49,7 @@ const getLastThursdayToWednesdayRange = (baseDate = new Date()) => {
 const processCollectReferralWeeklySummary = async (
   browser,
   sendWhatsappMessage,
+  isMonthlySummary = false,
 ) => {
   const { newPage: page, isLoggedIn } = await makeUserLoggedInOrOpenHomePage({
     browser,
@@ -62,8 +64,9 @@ const processCollectReferralWeeklySummary = async (
     return;
   }
 
-  const { start, end, summaryEnd, summaryStart } =
-    getLastThursdayToWednesdayRange(new Date());
+  const { start, end, summaryEnd, summaryStart } = isMonthlySummary
+    ? getMonthDateRange()
+    : getLastThursdayToWednesdayRange(new Date());
 
   const { patients: apisPatients, errors } = await getSummaryFromTabs({
     page,
@@ -116,6 +119,15 @@ const processCollectReferralWeeklySummary = async (
   const checkTabType = (tabName, type) =>
     tabName === PATIENT_SECTIONS_STATUS[type].categoryReference;
 
+  const getSourceProvider = (patient = {}) => {
+    return (
+      patient.sourceProvider ??
+      patient.assignedProvider ??
+      patient.provider ??
+      null
+    );
+  };
+
   const { fullPatients, newPatients } = apisPatients.reduce(
     (acc, patient) => {
       const { tabName } = patient;
@@ -126,17 +138,18 @@ const processCollectReferralWeeklySummary = async (
       const isDischarged = checkTabType(tabName, DISCHARGED);
       const isDeclined = tabName === "declined";
 
-      // const isConfirmed =
-      //   checkTabType(tabName, CONFIRMED) || isAdmitted || isDischarged;
+      const isAdmittedOrDischarged = isAdmitted || isDischarged;
 
-      const isAdmittedString = isAdmitted || isDischarged ? "yes" : "no";
+      const isConfirmed =
+        checkTabType(tabName, CONFIRMED) || isAdmittedOrDischarged;
 
       const itemBaseData = {
         isSent: "yes",
         isReceived: "yes",
         providerAction: isDeclined ? "rejected" : "accepted",
         payerAction: isAccepted ? "in acceptance" : "confirmed",
-        isAdmitted: isAdmittedString,
+        isAdmitted: isAdmittedOrDischarged ? "yes" : "no",
+        isConfirmed: isConfirmed ? "yes" : "no",
       };
 
       if (
@@ -145,6 +158,7 @@ const processCollectReferralWeeklySummary = async (
       ) {
         const newPatient = {
           ...patient,
+          assignedProvider: getSourceProvider(patient),
           ...itemBaseData,
           typeX: "!weeklyPatientstKeys",
         };
@@ -159,7 +173,6 @@ const processCollectReferralWeeklySummary = async (
             referenceId,
             patientName,
             nationalId,
-            provider,
             ...otherData
           } = existingPatient;
 
@@ -169,7 +182,7 @@ const processCollectReferralWeeklySummary = async (
             ihalatyReference: referenceId,
             adherentName: patientName,
             adherentNationalId: nationalId,
-            sourceProvider: provider,
+            assignedProvider: getSourceProvider(existingPatient),
             ...otherData,
           };
 

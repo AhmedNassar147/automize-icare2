@@ -7,7 +7,7 @@ import closePageSafely from "./closePageSafely.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
-import getFormattedDateForSummary from "./getFormattedDateForSummary.mjs";
+import getMonthDateRange from "./getMonthDateRange.mjs";
 import sendSummaryExcelToWhatsapp from "./sendSummaryExcelToWhatsapp.mjs";
 import {
   HOME_PAGE_URL,
@@ -20,23 +20,6 @@ const { DISCHARGED, ADMITTED, CONFIRMED } = TABS_COLLECTION_TYPES;
 
 const checkTabType = (tabName, type) =>
   tabName === PATIENT_SECTIONS_STATUS[type].categoryReference;
-
-const getMonthRange = (useCurrentMonth) => {
-  const now = new Date();
-
-  const dateMonth = now.getMonth();
-
-  const monthForFirst = useCurrentMonth ? dateMonth : dateMonth - 1;
-  const monthForLast = useCurrentMonth ? dateMonth + 1 : dateMonth;
-
-  const first = new Date(now.getFullYear(), monthForFirst, 1);
-  const last = new Date(now.getFullYear(), monthForLast, 0);
-
-  return {
-    startDate: getFormattedDateForSummary(first),
-    endDate: getFormattedDateForSummary(last),
-  };
-};
 
 const useCurrentMonth = false; // Set to true to use the current month instead of the previous month
 
@@ -57,17 +40,17 @@ const processCollectRefferalMonthlySummary = async (
     return;
   }
 
-  const { startDate, endDate } = getMonthRange(useCurrentMonth);
+  const { summaryStart, summaryEnd } = getMonthDateRange(useCurrentMonth);
 
   console.log({
-    startDate,
-    endDate,
+    summaryStart,
+    summaryEnd,
   });
 
   const { patients: apisPatients, errors } = await getSummaryFromTabs({
     page,
-    reportStartsAt: startDate,
-    reportEndsAt: endDate,
+    reportStartsAt: summaryStart,
+    reportEndsAt: summaryEnd,
     includeConfirmed: true,
   });
 

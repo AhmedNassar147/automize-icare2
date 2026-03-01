@@ -142,35 +142,36 @@ export const NOTES_PATH_RE = /^\/referrals\/[^/]+\/notes$/; // /referrals/358358
 
 export const excelColumns = [
   { header: "order", key: "order", width: 12 },
-  { header: "Referral Date", key: "referralDate", width: 24 },
-  { header: "GMS Referral Id", key: "idReferral", width: 20 },
-  { header: "MOH Referral Nb", key: "ihalatyReference", width: 20 },
-  { header: "Patient Name", key: "adherentName", width: 37 },
-  { header: "National ID", key: "adherentNationalId", width: 20 },
-  { header: "Referral Type", key: "referralType", width: 20 },
+  { header: "Referral Date", key: "referralDate", width: 26 },
+  { header: "GMS Referral Id", key: "idReferral", width: 22 },
+  { header: "MOH Referral Nb", key: "ihalatyReference", width: 22 },
+  { header: "Patient Name", key: "adherentName", width: 40 },
+  { header: "National ID", key: "adherentNationalId", width: 22 },
+  { header: "Referral Type", key: "referralType", width: 22 },
   { header: "Referral Reason", key: "referralReason", width: 28 },
   { header: "Source Zone", key: "sourceZone", width: 15 },
   { header: "Assigned Provider", key: "assignedProvider", width: 52 },
 ];
 
+export const monthlySummaryBookexcelColumns = [
+  { header: "Confirmed", key: "confirmed", width: 25 },
+  { header: "Admitted", key: "admitted", width: 25 },
+];
+
 export const weeklySummaryexcelColumns = [
-  ...excelColumns,
+  ...excelColumns.filter(
+    (column) => !["referralReason", "sourceZone"].includes(column.key),
+  ),
   { header: "sent", key: "isSent", width: 20 },
   { header: "received", key: "isReceived", width: 20 },
   { header: "providerAction", key: "providerAction", width: 35 },
   { header: "payerAction", key: "payerAction", width: 20 },
-  { header: "isAdmitted", key: "isAdmitted", width: 20 },
+  ...monthlySummaryBookexcelColumns,
 ];
 
 export const monthlySummaryexcelColumns = [
   ...excelColumns,
-  { header: "isConfirmed", key: "isConfirmed", width: 20 },
-  { header: "isAdmitted", key: "isAdmitted", width: 20 },
-];
-
-export const monthlySummaryBookexcelColumns = [
-  { header: "Confirmed", key: "confirmed", width: 30 },
-  { header: "Admitted", key: "admitted", width: 30 },
+  ...monthlySummaryBookexcelColumns,
 ];
 
 export const SUMMARY_TYPES = {

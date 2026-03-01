@@ -56,6 +56,9 @@ const sendSummaryExcelToWhatsapp = async (
 ) => {
   const isNormalSummary = summaryType === SUMMARY_TYPES.NORMAL;
   const isMonthlySummary = summaryType === SUMMARY_TYPES.MONTHLY;
+  const isWeeklySummary = summaryType === SUMMARY_TYPES.WEEKLY;
+
+  const shouldIncludeSecondarySheet = isMonthlySummary || isWeeklySummary;
 
   if (!allPatients?.length) {
     createConsoleMessage("There is no new patients for past week", "info");
@@ -96,7 +99,7 @@ const sendSummaryExcelToWhatsapp = async (
         ? "admitted"
         : isMonthlySummary
           ? "monthly-report"
-          : "weekly-report"
+          : "detailed-report"
     }-${fileTitle}`;
 
   const jsonData = JSON.stringify(preparedPatients, null, 2);
@@ -109,13 +112,15 @@ const sendSummaryExcelToWhatsapp = async (
 
   const workbook = new ExcelJS.Workbook();
   let sheet = null;
-  let monthlySummarySheet = null;
+  let secondarySummarySheet = null;
 
   try {
     sheet = workbook.addWorksheet(fileTitle);
 
-    if (isMonthlySummary) {
-      monthlySummarySheet = workbook.addWorksheet("monthly-summary");
+    if (shouldIncludeSecondarySheet) {
+      secondarySummarySheet = workbook.addWorksheet(
+        isMonthlySummary ? "monthly-summary" : "detailed-summary",
+      );
     }
   } catch (error) {
     createConsoleMessage(
@@ -134,7 +139,7 @@ const sendSummaryExcelToWhatsapp = async (
   preparedPatients.forEach((row) => sheet.addRow(row));
   styleSheet(sheet);
 
-  if (isMonthlySummary && monthlySummarySheet) {
+  if (shouldIncludeSecondarySheet && secondarySummarySheet) {
     const data = allPatients.reduce(
       (acc, patient) => {
         if (patient.isConfirmed === "yes") {
@@ -151,9 +156,9 @@ const sendSummaryExcelToWhatsapp = async (
         confirmed: 0,
       },
     );
-    monthlySummarySheet.columns = monthlySummaryBookexcelColumns;
-    monthlySummarySheet.addRow(data);
-    styleSheet(monthlySummarySheet);
+    secondarySummarySheet.columns = monthlySummaryBookexcelColumns;
+    secondarySummarySheet.addRow(data);
+    styleSheet(secondarySummarySheet);
   }
 
   const buffer = await workbook.xlsx.writeBuffer();

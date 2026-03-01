@@ -86,6 +86,7 @@ const currentProfile = "Profile 1";
     PORT,
     WEEKLY_REPORT_GENERATED_AT,
     MONTHLY_REPORT_GENERATED_AT,
+    DETAILED_REPORT_GENERATED_AT,
   } = process.env;
 
   let server;
@@ -260,6 +261,36 @@ const currentProfile = "Profile 1";
       },
       { timezone: "Asia/Riyadh" },
     );
+
+    if (DETAILED_REPORT_GENERATED_AT) {
+      cron.schedule(
+        DETAILED_REPORT_GENERATED_AT,
+        async () => {
+          createConsoleMessage(
+            "✅ Starting monthly detailed report job",
+            "info",
+          );
+          try {
+            await processCollectReferralWeeklySummary(
+              browser,
+              sendWhatsappMessage,
+              true,
+            );
+            createConsoleMessage(
+              "✅ monthly detailed report job done.",
+              "info",
+            );
+          } catch (err) {
+            createConsoleMessage(
+              err.message || err,
+              "error",
+              "monthly detailed report job Failure",
+            );
+          }
+        },
+        { timezone: "Asia/Riyadh" },
+      );
+    }
 
     // Summary cron
     if (MONTHLY_REPORT_GENERATED_AT) {
