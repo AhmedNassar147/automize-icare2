@@ -119,6 +119,27 @@ const processCollectReferralWeeklySummary = async (
   const checkTabType = (tabName, type) =>
     tabName === PATIENT_SECTIONS_STATUS[type].categoryReference;
 
+  const getConfirmedAndAdmittedStatus = (tabName) => {
+    const isAccepted = checkTabType(tabName, ACCEPTED);
+    const isAdmitted = checkTabType(tabName, ADMITTED);
+    const isDischarged = checkTabType(tabName, DISCHARGED);
+    const isAdmittedOrDischarged = isAdmitted || isDischarged;
+    const isDeclined = tabName === "declined";
+
+    const isConfirmed =
+      checkTabType(tabName, CONFIRMED) || isAdmittedOrDischarged;
+
+    return {
+      isAdmittedOrDischarged,
+      isAccepted,
+      isDeclined,
+      providerAction: isDeclined ? "rejected" : "accepted",
+      payerAction: isAccepted ? "in acceptance" : "confirmed",
+      isAdmitted: isAdmittedOrDischarged ? "yes" : "no",
+      isConfirmed: isConfirmed ? "yes" : "no",
+    };
+  };
+
   const getSourceProvider = (patient = {}) => {
     return (
       patient.sourceProvider ??
@@ -133,23 +154,16 @@ const processCollectReferralWeeklySummary = async (
       const { tabName } = patient;
       const rowKey = createPatientRowKey(patient);
 
-      const isAccepted = checkTabType(tabName, ACCEPTED);
-      const isAdmitted = checkTabType(tabName, ADMITTED);
-      const isDischarged = checkTabType(tabName, DISCHARGED);
-      const isDeclined = tabName === "declined";
-
-      const isAdmittedOrDischarged = isAdmitted || isDischarged;
-
-      const isConfirmed =
-        checkTabType(tabName, CONFIRMED) || isAdmittedOrDischarged;
+      const { providerAction, payerAction, isAdmitted, isConfirmed } =
+        getConfirmedAndAdmittedStatus(tabName);
 
       const itemBaseData = {
         isSent: "yes",
         isReceived: "yes",
-        providerAction: isDeclined ? "rejected" : "accepted",
-        payerAction: isAccepted ? "in acceptance" : "confirmed",
-        isAdmitted: isAdmittedOrDischarged ? "yes" : "no",
-        isConfirmed: isConfirmed ? "yes" : "no",
+        providerAction,
+        payerAction,
+        isAdmitted,
+        isConfirmed,
       };
 
       if (
@@ -173,8 +187,12 @@ const processCollectReferralWeeklySummary = async (
             referenceId,
             patientName,
             nationalId,
+            tabName,
             ...otherData
           } = existingPatient;
+
+          const { providerAction, payerAction, isAdmitted, isConfirmed } =
+            getConfirmedAndAdmittedStatus(tabName);
 
           const patient = {
             rowKey: existingRowKey,
@@ -183,6 +201,11 @@ const processCollectReferralWeeklySummary = async (
             adherentName: patientName,
             adherentNationalId: nationalId,
             assignedProvider: getSourceProvider(existingPatient),
+            tabName,
+            providerAction: otherData.providerAction || providerAction,
+            payerAction: otherData.payerAction || payerAction,
+            isAdmitted: otherData.isAdmitted || isAdmitted,
+            isConfirmed: otherData.isConfirmed || isConfirmed,
             ...otherData,
           };
 

@@ -35,12 +35,13 @@ const weeklyHistoryDb = new Database(weeklyHistoryFilePath);
           providerAction TEXT,                -- Accept, Reject, no reply, late reply
           payerAction TEXT,             -- confirmed or dropped
           isAdmitted TEXT,                    -- yes/no
+          isConfirmed TEXT,                    -- yes/no
           tabName TEXT DEFAULT '',
           paid INTEGER DEFAULT 0,             -- 0 = false, 1 = true
           createdAt TEXT DEFAULT (datetime('now')),
           updatedAt TEXT
         )
-      `
+      `,
       )
       .run();
 
@@ -50,7 +51,7 @@ const weeklyHistoryDb = new Database(weeklyHistoryFilePath);
       .run();
     database
       .prepare(
-        `CREATE INDEX IF NOT EXISTS idx_referralId ON patients(referralId)`
+        `CREATE INDEX IF NOT EXISTS idx_referralId ON patients(referralId)`,
       )
       .run();
     database
@@ -117,6 +118,7 @@ const toDbRow = (oldRow, patient) => {
     providerAction: merged.providerAction ?? null,
     payerAction: merged.payerAction ?? null,
     isAdmitted: merged.isAdmitted ?? null,
+    isConfirmed: merged.isConfirmed ?? null,
   };
 };
 
@@ -139,6 +141,7 @@ const insertPatientSQL = `
     providerAction,
     payerAction,
     isAdmitted,
+    isConfirmed,
     updatedAt
   ) VALUES (
     @rowKey,
@@ -158,6 +161,7 @@ const insertPatientSQL = `
     @providerAction,
     @payerAction,
     @isAdmitted,
+    @isConfirmed,
     datetime('now')
   )
   ON CONFLICT(rowKey) DO UPDATE SET
@@ -177,6 +181,7 @@ const insertPatientSQL = `
     providerAction    = COALESCE(excluded.providerAction, providerAction),
     payerAction       = COALESCE(excluded.payerAction, payerAction),
     isAdmitted        = COALESCE(excluded.isAdmitted, isAdmitted),
+    isConfirmed        = COALESCE(excluded.isConfirmed, isConfirmed),
     updatedAt         = datetime('now')
 `;
 
@@ -198,6 +203,7 @@ const updatePatientSQL = `
     providerAction = @providerAction,
     payerAction = @payerAction,
     isAdmitted = @isAdmitted,
+    isConfirmed = @isConfirmed,
     updatedAt = datetime('now')
   WHERE rowKey = @rowKey
 `;
@@ -221,6 +227,7 @@ const migratePatientsTable = (database) => {
   ensureColumn(database, "patients", "providerAction", "TEXT");
   ensureColumn(database, "patients", "payerAction", "TEXT");
   ensureColumn(database, "patients", "isAdmitted", "TEXT");
+  ensureColumn(database, "patients", "isConfirmed", "TEXT");
 };
 
 migratePatientsTable(db);
@@ -240,7 +247,7 @@ const processInsertionOrUpdateOnRecord = (
   database,
   patient,
   sqlStatement,
-  isUpdate
+  isUpdate,
 ) => {
   if (!patient) return null;
 
@@ -261,7 +268,7 @@ const processInsertionOrUpdateOnRecord = (
     !dbRow.nationalId
   ) {
     throw new Error(
-      `Missing required patient fields. rowKey=${dbRow.rowKey}, referralDate=${dbRow.referralDate}, referralId=${dbRow.referralId}, patientName=${dbRow.patientName}, nationalId=${dbRow.nationalId}`
+      `Missing required patient fields. rowKey=${dbRow.rowKey}, referralDate=${dbRow.referralDate}, referralId=${dbRow.referralId}, patientName=${dbRow.patientName}, nationalId=${dbRow.nationalId}`,
     );
   }
 
@@ -283,14 +290,14 @@ const __insertPatients = (database, insertStatement) => (oneOrMorePatients) => {
       database,
       patients[0],
       insertStatement,
-      false
+      false,
     );
   }
 
   const trx = database.transaction((items) =>
     items.map((p) =>
-      processInsertionOrUpdateOnRecord(database, p, insertStatement, false)
-    )
+      processInsertionOrUpdateOnRecord(database, p, insertStatement, false),
+    ),
   );
   return trx(patients);
 };
@@ -306,21 +313,21 @@ const __updatePatients = (database, updateStatement) => (oneOrMorePatients) => {
       database,
       patients[0],
       updateStatement,
-      true
+      true,
     );
   }
 
   const trx = database.transaction((items) =>
     items.map((p) =>
-      processInsertionOrUpdateOnRecord(database, p, updateStatement, true)
-    )
+      processInsertionOrUpdateOnRecord(database, p, updateStatement, true),
+    ),
   );
   return trx(patients);
 };
 
 const __deletePatients = (database, deleteStatement) => (patientIds) => {
   const ids = (Array.isArray(patientIds) ? patientIds : [patientIds]).filter(
-    Boolean
+    Boolean,
   );
   if (!ids.length) return;
 
@@ -329,7 +336,7 @@ const __deletePatients = (database, deleteStatement) => (patientIds) => {
   }
 
   const trx = database.transaction((items) =>
-    items.map((id) => deleteStatement.run(id))
+    items.map((id) => deleteStatement.run(id)),
   );
   return trx(ids);
 };
@@ -340,15 +347,15 @@ const deletePatients = __deletePatients(db, deleteStatement);
 
 const insertWeeklyHistoryPatients = __insertPatients(
   weeklyHistoryDb,
-  insertWeeklyStatement
+  insertWeeklyStatement,
 );
 const updateWeeklyHistoryPatients = __updatePatients(
   weeklyHistoryDb,
-  updateWeeklyStatement
+  updateWeeklyStatement,
 );
 const deleteWeeklyHistoryPatients = __deletePatients(
   weeklyHistoryDb,
-  deleteWeeklyStatement
+  deleteWeeklyStatement,
 );
 const getWeeklyHistoryPatient = (rowKey) =>
   getPatientStatement(weeklyHistoryDb).get(rowKey) || null;

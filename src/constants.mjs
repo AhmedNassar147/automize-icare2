@@ -160,13 +160,17 @@ export const monthlySummaryBookexcelColumns = [
 
 export const weeklySummaryexcelColumns = [
   ...excelColumns.filter(
-    (column) => !["referralReason", "sourceZone"].includes(column.key),
+    (column) =>
+      !["ihalatyReference", "referralReason", "sourceZone"].includes(
+        column.key,
+      ),
   ),
   { header: "sent", key: "isSent", width: 20 },
   { header: "received", key: "isReceived", width: 20 },
   { header: "providerAction", key: "providerAction", width: 35 },
   { header: "payerAction", key: "payerAction", width: 20 },
-  ...monthlySummaryBookexcelColumns,
+  { header: "confirmed", key: "isConfirmed", width: 25 },
+  { header: "admitted", key: "isAdmitted", width: 25 },
 ];
 
 export const monthlySummaryexcelColumns = [
