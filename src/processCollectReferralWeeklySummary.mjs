@@ -205,7 +205,7 @@ const processCollectReferralWeeklySummary = async (
             providerAction: otherData.providerAction || providerAction,
             payerAction: otherData.payerAction || payerAction,
             isAdmitted: otherData.isAdmitted || isAdmitted,
-            isConfirmed: otherData.isConfirmed || isConfirmed,
+            isConfirmed: otherData.isConfirmed || isConfirmed || "no",
             ...otherData,
           };
 
@@ -214,6 +214,7 @@ const processCollectReferralWeeklySummary = async (
               ...patient,
               payerAction: "dropped",
               isAdmitted: "no",
+              isConfirmed: "no",
               typeX: "!apisPatientsKeys.includes(existingRowKey)",
             };
           }

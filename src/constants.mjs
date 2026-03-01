@@ -165,12 +165,12 @@ export const weeklySummaryexcelColumns = [
         column.key,
       ),
   ),
-  { header: "sent", key: "isSent", width: 20 },
-  { header: "received", key: "isReceived", width: 20 },
+  { header: "sent", key: "isSent", width: 10 },
+  { header: "received", key: "isReceived", width: 10 },
   { header: "providerAction", key: "providerAction", width: 35 },
-  { header: "payerAction", key: "payerAction", width: 20 },
-  { header: "confirmed", key: "isConfirmed", width: 25 },
-  { header: "admitted", key: "isAdmitted", width: 25 },
+  { header: "payerAction", key: "payerAction", width: 15 },
+  { header: "confirmed", key: "isConfirmed", width: 20 },
+  { header: "admitted", key: "isAdmitted", width: 20 },
 ];
 
 export const monthlySummaryexcelColumns = [
