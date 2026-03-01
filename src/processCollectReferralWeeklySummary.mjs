@@ -25,6 +25,39 @@ import {
 
 const { DISCHARGED, ACCEPTED, ADMITTED, CONFIRMED } = TABS_COLLECTION_TYPES;
 
+const checkTabType = (tabName, type) =>
+  tabName === PATIENT_SECTIONS_STATUS[type].categoryReference;
+
+const getSourceProvider = (patient = {}) => {
+  return (
+    patient.sourceProvider ??
+    patient.assignedProvider ??
+    patient.provider ??
+    null
+  );
+};
+
+const getConfirmedAndAdmittedStatus = (tabName) => {
+  const isAccepted = checkTabType(tabName, ACCEPTED);
+  const isAdmitted = checkTabType(tabName, ADMITTED);
+  const isDischarged = checkTabType(tabName, DISCHARGED);
+  const isAdmittedOrDischarged = isAdmitted || isDischarged;
+  const isRejected = tabName === "declined";
+
+  const isConfirmed =
+    checkTabType(tabName, CONFIRMED) || isAdmittedOrDischarged;
+
+  return {
+    isAdmittedOrDischarged,
+    isAccepted,
+    providerAction: isRejected ? "rejected" : "accepted",
+    isRejected: isRejected ? "yes" : "no",
+    payerAction: isAccepted ? "in acceptance" : "confirmed",
+    isAdmitted: isAdmittedOrDischarged ? "yes" : "no",
+    isConfirmed: isConfirmed ? "yes" : "no",
+  };
+};
+
 const getLastThursdayToWednesdayRange = (baseDate = new Date()) => {
   // baseDate should be the Thursday run time
   const end = new Date(baseDate);
@@ -68,8 +101,12 @@ const processCollectReferralWeeklySummary = async (
     ? getMonthDateRange()
     : getLastThursdayToWednesdayRange(new Date());
 
-  console.log("summaryStart => summaryEnd", summaryStart, summaryEnd);
-  console.log("start, end", start, end);
+  console.log(`detailed summary for isMonthlySummary=${isMonthlySummary}`, {
+    start,
+    end,
+    summaryEnd,
+    summaryStart,
+  });
 
   const { patients: apisPatients, errors } = await getSummaryFromTabs({
     page,
@@ -118,39 +155,6 @@ const processCollectReferralWeeklySummary = async (
   const apisPatientsKeys = apisPatients.map((patient) =>
     createPatientRowKey(patient),
   );
-
-  const checkTabType = (tabName, type) =>
-    tabName === PATIENT_SECTIONS_STATUS[type].categoryReference;
-
-  const getConfirmedAndAdmittedStatus = (tabName) => {
-    const isAccepted = checkTabType(tabName, ACCEPTED);
-    const isAdmitted = checkTabType(tabName, ADMITTED);
-    const isDischarged = checkTabType(tabName, DISCHARGED);
-    const isAdmittedOrDischarged = isAdmitted || isDischarged;
-    const isRejected = tabName === "declined";
-
-    const isConfirmed =
-      checkTabType(tabName, CONFIRMED) || isAdmittedOrDischarged;
-
-    return {
-      isAdmittedOrDischarged,
-      isAccepted,
-      providerAction: isRejected ? "rejected" : "accepted",
-      isRejected: isRejected ? "yes" : "no",
-      payerAction: isAccepted ? "in acceptance" : "confirmed",
-      isAdmitted: isAdmittedOrDischarged ? "yes" : "no",
-      isConfirmed: isConfirmed ? "yes" : "no",
-    };
-  };
-
-  const getSourceProvider = (patient = {}) => {
-    return (
-      patient.sourceProvider ??
-      patient.assignedProvider ??
-      patient.provider ??
-      null
-    );
-  };
 
   const { fullPatients, newPatients } = apisPatients.reduce(
     (acc, patient) => {
