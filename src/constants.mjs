@@ -161,6 +161,8 @@ export const monthlySummaryBookexcelColumns = [
 export const detailedMonthlySummaryBookexcelColumns = [
   { header: "total", key: "total", width: 25 },
   { header: "no reply", key: "noReply", width: 25 },
+  { header: "late reply", key: "lateReply", width: 25 },
+  { header: "Dropped", key: "dropped", width: 25 },
   { header: "Rejected", key: "rejected", width: 25 },
   ...monthlySummaryBookexcelColumns,
 ];

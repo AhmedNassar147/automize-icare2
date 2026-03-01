@@ -164,6 +164,14 @@ const sendSummaryExcelToWhatsapp = async (
           acc.noReply += 1;
         }
 
+        if (patient.providerAction?.endsWith("late reply")) {
+          acc.lateReply += 1;
+        }
+
+        if (patient.payerAction?.endsWith("dropped")) {
+          acc.dropped += 1;
+        }
+
         return acc;
       },
       {
@@ -171,6 +179,8 @@ const sendSummaryExcelToWhatsapp = async (
         confirmed: 0,
         rejected: 0,
         noReply: 0,
+        lateReply: 0,
+        dropped: 0,
         total: allPatients.length,
       },
     );
