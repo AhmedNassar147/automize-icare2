@@ -143,10 +143,10 @@ export const NOTES_PATH_RE = /^\/referrals\/[^/]+\/notes$/; // /referrals/358358
 export const excelColumns = [
   { header: "order", key: "order", width: 12 },
   { header: "Referral Date", key: "referralDate", width: 26 },
-  { header: "GMS Referral Id", key: "idReferral", width: 22 },
+  { header: "GMS Referral Id", key: "idReferral", width: 20 },
   { header: "MOH Referral Nb", key: "ihalatyReference", width: 22 },
-  { header: "Patient Name", key: "adherentName", width: 40 },
-  { header: "National ID", key: "adherentNationalId", width: 22 },
+  { header: "Patient Name", key: "adherentName", width: 38 },
+  { header: "National ID", key: "adherentNationalId", width: 20 },
   { header: "Referral Type", key: "referralType", width: 22 },
   { header: "Referral Reason", key: "referralReason", width: 28 },
   { header: "Source Zone", key: "sourceZone", width: 15 },
@@ -156,6 +156,13 @@ export const excelColumns = [
 export const monthlySummaryBookexcelColumns = [
   { header: "Confirmed", key: "confirmed", width: 25 },
   { header: "Admitted", key: "admitted", width: 25 },
+];
+
+export const detailedMonthlySummaryBookexcelColumns = [
+  { header: "total", key: "total", width: 25 },
+  { header: "no reply", key: "noReply", width: 25 },
+  { header: "Rejected", key: "rejected", width: 25 },
+  ...monthlySummaryBookexcelColumns,
 ];
 
 export const weeklySummaryexcelColumns = [
@@ -169,8 +176,8 @@ export const weeklySummaryexcelColumns = [
   { header: "received", key: "isReceived", width: 10 },
   { header: "providerAction", key: "providerAction", width: 35 },
   { header: "payerAction", key: "payerAction", width: 15 },
-  { header: "confirmed", key: "isConfirmed", width: 20 },
-  { header: "admitted", key: "isAdmitted", width: 20 },
+  { header: "confirmed", key: "isConfirmed", width: 14 },
+  { header: "admitted", key: "isAdmitted", width: 14 },
 ];
 
 export const monthlySummaryexcelColumns = [

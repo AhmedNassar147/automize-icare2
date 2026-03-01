@@ -36,6 +36,7 @@ const weeklyHistoryDb = new Database(weeklyHistoryFilePath);
           payerAction TEXT,             -- confirmed or dropped
           isAdmitted TEXT,                    -- yes/no
           isConfirmed TEXT,                    -- yes/no
+          isRejected TEXT,                    -- yes/no
           tabName TEXT DEFAULT '',
           paid INTEGER DEFAULT 0,             -- 0 = false, 1 = true
           createdAt TEXT DEFAULT (datetime('now')),
@@ -118,6 +119,7 @@ const toDbRow = (oldRow, patient) => {
     providerAction: merged.providerAction ?? null,
     payerAction: merged.payerAction ?? null,
     isAdmitted: merged.isAdmitted ?? null,
+    isRejected: merged.isRejected ?? null,
     isConfirmed: merged.isConfirmed ?? null,
   };
 };
@@ -142,6 +144,7 @@ const insertPatientSQL = `
     payerAction,
     isAdmitted,
     isConfirmed,
+    isRejected,
     updatedAt
   ) VALUES (
     @rowKey,
@@ -162,6 +165,7 @@ const insertPatientSQL = `
     @payerAction,
     @isAdmitted,
     @isConfirmed,
+    @isRejected,
     datetime('now')
   )
   ON CONFLICT(rowKey) DO UPDATE SET
@@ -181,7 +185,8 @@ const insertPatientSQL = `
     providerAction    = COALESCE(excluded.providerAction, providerAction),
     payerAction       = COALESCE(excluded.payerAction, payerAction),
     isAdmitted        = COALESCE(excluded.isAdmitted, isAdmitted),
-    isConfirmed        = COALESCE(excluded.isConfirmed, isConfirmed),
+    isConfirmed       = COALESCE(excluded.isConfirmed, isConfirmed),
+    isRejected        = COALESCE(excluded.isRejected, isRejected),
     updatedAt         = datetime('now')
 `;
 
@@ -204,6 +209,7 @@ const updatePatientSQL = `
     payerAction = @payerAction,
     isAdmitted = @isAdmitted,
     isConfirmed = @isConfirmed,
+    isRejected = @isRejected,
     updatedAt = datetime('now')
   WHERE rowKey = @rowKey
 `;
@@ -227,6 +233,7 @@ const migratePatientsTable = (database) => {
   ensureColumn(database, "patients", "providerAction", "TEXT");
   ensureColumn(database, "patients", "payerAction", "TEXT");
   ensureColumn(database, "patients", "isAdmitted", "TEXT");
+  ensureColumn(database, "patients", "isRejected", "TEXT");
   ensureColumn(database, "patients", "isConfirmed", "TEXT");
 };
 

@@ -12,6 +12,7 @@ import {
   weeklySummaryexcelColumns,
   monthlySummaryexcelColumns,
   monthlySummaryBookexcelColumns,
+  detailedMonthlySummaryBookexcelColumns,
   SUMMARY_TYPES,
 } from "./constants.mjs";
 
@@ -19,6 +20,11 @@ const columns = {
   [SUMMARY_TYPES.NORMAL]: excelColumns,
   [SUMMARY_TYPES.WEEKLY]: weeklySummaryexcelColumns,
   [SUMMARY_TYPES.MONTHLY]: monthlySummaryexcelColumns,
+};
+
+const secondarySheetColumns = {
+  [SUMMARY_TYPES.MONTHLY]: monthlySummaryBookexcelColumns,
+  [SUMMARY_TYPES.WEEKLY]: detailedMonthlySummaryBookexcelColumns,
 };
 
 const styleSheet = (sheet) => {
@@ -149,14 +155,26 @@ const sendSummaryExcelToWhatsapp = async (
         if (patient.isAdmitted === "yes") {
           acc.admitted += 1;
         }
+
+        if (patient.isRejected === "yes") {
+          acc.rejected += 1;
+        }
+
+        if (patient.providerAction?.endsWith("no reply")) {
+          acc.noReply += 1;
+        }
+
         return acc;
       },
       {
         admitted: 0,
         confirmed: 0,
+        rejected: 0,
+        noReply: 0,
+        total: allPatients.length,
       },
     );
-    secondarySummarySheet.columns = monthlySummaryBookexcelColumns;
+    secondarySummarySheet.columns = secondarySheetColumns[summaryType];
     secondarySummarySheet.addRow(data);
     styleSheet(secondarySummarySheet);
   }

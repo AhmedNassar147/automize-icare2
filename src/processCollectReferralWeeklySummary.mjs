@@ -68,6 +68,8 @@ const processCollectReferralWeeklySummary = async (
     ? getMonthDateRange()
     : getLastThursdayToWednesdayRange(new Date());
 
+  console.log("summaryStart => summaryEnd", summaryStart, summaryEnd);
+
   const { patients: apisPatients, errors } = await getSummaryFromTabs({
     page,
     reportStartsAt: summaryStart,
@@ -124,7 +126,7 @@ const processCollectReferralWeeklySummary = async (
     const isAdmitted = checkTabType(tabName, ADMITTED);
     const isDischarged = checkTabType(tabName, DISCHARGED);
     const isAdmittedOrDischarged = isAdmitted || isDischarged;
-    const isDeclined = tabName === "declined";
+    const isRejected = tabName === "declined";
 
     const isConfirmed =
       checkTabType(tabName, CONFIRMED) || isAdmittedOrDischarged;
@@ -132,8 +134,8 @@ const processCollectReferralWeeklySummary = async (
     return {
       isAdmittedOrDischarged,
       isAccepted,
-      isDeclined,
-      providerAction: isDeclined ? "rejected" : "accepted",
+      providerAction: isRejected ? "rejected" : "accepted",
+      isRejected: isRejected ? "yes" : "no",
       payerAction: isAccepted ? "in acceptance" : "confirmed",
       isAdmitted: isAdmittedOrDischarged ? "yes" : "no",
       isConfirmed: isConfirmed ? "yes" : "no",
@@ -154,8 +156,13 @@ const processCollectReferralWeeklySummary = async (
       const { tabName } = patient;
       const rowKey = createPatientRowKey(patient);
 
-      const { providerAction, payerAction, isAdmitted, isConfirmed } =
-        getConfirmedAndAdmittedStatus(tabName);
+      const {
+        providerAction,
+        payerAction,
+        isAdmitted,
+        isRejected,
+        isConfirmed,
+      } = getConfirmedAndAdmittedStatus(tabName);
 
       const itemBaseData = {
         isSent: "yes",
@@ -163,6 +170,7 @@ const processCollectReferralWeeklySummary = async (
         providerAction,
         payerAction,
         isAdmitted,
+        isRejected,
         isConfirmed,
       };
 
@@ -191,8 +199,13 @@ const processCollectReferralWeeklySummary = async (
             ...otherData
           } = existingPatient;
 
-          const { providerAction, payerAction, isAdmitted, isConfirmed } =
-            getConfirmedAndAdmittedStatus(tabName);
+          const {
+            providerAction,
+            payerAction,
+            isAdmitted,
+            isRejected,
+            isConfirmed,
+          } = getConfirmedAndAdmittedStatus(tabName);
 
           const patient = {
             rowKey: existingRowKey,
@@ -206,6 +219,7 @@ const processCollectReferralWeeklySummary = async (
             payerAction: otherData.payerAction || payerAction,
             isAdmitted: otherData.isAdmitted || isAdmitted,
             isConfirmed: otherData.isConfirmed || isConfirmed || "no",
+            isRejected: otherData.isRejected || isRejected || "no",
             ...otherData,
           };
 
@@ -215,6 +229,7 @@ const processCollectReferralWeeklySummary = async (
               payerAction: "dropped",
               isAdmitted: "no",
               isConfirmed: "no",
+              isRejected: "no",
               typeX: "!apisPatientsKeys.includes(existingRowKey)",
             };
           }
