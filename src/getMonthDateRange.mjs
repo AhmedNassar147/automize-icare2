@@ -14,16 +14,17 @@ const getMonthDateRange = (useCurrentMonth) => {
   const monthForLast = useCurrentMonth ? dateMonth + 1 : dateMonth;
 
   const first = new Date(now.getFullYear(), monthForFirst, 1);
-  const last = new Date(now.getFullYear(), monthForLast, 0);
+  const lastForDb = new Date(now.getFullYear(), monthForLast, 0);
+  const last = new Date(now.getFullYear(), monthForLast, 1);
 
-  // Match your stored format: "YYYY-MM-DDTHH:mm:ss" (no milliseconds, no Z)
-  const toDbIso = (d) => d.toISOString().slice(0, 19);
+  const summaryStart = getFormattedDateForSummary(first);
+  const summaryEnd = getFormattedDateForSummary(last);
 
   return {
-    start: toDbIso(first),
-    end: toDbIso(last),
-    summaryStart: getFormattedDateForSummary(first),
-    summaryEnd: getFormattedDateForSummary(last),
+    start: `${summaryStart}T00:00:00`,
+    end: `${getFormattedDateForSummary(lastForDb)}T23:59:59`,
+    summaryStart: summaryStart,
+    summaryEnd: summaryEnd,
   };
 };
 
