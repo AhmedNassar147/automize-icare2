@@ -84,6 +84,9 @@ const processCollectReferralWeeklySummary = async (
   sendWhatsappMessage,
   isMonthlySummary = false,
 ) => {
+  const useCurrentMonthForSummary =
+    process.env.DETAILED_REPORT_USES_CURRENT_MONTH;
+
   const { newPage: page, isLoggedIn } = await makeUserLoggedInOrOpenHomePage({
     browser,
     startingPageUrl: HOME_PAGE_URL,
@@ -98,7 +101,7 @@ const processCollectReferralWeeklySummary = async (
   }
 
   const { start, end, summaryEnd, summaryStart } = isMonthlySummary
-    ? getMonthDateRange()
+    ? getMonthDateRange(useCurrentMonthForSummary === "Y")
     : getLastThursdayToWednesdayRange(new Date());
 
   console.log(`detailed summary for isMonthlySummary=${isMonthlySummary}`, {
@@ -106,6 +109,8 @@ const processCollectReferralWeeklySummary = async (
     end,
     summaryEnd,
     summaryStart,
+    useCurrentMonthForSummary,
+    isMonthlySummary,
   });
 
   const { patients: apisPatients, errors } = await getSummaryFromTabs({

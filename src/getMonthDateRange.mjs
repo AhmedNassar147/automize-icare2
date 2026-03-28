@@ -8,14 +8,24 @@ import getFormattedDateForSummary from "./getFormattedDateForSummary.mjs";
 const getMonthDateRange = (useCurrentMonth) => {
   const now = new Date();
 
-  const dateMonth = now.getMonth();
+  const year = now.getFullYear();
+  const currentMonth = now.getMonth();
 
-  const monthForFirst = useCurrentMonth ? dateMonth : dateMonth - 1;
-  const monthForLast = useCurrentMonth ? dateMonth + 1 : dateMonth;
+  let first;
+  let lastForDb;
+  let last;
 
-  const first = new Date(now.getFullYear(), monthForFirst, 1);
-  const lastForDb = new Date(now.getFullYear(), monthForLast, 0);
-  const last = new Date(now.getFullYear(), monthForLast, 1);
+  if (useCurrentMonth) {
+    // ✅ Current month
+    first = new Date(year, currentMonth, 1);
+    lastForDb = new Date(year, currentMonth + 1, 0);
+    last = new Date(year, currentMonth + 1, 1);
+  } else {
+    // Previous month
+    first = new Date(year, currentMonth - 1, 1);
+    lastForDb = new Date(year, currentMonth, 0);
+    last = new Date(year, currentMonth, 1);
+  }
 
   const summaryStart = getFormattedDateForSummary(first);
   const summaryEnd = getFormattedDateForSummary(last);
