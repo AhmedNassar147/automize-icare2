@@ -35,8 +35,12 @@ const handleCaseAcceptanceOrRejection =
     const { referralId, referralEndTimestamp, providerName } = patient;
 
     try {
-      const { CLIENT_NAME, WAIT_FOR_ACCEPT_MS, CLIENT_WHATSAPP_NUMBER } =
-        process.env;
+      const {
+        CLIENT_NAME,
+        WAIT_FOR_ACCEPT_MS,
+        CLIENT_WHATSAPP_NUMBER,
+        NTFY_TOPIC,
+      } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
 
@@ -72,29 +76,65 @@ const handleCaseAcceptanceOrRejection =
 
       const remainingMs = referralEndTimestamp - Date.now();
 
-      const { reason, elapsedMs, message, attempts } =
-        await waitUntilCanTakeActionByWindow({
-          page,
-          referralId,
-          remainingMs,
+      const {
+        reason,
+        elapsedMs,
+        message,
+        attempts,
+        claimableServerTime,
+        claimableLocalTime,
+      } = await waitUntilCanTakeActionByWindow({
+        page,
+        referralId,
+        remainingMs,
+      });
+
+      const avgReactionMs = 100; // adjust after testing
+      const requiredDelayAfterClaim = 2350 + avgReactionMs;
+      const targetServerTime = claimableServerTime + requiredDelayAfterClaim;
+      const serverClientOffset = claimableServerTime - claimableLocalTime;
+
+      // Convert target server time to current local time
+      const targetLocalTime = targetServerTime - serverClientOffset;
+
+      const ntfyLatencyMs = 50;
+      const waitTime = Math.abs(targetLocalTime - Date.now() - ntfyLatencyMs);
+
+      if (waitTime > 0) {
+        await sleep(waitTime);
+      }
+
+      let ntfyResult = "";
+
+      if (NTFY_TOPIC) {
+        const result = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+          method: "POST",
+          body: "ACCEPT NOW: " + referralId,
         });
 
-      let beepRes = {};
-      const waitTime = WAIT_FOR_ACCEPT_MS * 1000;
-
-      if (waitTime) {
-        await sleep(waitTime);
-
+        const resJson = await result.json();
+        ntfyResult = Object.entries({
+          ...resJson,
+          avgReactionMs,
+          claimableServerTime,
+          claimableLocalTime,
+          requiredDelayAfterClaim,
+          targetServerTime,
+          serverClientOffset,
+          targetLocalTime,
+        })
+          .map(([key, value]) => `${key}=${value}`)
+          .join(" ");
+      } else {
         await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
           message: `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`,
         });
-
-        // beepRes = await makeBeep("0x40");
       }
+
       await closePageSafely(page);
 
       createConsoleMessage(
-        `✅ Patient=${referralId} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} beep.elapsedMs=${beepRes?.elapsedMs} beep.exitCode=${beepRes?.exitCode}`,
+        `✅ Patient=${referralId} waitTime=${waitTime}ms remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} ntfyResult=${ntfyResult}`,
         "warn",
       );
 

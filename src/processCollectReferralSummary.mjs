@@ -19,7 +19,7 @@ const processCollectReferralSummary = async (
   browser,
   sendWhatsappMessage,
   firstSummaryReportStartsAt,
-  firstSummaryReportEndsAt,
+  summaryReportEndsAt,
 ) => {
   const { newPage: page, isLoggedIn } = await makeUserLoggedInOrOpenHomePage({
     browser,
@@ -37,7 +37,7 @@ const processCollectReferralSummary = async (
   const { patients: apisPatients, errors } = await getSummaryFromTabs({
     page,
     reportStartsAt: firstSummaryReportStartsAt,
-    reportEndsAt: firstSummaryReportEndsAt,
+    reportEndsAt: summaryReportEndsAt,
   });
 
   if (errors.length) {

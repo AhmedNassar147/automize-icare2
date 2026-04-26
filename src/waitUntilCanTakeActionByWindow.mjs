@@ -35,6 +35,11 @@ async function waitUntilCanTakeActionByWindow({
 
           if (!r.ok) return { ok: false, reason: `HTTP ${r.status}` };
 
+          // 🕒 Read server time from response header
+          const localNow = Date.now();
+          const serverDate = r.headers.get("Date");
+          const serverNow = serverDate ? new Date(serverDate).getTime() : null;
+
           const j = await r.json().catch(() => null);
           const { canTakeAction, canUpdate, status, message } = j?.data ?? {};
 
@@ -44,11 +49,15 @@ async function waitUntilCanTakeActionByWindow({
             ok,
             reason: ok ? "ready" : "not-ready",
             message: message || null,
+            serverNow,
+            localNow,
           };
         } catch (e) {
           return {
             ok: false,
             reason: e?.name || "err in catch",
+            serverNow: null,
+            localNow: null,
           };
         }
       }
@@ -70,6 +79,8 @@ async function waitUntilCanTakeActionByWindow({
             message: result.message,
             elapsedMs: Math.round(performance.now() - tStart),
             attempts,
+            claimableServerTime: result.serverNow,
+            claimableLocalTime: result.localNow,
           };
         }
 
@@ -82,7 +93,7 @@ async function waitUntilCanTakeActionByWindow({
       globMedHeaders,
       referralId,
       remainingMs,
-    }
+    },
   );
 }
 
