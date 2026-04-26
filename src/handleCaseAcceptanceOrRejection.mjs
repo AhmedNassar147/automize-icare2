@@ -90,7 +90,7 @@ const handleCaseAcceptanceOrRejection =
       });
 
       const avgReactionMs = 100; // adjust after testing
-      const requiredDelayAfterClaim = 2350 + avgReactionMs;
+      const requiredDelayAfterClaim = 2400 + avgReactionMs;
       const targetServerTime = claimableServerTime + requiredDelayAfterClaim;
       const serverClientOffset = claimableServerTime - claimableLocalTime;
 
