@@ -110,9 +110,14 @@ const handleCaseAcceptanceOrRejection =
         const result = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
           method: "POST",
           body: "ACCEPT NOW: " + referralId,
+          headers: {
+            // https://github.com/cityssm/node-ntfy-publish/blob/main/priorities.js
+            Priority: "5", // Add this line for max priority
+          },
         });
 
         const resJson = await result.json();
+        const isSent = result.ok;
         ntfyResult = Object.entries({
           ...resJson,
           avgReactionMs,
@@ -122,6 +127,7 @@ const handleCaseAcceptanceOrRejection =
           targetServerTime,
           serverClientOffset,
           targetLocalTime,
+          isSent: isSent,
         })
           .map(([key, value]) => `${key}=${value}`)
           .join(" ");
