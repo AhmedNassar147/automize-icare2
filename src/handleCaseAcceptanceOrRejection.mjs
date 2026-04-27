@@ -89,7 +89,7 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const requiredDelayAfterClaim = Math.floor(2495 + Math.random() * 15); // base cooldown only, NO reaction buffer
+      const requiredDelayAfterClaim = 2488; // base cooldown only, NO reaction buffer
       const targetClickLocalTime = claimableLocalTime + requiredDelayAfterClaim; // when you want the actual click
 
       const waitTime = targetClickLocalTime - Date.now();

@@ -33,10 +33,10 @@ async function waitUntilCanTakeActionByWindow({
             credentials: "include",
           });
 
+          const localNow = Date.now();
           if (!r.ok) return { ok: false, reason: `HTTP ${r.status}` };
 
           // 🕒 Read server time from response header
-          const localNow = Date.now();
           const serverDate = r.headers.get("Date");
           const serverNow = serverDate ? new Date(serverDate).getTime() : null;
 

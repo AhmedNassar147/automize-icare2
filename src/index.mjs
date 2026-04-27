@@ -50,7 +50,6 @@ import {
 } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
-import sleep from "./sleep.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -198,7 +197,7 @@ const currentProfile = "Profile 1";
 
     // WhatsApp client + outbound integration
     await initializeClient(CLIENT_WHATSAPP_NUMBER, patientsStore);
-    await sleep(5000); // ensure WhatsApp client is ready before accepting any events
+
     const sendWhatsappMessage = sendMessageUsingWhatsapp(patientsStore);
 
     patientsStore.on(

@@ -159,7 +159,6 @@ const processCollectingPatients = async ({
         ...patientData,
       };
 
-      await sleep(2500 + Math.random() * 2000);
       await patientsStore.addPatients(finalData);
 
       // Generate acceptance PDFs concurrently
@@ -168,7 +167,7 @@ const processCollectingPatients = async ({
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
-      await sleep(2500 + Math.random() * 2000);
+      await sleep(2500 + Math.random() * 3000);
     }
   } catch (err) {
     createConsoleMessage(
