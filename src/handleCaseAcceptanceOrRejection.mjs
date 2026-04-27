@@ -93,7 +93,7 @@ const handleCaseAcceptanceOrRejection =
       const reactionTimeBufferMs = Math.floor(145 + Math.random() * 15);
 
       const requiredDelayAfterClaim =
-        Math.floor(2435 + Math.random() * 15) + reactionTimeBufferMs;
+        Math.floor(2405 + Math.random() * 15) + reactionTimeBufferMs;
 
       const targetServerTime = claimableServerTime + requiredDelayAfterClaim;
 
