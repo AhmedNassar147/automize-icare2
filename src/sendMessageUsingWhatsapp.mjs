@@ -37,10 +37,10 @@ export const shutdownAllClients = async () => {
         createConsoleMessage(
           err,
           "error",
-          `❌ [${number}] Failed to destroy client:`
+          `❌ [${number}] Failed to destroy client:`,
         );
       }
-    })
+    }),
   );
   clients.clear();
   initializationLocks.clear();
@@ -61,7 +61,7 @@ const withLock = async (key, fn) => {
 export const initializeClient = async (
   number,
   patientsStore,
-  { headless = false } = {}
+  { headless = false } = {},
 ) =>
   withLock(number, async () => {
     const chatId = getChatId(number);
@@ -76,7 +76,7 @@ export const initializeClient = async (
       if (isReady || isInitializing) {
         createConsoleMessage(
           `ℹ️ [${number}] Client already initialized.`,
-          "info"
+          "info",
         );
         return;
       }
@@ -84,13 +84,13 @@ export const initializeClient = async (
         await oldClient.destroy();
         createConsoleMessage(
           `♻️ [${number}] Destroyed old client before reinitialization.`,
-          "info"
+          "info",
         );
       } catch (err) {
         createConsoleMessage(
           err,
           "error",
-          `❌ [${number}] Error destroying old client:`
+          `❌ [${number}] Error destroying old client:`,
         );
       }
     }
@@ -128,10 +128,10 @@ export const initializeClient = async (
       if (state.queue.length > 0) {
         createConsoleMessage(
           `📤 [${number}] Sending ${state.queue.length} queued message(s)...`,
-          "info"
+          "info",
         );
         await Promise.all(
-          state.queue.map((msg) => sendMessageWithFiles(number, msg))
+          state.queue.map((msg) => sendMessageWithFiles(number, msg)),
         );
         state.queue = [];
       }
@@ -160,12 +160,12 @@ export const initializeClient = async (
 
       createConsoleMessage(
         `🔁 [${number}] Retrying in ${(delay / 1000).toFixed(2)}s...`,
-        "info"
+        "info",
       );
 
       setTimeout(
         () => initializeClient(number, patientsStore, { headless }),
-        delay
+        delay,
       );
     });
 
@@ -176,7 +176,7 @@ export const initializeClient = async (
         if (!_from || !body) {
           createConsoleMessage(
             `⚠️ [${number}] Message missing 'from' or 'body'.`,
-            "warn"
+            "warn",
           );
           return;
         }
@@ -190,20 +190,20 @@ export const initializeClient = async (
 
         createConsoleMessage(
           `📨 [${number}] Incoming message from: ${from} — "${body}" where Expected chatId=${chatId}`,
-          "info"
+          "info",
         );
 
         if (from !== chatId) {
           createConsoleMessage(
             `⛔ [${number}] Message ignored — not from expected chatId.`,
-            "warn"
+            "warn",
           );
           return;
         }
 
         if (!message.hasQuotedMsg) {
           await message.reply(
-            `⚠️ Please reply to a *patient card* message with:\n${createConfirmationMessage()}`
+            `⚠️ Please reply to a *patient card* message with:\n${createConfirmationMessage()}`,
           );
           return;
         }
@@ -214,10 +214,10 @@ export const initializeClient = async (
         if (!referralId) {
           createConsoleMessage(
             `❌ [${number}] No referral ID in quoted message:\n${quotedMsg.body}`,
-            "error"
+            "error",
           );
           await quotedMsg.reply(
-            `❌ Invalid patient message — No *Referral ID* in quoted message.`
+            `❌ Invalid patient message — No *Referral ID* in quoted message.`,
           );
           return;
         }
@@ -240,7 +240,7 @@ export const initializeClient = async (
         if (isSentWithoutReply || isSentAndReceivedWithoutReply) {
           const actionNames = [
             ...new Set(
-              [storedPatient?.providerAction, "no reply"].filter(Boolean)
+              [storedPatient?.providerAction, "no reply"].filter(Boolean),
             ),
           ].join(" then ");
 
@@ -263,7 +263,7 @@ export const initializeClient = async (
 
         if (!isAcceptance && !isCancellation && !isRejection) {
           await message.reply(
-            `⚠️ Please select a patient card and reply with:\n${createConfirmationMessage()}`
+            `⚠️ Please select a patient card and reply with:\n${createConfirmationMessage()}`,
           );
           return;
         }
@@ -277,7 +277,7 @@ export const initializeClient = async (
 
           const actionNames = [
             ...new Set(
-              [storedPatient?.providerAction, actionName].filter(Boolean)
+              [storedPatient?.providerAction, actionName].filter(Boolean),
             ),
           ].join(" then ");
 
@@ -296,12 +296,12 @@ export const initializeClient = async (
           result = await patientsStore.scheduleAcceptedPatient(
             referralId,
             scheduledAt,
-            isSuperAcceptance
+            isSuperAcceptance,
           );
         } else if (isRejection) {
           result = await patientsStore.scheduleRejectedPatient(
             referralId,
-            scheduledAt
+            scheduledAt,
           );
         } else if (isCancellation) {
           result = await patientsStore.cancelPatient(referralId);
@@ -310,18 +310,18 @@ export const initializeClient = async (
         const { success, message: replyMessage } = result;
         const prefix = success ? "✅" : "❌";
         await quotedMsg.reply(
-          `${prefix} (Referral ID: ${referralId})  ${replyMessage}`
+          `${prefix} (Referral ID: ${referralId})  ${replyMessage}`,
         );
 
         createConsoleMessage(
           `📩 [${number}] Patient update result: ${prefix} ${replyMessage}`,
-          "info"
+          "info",
         );
       } catch (err) {
         createConsoleMessage(
           err,
           "error",
-          `❌ [${number}] Error handling incoming message:`
+          `❌ [${number}] Error handling incoming message:`,
         );
       }
     });
@@ -350,7 +350,7 @@ const sendMessageWithFiles = async (number, msgWithFiles) => {
         const media = new MessageMedia(
           mimeType,
           cleanBase64,
-          `${fileName}.${extension}`
+          `${fileName}.${extension}`,
         );
         await client.sendMessage(chatId, media);
       }
@@ -359,7 +359,7 @@ const sendMessageWithFiles = async (number, msgWithFiles) => {
     createConsoleMessage(
       err,
       "error",
-      `❌ [${number}] Failed to send message or files:`
+      `❌ [${number}] Failed to send message or files:`,
     );
   }
 };
@@ -376,7 +376,7 @@ const sendMessageUsingWhatsapp =
     if (!state?.isReady) {
       createConsoleMessage(
         `📥 [${phoneNo}] Client not ready — queuing messages`,
-        "info"
+        "info",
       );
       state.queue.push(...safeMessages);
     } else {
@@ -387,7 +387,7 @@ const sendMessageUsingWhatsapp =
           createConsoleMessage(
             err,
             "error",
-            `❌ [${phoneNo}] Failed to send message:`
+            `❌ [${phoneNo}] Failed to send message:`,
           );
         }
       }

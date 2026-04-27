@@ -23,7 +23,7 @@ const getSaudiStartAndEndDate = ({
 
   // Convert to Saudi time
   let saStartDate = new Date(
-    utcDate.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
+    utcDate.toLocaleString("en-US", { timeZone: "Asia/Riyadh" }),
   );
 
   let leftMs = 15 * 60 * 1000;
@@ -32,7 +32,7 @@ const getSaudiStartAndEndDate = ({
 
   if (saStartDate < new Date(currentDate - Min_15) && caseAlertMessage) {
     const match = caseAlertMessage.match(
-      /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/
+      /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/,
     );
 
     const minsLeft = parseInt(match?.[1], 10) ?? 0;
@@ -43,7 +43,7 @@ const getSaudiStartAndEndDate = ({
     const backExtraTime = Min_15 - _leftMs;
 
     saStartDate = new Date(
-      detailsAPiFiresAtMS - detailsAPiServerResponseTimeMS - backExtraTime
+      detailsAPiFiresAtMS - detailsAPiServerResponseTimeMS - backExtraTime,
     );
   }
 
@@ -68,7 +68,7 @@ const getSaudiStartAndEndDate = ({
     referralEndTimestamp: referralEndTimestamp,
     referralEndDateActionableAtMS,
     referralEndDateActionablAt: formateDateToString(
-      referralEndDateActionableAtMS
+      referralEndDateActionableAtMS,
     ),
   };
 };
@@ -99,13 +99,13 @@ const processCollectingPatients = async ({
 
       createConsoleMessage(
         `🔹 Progress: ${index}/${patientsLength} (referralId=${referralId})`,
-        "info"
+        "info",
       );
 
       if (patientsStore.has(referralId)) {
         createConsoleMessage(
           `✅ Skipping referralId=${referralId} already collected...`,
-          "warn"
+          "warn",
         );
         continue;
       }
@@ -114,14 +114,14 @@ const processCollectingPatients = async ({
       if (!newPatientAdded) newPatientAdded = true;
 
       createConsoleMessage(
-        `📡 Fetching data for referralId=(${referralId})...`
+        `📡 Fetching data for referralId=(${referralId})...`,
       );
 
       // Call existing API function to get detailed patient info
       const patientData = await insureFetchedPatientData(
         () => getPatientReferralDataFromAPI(page, referralId),
         3, // attempts
-        1200 // base backoff ms
+        1200, // base backoff ms
       );
 
       const {
@@ -142,7 +142,7 @@ const processCollectingPatients = async ({
       if (hasInternalError) {
         createConsoleMessage(
           `❌ Error collecting referralId=${referralId} => patientData=${!!patientData}, patientDetailsError=${patientDetailsError}, patientInfoError=${patientInfoError}, attchmentsError=${attchmentsError}`,
-          "error"
+          "error",
         );
         continue;
       }
@@ -159,6 +159,7 @@ const processCollectingPatients = async ({
         ...patientData,
       };
 
+      await sleep(2500 + Math.random() * 2000);
       await patientsStore.addPatients(finalData);
 
       // Generate acceptance PDFs concurrently
@@ -167,13 +168,13 @@ const processCollectingPatients = async ({
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
-      await sleep(2500 + Math.random() * 3000);
+      await sleep(2500 + Math.random() * 2000);
     }
   } catch (err) {
     createConsoleMessage(
       err,
       "error",
-      `🛑 Fatal error during processing patients:`
+      `🛑 Fatal error during processing patients:`,
     );
   }
 
