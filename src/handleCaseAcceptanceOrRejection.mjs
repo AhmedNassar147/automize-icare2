@@ -89,10 +89,17 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const requiredDelayAfterClaim = 2488; // base cooldown only, NO reaction buffer
-      const targetClickLocalTime = claimableLocalTime + requiredDelayAfterClaim; // when you want the actual click
+      const COOLDOWN_MS = 2480;
+      const targetServerTime = referralEndTimestamp + COOLDOWN_MS; // start COOLDOWN_MS = 0
 
-      const waitTime = targetClickLocalTime - Date.now();
+      // 2. Server→local offset (you already have it)
+      const offset = claimableServerTime - claimableLocalTime; // e.g., -293
+
+      // 3. The precise local time you must click Accept
+      const targetLocalTime = targetServerTime - offset;
+
+      const ntfLatency = 80; // estimated time it takes to send ntfy notification
+      const waitTime = targetLocalTime - Date.now() - ntfLatency;
 
       if (waitTime > 0) {
         await sleep(waitTime);
@@ -118,11 +125,17 @@ const handleCaseAcceptanceOrRejection =
         const isSent = result.ok;
         ntfyResult = Object.entries({
           ...resJson,
+          isSent: isSent,
           claimableServerTime,
           claimableLocalTime,
-          requiredDelayAfterClaim,
-          targetClickLocalTime,
-          isSent: isSent,
+          referralEndTimestamp,
+          COOLDOWN_MS,
+          targetServerTime,
+          offset,
+          targetLocalTime,
+          ntfLatency,
+          diff1: referralEndTimestamp - claimableServerTime,
+          diff2: referralEndTimestamp - claimableLocalTime,
         })
           .map(([key, value]) => `${key}=${value}`)
           .join(" ");
