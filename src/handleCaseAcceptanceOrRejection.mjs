@@ -97,7 +97,7 @@ const handleCaseAcceptanceOrRejection =
       // Convert target server time to current local time
       const targetLocalTime = targetServerTime - serverClientOffset;
 
-      const ntfyLatencyMs = 50;
+      const ntfyLatencyMs = 70;
       const waitTime = Math.abs(targetLocalTime - Date.now() - ntfyLatencyMs);
 
       if (waitTime > 0) {
