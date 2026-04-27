@@ -89,8 +89,7 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const avgReactionMs = 100; // adjust after testing
-      const requiredDelayAfterClaim = 2400 + avgReactionMs;
+      const requiredDelayAfterClaim = Math.floor(2450 + Math.random() * 15);
       const targetServerTime = claimableServerTime + requiredDelayAfterClaim;
       const serverClientOffset = claimableServerTime - claimableLocalTime;
 
@@ -124,7 +123,6 @@ const handleCaseAcceptanceOrRejection =
         const isSent = result.ok;
         ntfyResult = Object.entries({
           ...resJson,
-          avgReactionMs,
           claimableServerTime,
           claimableLocalTime,
           requiredDelayAfterClaim,

@@ -43,7 +43,8 @@ async function waitUntilCanTakeActionByWindow({
           const j = await r.json().catch(() => null);
           const { canTakeAction, canUpdate, status, message } = j?.data ?? {};
 
-          const ok = !!(canTakeAction && canUpdate && status === "P");
+          const ok =
+            !!(canTakeAction && canUpdate && status === "P") && !message;
 
           return {
             ok,
