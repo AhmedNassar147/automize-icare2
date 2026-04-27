@@ -98,7 +98,7 @@ const handleCaseAcceptanceOrRejection =
       // 3. The precise local time you must click Accept
       const targetLocalTime = targetServerTime - offset;
 
-      const ntfLatency = 80; // estimated time it takes to send ntfy notification
+      const ntfLatency = 30; // estimated time it takes to send ntfy notification
       const waitTime = targetLocalTime - Date.now() - ntfLatency;
 
       if (waitTime > 0) {
