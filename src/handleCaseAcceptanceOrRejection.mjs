@@ -89,14 +89,25 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const requiredDelayAfterClaim = Math.floor(2450 + Math.random() * 15);
+      // Buffer to account for human reaction time and any minor delays
+      const reactionTimeBufferMs = Math.floor(145 + Math.random() * 15);
+
+      const requiredDelayAfterClaim =
+        Math.floor(2435 + Math.random() * 15) + reactionTimeBufferMs;
+
       const targetServerTime = claimableServerTime + requiredDelayAfterClaim;
+
       const serverClientOffset = claimableServerTime - claimableLocalTime;
 
       // Convert target server time to current local time
       const targetLocalTime = targetServerTime - serverClientOffset;
 
-      const ntfyLatencyMs = 70;
+      // Start with ntfyLatencyMs = 90 (conservative).
+      // Monitor the results: if you never get blocked and often lose the case, lower it by 20.
+      // If you sometimes get blocked (early click), increase it —
+      // but that's less likely because reaction time already adds a buffer.
+
+      const ntfyLatencyMs = 90; // Estimated latency for ntfy notification to be received
       const waitTime = Math.abs(targetLocalTime - Date.now() - ntfyLatencyMs);
 
       if (waitTime > 0) {
@@ -125,6 +136,7 @@ const handleCaseAcceptanceOrRejection =
           ...resJson,
           claimableServerTime,
           claimableLocalTime,
+          reactionTimeBufferMs,
           requiredDelayAfterClaim,
           targetServerTime,
           serverClientOffset,
