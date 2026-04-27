@@ -89,26 +89,14 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      // Buffer to account for human reaction time and any minor delays
-      const reactionTimeBufferMs = Math.floor(145 + Math.random() * 15);
+      const requiredDelayAfterClaim = Math.floor(2405 + Math.random() * 15); // base cooldown only, NO reaction buffer
+      const targetClickLocalTime = claimableLocalTime + requiredDelayAfterClaim; // when you want the actual click
 
-      const requiredDelayAfterClaim =
-        Math.floor(2405 + Math.random() * 15) + reactionTimeBufferMs;
+      const ntfyLatencyMs = 90;
+      // const reactionTimeMs = 150; // average, can be tuned
+      const totalAdjustment = ntfyLatencyMs;
 
-      const targetServerTime = claimableServerTime + requiredDelayAfterClaim;
-
-      const serverClientOffset = claimableServerTime - claimableLocalTime;
-
-      // Convert target server time to current local time
-      const targetLocalTime = targetServerTime - serverClientOffset;
-
-      // Start with ntfyLatencyMs = 90 (conservative).
-      // Monitor the results: if you never get blocked and often lose the case, lower it by 20.
-      // If you sometimes get blocked (early click), increase it —
-      // but that's less likely because reaction time already adds a buffer.
-
-      const ntfyLatencyMs = 90; // Estimated latency for ntfy notification to be received
-      const waitTime = Math.abs(targetLocalTime - Date.now() - ntfyLatencyMs);
+      const waitTime = targetClickLocalTime - Date.now() - totalAdjustment;
 
       if (waitTime > 0) {
         await sleep(waitTime);
@@ -136,11 +124,11 @@ const handleCaseAcceptanceOrRejection =
           ...resJson,
           claimableServerTime,
           claimableLocalTime,
-          reactionTimeBufferMs,
           requiredDelayAfterClaim,
-          targetServerTime,
-          serverClientOffset,
-          targetLocalTime,
+          targetClickLocalTime,
+          ntfyLatencyMs,
+          // reactionTimeMs,
+          totalAdjustment,
           isSent: isSent,
         })
           .map(([key, value]) => `${key}=${value}`)
