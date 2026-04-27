@@ -89,14 +89,10 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const requiredDelayAfterClaim = Math.floor(2405 + Math.random() * 15); // base cooldown only, NO reaction buffer
+      const requiredDelayAfterClaim = Math.floor(2490 + Math.random() * 12); // base cooldown only, NO reaction buffer
       const targetClickLocalTime = claimableLocalTime + requiredDelayAfterClaim; // when you want the actual click
 
-      const ntfyLatencyMs = 90;
-      // const reactionTimeMs = 150; // average, can be tuned
-      const totalAdjustment = ntfyLatencyMs;
-
-      const waitTime = targetClickLocalTime - Date.now() - totalAdjustment;
+      const waitTime = targetClickLocalTime - Date.now();
 
       if (waitTime > 0) {
         await sleep(waitTime);
@@ -126,9 +122,6 @@ const handleCaseAcceptanceOrRejection =
           claimableLocalTime,
           requiredDelayAfterClaim,
           targetClickLocalTime,
-          ntfyLatencyMs,
-          // reactionTimeMs,
-          totalAdjustment,
           isSent: isSent,
         })
           .map(([key, value]) => `${key}=${value}`)
