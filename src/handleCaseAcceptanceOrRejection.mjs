@@ -89,20 +89,40 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const COOLDOWN_MS = 2050;
-      const targetServerTime = referralEndTimestamp + COOLDOWN_MS; // start COOLDOWN_MS = 0
+      const COOLDOWN_MS = 2000;
+
+      const _referralEndTimestamp =
+        referralEndTimestamp >= claimableServerTime
+          ? claimableServerTime
+          : referralEndTimestamp;
 
       // 2. Server→local offset (you already have it)
       const offset = claimableServerTime - claimableLocalTime; // e.g., -293
-
       // 3. The precise local time you must click Accept
-      const targetLocalTime = targetServerTime - offset;
+      const targetServerTime = _referralEndTimestamp - offset;
+
+      const targetLocalTime = targetServerTime + COOLDOWN_MS;
 
       const ntfLatency = 80; // estimated time it takes to send ntfy notification
       const waitTime = targetLocalTime - Date.now();
 
-      // COOLDOWN_MS=2450
+      // waitTime=2000ms
+      // claimableServerTime=1777392291000
+      // claimableLocalTime=1777392290745
+      // referralEndTimestamp=1777392292000
+      // COOLDOWN_MS=2000
+      // targetServerTime=1777392293000
+      // offset=255
+      // targetLocalTime=1777392292745
+      // _referralEndTimestamp=1777392291000
+      // ntfLatency=80
+      // diff1=1000
+      // diff2=1255
+      // _diff1=0
+      // _diff2=255
+
       // waitTime=3417ms
+      // COOLDOWN_MS=2450
       // referralEndTimestamp=1777335254000
       // claimableServerTime=1777335253000
       // claimableLocalTime=1777335253186
@@ -148,6 +168,9 @@ const handleCaseAcceptanceOrRejection =
           ntfLatency,
           diff1: referralEndTimestamp - claimableServerTime,
           diff2: referralEndTimestamp - claimableLocalTime,
+          _referralEndTimestamp,
+          _diff1: _referralEndTimestamp - claimableServerTime,
+          _diff2: _referralEndTimestamp - claimableLocalTime,
         })
           .map(([key, value]) => `${key}=${value}`)
           .join(" ");
