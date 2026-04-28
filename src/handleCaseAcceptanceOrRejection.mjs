@@ -89,23 +89,7 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      // const COOLDOWN_MS = 2000;
-
-      // const _referralEndTimestamp =
-      //   referralEndTimestamp >= claimableServerTime
-      //     ? claimableServerTime
-      //     : referralEndTimestamp;
-
-      // // 2. Server→local offset (you already have it)
-      // const offset = claimableServerTime - claimableLocalTime; // e.g., -293
-      // // 3. The precise local time you must click Accept
-      // const targetServerTime = _referralEndTimestamp - offset;
-
-      // const targetLocalTime = targetServerTime + COOLDOWN_MS;
-
-      // const waitTime = targetLocalTime - Date.now();
-
-      const COOLDOWN_MS = 2350; // start here, tune by ±100
+      const COOLDOWN_MS = 2300; // start here, tune by ±100
 
       // 1. Base = moment the button truly appears
       const targetServerTime = claimableServerTime + COOLDOWN_MS;
@@ -115,7 +99,10 @@ const handleCaseAcceptanceOrRejection =
       const targetLocalTime = targetServerTime - offset;
 
       // 3. Wait exactly until that local moment
-      const waitTime = targetLocalTime - Date.now() - 50;
+      const waitTime = targetLocalTime - Date.now() - 25;
+
+      // ✅ waitTime=2248ms claimableServerTime=1777407264000 claimableLocalTime=1777407263623 referralEndTimestamp=1777407265000 COOLDOWN_MS=2300 targetServerTime=1777407266300 offset=377 targetLocalTime=1777407265923 diff1=1000 diff2=1377
+      // ✅ waitTime=2248ms claimableServerTime=1777407548000 claimableLocalTime=1777407547647 referralEndTimestamp=1777407549000 COOLDOWN_MS=2300 targetServerTime=1777407550300 offset=353 targetLocalTime=1777407549947 diff1=1000 diff2=1353
 
       // waitTime=2298ms
       // claimableServerTime=1777403612000
