@@ -89,7 +89,7 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const COOLDOWN_MS = 2480;
+      const COOLDOWN_MS = 2350;
       const targetServerTime = referralEndTimestamp + COOLDOWN_MS; // start COOLDOWN_MS = 0
 
       // 2. Server→local offset (you already have it)
@@ -98,8 +98,20 @@ const handleCaseAcceptanceOrRejection =
       // 3. The precise local time you must click Accept
       const targetLocalTime = targetServerTime - offset;
 
-      const ntfLatency = 30; // estimated time it takes to send ntfy notification
+      const ntfLatency = 80; // estimated time it takes to send ntfy notification
       const waitTime = targetLocalTime - Date.now() - ntfLatency;
+
+      // COOLDOWN_MS=2450
+      // waitTime=3417ms
+      // referralEndTimestamp=1777335254000
+      // claimableServerTime=1777335253000
+      // claimableLocalTime=1777335253186
+      // targetServerTime=1777335256450
+      // offset=-186
+      // targetLocalTime=1777335256636
+      // ntfLatency=30
+      // diff1=1000
+      // diff2=814
 
       if (waitTime > 0) {
         await sleep(waitTime);
