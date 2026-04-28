@@ -99,7 +99,7 @@ const handleCaseAcceptanceOrRejection =
       const targetLocalTime = targetServerTime - offset;
 
       // 3. Wait exactly until that local moment
-      const waitTime = targetLocalTime - Date.now() - 25;
+      const waitTime = targetLocalTime - Date.now() - 20;
 
       // ✅ waitTime=2248ms claimableServerTime=1777407264000 claimableLocalTime=1777407263623 referralEndTimestamp=1777407265000 COOLDOWN_MS=2300 targetServerTime=1777407266300 offset=377 targetLocalTime=1777407265923 diff1=1000 diff2=1377
       // ✅ waitTime=2248ms claimableServerTime=1777407548000 claimableLocalTime=1777407547647 referralEndTimestamp=1777407549000 COOLDOWN_MS=2300 targetServerTime=1777407550300 offset=353 targetLocalTime=1777407549947 diff1=1000 diff2=1353
