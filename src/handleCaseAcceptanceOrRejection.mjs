@@ -115,7 +115,7 @@ const handleCaseAcceptanceOrRejection =
       const targetLocalTime = targetServerTime - offset;
 
       // 3. Wait exactly until that local moment
-      const waitTime = targetLocalTime - Date.now();
+      const waitTime = targetLocalTime - Date.now() - 50;
 
       // waitTime=2298ms
       // claimableServerTime=1777403612000
