@@ -89,7 +89,7 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      let COOLDOWN_MS = claimableServerTime > claimableLocalTime ? 2400 : 2100;
+      let COOLDOWN_MS = claimableServerTime > claimableLocalTime ? 2350 : 2100;
 
       const _referralEndTimestamp =
         referralEndTimestamp >= claimableServerTime
