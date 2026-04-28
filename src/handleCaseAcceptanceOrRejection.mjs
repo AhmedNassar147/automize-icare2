@@ -89,7 +89,7 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const COOLDOWN_MS = 2350;
+      const COOLDOWN_MS = 2050;
       const targetServerTime = referralEndTimestamp + COOLDOWN_MS; // start COOLDOWN_MS = 0
 
       // 2. Server→local offset (you already have it)
@@ -99,7 +99,7 @@ const handleCaseAcceptanceOrRejection =
       const targetLocalTime = targetServerTime - offset;
 
       const ntfLatency = 80; // estimated time it takes to send ntfy notification
-      const waitTime = targetLocalTime - Date.now() - ntfLatency;
+      const waitTime = targetLocalTime - Date.now();
 
       // COOLDOWN_MS=2450
       // waitTime=3417ms
@@ -176,3 +176,29 @@ const handleCaseAcceptanceOrRejection =
   };
 
 export default handleCaseAcceptanceOrRejection;
+
+// import { EventSource } from "eventsource";
+// const res = await fetch(`https://ntfy.sh/${process.env.NTFY_TOPIC}`, {
+//   method: "POST",
+//   body: JSON.stringify({
+//     referralId: "123522",
+//     type: "ACCEPT_REQUEST",
+//   }),
+//   headers: {
+//     "Content-Type": "application/json",
+//     Title: "Accept case 123522",
+//   },
+// });
+
+// const result = await res.json();
+// console.log("ntfy test response:", result);
+
+// const es = new EventSource(`https://ntfy.sh/${process.env.NTFY_TOPIC}/sse`);
+
+// es.onmessage = (event) => {
+//   const data = JSON.parse(event.data);
+
+//   console.log("Received:", data);
+// };
+
+// return;

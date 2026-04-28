@@ -3,14 +3,17 @@
  * Helper: `modifyGlobMedSourceCode`.
  *
  */
-// import { readFile, writeFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 
 function findReferralRendererName(src, markerIdx) {
   const marker = "referral-button-container";
 
+  // const re =
+  //   /(^|[^\w$])([A-Za-z_$][\w$]*)\s*=\s*\(\s*\)\s*=>\s*h\.jsx?s?\s*\(/gm;
+
   const re =
-    /(^|[^\w$])([A-Za-z_$][\w$]*)\s*=\s*\(\s*\)\s*=>\s*p\.jsx?s?\s*\(/gm;
+    /(^|[^\w$])([A-Za-z_$][\w$]*)\s*=\s*\(\s*\)\s*=>\s*(?:[A-Za-z_$][\w$]*)\s*\.\s*jsxs?\s*\(/gm;
 
   let bestName = null;
   let bestStart = -1;
@@ -39,7 +42,7 @@ function removeAllRendererInvocations(src, rendererName) {
   // but DO NOT touch: ni = () => ...
   const callRe = new RegExp(
     `(^|[\\[,\\s])${rendererName}\\s*\\(\\s*\\)\\s*,?`,
-    "g"
+    "g",
   );
 
   return src.replace(callRe, (m, prefix) => prefix);
@@ -50,8 +53,8 @@ function findEnclosingReactCallStart(src, anchorIdx) {
   const backStart = Math.max(0, anchorIdx - 6000);
   const back = src.slice(backStart, anchorIdx);
 
-  const jsxIdx = back.lastIndexOf("p.jsx(");
-  const jsxsIdx = back.lastIndexOf("p.jsxs(");
+  const jsxIdx = back.lastIndexOf("h.jsx(");
+  const jsxsIdx = back.lastIndexOf("h.jsxs(");
 
   const rel = Math.max(jsxIdx, jsxsIdx);
   if (rel === -1) return -1;
@@ -65,6 +68,7 @@ function insertRendererBeforePatientInfo(src) {
   if (markerIdx === -1) return src;
 
   const rendererName = findReferralRendererName(src, markerIdx);
+
   if (!rendererName) return src;
 
   const winStart = Math.max(0, markerIdx - 80);
@@ -264,7 +268,7 @@ function addOrderStyleAfterAcceptLabelCall(acceptText) {
 function moveAcceptButtonToTopLevelChildren(
   sectionText,
   variableName,
-  acceptButtonObject
+  acceptButtonObject,
 ) {
   const guard =
     `(!!${variableName}&&(` +
@@ -275,12 +279,12 @@ function moveAcceptButtonToTopLevelChildren(
   let next = removeSpanWithOptionalComma(
     sectionText,
     acceptButtonObject.start,
-    acceptButtonObject.end
+    acceptButtonObject.end,
   );
 
   // 2) Create the copied ACCEPT with order style
   const acceptWithOrder = addOrderStyleAfterAcceptLabelCall(
-    acceptButtonObject.text
+    acceptButtonObject.text,
   );
 
   // 3) Insert into top-level children array
@@ -311,7 +315,7 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
 
   // 2) Find where that handler starts: "Rt = async (...) => {"
   const handlerStartRegex = new RegExp(
-    handlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{"
+    handlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{",
   );
   const startMatch = sourceCode.match(handlerStartRegex);
 
@@ -344,7 +348,7 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   // 5) Build a regex that finds `<filesVarName> = await Promise.all(...)`
   //    We capture the Promise.all(...) part as group 1 so we can reuse it.
   const promiseRegex = new RegExp(
-    filesVarName + "\\s*=\\s*await\\s*(Promise\\.all\\([\\s\\S]*?\\));"
+    filesVarName + "\\s*=\\s*await\\s*(Promise\\.all\\([\\s\\S]*?\\));",
   );
 
   if (!promiseRegex.test(segment)) {
@@ -357,7 +361,7 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
     promiseRegex,
     filesVarName +
       '=JSON.parse(localStorage.getItem("GM__FILS")||"null")||' +
-      "(await $1);"
+      "(await $1);",
   );
 
   // 7) Rebuild the sourceCode with the patched segment
@@ -380,27 +384,33 @@ function modifyGlobMedSourceCode(code) {
   }
 
   let sourceCode = cleanupTrailingCommaBeforeArrayClose(
-    insertRendererBeforePatientInfo(_sourceCode)
+    insertRendererBeforePatientInfo(_sourceCode),
   );
 
   const section = findReactCallBoundsEnclosingText(
     sourceCode,
-    "referral-button-container"
+    "referral-button-container",
   );
-  if (!section || !section.text) return sourceCode;
+  if (!section || !section.text) {
+    return sourceCode;
+  }
 
   let sectionText = section.text;
 
   const variableName = extractCanTakeActionVar(sectionText);
-  if (!variableName) return sectionText;
+  if (!variableName) {
+    return sectionText;
+  }
 
   let accept = findAcceptElementBounds(sectionText);
-  if (!accept || !accept.text) return sourceCode;
+  if (!accept || !accept.text) {
+    return sourceCode;
+  }
 
   if (!REFETCH_TYPE) {
     const pattern = new RegExp(
       `${variableName}\\s*&&\\s*\\(\\s*${variableName}\\s*==\\s*null\\s*\\?\\s*void\\s+0\\s*:\\s*${variableName}\\.status\\s*\\)\\s*===\\s*"P"`,
-      "g"
+      "g",
     );
 
     sectionText = sectionText.replace(pattern, `!0`);
@@ -412,7 +422,7 @@ function modifyGlobMedSourceCode(code) {
     sectionText = moveAcceptButtonToTopLevelChildren(
       sectionText,
       variableName,
-      accept
+      accept,
     );
   }
 
@@ -438,3 +448,10 @@ function modifyGlobMedSourceCode(code) {
 // await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;
+
+// fileName: Tt.name,
+// fileData: br,
+// fileExtension: Jv(Tt.name),
+// userCode: a == null ? void 0 : a.user_code,
+// idAttachmentType: Vt == null ? void 0 : Vt.id,
+// languageCode: 1,
