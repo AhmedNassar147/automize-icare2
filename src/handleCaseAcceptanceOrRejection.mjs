@@ -89,59 +89,57 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      let COOLDOWN_MS = claimableServerTime > claimableLocalTime ? 2350 : 2100;
+      // const COOLDOWN_MS = 2000;
 
-      const _referralEndTimestamp =
-        referralEndTimestamp >= claimableServerTime
-          ? claimableServerTime
-          : referralEndTimestamp;
+      // const _referralEndTimestamp =
+      //   referralEndTimestamp >= claimableServerTime
+      //     ? claimableServerTime
+      //     : referralEndTimestamp;
 
-      // 2. Server→local offset (you already have it)
-      const offset = claimableServerTime - claimableLocalTime; // e.g., -293
-      // 3. The precise local time you must click Accept
-      const targetServerTime = _referralEndTimestamp - offset;
+      // // 2. Server→local offset (you already have it)
+      // const offset = claimableServerTime - claimableLocalTime; // e.g., -293
+      // // 3. The precise local time you must click Accept
+      // const targetServerTime = _referralEndTimestamp - offset;
 
-      const targetLocalTime = targetServerTime + COOLDOWN_MS;
+      // const targetLocalTime = targetServerTime + COOLDOWN_MS;
 
-      const ntfLatency = 80; // estimated time it takes to send ntfy notification
+      // const waitTime = targetLocalTime - Date.now();
+
+      const COOLDOWN_MS = 2350; // start here, tune by ±100
+
+      // 1. Base = moment the button truly appears
+      const targetServerTime = claimableServerTime + COOLDOWN_MS;
+
+      // 2. Offset from the response that detected it
+      const offset = claimableServerTime - claimableLocalTime; // can be positive or negative
+      const targetLocalTime = targetServerTime - offset;
+
+      // 3. Wait exactly until that local moment
       const waitTime = targetLocalTime - Date.now();
 
-      // waitTime=2004ms
-      // COOLDOWN_MS=2005
-      // claimableServerTime=1777400081000
-      // referralEndTimestamp=1777400081000
-      // _referralEndTimestamp=1777400081000
-      // claimableLocalTime=1777400079746
-      // offset=claimableServerTime - claimableLocalTime = 1254
-      // targetServerTime=_referralEndTimestamp - offset = 1777400079746
-      // targetLocalTime=targetServerTime + COOLDOWN_MS = 1777400081751
-
-      // waitTime=2000ms
-      // claimableServerTime=1777392291000
-      // claimableLocalTime=1777392290745
-      // referralEndTimestamp=1777392292000
-      // COOLDOWN_MS=2000
-      // targetServerTime=1777392293000
-      // offset=255
-      // targetLocalTime=1777392292745
-      // _referralEndTimestamp=1777392291000
+      // waitTime=2298ms
+      // claimableServerTime=1777403612000
+      // _referralEndTimestamp=1777403612000
+      // referralEndTimestamp=1777403612000
+      // claimableLocalTime=1777403611698
+      // offset=302
+      // COOLDOWN_MS=2300
+      // targetServerTime=1777403611698
+      // targetLocalTime=1777403613998
       // ntfLatency=80
-      // diff1=1000
-      // diff2=1255
-      // _diff1=0
-      // _diff2=255
+      // diff1=0
+      // diff2=302
+      // _diff1=0 _diff2=302
 
-      // waitTime=3417ms
-      // COOLDOWN_MS=2450
-      // referralEndTimestamp=1777335254000
-      // claimableServerTime=1777335253000
-      // claimableLocalTime=1777335253186
-      // targetServerTime=1777335256450
-      // offset=-186
-      // targetLocalTime=1777335256636
-      // ntfLatency=30
-      // diff1=1000
-      // diff2=814
+      // waitTime=2296ms
+      // claimableServerTime=1777403802000
+      // referralEndTimestamp=1777403803000
+      // _referralEndTimestamp=1777403802000
+      // claimableLocalTime=1777403801691
+      // COOLDOWN_MS=2300
+      // targetServerTime=1777403801691
+      // offset=309
+      // targetLocalTime=1777403803991
 
       if (waitTime > 0) {
         await sleep(waitTime);
@@ -171,16 +169,15 @@ const handleCaseAcceptanceOrRejection =
           claimableServerTime,
           claimableLocalTime,
           referralEndTimestamp,
+          // _referralEndTimestamp,
           COOLDOWN_MS,
           targetServerTime,
           offset,
           targetLocalTime,
-          ntfLatency,
           diff1: referralEndTimestamp - claimableServerTime,
           diff2: referralEndTimestamp - claimableLocalTime,
-          _referralEndTimestamp,
-          _diff1: _referralEndTimestamp - claimableServerTime,
-          _diff2: _referralEndTimestamp - claimableLocalTime,
+          // _diff1: _referralEndTimestamp - claimableServerTime,
+          // _diff2: _referralEndTimestamp - claimableLocalTime,
         })
           .map(([key, value]) => `${key}=${value}`)
           .join(" ");
