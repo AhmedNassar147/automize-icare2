@@ -89,7 +89,7 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const COOLDOWN_MS = 2000;
+      let COOLDOWN_MS = claimableServerTime > claimableLocalTime ? 2400 : 2100;
 
       const _referralEndTimestamp =
         referralEndTimestamp >= claimableServerTime
@@ -105,6 +105,16 @@ const handleCaseAcceptanceOrRejection =
 
       const ntfLatency = 80; // estimated time it takes to send ntfy notification
       const waitTime = targetLocalTime - Date.now();
+
+      // waitTime=2004ms
+      // COOLDOWN_MS=2005
+      // claimableServerTime=1777400081000
+      // referralEndTimestamp=1777400081000
+      // _referralEndTimestamp=1777400081000
+      // claimableLocalTime=1777400079746
+      // offset=claimableServerTime - claimableLocalTime = 1254
+      // targetServerTime=_referralEndTimestamp - offset = 1777400079746
+      // targetLocalTime=targetServerTime + COOLDOWN_MS = 1777400081751
 
       // waitTime=2000ms
       // claimableServerTime=1777392291000
