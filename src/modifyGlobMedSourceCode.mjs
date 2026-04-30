@@ -456,12 +456,20 @@ function modifyGlobMedSourceCode(code) {
     "btn.disabled=true;" +
     "const start=Date.now();" +
     "await new Promise(resolve=>{" +
-    "const interval=setInterval(()=>{" +
+    "const tick=()=>{" +
     "const elapsed=Date.now()-start;" +
     "const left=Math.max(0,waitTime-elapsed);" +
-    'btn.innerText="Waiting... "+Math.ceil(left)+" ms";' +
-    "if(left<=0){clearInterval(interval);resolve();}" +
-    "},50+Math.floor(Math.random()*31));" +
+    "const progress=Math.min(1,elapsed/waitTime);" +
+    'btn.innerText="Waiting... "+(elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
+    "if(left<=0){resolve();return;}" +
+    "let delay;" +
+    "if(progress<0.3){delay=40+Math.random()*20;}" +
+    "else if(progress<0.8){delay=120+Math.random()*80;}" +
+    "else{delay=30+Math.random()*20;}" +
+    "delay=Math.min(left,delay);" +
+    "setTimeout(tick,delay);" +
+    "};" +
+    "tick();" +
     "});" +
     'btn.innerText="Ready";' +
     "btn.disabled=false;" +
