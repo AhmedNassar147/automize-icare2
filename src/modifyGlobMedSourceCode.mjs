@@ -449,6 +449,11 @@ function modifyGlobMedSourceCode(code) {
   const injectedOnClick =
     "onClick:async(e)=>{" +
     "const btn=e.currentTarget;" +
+    "const originalText=btn.innerText;" +
+    "const originalWeight=btn.style.fontWeight;" +
+    "const originalSize=btn.style.fontSize;" +
+    'btn.style.fontWeight="bold";' +
+    'btn.style.fontSize="15px";' +
     'if(btn.dataset.waiting==="1")return;' +
     'btn.dataset.waiting="1";' +
     'const waitTime=Number(localStorage.getItem("GM__TIME")||0);' +
@@ -460,7 +465,7 @@ function modifyGlobMedSourceCode(code) {
     "const elapsed=Date.now()-start;" +
     "const left=Math.max(0,waitTime-elapsed);" +
     "const progress=Math.min(1,elapsed/waitTime);" +
-    'btn.innerText="Waiting... "+(elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
+    'btn.innerText=" "+ (elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
     "if(left<=0){resolve();return;}" +
     "let delay;" +
     "if(progress<0.3){delay=40+Math.random()*20;}" +
@@ -474,6 +479,9 @@ function modifyGlobMedSourceCode(code) {
     'btn.innerText="Ready";' +
     "btn.disabled=false;" +
     'btn.dataset.waiting="0";' +
+    "btn.style.fontWeight=originalWeight;" +
+    "btn.style.fontSize=originalSize;" +
+    "btn.innerText='Prepare';" +
     "}";
 
   const prepareButton = acceptText
