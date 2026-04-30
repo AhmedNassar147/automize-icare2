@@ -54,6 +54,8 @@ const handleCaseAcceptanceOrRejection =
 
       const filebase64 = await pdfToBase64(filePath);
 
+      const waitingTimeMSForAccept = 2050 + Math.floor(Math.random() * 120);
+
       broadcast({
         type: "case-acceptance-or-rejection",
         data: {
@@ -64,6 +66,7 @@ const handleCaseAcceptanceOrRejection =
           clientName: CLIENT_NAME,
           fileName,
           actionType,
+          waitingTime: waitingTimeMSForAccept,
         },
       });
 
@@ -89,48 +92,7 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const COOLDOWN_MS = 2300; // start here, tune by ±100
-
-      // 1. Base = moment the button truly appears
-      const targetServerTime = claimableServerTime + COOLDOWN_MS;
-
-      // 2. Offset from the response that detected it
-      const offset = claimableServerTime - claimableLocalTime; // can be positive or negative
-      const targetLocalTime = targetServerTime - offset;
-
-      // 3. Wait exactly until that local moment
-      const waitTime = targetLocalTime - Date.now() - 20;
-
-      // ✅ waitTime=2248ms claimableServerTime=1777407264000 claimableLocalTime=1777407263623 referralEndTimestamp=1777407265000 COOLDOWN_MS=2300 targetServerTime=1777407266300 offset=377 targetLocalTime=1777407265923 diff1=1000 diff2=1377
-      // ✅ waitTime=2248ms claimableServerTime=1777407548000 claimableLocalTime=1777407547647 referralEndTimestamp=1777407549000 COOLDOWN_MS=2300 targetServerTime=1777407550300 offset=353 targetLocalTime=1777407549947 diff1=1000 diff2=1353
-
-      // waitTime=2298ms
-      // claimableServerTime=1777403612000
-      // _referralEndTimestamp=1777403612000
-      // referralEndTimestamp=1777403612000
-      // claimableLocalTime=1777403611698
-      // offset=302
-      // COOLDOWN_MS=2300
-      // targetServerTime=1777403611698
-      // targetLocalTime=1777403613998
-      // ntfLatency=80
-      // diff1=0
-      // diff2=302
-      // _diff1=0 _diff2=302
-
-      // waitTime=2296ms
-      // claimableServerTime=1777403802000
-      // referralEndTimestamp=1777403803000
-      // _referralEndTimestamp=1777403802000
-      // claimableLocalTime=1777403801691
-      // COOLDOWN_MS=2300
-      // targetServerTime=1777403801691
-      // offset=309
-      // targetLocalTime=1777403803991
-
-      if (waitTime > 0) {
-        await sleep(waitTime);
-      }
+      const waitTime = WAIT_FOR_ACCEPT_MS * 1000;
 
       let ntfyResult = "";
 
@@ -157,18 +119,17 @@ const handleCaseAcceptanceOrRejection =
           claimableLocalTime,
           referralEndTimestamp,
           // _referralEndTimestamp,
-          COOLDOWN_MS,
-          targetServerTime,
-          offset,
-          targetLocalTime,
+          // COOLDOWN_MS,
+          // targetServerTime,
+          // offset,
+          // targetLocalTime,
           diff1: referralEndTimestamp - claimableServerTime,
           diff2: referralEndTimestamp - claimableLocalTime,
-          // _diff1: _referralEndTimestamp - claimableServerTime,
-          // _diff2: _referralEndTimestamp - claimableLocalTime,
         })
           .map(([key, value]) => `${key}=${value}`)
           .join(" ");
       } else {
+        await sleep(waitTime);
         await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
           message: `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`,
         });
@@ -177,7 +138,7 @@ const handleCaseAcceptanceOrRejection =
       await closePageSafely(page);
 
       createConsoleMessage(
-        `✅ Patient=${referralId} waitTime=${waitTime}ms remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} ntfyResult=${ntfyResult}`,
+        `✅ Patient=${referralId} waitTime=${waitTime}ms waitingTimeMSForAccept=${waitingTimeMSForAccept} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} ntfyResult=${ntfyResult}`,
         "warn",
       );
 
@@ -219,3 +180,60 @@ export default handleCaseAcceptanceOrRejection;
 // };
 
 // return;
+
+// let ntfyResult = "";
+
+// if (NTFY_TOPIC) {
+//   const COOLDOWN_MS = 2210;
+
+//   const offset = claimableServerTime - claimableLocalTime; // can be positive or negative
+//   const targetServerTime = claimableServerTime + COOLDOWN_MS;
+//   const targetLocalTime = targetServerTime - offset;
+//   waitTime = targetLocalTime - Date.now();
+//   if (waitTime > 0) {
+//     await sleep(waitTime);
+//   }
+//   const result = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+//     method: "POST",
+//     body: "ACCEPT NOW: " + referralId,
+//     headers: {
+//       Title: "CNHI",
+//       // https://github.com/cityssm/node-ntfy-publish/blob/main/emoji.js
+//       Tags: "rotating_light",
+//       // https://github.com/cityssm/node-ntfy-publish/blob/main/priorities.js
+//       Priority: "5", // Add this line for max priority,
+//       // Icon: "https://referralprogram.globemedsaudi.com/assets/MOHlogo-a80cbf2a.png",
+//     },
+//   });
+
+//   const resJson = await result.json();
+//   const isSent = result.ok;
+//   ntfyResult = Object.entries({
+//     ...resJson,
+//     isSent: isSent,
+//     claimableServerTime,
+//     claimableLocalTime,
+//     referralEndTimestamp,
+//     // _referralEndTimestamp,
+//     COOLDOWN_MS,
+//     targetServerTime,
+//     offset,
+//     targetLocalTime,
+//     diff1: referralEndTimestamp - claimableServerTime,
+//     diff2: referralEndTimestamp - claimableLocalTime,
+//     // _diff1: _referralEndTimestamp - claimableServerTime,
+//     // _diff2: _referralEndTimestamp - claimableLocalTime,
+//     // __targetLocalTime,
+//     // __waitTime
+//   })
+//     .map(([key, value]) => `${key}=${value}`)
+//     .join(" ");
+// } else {
+
+//   if (waitTime > 0) {
+//     await sleep(waitTime);
+//   }
+//   await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+//     message: `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`,
+//   });
+// }

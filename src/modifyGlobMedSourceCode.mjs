@@ -95,10 +95,21 @@ function cleanupTrailingCommaBeforeArrayClose(src) {
   return src.replace(/,\s*\]/g, "]");
 }
 
-function makeReferralDetailsApiPoll(sourceCode, refetchType) {
+function makeReferralDetailsApiPoll(sourceCode, refetchType, onlyAddRefretch) {
   const anchor = '["referral-details"';
   const idx = sourceCode.indexOf(anchor);
   if (idx === -1) return sourceCode;
+
+  if (onlyAddRefretch) {
+    const pattern =
+      /\{\s*data:\s*([A-Za-z_$][\w$]*),\s*error:\s*([A-Za-z_$][\w$]*),\s*isLoading:\s*([A-Za-z_$][\w$]*),?\s*\}\s*=\s*([A-Za-z_$][\w$]*)\(\s*\[\s*"referral-details",/;
+
+    return sourceCode.replace(
+      pattern,
+      (matched, dataVarName, errorVarName, isLoadingVarName, functionName) =>
+        `{data:${dataVarName},error:${errorVarName},isLoading:${isLoadingVarName},refetch:refetchReferralDetails}=${functionName}(["referral-details",`,
+    );
+  }
 
   // Take a small slice after the anchor; tune if needed.
   const WINDOW = 180;
@@ -329,7 +340,7 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   }
 
   // 3) Take a window after the start of the handler (3.5k chars worked for you)
-  const WINDOW_SIZE = 3600;
+  const WINDOW_SIZE = 1500;
   const windowStart = startIndex;
   const windowEnd = Math.min(sourceCode.length, windowStart + WINDOW_SIZE);
   let segment = sourceCode.slice(windowStart, windowEnd);
@@ -343,7 +354,7 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
     return sourceCode;
   }
 
-  const filesVarName = filesMatch[1]; // e.g. "Ot"
+  const filesVarName = filesMatch[1]; // e.g. "St"
 
   // 5) Build a regex that finds `<filesVarName> = await Promise.all(...)`
   //    We capture the Promise.all(...) part as group 1 so we can reuse it.
@@ -364,6 +375,15 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
       "(await $1);",
   );
 
+  const handlerWithBraceRegex = new RegExp(
+    "(" + handlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{)",
+  );
+
+  const injectedCode =
+    'const waitingTime=Number(localStorage.getItem("GM__TIME")||0);if(waitingTime>0){typeof refetchReferralDetails==="function"&&await refetchReferralDetails();await new Promise(r=>setTimeout(r,waitingTime));}';
+
+  segment = segment.replace(handlerWithBraceRegex, `$1${injectedCode}`);
+
   // 7) Rebuild the sourceCode with the patched segment
   sourceCode =
     sourceCode.slice(0, windowStart) + segment + sourceCode.slice(windowEnd);
@@ -371,17 +391,10 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   return sourceCode;
 };
 
-// REFETCH_TYPE = "poll" | "focus";
-
 function modifyGlobMedSourceCode(code) {
-  // const REFETCH_TYPE = "";
-  const { REFETCH_TYPE } = process.env;
   let _sourceCode = code;
 
-  if (REFETCH_TYPE) {
-    createConsoleMessage(`📋 REFETCH_TYPE => ${REFETCH_TYPE}`, "info");
-    _sourceCode = makeReferralDetailsApiPoll(_sourceCode, REFETCH_TYPE);
-  }
+  _sourceCode = makeReferralDetailsApiPoll(_sourceCode, undefined, true);
 
   let sourceCode = cleanupTrailingCommaBeforeArrayClose(
     insertRendererBeforePatientInfo(_sourceCode),
@@ -407,24 +420,14 @@ function modifyGlobMedSourceCode(code) {
     return sourceCode;
   }
 
-  if (!REFETCH_TYPE) {
-    const pattern = new RegExp(
-      `${variableName}\\s*&&\\s*\\(\\s*${variableName}\\s*==\\s*null\\s*\\?\\s*void\\s+0\\s*:\\s*${variableName}\\.status\\s*\\)\\s*===\\s*"P"`,
-      "g",
-    );
+  const pattern = new RegExp(
+    `${variableName}\\s*&&\\s*\\(\\s*${variableName}\\s*==\\s*null\\s*\\?\\s*void\\s+0\\s*:\\s*${variableName}\\.status\\s*\\)\\s*===\\s*"P"`,
+    "g",
+  );
 
-    sectionText = sectionText.replace(pattern, `!0`);
-    sectionText = sectionText.replace(`${variableName}.canTakeAction`, "!0");
-    sectionText = sectionText.replace(`${variableName}.canUpdate`, "!0");
-  } else if (REFETCH_TYPE === "poll") {
-    accept = findAcceptElementBounds(sectionText);
-
-    sectionText = moveAcceptButtonToTopLevelChildren(
-      sectionText,
-      variableName,
-      accept,
-    );
-  }
+  sectionText = sectionText.replace(pattern, `!0`);
+  sectionText = sectionText.replace(`${variableName}.canTakeAction`, "!0");
+  sectionText = sectionText.replace(`${variableName}.canUpdate`, "!0");
 
   if (!accept || !accept.text) return sourceCode;
 
@@ -443,7 +446,7 @@ function modifyGlobMedSourceCode(code) {
 // const sourceCode = await readFile(filePath, "utf8");
 
 // const modifiedCode = modifyGlobMedSourceCode(sourceCode);
-// console.log("modifiedCode", modifiedCode);
+// // console.log("modifiedCode", modifiedCode);
 // const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
 // await writeFile(mdsFilePath, modifiedCode);
 
