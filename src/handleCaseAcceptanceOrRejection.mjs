@@ -40,6 +40,7 @@ const handleCaseAcceptanceOrRejection =
         WAIT_FOR_ACCEPT_MS,
         CLIENT_WHATSAPP_NUMBER,
         NTFY_TOPIC,
+        NEW_WAITING_TIME_FOR_PATIENT,
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
@@ -54,7 +55,10 @@ const handleCaseAcceptanceOrRejection =
 
       const filebase64 = await pdfToBase64(filePath);
 
-      const waitingTimeMSForAccept = 2050 + Math.floor(Math.random() * 120);
+      const waitingTimeMSForAccept =
+        NEW_WAITING_TIME_FOR_PATIENT === referralId
+          ? 2170 + Math.floor(Math.random() * 100)
+          : undefined;
 
       broadcast({
         type: "case-acceptance-or-rejection",

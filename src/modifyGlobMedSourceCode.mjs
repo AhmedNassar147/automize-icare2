@@ -380,7 +380,8 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   );
 
   const injectedCode =
-    'const waitingTime=Number(localStorage.getItem("GM__TIME")||0);if(waitingTime>0){typeof refetchReferralDetails==="function"&&await refetchReferralDetails();await new Promise(r=>setTimeout(r,waitingTime));}';
+    // 'const waitingTime=Number(localStorage.getItem("GM__TIME")||0);if(waitingTime>0){typeof refetchReferralDetails==="function"&&await refetchReferralDetails();await new Promise(r=>setTimeout(r,waitingTime));}';
+    'const waitingTime=Number(localStorage.getItem("GM__TIME")||0);if(waitingTime>0){await new Promise(r=>setTimeout(r,waitingTime));}';
 
   segment = segment.replace(handlerWithBraceRegex, `$1${injectedCode}`);
 
