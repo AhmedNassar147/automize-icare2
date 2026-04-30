@@ -56,8 +56,9 @@ const handleCaseAcceptanceOrRejection =
       const filebase64 = await pdfToBase64(filePath);
 
       const waitingTimeMSForAccept =
+        NEW_WAITING_TIME_FOR_PATIENT === "y" ||
         NEW_WAITING_TIME_FOR_PATIENT === referralId
-          ? 2870 + Math.floor(Math.random() * 50)
+          ? 2200
           : undefined;
 
       broadcast({
