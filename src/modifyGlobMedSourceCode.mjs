@@ -48,13 +48,22 @@ function removeAllRendererInvocations(src, rendererName) {
   return src.replace(callRe, (m, prefix) => prefix);
 }
 
+const getReactAlias = (src) => {
+  const [, reactAliasMatch] = src.match(
+    /\b([A-Za-z_$][\w$]*)\.(?:jsx|jsxs)\s*\(/,
+  );
+
+  return reactAliasMatch || "h";
+};
+
 function findEnclosingReactCallStart(src, anchorIdx) {
   // Search backwards a bit for the nearest p.jsx( or p.jsxs( that encloses the anchor
   const backStart = Math.max(0, anchorIdx - 6000);
   const back = src.slice(backStart, anchorIdx);
 
-  const jsxIdx = back.lastIndexOf("h.jsx(");
-  const jsxsIdx = back.lastIndexOf("h.jsxs(");
+  const reactAliasMatch = getReactAlias(back);
+  const jsxIdx = back.lastIndexOf(`${reactAliasMatch}.jsx(`);
+  const jsxsIdx = back.lastIndexOf(`${reactAliasMatch}.jsxs(`);
 
   const rel = Math.max(jsxIdx, jsxsIdx);
   if (rel === -1) return -1;
@@ -100,16 +109,16 @@ function makeReferralDetailsApiPoll(sourceCode, refetchType, onlyAddRefretch) {
   const idx = sourceCode.indexOf(anchor);
   if (idx === -1) return sourceCode;
 
-  if (onlyAddRefretch) {
-    const pattern =
-      /\{\s*data:\s*([A-Za-z_$][\w$]*),\s*error:\s*([A-Za-z_$][\w$]*),\s*isLoading:\s*([A-Za-z_$][\w$]*),?\s*\}\s*=\s*([A-Za-z_$][\w$]*)\(\s*\[\s*"referral-details",/;
+  // if (onlyAddRefretch) {
+  //   const pattern =
+  //     /\{\s*data:\s*([A-Za-z_$][\w$]*),\s*error:\s*([A-Za-z_$][\w$]*),\s*isLoading:\s*([A-Za-z_$][\w$]*),?\s*\}\s*=\s*([A-Za-z_$][\w$]*)\(\s*\[\s*"referral-details",/;
 
-    return sourceCode.replace(
-      pattern,
-      (matched, dataVarName, errorVarName, isLoadingVarName, functionName) =>
-        `{data:${dataVarName},error:${errorVarName},isLoading:${isLoadingVarName},refetch:refetchReferralDetails}=${functionName}(["referral-details",`,
-    );
-  }
+  //   return sourceCode.replace(
+  //     pattern,
+  //     (matched, dataVarName, errorVarName, isLoadingVarName, functionName) =>
+  //       `{data:${dataVarName},error:${errorVarName},isLoading:${isLoadingVarName},refetch:refetchReferralDetails}=${functionName}(["referral-details",`,
+  //   );
+  // }
 
   // Take a small slice after the anchor; tune if needed.
   const WINDOW = 180;
@@ -375,15 +384,15 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
       "(await $1);",
   );
 
-  const handlerWithBraceRegex = new RegExp(
-    "(" + handlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{)",
-  );
+  // const handlerWithBraceRegex = new RegExp(
+  //   "(" + handlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{)",
+  // );
 
-  const injectedCode =
-    // 'const waitingTime=Number(localStorage.getItem("GM__TIME")||0);if(waitingTime>0){typeof refetchReferralDetails==="function"&&await refetchReferralDetails();await new Promise(r=>setTimeout(r,waitingTime));}';
-    'const waitingTime=Number(localStorage.getItem("GM__TIME")||0);if(waitingTime>0){await new Promise(r=>setTimeout(r,waitingTime));}';
+  // const injectedCode =
+  //   // 'const waitingTime=Number(localStorage.getItem("GM__TIME")||0);if(waitingTime>0){typeof refetchReferralDetails==="function"&&await refetchReferralDetails();await new Promise(r=>setTimeout(r,waitingTime));}';
+  //   'const waitingTime=Number(localStorage.getItem("GM__TIME")||0);if(waitingTime>0){await new Promise(r=>setTimeout(r,waitingTime));}';
 
-  segment = segment.replace(handlerWithBraceRegex, `$1${injectedCode}`);
+  // segment = segment.replace(handlerWithBraceRegex, `$1${injectedCode}`);
 
   // 7) Rebuild the sourceCode with the patched segment
   sourceCode =
@@ -395,7 +404,7 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
 function modifyGlobMedSourceCode(code) {
   let _sourceCode = code;
 
-  _sourceCode = makeReferralDetailsApiPoll(_sourceCode, undefined, true);
+  // _sourceCode = makeReferralDetailsApiPoll(_sourceCode, undefined, true);
 
   let sourceCode = cleanupTrailingCommaBeforeArrayClose(
     insertRendererBeforePatientInfo(_sourceCode),
@@ -430,14 +439,51 @@ function modifyGlobMedSourceCode(code) {
   sectionText = sectionText.replace(`${variableName}.canTakeAction`, "!0");
   sectionText = sectionText.replace(`${variableName}.canUpdate`, "!0");
 
+  //  IMPORTANT: find accept AFTER modifying sectionText
+  accept = findAcceptElementBounds(sectionText);
+
   if (!accept || !accept.text) return sourceCode;
+
+  const acceptText = accept.text;
+
+  const injectedOnClick =
+    "onClick:async(e)=>{" +
+    "const btn=e.currentTarget;" +
+    'if(btn.dataset.waiting==="1")return;' +
+    'btn.dataset.waiting="1";' +
+    'const waitTime=Number(localStorage.getItem("GM__TIME")||0);' +
+    'if(!waitTime||waitTime<=0){btn.innerText="No time set";btn.dataset.waiting="0";return;}' +
+    "btn.disabled=true;" +
+    "const start=Date.now();" +
+    "await new Promise(resolve=>{" +
+    "const interval=setInterval(()=>{" +
+    "const elapsed=Date.now()-start;" +
+    "const left=Math.max(0,waitTime-elapsed);" +
+    'btn.innerText="Waiting... "+Math.ceil(left)+" ms";' +
+    "if(left<=0){clearInterval(interval);resolve();}" +
+    "},50+Math.floor(Math.random()*31));" +
+    "});" +
+    'btn.innerText="Ready";' +
+    "btn.disabled=false;" +
+    'btn.dataset.waiting="0";' +
+    "}";
+
+  const prepareButton = acceptText
+    .replace(/,children:[^,}]+\}\)\}\)$/, ',children:"Prepare"})})')
+    .replace(/onClick:\s*([A-Za-z_$][\w$]*)/, injectedOnClick);
+
+  sectionText =
+    sectionText.slice(0, accept.start) +
+    prepareButton +
+    "," +
+    sectionText.slice(accept.start);
 
   sourceCode =
     sourceCode.slice(0, section.start) +
     sectionText +
     sourceCode.slice(section.end);
 
-  sourceCode = addFilesFromLocalStorage(sourceCode, accept.text);
+  sourceCode = addFilesFromLocalStorage(sourceCode, acceptText);
 
   // window.__PATCHED_BUNDLE__= true;
   return `console.log("<<< PATCHED BUNDLE LOADED >>>");${sourceCode}`;
@@ -447,15 +493,7 @@ function modifyGlobMedSourceCode(code) {
 // const sourceCode = await readFile(filePath, "utf8");
 
 // const modifiedCode = modifyGlobMedSourceCode(sourceCode);
-// // console.log("modifiedCode", modifiedCode);
 // const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
 // await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;
-
-// fileName: Tt.name,
-// fileData: br,
-// fileExtension: Jv(Tt.name),
-// userCode: a == null ? void 0 : a.user_code,
-// idAttachmentType: Vt == null ? void 0 : Vt.id,
-// languageCode: 1,

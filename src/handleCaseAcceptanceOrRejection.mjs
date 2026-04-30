@@ -57,7 +57,7 @@ const handleCaseAcceptanceOrRejection =
 
       const waitingTimeMSForAccept =
         NEW_WAITING_TIME_FOR_PATIENT === referralId
-          ? 2170 + Math.floor(Math.random() * 100)
+          ? 2870 + Math.floor(Math.random() * 50)
           : undefined;
 
       broadcast({
