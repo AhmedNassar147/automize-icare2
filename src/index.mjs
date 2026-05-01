@@ -220,7 +220,7 @@ const currentProfile = "Profile 1";
       }))();
 
     if (RESEND_PATIENT_SUMMARY_FILE_PATH) {
-      await sleep(10_000); // delay to ensure everything is up before sending
+      await sleep(15_000); // delay to ensure everything is up before sending
       await sendRefferalsToWhatsAppAsExcel(
         sendWhatsappMessage,
         RESEND_PATIENT_SUMMARY_FILE_PATH,
