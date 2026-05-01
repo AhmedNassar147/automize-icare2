@@ -50,6 +50,7 @@ import {
 } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
+import sleep from "./sleep.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -87,6 +88,7 @@ const currentProfile = "Profile 1";
     WEEKLY_REPORT_GENERATED_AT,
     MONTHLY_REPORT_GENERATED_AT,
     DETAILED_REPORT_GENERATED_AT,
+    RESEND_PATIENT_SUMMARY_FILE_PATH,
   } = process.env;
 
   let server;
@@ -216,6 +218,14 @@ const currentProfile = "Profile 1";
         patientsStore,
         sendWhatsappMessage,
       }))();
+
+    if (RESEND_PATIENT_SUMMARY_FILE_PATH) {
+      await sleep(10_000); // delay to ensure everything is up before sending
+      await sendRefferalsToWhatsAppAsExcel(
+        sendWhatsappMessage,
+        RESEND_PATIENT_SUMMARY_FILE_PATH,
+      );
+    }
 
     // Summary cron
     cron.schedule(
