@@ -55,11 +55,15 @@ const handleCaseAcceptanceOrRejection =
 
       const filebase64 = await pdfToBase64(filePath);
 
-      const waitingTimeMSForAccept =
-        NEW_WAITING_TIME_FOR_PATIENT === "y" ||
-        NEW_WAITING_TIME_FOR_PATIENT === referralId
-          ? 2200
-          : undefined;
+      const [timeMs, checkingReferralId] = (
+        NEW_WAITING_TIME_FOR_PATIENT || ""
+      ).split(",");
+
+      const waitingTimeMSForAccept = timeMs
+        ? checkingReferralId === referralId
+          ? Number(timeMs)
+          : Number(timeMs)
+        : undefined;
 
       broadcast({
         type: "case-acceptance-or-rejection",
