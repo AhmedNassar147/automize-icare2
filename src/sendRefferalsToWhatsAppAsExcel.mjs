@@ -12,7 +12,7 @@ const sendRefferalsToWhatsAppAsExcel = async (
   sendWhatsappMessage,
   filePath,
 ) => {
-  const fileData = readJsonFile(filePath, true);
+  const fileData = await readJsonFile(filePath, true);
 
   const isSent = await sendSummaryExcelToWhatsapp(
     sendWhatsappMessage,
