@@ -461,7 +461,8 @@ const addAcceptClickLogger = (sourceCode) => {
     'if(!txt.includes("Accept"))return;' +
     'const pb=document.querySelector("[data-gm-prepare]");' +
     'const k=Date.now()+"GM__PREPARE_TIME";' +
-    'localStorage.setItem(k,pb?.innerText||"");' +
+    'const k_v=pb?.innerText||"";' +
+    "localStorage.setItem(k,k_v);" +
     "});";
 
   const lastInjection =
