@@ -41,7 +41,11 @@ const handleCaseAcceptanceOrRejection =
         CLIENT_WHATSAPP_NUMBER,
         NTFY_TOPIC,
         NEW_WAITING_TIME_FOR_PATIENT,
+        NEW_EXTRA_WAITING_TIME_FOR_PATIENT,
       } = process.env;
+
+      // NEW_EXTRA_WAITING_TIME_FOR_PATIENT=700
+      // NEW_WAITING_TIME_FOR_PATIENT=2000
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
 
@@ -60,7 +64,7 @@ const handleCaseAcceptanceOrRejection =
       ).split(",");
 
       let waitingTimeMSForAccept = timeMsString
-        ? Number(timeMsString)
+        ? Math.max(Number(timeMsString), 2000)
         : undefined;
 
       if (checkingReferralId && checkingReferralId !== referralId) {
@@ -78,6 +82,9 @@ const handleCaseAcceptanceOrRejection =
           fileName,
           actionType,
           waitingTime: waitingTimeMSForAccept,
+          waitExtraTime: waitingTimeMSForAccept
+            ? NEW_EXTRA_WAITING_TIME_FOR_PATIENT
+            : undefined,
         },
       });
 

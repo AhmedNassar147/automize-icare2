@@ -109,16 +109,16 @@ function makeReferralDetailsApiPoll(sourceCode, refetchType, onlyAddRefretch) {
   const idx = sourceCode.indexOf(anchor);
   if (idx === -1) return sourceCode;
 
-  // if (onlyAddRefretch) {
-  //   const pattern =
-  //     /\{\s*data:\s*([A-Za-z_$][\w$]*),\s*error:\s*([A-Za-z_$][\w$]*),\s*isLoading:\s*([A-Za-z_$][\w$]*),?\s*\}\s*=\s*([A-Za-z_$][\w$]*)\(\s*\[\s*"referral-details",/;
+  if (onlyAddRefretch) {
+    const pattern =
+      /\{\s*data:\s*([A-Za-z_$][\w$]*),\s*error:\s*([A-Za-z_$][\w$]*),\s*isLoading:\s*([A-Za-z_$][\w$]*),?\s*\}\s*=\s*([A-Za-z_$][\w$]*)\(\s*\[\s*"referral-details",/;
 
-  //   return sourceCode.replace(
-  //     pattern,
-  //     (matched, dataVarName, errorVarName, isLoadingVarName, functionName) =>
-  //       `{data:${dataVarName},error:${errorVarName},isLoading:${isLoadingVarName},refetch:refetchReferralDetails}=${functionName}(["referral-details",`,
-  //   );
-  // }
+    return sourceCode.replace(
+      pattern,
+      (matched, dataVarName, errorVarName, isLoadingVarName, functionName) =>
+        `{data:${dataVarName},error:${errorVarName},isLoading:${isLoadingVarName},refetch:refetchReferralDetails}=${functionName}(["referral-details",`,
+    );
+  }
 
   // Take a small slice after the anchor; tune if needed.
   const WINDOW = 180;
@@ -412,15 +412,33 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
     'if(btn.dataset.waiting==="1")return;' +
     'btn.dataset.waiting="1";' +
     'const waitTime=Number(localStorage.getItem("GM__TIME")||0);' +
+    'const extraWaitTime=Number(localStorage.getItem("GM__EXTRA_TIME")||0);' +
     'if(!waitTime||waitTime<=0){btn.innerText="No time set";btn.dataset.waiting="0";return;}' +
     "btn.disabled=true;" +
+    "let fetchedEarly=false;" +
     "const start=Date.now();" +
     "await new Promise(resolve=>{" +
     "const tick=()=>{" +
     "const elapsed=Date.now()-start;" +
     "const left=Math.max(0,waitTime-elapsed);" +
     "const progress=Math.min(1,elapsed/waitTime);" +
-    'btn.innerText=" "+ (elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
+    'btn.innerText=" "+(elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
+    "if(left<=100&&!fetchedEarly&&!!extraWaitTime){" +
+    "fetchedEarly=true;" +
+    "(async()=>{" +
+    "try{" +
+    'btn.innerText="Refetching... "+(elapsed/1000).toFixed(2)+"s";' +
+    "await fetch(location.href);" +
+    "let resultDATA=await refetchReferralDetails();if(resultDATA?.data?.message){await new Promise(r=>setTimeout(r,50));await fetch(location.href);resultDATA=await refetchReferralDetails();console.log('resultDATA_AGAIN',resultDATA);}else{console.log('resultDATA',resultDATA);};" +
+    "}catch(e){console.log('Error',e)}" +
+    "finally{" +
+    "const remaining=Math.max(0,(waitTime-(Date.now()-start))+extraWaitTime);" +
+    "if(remaining>0)await new Promise(r=>setTimeout(r,remaining));" +
+    "resolve();" +
+    "}" +
+    "})();" +
+    "return;" +
+    "}" +
     "if(left<=0){resolve();return;}" +
     "let delay;" +
     "if(progress<0.3){delay=40+Math.random()*20;}" +
@@ -474,7 +492,7 @@ const addAcceptClickLogger = (sourceCode) => {
 function modifyGlobMedSourceCode(code) {
   let _sourceCode = code;
 
-  // _sourceCode = makeReferralDetailsApiPoll(_sourceCode, undefined, true);
+  _sourceCode = makeReferralDetailsApiPoll(_sourceCode, undefined, true);
 
   let sourceCode = cleanupTrailingCommaBeforeArrayClose(
     insertRendererBeforePatientInfo(_sourceCode),
