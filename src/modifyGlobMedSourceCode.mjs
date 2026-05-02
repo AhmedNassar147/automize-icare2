@@ -401,6 +401,75 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   return sourceCode;
 };
 
+const addPrepareButton = (sectionText, acceptButtonObject) => {
+  const injectedOnClick =
+    "onClick:async(e)=>{" +
+    "const btn=e.currentTarget;" +
+    "const originalWeight=btn.style.fontWeight;" +
+    "const originalSize=btn.style.fontSize;" +
+    'btn.style.fontWeight="bold";' +
+    'btn.style.fontSize="15px";' +
+    'if(btn.dataset.waiting==="1")return;' +
+    'btn.dataset.waiting="1";' +
+    'const waitTime=Number(localStorage.getItem("GM__TIME")||0);' +
+    'if(!waitTime||waitTime<=0){btn.innerText="No time set";btn.dataset.waiting="0";return;}' +
+    "btn.disabled=true;" +
+    "const start=Date.now();" +
+    "await new Promise(resolve=>{" +
+    "const tick=()=>{" +
+    "const elapsed=Date.now()-start;" +
+    "const left=Math.max(0,waitTime-elapsed);" +
+    "const progress=Math.min(1,elapsed/waitTime);" +
+    'btn.innerText=" "+ (elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
+    "if(left<=0){resolve();return;}" +
+    "let delay;" +
+    "if(progress<0.3){delay=40+Math.random()*20;}" +
+    "else if(progress<0.8){delay=120+Math.random()*80;}" +
+    "else{delay=30+Math.random()*20;}" +
+    "delay=Math.min(left,delay);" +
+    "setTimeout(tick,delay);" +
+    "};" +
+    "tick();" +
+    "});" +
+    'btn.innerText="Ready";' +
+    "btn.disabled=false;" +
+    'btn.dataset.waiting="0";' +
+    "btn.style.fontWeight=originalWeight;" +
+    "btn.style.fontSize=originalSize;" +
+    'btn.style.backgroundColor="#2e7d32";' +
+    "}";
+
+  const { start, text } = acceptButtonObject;
+
+  const prepareButton = text
+    .replace(/,children:[^,}]+\}\)\}\)$/, ',children:"Prepare"})})')
+    .replace(/onClick:\s*([A-Za-z_$][\w$]*)/, injectedOnClick)
+    .replace(/(size:\s*"small")/, '$1,"data-gm-prepare":"1"');
+
+  return (
+    sectionText.slice(0, start) + prepareButton + "," + sectionText.slice(start)
+  );
+};
+
+const addAcceptClickLogger = (sourceCode) => {
+  const injection =
+    'document.addEventListener("click",function(e){' +
+    'if(location.pathname!=="/referral/details")return;' +
+    'const btn=e.target.closest("button");' +
+    "if(!btn)return;" +
+    'const txt=btn.innerText||"";' +
+    'if(!txt.includes("Accept"))return;' +
+    'const pb=document.querySelector("[data-gm-prepare]");' +
+    'const k=Date.now()+"GM__PREPARE_TIME";' +
+    'localStorage.setItem(k,pb?.innerText||"");' +
+    "});";
+
+  const lastInjection =
+    'console.log("<<< PATCHED BUNDLE LOADED >>>");' + injection;
+
+  return `${lastInjection}${sourceCode}`;
+};
+
 function modifyGlobMedSourceCode(code) {
   let _sourceCode = code;
 
@@ -446,53 +515,7 @@ function modifyGlobMedSourceCode(code) {
 
   const acceptText = accept.text;
 
-  const injectedOnClick =
-    "onClick:async(e)=>{" +
-    "const btn=e.currentTarget;" +
-    "const originalText=btn.innerText;" +
-    "const originalWeight=btn.style.fontWeight;" +
-    "const originalSize=btn.style.fontSize;" +
-    'btn.style.fontWeight="bold";' +
-    'btn.style.fontSize="15px";' +
-    'if(btn.dataset.waiting==="1")return;' +
-    'btn.dataset.waiting="1";' +
-    'const waitTime=Number(localStorage.getItem("GM__TIME")||0);' +
-    'if(!waitTime||waitTime<=0){btn.innerText="No time set";btn.dataset.waiting="0";return;}' +
-    "btn.disabled=true;" +
-    "const start=Date.now();" +
-    "await new Promise(resolve=>{" +
-    "const tick=()=>{" +
-    "const elapsed=Date.now()-start;" +
-    "const left=Math.max(0,waitTime-elapsed);" +
-    "const progress=Math.min(1,elapsed/waitTime);" +
-    'btn.innerText=" "+ (elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
-    "if(left<=0){resolve();return;}" +
-    "let delay;" +
-    "if(progress<0.3){delay=40+Math.random()*20;}" +
-    "else if(progress<0.8){delay=120+Math.random()*80;}" +
-    "else{delay=30+Math.random()*20;}" +
-    "delay=Math.min(left,delay);" +
-    "setTimeout(tick,delay);" +
-    "};" +
-    "tick();" +
-    "});" +
-    'btn.innerText="Ready";' +
-    "btn.disabled=false;" +
-    'btn.dataset.waiting="0";' +
-    "btn.style.fontWeight=originalWeight;" +
-    "btn.style.fontSize=originalSize;" +
-    "btn.innerText='Prepare';" +
-    "}";
-
-  const prepareButton = acceptText
-    .replace(/,children:[^,}]+\}\)\}\)$/, ',children:"Prepare"})})')
-    .replace(/onClick:\s*([A-Za-z_$][\w$]*)/, injectedOnClick);
-
-  sectionText =
-    sectionText.slice(0, accept.start) +
-    prepareButton +
-    "," +
-    sectionText.slice(accept.start);
+  sectionText = addPrepareButton(sectionText, accept);
 
   sourceCode =
     sourceCode.slice(0, section.start) +
@@ -501,8 +524,7 @@ function modifyGlobMedSourceCode(code) {
 
   sourceCode = addFilesFromLocalStorage(sourceCode, acceptText);
 
-  // window.__PATCHED_BUNDLE__= true;
-  return `console.log("<<< PATCHED BUNDLE LOADED >>>");${sourceCode}`;
+  return addAcceptClickLogger(sourceCode);
 }
 
 // const filePath = process.cwd() + "/original-gm-index.js";
