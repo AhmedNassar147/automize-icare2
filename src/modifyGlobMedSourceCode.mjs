@@ -423,13 +423,13 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
     "const left=Math.max(0,waitTime-elapsed);" +
     "const progress=Math.min(1,elapsed/waitTime);" +
     'btn.innerText=" "+(elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
-    "if(left<=100&&!fetchedEarly&&!!extraWaitTime){" +
+    "if(left<=70&&!fetchedEarly&&!!extraWaitTime){" +
     "fetchedEarly=true;" +
     "(async()=>{" +
     "try{" +
-    'btn.innerText="Refetching... "+(elapsed/1000).toFixed(2)+"s";' +
+    'btn.innerText="Fetching... "+(elapsed/1000).toFixed(2)+"s";' +
     "await fetch(location.href);" +
-    "let resultDATA=await refetchReferralDetails();if(resultDATA?.data?.message){await new Promise(r=>setTimeout(r,50));await fetch(location.href);resultDATA=await refetchReferralDetails();console.log('resultDATA_AGAIN',resultDATA);}else{console.log('resultDATA',resultDATA);};" +
+    "let resultDATA=await refetchReferralDetails();if(resultDATA?.data?.message){await new Promise(r=>setTimeout(r,25));btn.innerText='Refetching...';await fetch(location.href);resultDATA=await refetchReferralDetails();console.log('resultDATA_AGAIN',resultDATA);}else{console.log('resultDATA',resultDATA);};" +
     "}catch(e){console.log('Error',e)}" +
     "finally{" +
     "const remaining=Math.max(0,(waitTime-(Date.now()-start))+extraWaitTime);" +
