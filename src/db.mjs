@@ -367,6 +367,9 @@ const deleteWeeklyHistoryPatients = __deletePatients(
 const getWeeklyHistoryPatient = (rowKey) =>
   getPatientStatement(weeklyHistoryDb).get(rowKey) || null;
 
+const getOldestPatient = () =>
+  db.prepare(`SELECT * FROM patients ORDER BY id ASC LIMIT 1`).get() || null;
+
 export {
   createPatientRowKey,
   db,
@@ -381,4 +384,5 @@ export {
   deleteWeeklyHistoryPatients,
   toDbRow,
   getWeeklyHistoryPatient,
+  getOldestPatient,
 };
