@@ -431,7 +431,7 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
     "const left=Math.max(0,waitTime-elapsed);" +
     "const progress=Math.min(1,elapsed/waitTime);" +
     'btn.innerText=" "+(elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
-    "if(left<=100&&!!extraWaitTime){" +
+    "if(left<=110&&!!extraWaitTime){" +
     "let isReady=false;" +
     "try{isReady=await doFetch();}" +
     "catch(e){console.log('Error',e)}" +
