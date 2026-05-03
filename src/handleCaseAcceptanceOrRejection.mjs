@@ -44,9 +44,6 @@ const handleCaseAcceptanceOrRejection =
         NEW_EXTRA_WAITING_TIME_FOR_PATIENT,
       } = process.env;
 
-      // NEW_EXTRA_WAITING_TIME_FOR_PATIENT=700
-      // NEW_WAITING_TIME_FOR_PATIENT=2000
-
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
 
       const folderPathe = isAcceptanceAction

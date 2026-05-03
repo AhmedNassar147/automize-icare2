@@ -380,9 +380,12 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
     "const btn=e.currentTarget;" +
     'if(btn.dataset.phase==="ready"){return;}' +
     "btn.disabled=true;" +
+    "if(!btn.dataset.startTime){btn.dataset.startTime=String(Date.now());}" +
+    "const _startTime=Number(btn.dataset.startTime);" +
+    'const phase=btn.dataset.phase||"";' +
+    "console.log('[GM] prepare clicked, phase='+phase+' started at '+new Date(_startTime).toISOString());" +
     'btn.style.fontWeight="bold";' +
     'btn.style.fontSize="15px";' +
-    'const phase=btn.dataset.phase||"";' +
     'const waitTime=Number(localStorage.getItem("GM__TIME")||0);' +
     'const extraWaitTime=Number(localStorage.getItem("GM__EXTRA_TIME")||0);' +
     // Shared fetch logic - returns true if ready
@@ -395,6 +398,8 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
     "await fetch(location.href);" +
     "await refetchPatientInfo();" +
     "resultDATA=await refetchReferralDetails();" +
+    "const _readyTime=Date.now();" +
+    "console.log('[GM] ready at '+new Date(_readyTime).toISOString()+' took '+((_readyTime-_startTime)/1000).toFixed(3)+'s');" +
     'btn.innerText="Ready";' +
     "btn.style.backgroundColor='#56c75d';" +
     'btn.dataset.phase="ready";' +
@@ -428,7 +433,7 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
     "const left=Math.max(0,waitTime-elapsed);" +
     "const progress=Math.min(1,elapsed/waitTime);" +
     'btn.innerText=" "+(elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
-    "if(left<=80&&!fetchedEarly&&!!extraWaitTime){" +
+    "if(left<=100&&!fetchedEarly&&!!extraWaitTime){" +
     "fetchedEarly=true;" +
     "(async()=>{" +
     "let isReady=false;" +
