@@ -423,40 +423,30 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
     "catch(e){console.log('Error',e)}" +
     "return;" +
     "}" +
-    // Phase: first click — full countdown
+    // Phase: first click — full countdown using while loop
     'if(!waitTime||waitTime<=0){btn.innerText="No time set";btn.disabled=false;return;}' +
-    "let fetchedEarly=false;" +
     "const start=Date.now();" +
-    "await new Promise(resolve=>{" +
-    "const tick=()=>{" +
+    "while(true){" +
     "const elapsed=Date.now()-start;" +
     "const left=Math.max(0,waitTime-elapsed);" +
     "const progress=Math.min(1,elapsed/waitTime);" +
     'btn.innerText=" "+(elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
-    "if(left<=100&&!fetchedEarly&&!!extraWaitTime){" +
-    "fetchedEarly=true;" +
-    "(async()=>{" +
+    "if(left<=100&&!!extraWaitTime){" +
     "let isReady=false;" +
     "try{isReady=await doFetch();}" +
     "catch(e){console.log('Error',e)}" +
-    "finally{" +
     "const remaining=Math.max(0,(waitTime-(Date.now()-start))+extraWaitTime);" +
     "if(isReady&&remaining>0)await new Promise(r=>setTimeout(r,remaining));" +
-    "resolve();" +
+    "break;" +
     "}" +
-    "})();" +
-    "return;" +
-    "}" +
-    "if(left<=0){resolve();return;}" +
+    "if(left<=0){break;}" +
     "let delay;" +
     "if(progress<0.3){delay=40+Math.random()*20;}" +
     "else if(progress<0.8){delay=120+Math.random()*80;}" +
     "else{delay=30+Math.random()*20;}" +
     "delay=Math.min(left,delay);" +
-    "setTimeout(tick,delay);" +
-    "};" +
-    "tick();" +
-    "});" +
+    "await new Promise(r=>setTimeout(r,delay));" +
+    "}" +
     // After countdown completes
     'if(btn.dataset.phase!=="ready"){' +
     'btn.dataset.phase="countdown_done";' +
