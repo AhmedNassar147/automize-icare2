@@ -104,44 +104,17 @@ function cleanupTrailingCommaBeforeArrayClose(src) {
   return src.replace(/,\s*\]/g, "]");
 }
 
-function makeReferralDetailsApiPoll(sourceCode, refetchType, onlyAddRefretch) {
-  const anchor = '["referral-details"';
-  const idx = sourceCode.indexOf(anchor);
-  if (idx === -1) return sourceCode;
+const makeApisExposeRefetch = (sourceCode, apiId, refetchName) => {
+  const pattern = new RegExp(
+    `\\{\\s*data:\\s*([A-Za-z_$][\\w$]*),\\s*error:\\s*([A-Za-z_$][\\w$]*),\\s*isLoading:\\s*([A-Za-z_$][\\w$]*),?\\s*\\}\\s*=\\s*([A-Za-z_$][\\w$]*)\\(\\s*\\[\\s*"${apiId}",`,
+  );
 
-  if (onlyAddRefretch) {
-    const pattern =
-      /\{\s*data:\s*([A-Za-z_$][\w$]*),\s*error:\s*([A-Za-z_$][\w$]*),\s*isLoading:\s*([A-Za-z_$][\w$]*),?\s*\}\s*=\s*([A-Za-z_$][\w$]*)\(\s*\[\s*"referral-details",/;
-
-    return sourceCode.replace(
-      pattern,
-      (matched, dataVarName, errorVarName, isLoadingVarName, functionName) =>
-        `{data:${dataVarName},error:${errorVarName},isLoading:${isLoadingVarName},refetch:refetchReferralDetails}=${functionName}(["referral-details",`,
-    );
-  }
-
-  // Take a small slice after the anchor; tune if needed.
-  const WINDOW = 180;
-  const start = idx;
-  const end = Math.min(sourceCode.length, start + WINDOW);
-  let segment = sourceCode.slice(start, end);
-
-  // Match either !0 or !1
-  const focusRegex = /refetchOnWindowFocus\s*:\s*!\s*[01]\s*,/;
-
-  if (!focusRegex.test(segment)) return sourceCode;
-
-  if (refetchType === "focus") {
-    // force focus refetch on
-    segment = segment.replace(focusRegex, (m) => m.replace(/!\s*[01]/, "!0"));
-  } else {
-    // Inject right after refetchOnWindowFocus: !1,
-    const pollInjection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=165+s.n*48;b=Math.min(b,460);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
-    segment = segment.replace(focusRegex, (m) => m + pollInjection);
-  }
-
-  return sourceCode.slice(0, start) + segment + sourceCode.slice(end);
-}
+  return sourceCode.replace(
+    pattern,
+    (matched, dataVarName, errorVarName, isLoadingVarName, functionName) =>
+      `{data:${dataVarName},error:${errorVarName},isLoading:${isLoadingVarName},refetch:${refetchName}}=${functionName}(["${apiId}",`,
+  );
+};
 
 function findReactCallBoundsEnclosingText(src, text) {
   const idx = src.indexOf(text);
@@ -405,16 +378,48 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
   const injectedOnClick =
     "onClick:async(e)=>{" +
     "const btn=e.currentTarget;" +
-    "const originalWeight=btn.style.fontWeight;" +
-    "const originalSize=btn.style.fontSize;" +
+    'if(btn.dataset.phase==="ready"){return;}' +
+    "btn.disabled=true;" +
     'btn.style.fontWeight="bold";' +
     'btn.style.fontSize="15px";' +
-    'if(btn.dataset.waiting==="1")return;' +
-    'btn.dataset.waiting="1";' +
+    'const phase=btn.dataset.phase||"";' +
     'const waitTime=Number(localStorage.getItem("GM__TIME")||0);' +
     'const extraWaitTime=Number(localStorage.getItem("GM__EXTRA_TIME")||0);' +
-    'if(!waitTime||waitTime<=0){btn.innerText="No time set";btn.dataset.waiting="0";return;}' +
+    // Shared fetch logic - returns true if ready
+    "const doFetch=async()=>{" +
+    'btn.innerText="Fetching...";' +
+    "let resultDATA=await refetchReferralDetails();" +
+    "const msg=resultDATA?.data?.message||'';" +
+    "if(!msg){" +
+    "console.log('[GM] ready, no message',resultDATA);" +
+    "await fetch(location.href);" +
+    "await refetchPatientInfo();" +
+    "resultDATA=await refetchReferralDetails();" +
+    'btn.innerText="Ready";' +
+    "btn.style.backgroundColor='#56c75d';" +
+    'btn.dataset.phase="ready";' +
     "btn.disabled=true;" +
+    "return true;" +
+    "}else{" +
+    "const match=msg.match(/(\\d+)\\s*(?:minute(?:\\(s\\))?|mins?|min)\\s+and\\s+(\\d+)\\s*(?:second(?:\\(s\\))?|secs?|sec)/);" +
+    "const minsLeft=parseInt(match?.[1],10)||0;" +
+    "const secsLeft=parseInt(match?.[2],10)||0;" +
+    "console.log('[GM] not ready, message='+msg+' mins='+minsLeft+' secs='+secsLeft);" +
+    'btn.innerText="Click again: "+minsLeft+"m "+secsLeft+"s";' +
+    'btn.style.backgroundColor="#ff3d57";' +
+    'btn.dataset.phase="countdown_done";' +
+    "btn.disabled=false;" +
+    "return false;" +
+    "}" +
+    "};" +
+    // Phase: countdown already done, skip straight to fetch
+    'if(phase==="countdown_done"){' +
+    "try{await doFetch();}" +
+    "catch(e){console.log('Error',e)}" +
+    "return;" +
+    "}" +
+    // Phase: first click — full countdown
+    'if(!waitTime||waitTime<=0){btn.innerText="No time set";btn.disabled=false;return;}' +
     "let fetchedEarly=false;" +
     "const start=Date.now();" +
     "await new Promise(resolve=>{" +
@@ -423,17 +428,15 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
     "const left=Math.max(0,waitTime-elapsed);" +
     "const progress=Math.min(1,elapsed/waitTime);" +
     'btn.innerText=" "+(elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
-    "if(left<=70&&!fetchedEarly&&!!extraWaitTime){" +
+    "if(left<=80&&!fetchedEarly&&!!extraWaitTime){" +
     "fetchedEarly=true;" +
     "(async()=>{" +
-    "try{" +
-    'btn.innerText="Fetching... "+(elapsed/1000).toFixed(2)+"s";' +
-    "await fetch(location.href);" +
-    "let resultDATA=await refetchReferralDetails();if(resultDATA?.data?.message){await new Promise(r=>setTimeout(r,25));btn.innerText='Refetching...';await fetch(location.href);resultDATA=await refetchReferralDetails();console.log('resultDATA_AGAIN',resultDATA);}else{console.log('resultDATA',resultDATA);};" +
-    "}catch(e){console.log('Error',e)}" +
+    "let isReady=false;" +
+    "try{isReady=await doFetch();}" +
+    "catch(e){console.log('Error',e)}" +
     "finally{" +
     "const remaining=Math.max(0,(waitTime-(Date.now()-start))+extraWaitTime);" +
-    "if(remaining>0)await new Promise(r=>setTimeout(r,remaining));" +
+    "if(isReady&&remaining>0)await new Promise(r=>setTimeout(r,remaining));" +
     "resolve();" +
     "}" +
     "})();" +
@@ -449,12 +452,17 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
     "};" +
     "tick();" +
     "});" +
-    'btn.innerText="Ready";' +
+    // After countdown completes
+    'if(btn.dataset.phase!=="ready"){' +
+    'btn.dataset.phase="countdown_done";' +
+    'btn.innerText="Click again";' +
+    'btn.style.backgroundColor="#ff3d57";' +
     "btn.disabled=false;" +
-    'btn.dataset.waiting="0";' +
-    "btn.style.fontWeight=originalWeight;" +
-    "btn.style.fontSize=originalSize;" +
-    'btn.style.backgroundColor="#2e7d32";' +
+    "}else{" +
+    'btn.innerText="Ready";' +
+    "btn.style.backgroundColor='#56c75d';" +
+    "btn.disabled=true;" +
+    "}" +
     "}";
 
   const { start, text } = acceptButtonObject;
@@ -492,7 +500,18 @@ const addAcceptClickLogger = (sourceCode) => {
 function modifyGlobMedSourceCode(code) {
   let _sourceCode = code;
 
-  _sourceCode = makeReferralDetailsApiPoll(_sourceCode, undefined, true);
+  // Usage — synchronous, no await needed
+  _sourceCode = makeApisExposeRefetch(
+    _sourceCode,
+    "referral-details",
+    "refetchReferralDetails",
+  );
+
+  _sourceCode = makeApisExposeRefetch(
+    _sourceCode,
+    "patient-info",
+    "refetchPatientInfo",
+  );
 
   let sourceCode = cleanupTrailingCommaBeforeArrayClose(
     insertRendererBeforePatientInfo(_sourceCode),
@@ -554,3 +573,31 @@ function modifyGlobMedSourceCode(code) {
 // await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;
+
+// function makeReferralDetailsApiPoll(sourceCode, refetchType) {
+//   const anchor = '["referral-details"';
+//   const idx = sourceCode.indexOf(anchor);
+//   if (idx === -1) return sourceCode;
+
+//   // Take a small slice after the anchor; tune if needed.
+//   const WINDOW = 180;
+//   const start = idx;
+//   const end = Math.min(sourceCode.length, start + WINDOW);
+//   let segment = sourceCode.slice(start, end);
+
+//   // Match either !0 or !1
+//   const focusRegex = /refetchOnWindowFocus\s*:\s*!\s*[01]\s*,/;
+
+//   if (!focusRegex.test(segment)) return sourceCode;
+
+//   if (refetchType === "focus") {
+//     // force focus refetch on
+//     segment = segment.replace(focusRegex, (m) => m.replace(/!\s*[01]/, "!0"));
+//   } else {
+//     // Inject right after refetchOnWindowFocus: !1,
+//     const pollInjection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=165+s.n*48;b=Math.min(b,460);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
+//     segment = segment.replace(focusRegex, (m) => m + pollInjection);
+//   }
+
+//   return sourceCode.slice(0, start) + segment + sourceCode.slice(end);
+// }
