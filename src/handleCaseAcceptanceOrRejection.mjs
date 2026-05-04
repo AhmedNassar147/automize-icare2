@@ -61,7 +61,7 @@ const handleCaseAcceptanceOrRejection =
       ).split(",");
 
       let waitingTimeMSForAccept = timeMsString
-        ? Math.max(Number(timeMsString), 2000)
+        ? Math.max(Number(timeMsString), 1000)
         : undefined;
 
       if (checkingReferralId && checkingReferralId !== referralId) {
