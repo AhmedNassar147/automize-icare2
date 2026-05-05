@@ -472,6 +472,152 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
   );
 };
 
+const getDashboardButtonAliases = (sourceCode) => {
+  const idx = sourceCode.indexOf('"CREATE_REFERRAL"');
+  if (idx === -1) return null;
+
+  const snippet = sourceCode.slice(Math.max(0, idx - 600), idx + 50);
+
+  const btnMatch = snippet.match(
+    /children:\s*[A-Za-z_$][\w$]*\.jsx\(([A-Za-z_$][\w$]*),\s*\{\s*variant:\s*"contained"/,
+  );
+
+  const iconMatch = snippet.match(
+    /[A-Za-z_$][\w$]*\.jsx\(([A-Za-z_$][\w$]*),\s*\{\s*children:\s*"add"\s*\}/,
+  );
+
+  if (!btnMatch || !iconMatch) return null;
+
+  return { btnAlias: btnMatch[1], iconAlias: iconMatch[1] };
+};
+
+const addSettingsToDashboard = (sourceCode) => {
+  const btnPattern =
+    /(children:\s*[A-Za-z_$][\w$]*\s*\(\s*"CREATE_REFERRAL"\s*\)\s*\}\)\s*\}\))(\])/;
+
+  if (!btnPattern.test(sourceCode)) {
+    console.warn("[GM] addSettingsToDashboard: button anchor not found");
+    return sourceCode;
+  }
+
+  const dialogPattern = /(categoryReference:[^\]]+\]\}\))(\])/;
+
+  if (!dialogPattern.test(sourceCode)) {
+    console.warn("[GM] addSettingsToDashboard: dialog anchor not found");
+    return sourceCode;
+  }
+
+  const reactAlias = getReactAlias(sourceCode);
+  const aliases = getDashboardButtonAliases(sourceCode);
+
+  if (!aliases) {
+    console.warn("[GM] addSettingsToDashboard: button aliases not found");
+    return sourceCode;
+  }
+
+  const { btnAlias, iconAlias } = aliases;
+
+  const CSS =
+    `#gm-dialog{border:none;border-radius:8px;padding:24px;min-width:360px;box-shadow:0 11px 15px rgba(0,0,0,0.2);font-family:Roboto,sans-serif;}` +
+    `#gm-dialog::backdrop{background:rgba(0,0,0,0.5);}` +
+    `#gm-dialog h2{margin:0 0 20px;font-size:1.25rem;font-weight:500;color:rgba(0,0,0,0.87);}` +
+    `#gm-dialog label{display:block;font-size:0.875rem;color:rgba(0,0,0,0.6);margin-bottom:4px;}` +
+    `#gm-dialog input[type=number]{width:100%;padding:8px 12px;border:1px solid rgba(0,0,0,0.23);border-radius:4px;font-size:1rem;box-sizing:border-box;outline:none;transition:border-color 0.2s;}` +
+    `#gm-dialog input[type=number]:focus{border-color:#1976d2;border-width:2px;}` +
+    `#gm-dialog .gm-field{margin-bottom:16px;}` +
+    `#gm-dialog .gm-checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;}` +
+    `#gm-dialog .gm-checkbox-row input[type=checkbox]{width:18px;height:18px;cursor:pointer;}` +
+    `#gm-dialog .gm-checkbox-row span{font-size:0.875rem;color:rgba(0,0,0,0.87);}` +
+    `#gm-dialog .gm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;}` +
+    `#gm-dialog button{padding:6px 16px;border-radius:4px;font-size:0.875rem;font-weight:500;cursor:pointer;border:none;text-transform:uppercase;letter-spacing:0.02857em;}` +
+    `#gm-dialog .gm-btn-cancel{background:transparent;color:#1976d2;}` +
+    `#gm-dialog .gm-btn-cancel:hover{background:rgba(25,118,210,0.04);}` +
+    `#gm-dialog .gm-btn-save{background:#1976d2;color:#fff;}` +
+    `#gm-dialog .gm-btn-save:hover{background:#1565c0;}`;
+
+  const onClickHandler =
+    `()=>{` +
+    `const dialog=document.getElementById('gm-dialog');` +
+    `if(!dialog)return;` +
+    `if(!dialog.dataset.init){` +
+    `dialog.dataset.init='1';` +
+    `const style=document.createElement('style');` +
+    `style.textContent='${CSS}';` +
+    `document.head.appendChild(style);` +
+    `document.getElementById('gm-cancel')?.addEventListener('click',()=>dialog.close());` +
+    `document.getElementById('gm-extra-check')?.addEventListener('change',function(){` +
+    `document.getElementById('gm-extra-field').style.display=this.checked?'block':'none';` +
+    `});` +
+    `document.getElementById('gm-save')?.addEventListener('click',()=>{` +
+    `const waitVal=parseFloat(document.getElementById('gm-wait-input')?.value);` +
+    `if(!isNaN(waitVal)&&waitVal>0)localStorage.setItem('GM__TIME',String(Math.round(waitVal)));` +
+    `const ec=document.getElementById('gm-extra-check');` +
+    `if(ec?.checked){` +
+    `const extraVal=parseInt(document.getElementById('gm-extra-input')?.value,10);` +
+    `if(!isNaN(extraVal)&&extraVal>0)localStorage.setItem('GM__EXTRA_TIME',String(extraVal));` +
+    `}else{localStorage.setItem('GM__EXTRA_TIME','0');}` +
+    `dialog.close();` +
+    `});` +
+    `dialog.addEventListener('click',function(e){` +
+    `const rect=dialog.getBoundingClientRect();` +
+    `if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)dialog.close();` +
+    `});` +
+    `}` +
+    `const waitInput=document.getElementById('gm-wait-input');` +
+    `const extraCheck=document.getElementById('gm-extra-check');` +
+    `const extraField=document.getElementById('gm-extra-field');` +
+    `const extraInput=document.getElementById('gm-extra-input');` +
+    `if(waitInput)waitInput.value=localStorage.getItem('GM__TIME')||'';` +
+    `const extraTime=localStorage.getItem('GM__EXTRA_TIME')||'0';` +
+    `const hasExtra=Number(extraTime)>0;` +
+    `if(extraCheck)extraCheck.checked=hasExtra;` +
+    `if(extraField)extraField.style.display=hasExtra?'block':'none';` +
+    `if(extraInput)extraInput.value=hasExtra?extraTime:'';` +
+    `dialog.showModal();` +
+    `}`;
+
+  // Inject settings button into dashboard button row
+  const settingsBtn =
+    `,${reactAlias}.jsx(${btnAlias},{variant:"contained",color:"primary",size:"small",` +
+    `startIcon:${reactAlias}.jsx(${iconAlias},{children:"settings"}),` +
+    `onClick:${onClickHandler},` +
+    `children:"⚙ GM"})`;
+
+  sourceCode = sourceCode.replace(
+    btnPattern,
+    (_, before, bracket) => before + settingsBtn + bracket,
+  );
+
+  // Inject dialog as native React element into dashboard JSX
+  const dialogEl =
+    `,${reactAlias}.jsx("dialog",{id:"gm-dialog",children:[` +
+    `${reactAlias}.jsx("h2",{children:"GM Settings"}),` +
+    `${reactAlias}.jsx("div",{className:"gm-field",children:[` +
+    `${reactAlias}.jsx("label",{children:"Waiting time (ms)"}),` +
+    `${reactAlias}.jsx("input",{id:"gm-wait-input",type:"number",min:0,step:0.001,placeholder:"e.g. 1965"})` +
+    `]}),` +
+    `${reactAlias}.jsx("div",{className:"gm-checkbox-row",children:[` +
+    `${reactAlias}.jsx("input",{id:"gm-extra-check",type:"checkbox"}),` +
+    `${reactAlias}.jsx("span",{children:"Enter in last second"})` +
+    `]}),` +
+    `${reactAlias}.jsx("div",{id:"gm-extra-field",className:"gm-field",style:{display:"none"},children:[` +
+    `${reactAlias}.jsx("label",{children:"How long to wait before ready (ms)"}),` +
+    `${reactAlias}.jsx("input",{id:"gm-extra-input",type:"number",min:0,step:1,placeholder:"e.g. 1590"})` +
+    `]}),` +
+    `${reactAlias}.jsx("div",{className:"gm-actions",children:[` +
+    `${reactAlias}.jsx("button",{className:"gm-btn-cancel",id:"gm-cancel",children:"Cancel"}),` +
+    `${reactAlias}.jsx("button",{className:"gm-btn-save",id:"gm-save",children:"Save"})` +
+    `]})` +
+    `]})`;
+
+  sourceCode = sourceCode.replace(
+    dialogPattern,
+    (_, before, bracket) => before + dialogEl + bracket,
+  );
+
+  return sourceCode;
+};
+
 const addAcceptClickLogger = (sourceCode) => {
   const injection =
     'document.addEventListener("click",function(e){' +
@@ -486,14 +632,15 @@ const addAcceptClickLogger = (sourceCode) => {
     "localStorage.setItem(k,k_v);" +
     "});";
 
-  const lastInjection =
-    'console.log("<<< PATCHED BUNDLE LOADED >>>");' + injection;
-
-  return `${lastInjection}${sourceCode}`;
+  return (
+    'console.log("<<< PATCHED BUNDLE LOADED >>>");' + injection + sourceCode
+  );
 };
 
 function modifyGlobMedSourceCode(code) {
   let _sourceCode = code;
+
+  _sourceCode = addSettingsToDashboard(_sourceCode);
 
   // Usage — synchronous, no await needed
   _sourceCode = makeApisExposeRefetch(
@@ -562,37 +709,8 @@ function modifyGlobMedSourceCode(code) {
 
 // const filePath = process.cwd() + "/original-gm-index.js";
 // const sourceCode = await readFile(filePath, "utf8");
-
 // const modifiedCode = modifyGlobMedSourceCode(sourceCode);
 // const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
 // await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;
-
-// function makeReferralDetailsApiPoll(sourceCode, refetchType) {
-//   const anchor = '["referral-details"';
-//   const idx = sourceCode.indexOf(anchor);
-//   if (idx === -1) return sourceCode;
-
-//   // Take a small slice after the anchor; tune if needed.
-//   const WINDOW = 180;
-//   const start = idx;
-//   const end = Math.min(sourceCode.length, start + WINDOW);
-//   let segment = sourceCode.slice(start, end);
-
-//   // Match either !0 or !1
-//   const focusRegex = /refetchOnWindowFocus\s*:\s*!\s*[01]\s*,/;
-
-//   if (!focusRegex.test(segment)) return sourceCode;
-
-//   if (refetchType === "focus") {
-//     // force focus refetch on
-//     segment = segment.replace(focusRegex, (m) => m.replace(/!\s*[01]/, "!0"));
-//   } else {
-//     // Inject right after refetchOnWindowFocus: !1,
-//     const pollInjection = `refetchInterval:d=>{if(!d||typeof d.status!=="string")return 400;if(d.status!=="P")return!1;const k="__GM_REF_POLL__";if(d.canTakeAction&&d.canUpdate)return window[k]=undefined,!1;const s=window[k]||(window[k]={n:0});let b=165+s.n*48;b=Math.min(b,460);const j=b*.2,m=Math.floor(b-j+Math.random()*(2*j));return s.n++,m},`;
-//     segment = segment.replace(focusRegex, (m) => m + pollInjection);
-//   }
-
-//   return sourceCode.slice(0, start) + segment + sourceCode.slice(end);
-// }
