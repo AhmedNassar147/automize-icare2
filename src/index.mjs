@@ -54,9 +54,6 @@ import sleep from "./sleep.mjs";
 import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
-import fs from "fs";
-import path from "path";
-
 const updateEnvFile = (updates) => {
   if (!Object.keys(updates).length) return;
 
