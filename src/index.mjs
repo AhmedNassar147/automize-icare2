@@ -90,6 +90,8 @@ const currentProfile = "Profile 1";
     MONTHLY_REPORT_GENERATED_AT,
     DETAILED_REPORT_GENERATED_AT,
     RESEND_PATIENT_SUMMARY_FILE_PATH,
+    WAIT_FOR_ACCEPT_MS,
+    NEW_WAITING_TIME_FOR_PATIENT,
   } = process.env;
 
   let server;
@@ -376,6 +378,27 @@ const currentProfile = "Profile 1";
         return res
           .status(500)
           .json({ success: false, message: "Internal error." });
+      }
+    });
+
+    app.get("/settings", async (req, res) => {
+      try {
+        const [timeMsString] = (NEW_WAITING_TIME_FOR_PATIENT || "").split(",");
+
+        const waitBeforeReady = Math.floor(timeMsString || 0);
+
+        const result = {
+          whatsAppWait: Math.floor(WAIT_FOR_ACCEPT_MS * 1000),
+          waitBeforeReady: waitBeforeReady ? waitBeforeReady : undefined,
+        };
+
+        return res.status(200).json(result);
+      } catch (err) {
+        createConsoleMessage(err, "error", "GET /settings error");
+        return res.status(500).json({
+          success: false,
+          message: "Internal error when getting settings.",
+        });
       }
     });
 
