@@ -407,12 +407,14 @@ const currentProfile = "Profile 1";
 
     app.get("/settings", async (req, res) => {
       try {
-        const [timeMsString] = (NEW_WAITING_TIME_FOR_PATIENT || "").split(",");
+        const [timeMsString] = (
+          process.env.NEW_WAITING_TIME_FOR_PATIENT || ""
+        ).split(",");
 
         const waitBeforeReady = Math.floor(timeMsString || 0);
 
         const result = {
-          whatsAppWait: Math.floor(WAIT_FOR_ACCEPT_MS * 1000),
+          whatsAppWait: Math.floor(process.env.WAIT_FOR_ACCEPT_MS * 1000),
           waitBeforeReady: waitBeforeReady ? waitBeforeReady : undefined,
         };
 
