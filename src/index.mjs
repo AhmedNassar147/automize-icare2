@@ -11,6 +11,7 @@ import { unlink } from "node:fs/promises";
 import path from "node:path";
 import https from "node:https";
 import express from "express";
+import cors from "cors";
 import { WebSocketServer } from "ws";
 
 import puppeteer from "puppeteer";
@@ -47,6 +48,7 @@ import {
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
+  APP_URL,
 } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
@@ -356,6 +358,13 @@ const currentProfile = "Profile 1";
     app.use(express.json());
     app.disable("x-powered-by");
     app.set("trust proxy", 1);
+    app.use(
+      cors({
+        origin: APP_URL,
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type"],
+      }),
+    );
 
     app.delete("/patients/:referralId", async (req, res) => {
       try {
