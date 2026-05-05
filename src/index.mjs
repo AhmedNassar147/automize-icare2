@@ -53,29 +53,9 @@ import {
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
 import sleep from "./sleep.mjs";
+import updateEnvFile from "./updateEnvFile.mjs";
 import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
-
-const updateEnvFile = (updates) => {
-  if (!Object.keys(updates).length) return;
-
-  const envPath = path.resolve(process.cwd(), ".env");
-  let content = fs.readFileSync(envPath, "utf8");
-
-  for (const [key, value] of Object.entries(updates)) {
-    const regex = new RegExp(`^${key}=.*$`, "m");
-    const line = `${key}=${value}`;
-    if (regex.test(content)) {
-      // update existing key
-      content = content.replace(regex, line);
-    } else {
-      // append new key
-      content += `\n${line}`;
-    }
-  }
-
-  fs.writeFileSync(envPath, content, "utf8");
-};
 
 // https://github.com/FiloSottile/mkcert/releases
 // Download mkcert-vX.X.X-windows-amd64.exe
@@ -353,7 +333,6 @@ const currentProfile = "Profile 1";
       );
     }
 
-    // ---------- HTTPS + Express (DELETE only) ----------
     const app = express();
     app.use(express.json());
     app.disable("x-powered-by");
@@ -361,7 +340,7 @@ const currentProfile = "Profile 1";
     app.use(
       cors({
         origin: APP_URL,
-        methods: ["GET", "POST"],
+        methods: ["GET", "POST", "DELETE"],
         allowedHeaders: ["Content-Type"],
       }),
     );
@@ -454,11 +433,6 @@ const currentProfile = "Profile 1";
 
         updateEnvFile(updates);
 
-        console.log(
-          "process.env.WAIT_FOR_ACCEPT_MS",
-          process.env.WAIT_FOR_ACCEPT_MS,
-        );
-
         return res.status(200).json({ success: true });
       } catch (err) {
         return res.status(500).json({ success: false });
@@ -537,9 +511,6 @@ const currentProfile = "Profile 1";
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {
       createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`);
-      createConsoleMessage(
-        `DELETE: https://${HOST}:${PORT}/patients/:referralId`,
-      );
     });
 
     process.on("SIGINT", () => {
