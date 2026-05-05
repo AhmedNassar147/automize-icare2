@@ -54,6 +54,30 @@ import sleep from "./sleep.mjs";
 import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
+import fs from "fs";
+import path from "path";
+
+const updateEnvFile = (updates) => {
+  if (!Object.keys(updates).length) return;
+
+  const envPath = path.resolve(process.cwd(), ".env");
+  let content = fs.readFileSync(envPath, "utf8");
+
+  for (const [key, value] of Object.entries(updates)) {
+    const regex = new RegExp(`^${key}=.*$`, "m");
+    const line = `${key}=${value}`;
+    if (regex.test(content)) {
+      // update existing key
+      content = content.replace(regex, line);
+    } else {
+      // append new key
+      content += `\n${line}`;
+    }
+  }
+
+  fs.writeFileSync(envPath, content, "utf8");
+};
+
 // https://github.com/FiloSottile/mkcert/releases
 // Download mkcert-vX.X.X-windows-amd64.exe
 // Rename it to just mkcert.exe.
@@ -399,6 +423,37 @@ const currentProfile = "Profile 1";
           success: false,
           message: "Internal error when getting settings.",
         });
+      }
+    });
+
+    app.post("/settings", async (req, res) => {
+      try {
+        const { whatsAppWait, waitBeforeReady } = req.body;
+
+        const updates = {};
+
+        if (whatsAppWait) {
+          const value = String(whatsAppWait / 1000);
+          process.env.WAIT_FOR_ACCEPT_MS = value;
+          updates.WAIT_FOR_ACCEPT_MS = value;
+        }
+
+        if (waitBeforeReady) {
+          const value = String(waitBeforeReady);
+          process.env.NEW_WAITING_TIME_FOR_PATIENT = value;
+          updates.NEW_WAITING_TIME_FOR_PATIENT = value;
+        }
+
+        updateEnvFile(updates);
+
+        console.log(
+          "process.env.WAIT_FOR_ACCEPT_MS",
+          process.env.WAIT_FOR_ACCEPT_MS,
+        );
+
+        return res.status(200).json({ success: true });
+      } catch (err) {
+        return res.status(500).json({ success: false });
       }
     });
 

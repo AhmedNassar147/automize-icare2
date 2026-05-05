@@ -536,7 +536,7 @@ const addSettingsToDashboard = (sourceCode) => {
     `#gm-dialog .gm-btn-save:hover{background:#1565c0;}`;
 
   const onClickHandler =
-    `()=>{` +
+    `async()=>{` +
     `const dialog=document.getElementById('gm-dialog');` +
     `if(!dialog)return;` +
     `if(!dialog.dataset.init){` +
@@ -544,7 +544,6 @@ const addSettingsToDashboard = (sourceCode) => {
     `const style=document.createElement('style');` +
     `style.textContent='${CSS}';` +
     `document.head.appendChild(style);` +
-    // Enforce max 4 digits on both inputs
     `const enforceMax4=function(){if(this.value.length>4)this.value=this.value.slice(0,4);};` +
     `document.getElementById('gm-wait-input')?.addEventListener('input',enforceMax4);` +
     `document.getElementById('gm-extra-input')?.addEventListener('input',enforceMax4);` +
@@ -552,14 +551,17 @@ const addSettingsToDashboard = (sourceCode) => {
     `document.getElementById('gm-extra-check')?.addEventListener('change',function(){` +
     `document.getElementById('gm-extra-field').style.display=this.checked?'block':'none';` +
     `});` +
-    `document.getElementById('gm-save')?.addEventListener('click',()=>{` +
+    `document.getElementById('gm-save')?.addEventListener('click',async()=>{` +
     `const waitVal=parseInt(document.getElementById('gm-wait-input')?.value,10);` +
-    `if(!isNaN(waitVal)&&waitVal>0)localStorage.setItem('GM__TIME',String(waitVal));` +
     `const ec=document.getElementById('gm-extra-check');` +
-    `if(ec?.checked){` +
-    `const extraVal=parseInt(document.getElementById('gm-extra-input')?.value,10);` +
-    `if(!isNaN(extraVal)&&extraVal>0)localStorage.setItem('GM__EXTRA_TIME',String(extraVal));` +
-    `}else{localStorage.setItem('GM__EXTRA_TIME','0');}` +
+    `const extraVal=ec?.checked?parseInt(document.getElementById('gm-extra-input')?.value,10):undefined;` +
+    `try{` +
+    `await fetch('https://localhost:8443/settings',{` +
+    `method:'POST',` +
+    `headers:{'Content-Type':'application/json'},` +
+    `body:JSON.stringify({whatsAppWait:waitVal,waitBeforeReady:extraVal})` +
+    `});` +
+    `}catch(e){console.log('[GM] save settings failed',e);}` +
     `dialog.close();` +
     `});` +
     `dialog.addEventListener('click',function(e){` +
@@ -567,16 +569,20 @@ const addSettingsToDashboard = (sourceCode) => {
     `if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)dialog.close();` +
     `});` +
     `}` +
+    // Load values from API on every open
     `const waitInput=document.getElementById('gm-wait-input');` +
     `const extraCheck=document.getElementById('gm-extra-check');` +
     `const extraField=document.getElementById('gm-extra-field');` +
     `const extraInput=document.getElementById('gm-extra-input');` +
-    `if(waitInput)waitInput.value=localStorage.getItem('GM__TIME')||'';` +
-    `const extraTime=localStorage.getItem('GM__EXTRA_TIME')||'0';` +
-    `const hasExtra=Number(extraTime)>0;` +
+    `try{` +
+    `const res=await fetch('https://localhost:8443/settings');` +
+    `const settings=await res.json();` +
+    `if(waitInput)waitInput.value=settings.whatsAppWait||'';` +
+    `const hasExtra=!!settings.waitBeforeReady;` +
     `if(extraCheck)extraCheck.checked=hasExtra;` +
     `if(extraField)extraField.style.display=hasExtra?'block':'none';` +
-    `if(extraInput)extraInput.value=hasExtra?extraTime:'';` +
+    `if(extraInput)extraInput.value=settings.waitBeforeReady||'';` +
+    `}catch(e){console.log('[GM] load settings failed',e);}` +
     `dialog.showModal();` +
     `}`;
 
