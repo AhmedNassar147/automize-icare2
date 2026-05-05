@@ -520,14 +520,14 @@ const addSettingsToDashboard = (sourceCode) => {
   const CSS =
     `#gm-dialog{border:none;border-radius:8px;padding:24px;min-width:360px;box-shadow:0 11px 15px rgba(0,0,0,0.2);font-family:Roboto,sans-serif;}` +
     `#gm-dialog::backdrop{background:rgba(0,0,0,0.5);}` +
-    `#gm-dialog h2{margin:0 0 20px;font-size:1.25rem;font-weight:500;color:rgba(0,0,0,0.87);}` +
-    `#gm-dialog label{display:block;font-size:0.875rem;color:rgba(0,0,0,0.6);margin-bottom:4px;}` +
+    `#gm-dialog h2{margin:0 0 20px;font-size:1.25rem;font-weight:500;color:white;}` +
+    `#gm-dialog label{display:block;font-size:0.875rem;color:white;margin-bottom:4px;}` +
     `#gm-dialog input[type=number]{width:100%;padding:8px 12px;border:1px solid rgba(0,0,0,0.23);border-radius:4px;font-size:1rem;box-sizing:border-box;outline:none;transition:border-color 0.2s;}` +
     `#gm-dialog input[type=number]:focus{border-color:#1976d2;border-width:2px;}` +
     `#gm-dialog .gm-field{margin-bottom:16px;}` +
     `#gm-dialog .gm-checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;}` +
     `#gm-dialog .gm-checkbox-row input[type=checkbox]{width:18px;height:18px;cursor:pointer;}` +
-    `#gm-dialog .gm-checkbox-row span{font-size:0.875rem;color:rgba(0,0,0,0.87);}` +
+    `#gm-dialog .gm-checkbox-row span{font-size:0.875rem;color:white;}` +
     `#gm-dialog .gm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;}` +
     `#gm-dialog button{padding:6px 16px;border-radius:4px;font-size:0.875rem;font-weight:500;cursor:pointer;border:none;text-transform:uppercase;letter-spacing:0.02857em;}` +
     `#gm-dialog .gm-btn-cancel{background:transparent;color:#1976d2;}` +
@@ -544,13 +544,17 @@ const addSettingsToDashboard = (sourceCode) => {
     `const style=document.createElement('style');` +
     `style.textContent='${CSS}';` +
     `document.head.appendChild(style);` +
+    // Enforce max 4 digits on both inputs
+    `const enforceMax4=function(){if(this.value.length>4)this.value=this.value.slice(0,4);};` +
+    `document.getElementById('gm-wait-input')?.addEventListener('input',enforceMax4);` +
+    `document.getElementById('gm-extra-input')?.addEventListener('input',enforceMax4);` +
     `document.getElementById('gm-cancel')?.addEventListener('click',()=>dialog.close());` +
     `document.getElementById('gm-extra-check')?.addEventListener('change',function(){` +
     `document.getElementById('gm-extra-field').style.display=this.checked?'block':'none';` +
     `});` +
     `document.getElementById('gm-save')?.addEventListener('click',()=>{` +
-    `const waitVal=parseFloat(document.getElementById('gm-wait-input')?.value);` +
-    `if(!isNaN(waitVal)&&waitVal>0)localStorage.setItem('GM__TIME',String(Math.round(waitVal)));` +
+    `const waitVal=parseInt(document.getElementById('gm-wait-input')?.value,10);` +
+    `if(!isNaN(waitVal)&&waitVal>0)localStorage.setItem('GM__TIME',String(waitVal));` +
     `const ec=document.getElementById('gm-extra-check');` +
     `if(ec?.checked){` +
     `const extraVal=parseInt(document.getElementById('gm-extra-input')?.value,10);` +
@@ -581,7 +585,7 @@ const addSettingsToDashboard = (sourceCode) => {
     `,${reactAlias}.jsx(${btnAlias},{variant:"contained",color:"primary",size:"small",` +
     `startIcon:${reactAlias}.jsx(${iconAlias},{children:"settings"}),` +
     `onClick:${onClickHandler},` +
-    `children:"⚙ GM"})`;
+    `children:"😉 Settings"})`;
 
   sourceCode = sourceCode.replace(
     btnPattern,
@@ -591,10 +595,10 @@ const addSettingsToDashboard = (sourceCode) => {
   // Inject dialog as native React element into dashboard JSX
   const dialogEl =
     `,${reactAlias}.jsx("dialog",{id:"gm-dialog",children:[` +
-    `${reactAlias}.jsx("h2",{children:"GM Settings"}),` +
+    `${reactAlias}.jsx("h2",{children:"Set Settings for next patient"}),` +
     `${reactAlias}.jsx("div",{className:"gm-field",children:[` +
-    `${reactAlias}.jsx("label",{children:"Waiting time (ms)"}),` +
-    `${reactAlias}.jsx("input",{id:"gm-wait-input",type:"number",min:0,step:0.001,placeholder:"e.g. 1965"})` +
+    `${reactAlias}.jsx("label",{children:"WAIT_FOR_ACCEPT_MS (whatsapp) (ms)"}),` +
+    `${reactAlias}.jsx("input",{id:"gm-wait-input",type:"number",min:0,step:1,placeholder:"e.g. 1975"})` +
     `]}),` +
     `${reactAlias}.jsx("div",{className:"gm-checkbox-row",children:[` +
     `${reactAlias}.jsx("input",{id:"gm-extra-check",type:"checkbox"}),` +
@@ -602,7 +606,7 @@ const addSettingsToDashboard = (sourceCode) => {
     `]}),` +
     `${reactAlias}.jsx("div",{id:"gm-extra-field",className:"gm-field",style:{display:"none"},children:[` +
     `${reactAlias}.jsx("label",{children:"How long to wait before ready (ms)"}),` +
-    `${reactAlias}.jsx("input",{id:"gm-extra-input",type:"number",min:0,step:1,placeholder:"e.g. 1590"})` +
+    `${reactAlias}.jsx("input",{id:"gm-extra-input",type:"number",min:0,step:1,placeholder:"e.g. 2181"})` +
     `]}),` +
     `${reactAlias}.jsx("div",{className:"gm-actions",children:[` +
     `${reactAlias}.jsx("button",{className:"gm-btn-cancel",id:"gm-cancel",children:"Cancel"}),` +
