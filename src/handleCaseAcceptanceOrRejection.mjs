@@ -17,6 +17,7 @@ import {
   HOME_PAGE_URL,
   USER_ACTION_TYPES,
 } from "./constants.mjs";
+import sendNtfyMessage from "./sendNtfyMessage.mjs";
 
 async function pdfToBase64(filePath) {
   const buf = await readFile(filePath);
@@ -109,51 +110,20 @@ const handleCaseAcceptanceOrRejection =
 
       const waitTime = Math.ceil(WAIT_FOR_ACCEPT_MS * 1000);
 
-      let ntfyResult = "";
+      await sleep(waitTime);
+      const approvalMessage = `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`;
 
-      if (NTFY_TOPIC) {
-        const result = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
-          method: "POST",
-          body: "ACCEPT NOW: " + referralId,
-          headers: {
-            Title: "CNHI",
-            // https://github.com/cityssm/node-ntfy-publish/blob/main/emoji.js
-            Tags: "rotating_light",
-            // https://github.com/cityssm/node-ntfy-publish/blob/main/priorities.js
-            Priority: "5", // Add this line for max priority,
-            // Icon: "https://referralprogram.globemedsaudi.com/assets/MOHlogo-a80cbf2a.png",
-          },
-        });
-
-        const resJson = await result.json();
-        const isSent = result.ok;
-        ntfyResult = Object.entries({
-          ...resJson,
-          isSent: isSent,
-          claimableServerTime,
-          claimableLocalTime,
-          referralEndTimestamp,
-          // _referralEndTimestamp,
-          // COOLDOWN_MS,
-          // targetServerTime,
-          // offset,
-          // targetLocalTime,
-          diff1: referralEndTimestamp - claimableServerTime,
-          diff2: referralEndTimestamp - claimableLocalTime,
-        })
-          .map(([key, value]) => `${key}=${value}`)
-          .join(" ");
-      } else {
-        await sleep(waitTime);
-        await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-          message: `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`,
-        });
-      }
+      await Promise.all([
+        sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+          message: approvalMessage,
+        }),
+        sendNtfyMessage(approvalMessage),
+      ]);
 
       await closePageSafely(page);
 
       createConsoleMessage(
-        `✅ Patient=${referralId} waitTime=${waitTime}ms waitingTimeMSForAccept=${waitingTimeMSForAccept} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} ntfyResult=${ntfyResult} claimableServerTimeIsGreater={claimableServerTime > referralEndTimestamp}`,
+        `✅ Patient=${referralId} waitTime=${waitTime}ms waitingTimeMSForAccept=${waitingTimeMSForAccept} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} claimableServerTimeIsGreater={claimableServerTime > referralEndTimestamp}`,
         "warn",
       );
 

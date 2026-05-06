@@ -6,7 +6,7 @@
 import speakText from "./speakText.mjs";
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
-import getCurrentUserNtfyID from "./getCurrentUserNtfyID.mjs";
+import sendNtfyMessage from "./sendNtfyMessage.mjs";
 
 const processSendCollectedPatientsToWhatsapp =
   (sendWhatsappMessage, execludeWhatsAppMsgFooter) => async (addedPatients) => {
@@ -96,29 +96,17 @@ const processSendCollectedPatientsToWhatsapp =
         text: "Check your WhatsApp, there is a new patient",
       });
 
-      const notifierID = getCurrentUserNtfyID();
+      const [{ referralId, referralEndDate }] = addedPatients;
 
-      if (notifierID) {
-        const [{ referralId, referralEndDate }] = addedPatients;
-        await fetch(`https://ntfy.sh/${notifierID}`, {
-          method: "POST",
-          body:
-            "At " +
-            (BRANCH_NAME || CLIENT_ID) +
-            " NEW PAtient " +
-            referralId +
-            " Ends At " +
-            referralEndDate,
-          headers: {
-            Title: "CNHI",
-            // https://github.com/cityssm/node-ntfy-publish/blob/main/emoji.js
-            Tags: "rotating_light",
-            // https://github.com/cityssm/node-ntfy-publish/blob/main/priorities.js
-            Priority: "5", // Add this line for max priority,
-            // Icon: "https://referralprogram.globemedsaudi.com/assets/MOHlogo-a80cbf2a.png",
-          },
-        });
-      }
+      const message =
+        "At " +
+        (BRANCH_NAME || CLIENT_ID) +
+        " NEW PAtient " +
+        referralId +
+        " Ends At " +
+        referralEndDate;
+
+      await sendNtfyMessage(message);
     } catch (error) {
       createConsoleMessage(error, "error", "SOUND error");
     }
