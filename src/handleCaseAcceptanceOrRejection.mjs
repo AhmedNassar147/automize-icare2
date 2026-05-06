@@ -127,8 +127,12 @@ const handleCaseAcceptanceOrRejection =
       const claimableServerTimeIsGreater =
         claimableServerTime > referralEndTimestamp;
 
+      const diff = claimableServerTimeIsGreater
+        ? claimableServerTime - referralEndTimestamp
+        : referralEndTimestamp - claimableServerTime;
+
       createConsoleMessage(
-        `✅ Patient=${referralId} waitTime=${waitTime}ms waitingTimeMSForAccept=${waitingTimeMSForAccept} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} claimableServerTimeIsGreater=${claimableServerTimeIsGreater}`,
+        `✅ Patient=${referralId} waitTime=${waitTime}ms waitingTimeMSForAccept=${waitingTimeMSForAccept} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} claimableServerTimeIsGreater=${claimableServerTimeIsGreater} diff=${diff}`,
         "warn",
       );
 
