@@ -95,6 +95,7 @@ const currentProfile = "Profile 1";
     RESEND_PATIENT_SUMMARY_FILE_PATH,
     WAIT_FOR_ACCEPT_MS,
     NEW_WAITING_TIME_FOR_PATIENT,
+    NTFY_ID_FOR_NEW_PATIENT,
   } = process.env;
 
   let server;
@@ -213,6 +214,7 @@ const currentProfile = "Profile 1";
       processSendCollectedPatientsToWhatsapp(
         sendWhatsappMessage,
         EXECLUDE_WHATSAPP_MSG_FOOTER === "Y",
+        NTFY_ID_FOR_NEW_PATIENT,
       ),
     );
 

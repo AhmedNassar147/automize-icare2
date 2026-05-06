@@ -8,7 +8,8 @@ import createConfirmationMessage from "./createConfirmationMessage.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const processSendCollectedPatientsToWhatsapp =
-  (sendWhatsappMessage, execludeWhatsAppMsgFooter) => async (addedPatients) => {
+  (sendWhatsappMessage, execludeWhatsAppMsgFooter, notifierID) =>
+  async (addedPatients) => {
     const formatPatient = ({
       referralId,
       patientName,
@@ -85,22 +86,28 @@ const processSendCollectedPatientsToWhatsapp =
 
     await sendWhatsappMessage(
       process.env.CLIENT_WHATSAPP_NUMBER,
-      addedPatients.map(formatPatient)
+      addedPatients.map(formatPatient),
     );
 
     try {
-      // const now = new Date();
-
-      // const saTime = new Date(
-      //   now.toLocaleString("en-US", { timeZone: "Asia/Riyadh" })
-      // );
-      // const hour = saTime.getHours();
-
-      // if (hour >= 22 || hour <= 9) {
       speakText({
         text: "Check your WhatsApp, there is a new patient",
       });
-      // }
+
+      if (notifierID) {
+        await fetch(`https://ntfy.sh/${notifierID}`, {
+          method: "POST",
+          body: "NEW PAtient " + addedPatients?.[0]?.referralId,
+          headers: {
+            Title: "CNHI",
+            // https://github.com/cityssm/node-ntfy-publish/blob/main/emoji.js
+            Tags: "rotating_light",
+            // https://github.com/cityssm/node-ntfy-publish/blob/main/priorities.js
+            Priority: "5", // Add this line for max priority,
+            // Icon: "https://referralprogram.globemedsaudi.com/assets/MOHlogo-a80cbf2a.png",
+          },
+        });
+      }
     } catch (error) {
       createConsoleMessage(error, "error", "SOUND error");
     }
