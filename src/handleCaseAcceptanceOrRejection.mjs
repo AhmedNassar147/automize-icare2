@@ -110,14 +110,16 @@ const handleCaseAcceptanceOrRejection =
 
       const waitTime = Math.ceil(WAIT_FOR_ACCEPT_MS * 1000);
 
-      await sleep(waitTime);
       const approvalMessage = `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`;
 
       await Promise.all([
-        sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-          message: approvalMessage,
-        }),
-        sendNtfyMessage(approvalMessage),
+        sleep(waitTime).then(() =>
+          sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
+            message: approvalMessage,
+          }),
+        ),
+
+        sleep(waitTime + 50).then(() => sendNtfyMessage(approvalMessage)),
       ]);
 
       await closePageSafely(page);
