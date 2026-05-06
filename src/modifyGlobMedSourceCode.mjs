@@ -525,6 +525,9 @@ const addSettingsToDashboard = (sourceCode) => {
     `#gm-dialog input[type=number]{width:100%;padding:8px 12px;border:1px solid rgba(0,0,0,0.23);border-radius:4px;font-size:1rem;box-sizing:border-box;outline:none;transition:border-color 0.2s;}` +
     `#gm-dialog input[type=number]:focus{border-color:#1976d2;border-width:2px;}` +
     `#gm-dialog .gm-field{margin-bottom:16px;}` +
+    `#gm-dialog .gm-input-row{display:flex;align-items:center;gap:8px;}` +
+    `#gm-dialog .gm-input-row input{flex:1;}` +
+    `#gm-dialog .gm-seconds{font-size:0.875rem;color:white;white-space:nowrap;min-width:48px;}` +
     `#gm-dialog .gm-checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;}` +
     `#gm-dialog .gm-checkbox-row input[type=checkbox]{width:18px;height:18px;cursor:pointer;}` +
     `#gm-dialog .gm-checkbox-row span{font-size:0.875rem;color:white;}` +
