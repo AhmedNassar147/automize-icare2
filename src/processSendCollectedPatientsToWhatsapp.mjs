@@ -84,8 +84,10 @@ const processSendCollectedPatientsToWhatsapp =
       };
     };
 
+    const { BRANCH_NAME, CLIENT_WHATSAPP_NUMBER, CLIENT_ID } = process.env;
+
     await sendWhatsappMessage(
-      process.env.CLIENT_WHATSAPP_NUMBER,
+      CLIENT_WHATSAPP_NUMBER,
       addedPatients.map(formatPatient),
     );
 
@@ -97,14 +99,16 @@ const processSendCollectedPatientsToWhatsapp =
       const notifierID = getCurrentUserNtfyID();
 
       if (notifierID) {
-        const [{ referralId, referralEndDateActionablAt }] = addedPatients;
+        const [{ referralId, referralEndDate }] = addedPatients;
         await fetch(`https://ntfy.sh/${notifierID}`, {
           method: "POST",
           body:
-            "NEW PAtient " +
+            "At " +
+            (BRANCH_NAME || CLIENT_ID) +
+            " NEW PAtient " +
             referralId +
-            " actionable At " +
-            referralEndDateActionablAt,
+            " Ends At " +
+            referralEndDate,
           headers: {
             Title: "CNHI",
             // https://github.com/cityssm/node-ntfy-publish/blob/main/emoji.js

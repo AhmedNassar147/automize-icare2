@@ -545,8 +545,18 @@ const addSettingsToDashboard = (sourceCode) => {
     `style.textContent='${CSS}';` +
     `document.head.appendChild(style);` +
     `const enforceMax4=function(){if(this.value.length>4)this.value=this.value.slice(0,4);};` +
-    `document.getElementById('gm-wait-input')?.addEventListener('input',enforceMax4);` +
-    `document.getElementById('gm-extra-input')?.addEventListener('input',enforceMax4);` +
+    `const updateSeconds=(inputId,spanId)=>{` +
+    `const input=document.getElementById(inputId);` +
+    `const span=document.getElementById(spanId);` +
+    `if(!input||!span)return;` +
+    `input.addEventListener('input',function(){` +
+    `enforceMax4.call(this);` +
+    `const ms=parseInt(this.value,10);` +
+    `span.textContent=isNaN(ms)||ms<=0?'':(ms/1000).toFixed(3)+'s';` +
+    `});` +
+    `};` +
+    `updateSeconds('gm-wait-input','gm-wait-seconds');` +
+    `updateSeconds('gm-extra-input','gm-extra-seconds');` +
     `document.getElementById('gm-cancel')?.addEventListener('click',()=>dialog.close());` +
     `document.getElementById('gm-extra-check')?.addEventListener('change',function(){` +
     `document.getElementById('gm-extra-field').style.display=this.checked?'block':'none';` +
@@ -571,17 +581,21 @@ const addSettingsToDashboard = (sourceCode) => {
     `}` +
     // Load values from API on every open
     `const waitInput=document.getElementById('gm-wait-input');` +
+    `const waitSeconds=document.getElementById('gm-wait-seconds');` +
     `const extraCheck=document.getElementById('gm-extra-check');` +
     `const extraField=document.getElementById('gm-extra-field');` +
     `const extraInput=document.getElementById('gm-extra-input');` +
+    `const extraSeconds=document.getElementById('gm-extra-seconds');` +
     `try{` +
     `const res=await fetch('https://localhost:8443/settings');` +
     `const settings=await res.json();` +
     `if(waitInput)waitInput.value=settings.whatsAppWait||'';` +
+    `if(waitSeconds&&settings.whatsAppWait)waitSeconds.textContent=(settings.whatsAppWait/1000).toFixed(3)+'s';` +
     `const hasExtra=!!settings.waitBeforeReady;` +
     `if(extraCheck)extraCheck.checked=hasExtra;` +
     `if(extraField)extraField.style.display=hasExtra?'block':'none';` +
     `if(extraInput)extraInput.value=settings.waitBeforeReady||'';` +
+    `if(extraSeconds&&settings.waitBeforeReady)extraSeconds.textContent=(settings.waitBeforeReady/1000).toFixed(3)+'s';` +
     `}catch(e){console.log('[GM] load settings failed',e);}` +
     `dialog.showModal();` +
     `}`;
@@ -604,7 +618,10 @@ const addSettingsToDashboard = (sourceCode) => {
     `${reactAlias}.jsx("h2",{children:"Set Settings for next patient"}),` +
     `${reactAlias}.jsx("div",{className:"gm-field",children:[` +
     `${reactAlias}.jsx("label",{children:"WAIT_FOR_ACCEPT_MS (whatsapp) (ms)"}),` +
-    `${reactAlias}.jsx("input",{id:"gm-wait-input",type:"number",min:0,step:1,placeholder:"e.g. 1975"})` +
+    `${reactAlias}.jsx("div",{className:"gm-input-row",children:[` +
+    `${reactAlias}.jsx("input",{id:"gm-wait-input",type:"number",min:0,step:1,placeholder:"e.g. 1975"}),` +
+    `${reactAlias}.jsx("span",{id:"gm-wait-seconds",className:"gm-seconds"})` +
+    `]})` +
     `]}),` +
     `${reactAlias}.jsx("div",{className:"gm-checkbox-row",children:[` +
     `${reactAlias}.jsx("input",{id:"gm-extra-check",type:"checkbox"}),` +
@@ -612,7 +629,10 @@ const addSettingsToDashboard = (sourceCode) => {
     `]}),` +
     `${reactAlias}.jsx("div",{id:"gm-extra-field",className:"gm-field",style:{display:"none"},children:[` +
     `${reactAlias}.jsx("label",{children:"How long to wait before ready (ms)"}),` +
-    `${reactAlias}.jsx("input",{id:"gm-extra-input",type:"number",min:0,step:1,placeholder:"e.g. 2181"})` +
+    `${reactAlias}.jsx("div",{className:"gm-input-row",children:[` +
+    `${reactAlias}.jsx("input",{id:"gm-extra-input",type:"number",min:0,step:1,placeholder:"e.g. 2181"}),` +
+    `${reactAlias}.jsx("span",{id:"gm-extra-seconds",className:"gm-seconds"})` +
+    `]})` +
     `]}),` +
     `${reactAlias}.jsx("div",{className:"gm-actions",children:[` +
     `${reactAlias}.jsx("button",{className:"gm-btn-cancel",id:"gm-cancel",children:"Cancel"}),` +
