@@ -107,7 +107,7 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const waitTime = WAIT_FOR_ACCEPT_MS * 1000;
+      const waitTime = Math.ceil(WAIT_FOR_ACCEPT_MS * 1000);
 
       let ntfyResult = "";
 
@@ -153,7 +153,7 @@ const handleCaseAcceptanceOrRejection =
       await closePageSafely(page);
 
       createConsoleMessage(
-        `✅ Patient=${referralId} waitTime=${waitTime}ms waitingTimeMSForAccept=${waitingTimeMSForAccept} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} ntfyResult=${ntfyResult}`,
+        `✅ Patient=${referralId} waitTime=${waitTime}ms waitingTimeMSForAccept=${waitingTimeMSForAccept} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} ntfyResult=${ntfyResult} claimableServerTimeIsGreater={claimableServerTime > referralEndTimestamp}`,
         "warn",
       );
 
