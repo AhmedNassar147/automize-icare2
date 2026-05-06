@@ -6,10 +6,10 @@
 import speakText from "./speakText.mjs";
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
+import getCurrentUserNtfyID from "./getCurrentUserNtfyID.mjs";
 
 const processSendCollectedPatientsToWhatsapp =
-  (sendWhatsappMessage, execludeWhatsAppMsgFooter, notifierID) =>
-  async (addedPatients) => {
+  (sendWhatsappMessage, execludeWhatsAppMsgFooter) => async (addedPatients) => {
     const formatPatient = ({
       referralId,
       patientName,
@@ -94,10 +94,17 @@ const processSendCollectedPatientsToWhatsapp =
         text: "Check your WhatsApp, there is a new patient",
       });
 
+      const notifierID = getCurrentUserNtfyID();
+
       if (notifierID) {
+        const [{ referralId, referralEndDateActionablAt }] = addedPatients;
         await fetch(`https://ntfy.sh/${notifierID}`, {
           method: "POST",
-          body: "NEW PAtient " + addedPatients?.[0]?.referralId,
+          body:
+            "NEW PAtient " +
+            referralId +
+            " actionable At " +
+            referralEndDateActionablAt,
           headers: {
             Title: "CNHI",
             // https://github.com/cityssm/node-ntfy-publish/blob/main/emoji.js
