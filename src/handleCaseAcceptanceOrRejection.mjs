@@ -119,7 +119,7 @@ const handleCaseAcceptanceOrRejection =
           }),
         ),
 
-        sleep(waitTime - 33).then(() => sendNtfyMessage(approvalMessage)),
+        sleep(waitTime - 34).then(() => sendNtfyMessage(approvalMessage)),
       ]);
 
       await closePageSafely(page);
