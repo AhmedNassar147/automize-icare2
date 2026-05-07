@@ -29,8 +29,10 @@ const getSaudiStartAndEndDate = ({
   let leftMs = 15 * 60 * 1000;
 
   const Min_15 = 15 * 60 * 1000;
+  let isReferralOldDate = false;
 
   if (saStartDate < new Date(currentDate - Min_15) && caseAlertMessage) {
+    isReferralOldDate = true;
     const match = caseAlertMessage.match(
       /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/,
     );
@@ -61,6 +63,7 @@ const getSaudiStartAndEndDate = ({
     : referralEndTimestamp;
 
   return {
+    isReferralOldDate,
     cutoffTimeMs: shouldCutoffTime ? cutoffTimeMs : 0,
     referralDate,
     referralStartDate: formateDateToString(saStartDate),
@@ -127,7 +130,7 @@ const processCollectingPatients = async ({
       const {
         patientDetailsError,
         patientInfoError,
-        attchmentsError,
+        attachmentsError,
         caseAlertMessage,
         detailsAPiFiresAtMS,
         detailsAPiServerResponseTimeMS,
@@ -137,11 +140,11 @@ const processCollectingPatients = async ({
         !patientData ||
         patientDetailsError ||
         patientInfoError ||
-        attchmentsError;
+        attachmentsError;
 
       if (hasInternalError) {
         createConsoleMessage(
-          `❌ Error collecting referralId=${referralId} => patientData=${!!patientData}, patientDetailsError=${patientDetailsError}, patientInfoError=${patientInfoError}, attchmentsError=${attchmentsError}`,
+          `❌ Error collecting referralId=${referralId} => patientData=${!!patientData}, patientDetailsError=${patientDetailsError}, patientInfoError=${patientInfoError}, attachmentsError=${attachmentsError}`,
           "error",
         );
         continue;

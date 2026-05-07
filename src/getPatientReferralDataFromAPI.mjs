@@ -54,7 +54,7 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
               serverResponseTimeMS: (finishedDateMS - apiFiresAtMS) / 2,
             };
           }
-        })
+        }),
       );
 
       const normalizeSettled = (settled) => {
@@ -84,24 +84,17 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
       const { data: patientInfo, error: patientInfoError } =
         normalizeSettled(patientInfoResponse);
 
-      const { data: attachmentList, error: attchmentsError } =
+      const { data: attachmentList, error: attachmentsError } =
         normalizeSettled(attachmentResponse);
 
       const {
         requiredSpecialty,
         specialty,
         mobileNumber: mobileNumberFromDetails,
-        sourceProvider,
-        requestDate,
-        referralCause,
-        requestedBedType,
         refType,
-        providerZone,
-        providerName,
-        providerCode,
         message,
-        quotaExceededMessage,
         referralCauseDetails,
+        ...otherDetailsData
       } = detailsData || {};
 
       const {
@@ -137,58 +130,55 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         patientInfoError: patientInfoError,
         specialty: _specialty,
         subSpecialty: subSpecialty,
-        sourceProvider,
-        providerZone,
-        providerName,
-        providerCode,
-        requestDate,
-        requestedBedType,
-        referralCause,
         referralType: refType,
         note: note,
+        referralCauseDetails,
+        ...otherDetailsData,
         detailsAPiFiresAtMS: apiFiresAtMS,
-        detailsAPiServerResponseTimeMS: Math.trunc(serverResponseTimeMS),
+        detailsAPiServerResponseTimeMS:
+          !!serverResponseTimeMS || typeof serverResponseTimeMS === "number"
+            ? Math.trunc(serverResponseTimeMS)
+            : undefined,
         caseAlertMessage: message,
-        quotaExceededMessage,
         patientDetailsError,
-        attchmentsError,
+        attachmentsError,
       };
 
       if (Array.isArray(attachmentList) && attachmentList.length) {
         function arrayBufferToBase64(buffer) {
           const bytes = new Uint8Array(buffer);
-
           const base64abc =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split(
-              ""
-            );
-
-          let result = "";
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+          const result = [];
           let i;
 
           for (i = 2; i < bytes.length; i += 3) {
-            result += base64abc[bytes[i - 2] >> 2];
-            result +=
-              base64abc[((bytes[i - 2] & 3) << 4) | (bytes[i - 1] >> 4)];
-            result += base64abc[((bytes[i - 1] & 15) << 2) | (bytes[i] >> 6)];
-            result += base64abc[bytes[i] & 63];
+            result.push(base64abc[bytes[i - 2] >> 2]);
+            result.push(
+              base64abc[((bytes[i - 2] & 3) << 4) | (bytes[i - 1] >> 4)],
+            );
+            result.push(
+              base64abc[((bytes[i - 1] & 15) << 2) | (bytes[i] >> 6)],
+            );
+            result.push(base64abc[bytes[i] & 63]);
           }
 
           if (i === bytes.length + 1) {
-            result += base64abc[bytes[i - 2] >> 2];
-            result += base64abc[(bytes[i - 2] & 3) << 4];
-            result += "==";
+            result.push(base64abc[bytes[i - 2] >> 2]);
+            result.push(base64abc[(bytes[i - 2] & 3) << 4]);
+            result.push("==");
           }
 
           if (i === bytes.length) {
-            result += base64abc[bytes[i - 2] >> 2];
-            result +=
-              base64abc[((bytes[i - 2] & 3) << 4) | (bytes[i - 1] >> 4)];
-            result += base64abc[(bytes[i - 1] & 15) << 2];
-            result += "=";
+            result.push(base64abc[bytes[i - 2] >> 2]);
+            result.push(
+              base64abc[((bytes[i - 2] & 3) << 4) | (bytes[i - 1] >> 4)],
+            );
+            result.push(base64abc[(bytes[i - 1] & 15) << 2]);
+            result.push("=");
           }
 
-          return result;
+          return result.join("");
         }
 
         const downloadTasks = attachmentList
@@ -197,7 +187,13 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
             const downloadUrl = `${baseGlobMedAPiUrl}/download-attachment/${idAttachment}`;
 
             try {
-              const fileRes = await fetch(downloadUrl);
+              const fileRes = await fetch(downloadUrl, {
+                credentials: "include",
+                headers: {
+                  "x-csrf": "1",
+                  accept: "*/*",
+                },
+              });
 
               if (!fileRes.ok) {
                 return {
@@ -226,19 +222,23 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
               return {
                 fileName,
                 downloadUrl,
-                downloadError: `Failed with error ${error}`,
+                downloadError:
+                  error instanceof Error ? error.message : String(error),
               };
             }
           });
 
         const files = await Promise.allSettled(downloadTasks);
 
-        finalData.files = files.map((item) => item.value).filter(Boolean);
+        finalData.files = files
+          .filter((item) => item.status === "fulfilled")
+          .map((item) => item.value)
+          .filter(Boolean);
       }
 
       return finalData;
     },
-    { urls, globMedHeaders, idReferral, baseGlobMedAPiUrl }
+    { urls, globMedHeaders, idReferral, baseGlobMedAPiUrl },
   );
 
   return results;

@@ -15,7 +15,7 @@ import sleep from "./sleep.mjs";
 const insureFetchedPatientData = async (
   fn,
   maxAttempts = 2,
-  baseBackoffMs = 1000
+  baseBackoffMs = 1000,
 ) => {
   let lastPatientData = null;
 
@@ -24,18 +24,18 @@ const insureFetchedPatientData = async (
       const patientData = await fn();
       lastPatientData = patientData;
 
-      const { patientDetailsError, patientInfoError, attchmentsError } =
+      const { patientDetailsError, patientInfoError, attachmentsError } =
         patientData || {};
 
       // If internal errors, retry (unless last attempt)
-      if (patientDetailsError || patientInfoError || attchmentsError) {
+      if (patientDetailsError || patientInfoError || attachmentsError) {
         if (attempt < maxAttempts) {
           const wait = baseBackoffMs + Math.random() * 1000;
           createConsoleMessage(
             `⚠️ attempt ${attempt} returned internal errors, retrying in ${Math.round(
-              wait
+              wait,
             )}ms...`,
-            "info"
+            "info",
           );
           await sleep(wait);
           continue;
@@ -55,7 +55,7 @@ const insureFetchedPatientData = async (
           `⚠️ attempt ${attempt} threw (${
             err.message
           }), retrying in ${Math.round(wait)}ms...`,
-          "error"
+          "error",
         );
         await sleep(wait);
         continue;
@@ -63,7 +63,7 @@ const insureFetchedPatientData = async (
 
       createConsoleMessage(
         `❌ all ${maxAttempts} attempts failed (last error: ${err.message})`,
-        "error"
+        "error",
       );
       return lastPatientData; // maybe null
     }
