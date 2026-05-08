@@ -36,6 +36,14 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
               };
             }
 
+            let serverDate = undefined;
+            let serverNow = undefined;
+
+            if ("url".endsWith("details")) {
+              serverDate = res.headers.get("Date");
+              serverNow = serverDate ? new Date(serverDate).getTime() : null;
+            }
+
             const data = await res.json();
 
             return {
@@ -43,6 +51,8 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
               data: data?.data,
               apiFiresAtMS,
               serverResponseTimeMS,
+              serverDate,
+              serverNow,
             };
           } catch (err) {
             const finishedDateMS = new Date().getTime();

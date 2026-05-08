@@ -108,7 +108,16 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
-      const waitTime = Math.ceil(WAIT_FOR_ACCEPT_MS * 1000);
+      let waitTime = Math.ceil(WAIT_FOR_ACCEPT_MS * 1000);
+
+      const claimableServerTimeIsGreater =
+        claimableServerTime > referralEndTimestamp;
+
+      const diff = claimableServerTimeIsGreater
+        ? claimableServerTime - referralEndTimestamp
+        : referralEndTimestamp - claimableServerTime;
+
+      waitTime = diff > 0 ? waitTime : waitTime + 2;
 
       const approvalMessage = `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`;
 
@@ -123,13 +132,6 @@ const handleCaseAcceptanceOrRejection =
       ]);
 
       await closePageSafely(page);
-
-      const claimableServerTimeIsGreater =
-        claimableServerTime > referralEndTimestamp;
-
-      const diff = claimableServerTimeIsGreater
-        ? claimableServerTime - referralEndTimestamp
-        : referralEndTimestamp - claimableServerTime;
 
       createConsoleMessage(
         `✅ Patient=${referralId} waitTime=${waitTime}ms waitingTimeMSForAccept=${waitingTimeMSForAccept} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} claimableServerTimeIsGreater=${claimableServerTimeIsGreater} diff=${diff}`,
