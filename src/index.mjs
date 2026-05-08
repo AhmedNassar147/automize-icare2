@@ -399,7 +399,7 @@ const currentProfile = "Profile 1";
         const waitBeforeReady = Math.ceil(timeMsString || 0);
 
         const result = {
-          whatsAppWait: Math.ceil(process.env.WAIT_FOR_ACCEPT_MS * 1000),
+          whatsAppWait: Math.floor(process.env.WAIT_FOR_ACCEPT_MS * 1000),
           waitBeforeReady: waitBeforeReady ? waitBeforeReady : undefined,
         };
 

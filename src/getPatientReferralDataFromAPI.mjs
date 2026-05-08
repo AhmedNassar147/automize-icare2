@@ -30,7 +30,7 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
             let serverDate = undefined;
             let serverNow = undefined;
 
-            if ("url".endsWith("details")) {
+            if (url.endsWith("details")) {
               serverDate = res.headers.get("Date");
               serverNow = serverDate ? new Date(serverDate).getTime() : null;
             }
