@@ -134,7 +134,6 @@ const processCollectingPatients = async ({
         caseAlertMessage,
         detailsAPiFiresAtMS,
         detailsAPiServerResponseTimeMS,
-        serverNow,
       } = patientData || {};
 
       const hasInternalError =
@@ -159,7 +158,9 @@ const processCollectingPatients = async ({
           detailsAPiFiresAtMS,
           caseAlertMessage,
           cutoffTimeMs,
-          serverFormatedDate: serverNow ? formateDateToString(serverNow) : null,
+          serverFormatedDate: patientData.serverNow
+            ? formateDateToString(patientData.serverNow)
+            : null,
         }),
         ...patientData,
       };
