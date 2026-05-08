@@ -27,21 +27,23 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
             const finishedDateMS = new Date().getTime();
             const serverResponseTimeMS = (finishedDateMS - apiFiresAtMS) / 2;
 
-            if (!res.ok) {
-              return {
-                apiFiresAtMS,
-                serverResponseTimeMS,
-                success: false,
-                error: `Status ${res.status}`,
-              };
-            }
-
             let serverDate = undefined;
             let serverNow = undefined;
 
             if ("url".endsWith("details")) {
               serverDate = res.headers.get("Date");
               serverNow = serverDate ? new Date(serverDate).getTime() : null;
+            }
+
+            if (!res.ok) {
+              return {
+                apiFiresAtMS,
+                serverResponseTimeMS,
+                serverDate,
+                serverNow,
+                success: false,
+                error: `Status ${res.status}`,
+              };
             }
 
             const data = await res.json();
@@ -89,6 +91,8 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         error: patientDetailsError,
         apiFiresAtMS,
         serverResponseTimeMS,
+        serverDate,
+        serverNow,
       } = normalizeSettled(detailsResponse);
 
       const { data: patientInfo, error: patientInfoError } =
@@ -143,6 +147,8 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         referralType: refType,
         note: note,
         referralCauseDetails,
+        serverDate,
+        serverNow,
         ...otherDetailsData,
         detailsAPiFiresAtMS: apiFiresAtMS,
         detailsAPiServerResponseTimeMS:

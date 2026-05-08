@@ -108,14 +108,15 @@ const handleCaseAcceptanceOrRejection =
         remainingMs,
       });
 
+      const isEndDateGreaterThanFinalCaseDate =
+        referralEndTimestamp > claimableServerTime;
+
+      const isEndDateEqualToFinalCaseDate =
+        referralEndTimestamp === claimableServerTime;
+
+      const diff = referralEndTimestamp - claimableServerTime;
+
       let waitTime = Math.ceil(WAIT_FOR_ACCEPT_MS * 1000);
-
-      const claimableServerTimeIsGreater =
-        claimableServerTime > referralEndTimestamp;
-
-      const diff = claimableServerTimeIsGreater
-        ? claimableServerTime - referralEndTimestamp
-        : referralEndTimestamp - claimableServerTime;
 
       waitTime = diff > 0 ? waitTime : waitTime + 2;
 
@@ -133,8 +134,22 @@ const handleCaseAcceptanceOrRejection =
 
       await closePageSafely(page);
 
+      const logs = {
+        referralId,
+        waitTime,
+        waitingTimeMSForAccept,
+        remainingMs,
+        elapsedMs,
+        attempts,
+        reason,
+        message,
+        isEndDateGreaterThanFinalCaseDate,
+        isEndDateEqualToFinalCaseDate,
+        diff,
+      };
+
       createConsoleMessage(
-        `✅ Patient=${referralId} waitTime=${waitTime}ms waitingTimeMSForAccept=${waitingTimeMSForAccept} remainingMs=${remainingMs} elapsedMs=${elapsedMs} attempts=${attempts} reason=${reason} message=${message} claimableServerTimeIsGreater=${claimableServerTimeIsGreater} diff=${diff}`,
+        "✅ " + Object.keys(logs).map((k) => `${k}: ${logs[k]} `),
         "warn",
       );
 
