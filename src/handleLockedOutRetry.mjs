@@ -8,7 +8,13 @@ import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const createSendLockedMessage =
-  (sendWhatsappMessage, patientsStore, clientPhoneNumber, patient) =>
+  (
+    sendWhatsappMessage,
+    sendTelegramMessage,
+    patientsStore,
+    clientPhoneNumber,
+    patient,
+  ) =>
   async (message) => {
     if (patient) {
       patientsStore.setLastActionablePatient({
@@ -17,14 +23,18 @@ const createSendLockedMessage =
       });
     }
 
+    const _message =
+      "⚠️ *‼️ Login Errors Detected ‼️*\n" +
+      "────────────────────────\n" +
+      `_${message}_`;
+
     await sendWhatsappMessage(clientPhoneNumber, [
       {
-        message:
-          "⚠️ *‼️ Login Errors Detected ‼️*\n" +
-          "────────────────────────\n" +
-          `_${message}_`,
+        message: _message,
       },
     ]);
+
+    await sendTelegramMessage(_message);
   };
 
 async function handleLockedOutRetry({
@@ -33,6 +43,7 @@ async function handleLockedOutRetry({
   page,
   pausableSleep,
   sendWhatsappMessage,
+  sendTelegramMessage,
 }) {
   const { CLIENT_WHATSAPP_NUMBER, APP_LOCK_HOURS } = process.env;
   const now = Date.now();
@@ -43,9 +54,10 @@ async function handleLockedOutRetry({
 
   const sendMessage = createSendLockedMessage(
     sendWhatsappMessage,
+    sendTelegramMessage,
     patientsStore,
     CLIENT_WHATSAPP_NUMBER,
-    lastPatient
+    lastPatient,
   );
 
   const { referralEndTimestamp, hasLockMessageSent } = lastPatient || {};
@@ -87,7 +99,7 @@ async function handleLockedOutRetry({
     const nextAttemptDate = new Date(nextAttemptAt);
 
     const message = `🔐 We are locked out. Will retry in ${Math.round(
-      (nextAttemptAt - now) / 60000
+      (nextAttemptAt - now) / 60000,
     )} minutes at ${nextAttemptDate.toLocaleTimeString("en-US", {
       hour12: false,
     })} (deadline ${new Date(deadline).toLocaleString()}).`;
@@ -109,7 +121,7 @@ async function handleLockedOutRetry({
   const nextRetryDate = new Date(candidateNextAttempt);
 
   const message = `🔐 Locked out. No last patient deadline found. Retrying in ${Math.round(
-    lockSleepTime / 60000
+    lockSleepTime / 60000,
   )} minutes at ${nextRetryDate.toLocaleTimeString("en-US", {
     hour12: false,
   })}.`;

@@ -19,6 +19,7 @@
     "ghost-cursor": "^1.4.1",
     "http-proxy": "^1.18.1",
     "node-cron": "^4.2.1",
+    "node-telegram-bot-api": "^0.67.0",
     "p-limit": "^6.2.0",
     "puppeteer": "^24.8.2",
     "puppeteer-extra": "^3.3.6",

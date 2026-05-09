@@ -29,6 +29,7 @@ const handleCaseAcceptanceOrRejection =
     actionType,
     broadcast,
     sendWhatsappMessage,
+    sendTelegramMessage,
     continueFetchingPatientsIfPaused,
     browser,
   }) =>
@@ -128,6 +129,7 @@ const handleCaseAcceptanceOrRejection =
             message: approvalMessage,
           }),
         ),
+        sleep(waitTime - 65).then(() => sendTelegramMessage(approvalMessage)),
 
         sleep(waitTime - 34).then(() => sendNtfyMessage(approvalMessage)),
       ]);

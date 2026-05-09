@@ -30,6 +30,7 @@ const waitForWaitingCountWithInterval = async ({
   browser,
   patientsStore,
   sendWhatsappMessage,
+  sendTelegramMessage,
 }) => {
   let page, cursor;
 
@@ -46,7 +47,7 @@ const waitForWaitingCountWithInterval = async ({
     createReloadAndCheckIfShouldCreateNewPage(
       pauseController,
       pausableSleep,
-      INTERVAL
+      INTERVAL,
     );
 
   const requestBody = JSON.stringify({
@@ -74,13 +75,13 @@ const waitForWaitingCountWithInterval = async ({
           createConsoleMessage(
             err,
             "error",
-            `❌ Error during manual homepage reload:`
+            `❌ Error during manual homepage reload:`,
           );
         }
       } else {
         createConsoleMessage(
           `⚠️ forceReloadHomePage event fired but page is null`,
-          "warn"
+          "warn",
         );
       }
     });
@@ -107,14 +108,19 @@ const waitForWaitingCountWithInterval = async ({
       cursor = newCursor;
 
       if (shouldCloseApp) {
+        const message =
+          "⚠️ *‼️ Login Errors Detected ‼️*\n" +
+          "\n────────────────────────\n" +
+          "_App is Closed, Please check the app, try to open it manually_";
+
         await sendWhatsappMessage(clientPhoneNumber, [
           {
-            message:
-              "⚠️ *‼️ Login Errors Detected ‼️*\n" +
-              "\n────────────────────────\n" +
-              "_App is Closed, Please check the app, try to open it manually_",
+            message: message,
           },
         ]);
+
+        await sendTelegramMessage(message);
+
         speakText({
           text: "App is Closed, Please check the app, try to open it manually",
           useMaleVoice: true,
@@ -133,6 +139,7 @@ const waitForWaitingCountWithInterval = async ({
           page,
           pausableSleep,
           sendWhatsappMessage,
+          sendTelegramMessage,
         });
 
         page = null;
@@ -148,14 +155,14 @@ const waitForWaitingCountWithInterval = async ({
       createConsoleMessage(`🌀 Fetching ${targetText} collection ...`);
       const { patients, message, success } = await fetchPatientsFromAPI(
         page,
-        requestBody
+        requestBody,
       );
 
       if (!success || message) {
         const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
           page,
           `success=${success} message=${message}`,
-          0
+          0,
         );
         if (shouldCreateNewPage) {
           page = null;
@@ -169,7 +176,7 @@ const waitForWaitingCountWithInterval = async ({
       if (!patientsLength) {
         createConsoleMessage(
           `⏳ No patients found in API response, exiting...`,
-          "warn"
+          "warn",
         );
 
         if (apiHadData && patientsStore.size()) {
@@ -181,14 +188,14 @@ const waitForWaitingCountWithInterval = async ({
             createConsoleMessage(
               error,
               "error",
-              `Error clearing patients store`
+              `Error clearing patients store`,
             );
           }
 
           const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
             page,
             "🛑 cleared patients store and files",
-            0
+            0,
           );
           if (shouldCreateNewPage) {
             page = null;
@@ -199,7 +206,7 @@ const waitForWaitingCountWithInterval = async ({
 
         const waitingMs = INTERVAL + Math.random() * 5000;
         createConsoleMessage(
-          `📋 sleep for ${waitingMs / 1000} s before next search ...`
+          `📋 sleep for ${waitingMs / 1000} s before next search ...`,
         );
         await pausableSleep(waitingMs);
         continue;
@@ -207,7 +214,7 @@ const waitForWaitingCountWithInterval = async ({
 
       createConsoleMessage(
         `📋 Found ${patientsLength} patients from API to process`,
-        "info"
+        "info",
       );
 
       apiHadData = true;
@@ -226,7 +233,7 @@ const waitForWaitingCountWithInterval = async ({
 
       if (patientsInStore.length) {
         const storePatientsNotInTheApi = patientsInStore.filter(
-          ({ referralId }) => !patientsIds.includes(referralId)
+          ({ referralId }) => !patientsIds.includes(referralId),
         );
 
         if (storePatientsNotInTheApi?.length) {
@@ -234,15 +241,15 @@ const waitForWaitingCountWithInterval = async ({
             createConsoleMessage(`🛑 removing unsynced patients from store`);
             await Promise.allSettled(
               storePatientsNotInTheApi.map(({ referralId }) =>
-                patientsStore.removePatientByReferralId(referralId)
-              )
+                patientsStore.removePatientByReferralId(referralId),
+              ),
             );
             hasPatientsRemoved = true;
           } catch (error) {
             createConsoleMessage(
               error,
               "error",
-              `🛑 Failed removing unsynced patients from store`
+              `🛑 Failed removing unsynced patients from store`,
             );
           }
         }
@@ -252,7 +259,7 @@ const waitForWaitingCountWithInterval = async ({
         const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
           page,
           "showing patients",
-          2000
+          2000,
         );
         if (shouldCreateNewPage) {
           page = null;
@@ -261,7 +268,7 @@ const waitForWaitingCountWithInterval = async ({
       } else {
         const waitingMs = INTERVAL + Math.random() * 5000;
         createConsoleMessage(
-          `📋 sleep for ${waitingMs / 1000} s before next search ...`
+          `📋 sleep for ${waitingMs / 1000} s before next search ...`,
         );
         await pausableSleep(waitingMs);
       }

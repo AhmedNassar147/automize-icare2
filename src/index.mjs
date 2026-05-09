@@ -55,6 +55,7 @@ import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
 import sleep from "./sleep.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs";
+import installTelegramBotApi from "./installTelegramBotApi.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -95,6 +96,8 @@ const currentProfile = "Profile 1";
     RESEND_PATIENT_SUMMARY_FILE_PATH,
     WAIT_FOR_ACCEPT_MS,
     NEW_WAITING_TIME_FOR_PATIENT,
+    TG_TOKEN,
+    TG_CHAT_ID,
   } = process.env;
 
   let server;
@@ -203,6 +206,13 @@ const currentProfile = "Profile 1";
 
     await patientsStore.scheduleAllInitialPatients();
 
+    const sendTelegramMessage = installTelegramBotApi(
+      TG_TOKEN,
+      TG_CHAT_ID,
+      [],
+      patientsStore,
+    );
+
     // WhatsApp client + outbound integration
     await initializeClient(CLIENT_WHATSAPP_NUMBER, patientsStore);
 
@@ -212,6 +222,7 @@ const currentProfile = "Profile 1";
       "patientsAdded",
       processSendCollectedPatientsToWhatsapp(
         sendWhatsappMessage,
+        sendTelegramMessage,
         EXECLUDE_WHATSAPP_MSG_FOOTER === "Y",
       ),
     );
@@ -223,6 +234,7 @@ const currentProfile = "Profile 1";
         browser,
         patientsStore,
         sendWhatsappMessage,
+        sendTelegramMessage,
       }))();
 
     if (RESEND_PATIENT_SUMMARY_FILE_PATH) {
@@ -493,6 +505,7 @@ const currentProfile = "Profile 1";
         actionType: USER_ACTION_TYPES.ACCEPT,
         broadcast,
         sendWhatsappMessage,
+        sendTelegramMessage,
         continueFetchingPatientsIfPaused,
       }),
     );
@@ -504,6 +517,7 @@ const currentProfile = "Profile 1";
         actionType: USER_ACTION_TYPES.REJECT,
         broadcast,
         sendWhatsappMessage,
+        sendTelegramMessage,
         continueFetchingPatientsIfPaused,
       }),
     );

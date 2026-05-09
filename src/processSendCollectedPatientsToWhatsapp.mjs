@@ -9,7 +9,8 @@ import createConsoleMessage from "./createConsoleMessage.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 
 const processSendCollectedPatientsToWhatsapp =
-  (sendWhatsappMessage, execludeWhatsAppMsgFooter) => async (addedPatients) => {
+  (sendWhatsappMessage, sendTelegramMessage, execludeWhatsAppMsgFooter) =>
+  async (addedPatients) => {
     const formatPatient = ({
       referralId,
       patientName,
@@ -81,15 +82,24 @@ const processSendCollectedPatientsToWhatsapp =
       return {
         message,
         files,
+        referralId,
       };
     };
 
     const { BRANCH_NAME, CLIENT_WHATSAPP_NUMBER, CLIENT_ID } = process.env;
 
-    await sendWhatsappMessage(
-      CLIENT_WHATSAPP_NUMBER,
-      addedPatients.map(formatPatient),
-    );
+    const formattedMessages = addedPatients.map(formatPatient).filter(Boolean);
+
+    const telgramAPis = formattedMessages
+      .map(({ message, files, referralId }) =>
+        sendTelegramMessage(message, files, referralId),
+      )
+      .flat();
+
+    await Promise.all([
+      sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, formattedMessages),
+      ...telgramAPis,
+    ]);
 
     try {
       speakText({
