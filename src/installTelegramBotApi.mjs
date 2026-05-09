@@ -76,7 +76,6 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
   bot.onText(/\/me/, (msg) => {
     const chatId = String(msg.chat.id);
-    console.log("msg.chat", msg);
     const fromName =
       msg.from.first_name || msg.chat.first_name || msg.from.last_name;
 
