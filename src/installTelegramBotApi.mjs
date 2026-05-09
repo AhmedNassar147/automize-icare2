@@ -13,6 +13,9 @@ import {
 import getMimeType from "./getMimeType.mjs";
 import { alarmFile } from "./constants.mjs";
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const alarmFile = createReadStream(resolve(__dirname, "./alarm.ogg"));
+
 // https://t.me/td_cases_bot
 
 const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
@@ -227,17 +230,14 @@ const installTelegramBotApi = (
         });
       }
 
+      console.log("alarmFile", alarmFile);
+
       if (targetReferralIdForButtons) {
         await bot.sendVoice(
           TG_CHAT_ID,
-          alarmFile,
-          {
-            disable_notification: false,
-          },
-          {
-            contentType: "application/ogg",
-            filename: "alarm.ogg",
-          },
+          createReadStream(alarmFile),
+          { disable_notification: false },
+          { contentType: "audio/ogg", filename: "alarm.ogg" },
         );
       }
 
