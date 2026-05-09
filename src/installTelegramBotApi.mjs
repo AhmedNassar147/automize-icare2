@@ -59,7 +59,7 @@ const prepareMessage = (message) => {
   return { text: escaped, parse_mode: "HTML" };
 };
 
-const installTelegramBotApi = (TG_TOKEN, allowedChatIds, patientsStore) => {
+const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
   const bot = new TelegramBot(TG_TOKEN, { polling: true, filepath: false });
 
   createConsoleMessage("🤖 Telegram Case Bot is running...", "info");
@@ -71,23 +71,53 @@ const installTelegramBotApi = (TG_TOKEN, allowedChatIds, patientsStore) => {
     );
   }
 
+  const getAllowedList = () =>
+    process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || [];
+
   bot.onText(/\/me/, (msg) => {
-    const chatId = msg.chat.id;
+    const chatId = String(msg.chat.id);
     console.log("msg.chat", msg);
-    const fromName = msg.from.first_name || msg.from.last_name;
+    const fromName =
+      msg.from.first_name || msg.chat.first_name || msg.from.last_name;
+
+    const allowedList = getAllowedList();
+
+    if (!allowedList.includes(chatId)) {
+      bot.sendMessage(
+        chatId,
+        `✅ Hi, \`${fromName}\` you are not authorized.`,
+        {
+          parse_mode: "Markdown",
+        },
+      );
+      return;
+    }
 
     updateEnvFile({
       TG_CHAT_ID: chatId,
-      TG_CHAT_IDS: [
-        ...new Set([
-          ...(process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || []),
-          String(chatId),
-        ]),
-      ].join(","),
     });
     bot.sendMessage(
       chatId,
       `✅ Hi, \`${fromName}\` you are active now, cases will be sent for you here, Chat ID \`${chatId}\` has been saved automatically.`,
+      {
+        parse_mode: "Markdown",
+      },
+    );
+  });
+
+  bot.onText(/\/add/, (msg) => {
+    const chatId = String(msg.chat.id);
+    const fromName =
+      msg.from.first_name || msg.chat.first_name || msg.from.last_name;
+
+    const allowedList = getAllowedList();
+
+    updateEnvFile({
+      TG_CHAT_IDS: [...new Set([...allowedList, chatId])].join(","),
+    });
+    bot.sendMessage(
+      chatId,
+      `✅ Hi, \`${fromName}\` you are added now, Please send /me to get activated, Chat ID \`${chatId}\` has been saved automatically.`,
       {
         parse_mode: "Markdown",
       },
@@ -126,8 +156,10 @@ const installTelegramBotApi = (TG_TOKEN, allowedChatIds, patientsStore) => {
         return reply(_message);
       }
 
+      const allowedList = getAllowedList();
+
       // ✅ Add this inside callback_query to restrict access
-      if (allowedChatIds.length && !allowedChatIds.includes(String(chatId))) {
+      if (!allowedList.includes(String(chatId))) {
         const _message = `❌ chatId=${chatId} not allowed`;
         createConsoleMessage(_message, "error");
         return reply(_message);
