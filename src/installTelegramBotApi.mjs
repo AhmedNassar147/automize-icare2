@@ -66,23 +66,28 @@ const installTelegramBotApi = (TG_TOKEN, allowedChatIds, patientsStore) => {
 
   if (!process.env.TG_CHAT_ID) {
     createConsoleMessage(
-      "⚠️ TG_CHAT_ID not set — send /start to the bot first",
+      "⚠️ TG_CHAT_ID not set — send /me to the bot first",
       "warn",
     );
   }
 
-  bot.onText(/\/start/, (msg) => {
+  bot.onText(/\/me/, (msg) => {
     const chatId = msg.chat.id;
     console.log("msg.chat", msg);
+    const fromName = msg.from.first_name || msg.from.last_name;
+
     updateEnvFile({
       TG_CHAT_ID: chatId,
-      TG_CHAT_IDS: [process.env.TG_CHAT_IDS?.split(",") || [], chatId]
-        .flat()
-        .join(","),
+      TG_CHAT_IDS: [
+        ...new Set([
+          ...(process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || []),
+          String(chatId),
+        ]),
+      ].join(","),
     });
     bot.sendMessage(
       chatId,
-      `✅ Chat ID \`${chatId}\` has been saved automatically.`,
+      `✅ Hi, \`${fromName}\` you are active now, cases will be sent to here for you, Chat ID \`${chatId}\` has been saved automatically.`,
       {
         parse_mode: "Markdown",
       },
