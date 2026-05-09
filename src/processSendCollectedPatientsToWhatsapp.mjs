@@ -72,7 +72,7 @@ const processSendCollectedPatientsToWhatsapp =
             `📝 <b>Reason:</b> <code>${referralCause}</code>\n` +
             `🧾 <b>CauseNote:</b> <code>${note || ""}</code>\n`;
         } else {
-          let message =
+          message =
             `🚨 *New Case Alert!* 🚨\n\n` +
             `🕐 *Actionable At*: ${referralEndDateActionablAt}\n` +
             `🕐 *cutoffTime*: ${label}\n` +
