@@ -73,8 +73,12 @@ const installTelegramBotApi = (TG_TOKEN, allowedChatIds, patientsStore) => {
 
   bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
+    console.log("msg.chat", msg);
     updateEnvFile({
       TG_CHAT_ID: chatId,
+      TG_CHAT_IDS: [process.env.TG_CHAT_IDS?.split(",") || [], chatId]
+        .flat()
+        .join(","),
     });
     bot.sendMessage(
       chatId,
