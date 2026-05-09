@@ -113,7 +113,6 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
           parse_mode: "Markdown",
         },
       );
-      return;
     }
 
     updateEnvFile({
