@@ -6,6 +6,7 @@
 export const cwd = process.cwd();
 
 export const siteCodeConfigFile = `${cwd}/sitecode_config.json`;
+export const alarmFile = `${cwd}/src/alarm.ogg`;
 export const screenshotsFolderDirectory = `${cwd}/screenshots`;
 export const waitingPatientsFolderDirectory = `${cwd}/results/waiting-patients`;
 export const generatedPdfsPathForAcceptance = `${cwd}/results/generated-acceptance-pdf`;

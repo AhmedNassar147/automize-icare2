@@ -11,6 +11,7 @@ import {
   updateWeeklyHistoryPatients,
 } from "./db.mjs";
 import getMimeType from "./getMimeType.mjs";
+import { alarmFile } from "./constants.mjs";
 
 // https://t.me/td_cases_bot
 
@@ -219,10 +220,25 @@ const installTelegramBotApi = (
         const { text, parse_mode } = prepareMessage(message);
         await bot.sendMessage(TG_CHAT_ID, text, {
           parse_mode: parse_mode,
+          disable_notification: false,
           ...(targetReferralIdForButtons && {
             reply_markup: buildButtons(targetReferralIdForButtons),
           }),
         });
+      }
+
+      if (targetReferralIdForButtons) {
+        await bot.sendVoice(
+          TG_CHAT_ID,
+          alarmFile,
+          {
+            disable_notification: false,
+          },
+          {
+            contentType: "application/ogg",
+            filename: "alarm.ogg",
+          },
+        );
       }
 
       if (!files?.length) return;
