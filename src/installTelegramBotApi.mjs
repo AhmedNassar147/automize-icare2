@@ -78,6 +78,7 @@ const installTelegramBotApi = (
       // 2. Reply to the original case message
       await bot.sendMessage(chatId, message, {
         parse_mode: "Markdown",
+        disable_notification: false,
         reply_to_message_id: replyMesgId,
       });
     }
