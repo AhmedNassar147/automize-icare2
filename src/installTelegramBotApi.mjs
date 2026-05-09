@@ -34,7 +34,7 @@ const installTelegramBotApi = (
   allowedChatIds,
   patientsStore,
 ) => {
-  const bot = new TelegramBot(TG_TOKEN, { polling: true });
+  const bot = new TelegramBot(TG_TOKEN, { polling: true, filepath: false });
 
   createConsoleMessage("🤖 Telegram Case Bot is running...", "info");
 
@@ -186,7 +186,7 @@ const installTelegramBotApi = (
     try {
       if (message) {
         await bot.sendMessage(TG_CHAT_ID, message, {
-          parse_mode: "Markdown",
+          parse_mode: targetReferralIdForButtons ? "HTML" : "Markdown",
           ...(targetReferralIdForButtons && {
             reply_markup: buildButtons(targetReferralIdForButtons),
           }),
@@ -218,7 +218,7 @@ const installTelegramBotApi = (
         const mimeType = getMimeType(extension);
 
         if (imageExtensions.includes(extension)) {
-          photos.push({ buffer, filename });
+          photos.push({ buffer, filename, mimeType: mimeType });
         } else {
           docs.push({ buffer, filename, mimeType: mimeType });
         }
@@ -232,6 +232,7 @@ const installTelegramBotApi = (
           batch.map((f, idx) => ({
             type: "photo",
             media: f.buffer,
+            contentType: "application/octet-stream",
             ...(idx === 0 &&
               batch.length > 1 && { caption: `🖼️ ${batch.length} photos` }),
           })),
