@@ -19,10 +19,12 @@ const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 const buildButtons = (referralId) => ({
   inline_keyboard: [
     [
-      { text: "✅ Accept", callback_data: `accept_${referralId}` },
-      { text: "❌ Reject", callback_data: `reject_${referralId}` },
-      { text: "❌ Cancel", callback_data: `cancel_${referralId}` },
-      { text: "🔕 No Reply", callback_data: `noreply_${referralId}` },
+      { text: "Accept", callback_data: `accept_${referralId}` },
+      { text: "Reject", callback_data: `reject_${referralId}` },
+    ],
+    [
+      { text: "Cancel", callback_data: `cancel_${referralId}` },
+      { text: "No Reply", callback_data: `noreply_${referralId}` },
     ],
     // [{ text: "⏳ Get Time Left", callback_data: `timeleft_${referralId}` }],
   ],
