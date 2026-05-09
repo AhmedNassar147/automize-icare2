@@ -87,7 +87,7 @@ const installTelegramBotApi = (TG_TOKEN, allowedChatIds, patientsStore) => {
     });
     bot.sendMessage(
       chatId,
-      `✅ Hi, \`${fromName}\` you are active now, cases will be sent to here for you, Chat ID \`${chatId}\` has been saved automatically.`,
+      `✅ Hi, \`${fromName}\` you are active now, cases will be sent for you here, Chat ID \`${chatId}\` has been saved automatically.`,
       {
         parse_mode: "Markdown",
       },
