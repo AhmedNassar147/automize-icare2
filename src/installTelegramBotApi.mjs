@@ -85,7 +85,20 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     if (!allowedList.includes(chatId)) {
       bot.sendMessage(
         chatId,
-        `✅ Hi, \`${fromName}\` you are not authorized.`,
+        `⛔ Hi, \`${fromName}\` you are not authorized.`,
+        {
+          parse_mode: "Markdown",
+        },
+      );
+      return;
+    }
+
+    const activeChatId = process.env.TG_CHAT_ID;
+
+    if (activeChatId === chatId) {
+      bot.sendMessage(
+        chatId,
+        `✅ Hi, \`${fromName}\` you are already active.`,
         {
           parse_mode: "Markdown",
         },
@@ -109,6 +122,19 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     const chatId = String(msg.chat.id);
     const fromName =
       msg.from.first_name || msg.chat.first_name || msg.from.last_name;
+
+    const activeChatId = process.env.TG_CHAT_ID;
+
+    if (activeChatId === chatId) {
+      bot.sendMessage(
+        chatId,
+        `⛔ Hi, \`${fromName}\` you are already Authorized.`,
+        {
+          parse_mode: "Markdown",
+        },
+      );
+      return;
+    }
 
     const allowedList = getAllowedList();
 
