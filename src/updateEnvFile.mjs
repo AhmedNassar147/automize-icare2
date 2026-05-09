@@ -23,6 +23,8 @@ const updateEnvFile = (updates) => {
       // append new key
       content += `\n${line}`;
     }
+
+    process.env[key] = value;
   }
 
   fs.writeFileSync(envPath, content, "utf8");

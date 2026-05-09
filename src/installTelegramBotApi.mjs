@@ -11,6 +11,7 @@ import {
   updateWeeklyHistoryPatients,
 } from "./db.mjs";
 import getMimeType from "./getMimeType.mjs";
+import updateEnvFile from "./updateEnvFile.mjs";
 
 // https://t.me/td_cases_bot
 
@@ -58,15 +59,31 @@ const prepareMessage = (message) => {
   return { text: escaped, parse_mode: "HTML" };
 };
 
-const installTelegramBotApi = (
-  TG_TOKEN,
-  TG_CHAT_ID,
-  allowedChatIds,
-  patientsStore,
-) => {
+const installTelegramBotApi = (TG_TOKEN, allowedChatIds, patientsStore) => {
   const bot = new TelegramBot(TG_TOKEN, { polling: true, filepath: false });
 
   createConsoleMessage("🤖 Telegram Case Bot is running...", "info");
+
+  if (!process.env.TG_CHAT_ID) {
+    createConsoleMessage(
+      "⚠️ TG_CHAT_ID not set — send /start to the bot first",
+      "warn",
+    );
+  }
+
+  bot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id;
+    updateEnvFile({
+      TG_CHAT_ID: chatId,
+    });
+    bot.sendMessage(
+      chatId,
+      `✅ Chat ID \`${chatId}\` has been saved automatically.`,
+      {
+        parse_mode: "Markdown",
+      },
+    );
+  });
 
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {
     await bot.answerCallbackQuery(queryId, {
@@ -215,16 +232,31 @@ const installTelegramBotApi = (
     files = [],
     targetReferralIdForButtons,
   ) => {
+    const TG_CHAT_ID = process.env.TG_CHAT_ID;
+
+    // ✅ Add this
+    if (!TG_CHAT_ID) {
+      createConsoleMessage(
+        "⚠️ sendTelegramMessage skipped — send /start to the bot first",
+        "warn",
+      );
+      return;
+    }
+
     try {
+      let messageId = undefined;
+
       if (message) {
         const { text, parse_mode } = prepareMessage(message);
-        await bot.sendMessage(TG_CHAT_ID, text, {
+        const res = await bot.sendMessage(TG_CHAT_ID, text, {
           parse_mode: parse_mode,
           disable_notification: false,
           ...(targetReferralIdForButtons && {
             reply_markup: buildButtons(targetReferralIdForButtons),
           }),
         });
+
+        messageId = res.message_id;
       }
 
       if (!files?.length) return;
@@ -266,8 +298,12 @@ const installTelegramBotApi = (
           batch.map((f, idx) => ({
             type: "photo",
             media: f.buffer,
-            fileOptions: { contentType: f.mimeType },
+            ...(idx === 0 && { caption: `🖼️ ${batch.length} photo(s)` }),
+            fileOptions: { contentType: f.mimeType, filename: f.filename },
           })),
+          {
+            reply_to_message_id: messageId,
+          },
         );
       }
 
@@ -276,7 +312,7 @@ const installTelegramBotApi = (
         await bot.sendDocument(
           TG_CHAT_ID,
           doc.buffer,
-          { caption: `📎 ${doc.filename}` },
+          { reply_to_message_id: messageId, caption: `📎 ${doc.filename}` },
           { filename: doc.filename, contentType: doc.mimeType },
         );
       }

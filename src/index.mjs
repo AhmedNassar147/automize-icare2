@@ -97,7 +97,6 @@ const currentProfile = "Profile 1";
     WAIT_FOR_ACCEPT_MS,
     NEW_WAITING_TIME_FOR_PATIENT,
     TG_TOKEN,
-    TG_CHAT_ID,
   } = process.env;
 
   let server;
@@ -208,7 +207,6 @@ const currentProfile = "Profile 1";
 
     const sendTelegramMessage = installTelegramBotApi(
       TG_TOKEN,
-      TG_CHAT_ID,
       [],
       patientsStore,
     );
@@ -433,13 +431,11 @@ const currentProfile = "Profile 1";
 
         if (whatsAppWait) {
           const value = String(whatsAppWait / 1000);
-          process.env.WAIT_FOR_ACCEPT_MS = value;
           updates.WAIT_FOR_ACCEPT_MS = value;
         }
 
         if (waitBeforeReady) {
           const value = String(waitBeforeReady);
-          process.env.NEW_WAITING_TIME_FOR_PATIENT = value;
           updates.NEW_WAITING_TIME_FOR_PATIENT = value;
         }
 
@@ -549,21 +545,6 @@ const currentProfile = "Profile 1";
   }
 })();
 
-// const profiles = [
-//   "Profile 4",
-//   "Profile 5",
-//   "Profile 6",
-//   "Profile 7",
-//   "Profile 8",
-//   "Profile 9",
-//   "Profile 10",
-//   "Profile 11",
-//   "Profile 12",
-// ];
-
-// Rotate randomly
-// const currentProfile = profiles[Math.floor(Math.random() * profiles.length)];
-
 // const browser = await puppeteer.launch({
 //   headless: false,
 //   defaultViewport: null,
@@ -672,43 +653,3 @@ const currentProfile = "Profile 1";
 //     "statusCode": "Success",
 //     "errorMessage": null
 // }
-
-// const twilioClient = twilio(
-//   process.env.TWILIO_ACCOUNT_SID,
-//   process.env.TWILIO_AUTH_TOKEN
-// );
-
-// const numbers = await twilioClient.incomingPhoneNumbers.list();
-
-// const createCall = async () => {
-//   const call = await twilioClient.calls.create({
-//     from: "+15076775062",
-//     to: "+966569157706", // Saudi number in international format
-//     url: "https://twimlets.com/message?Message%5B0%5D=A%20new%20patient%20has%20been%20received.%20Please%20check%20WhatsApp.",
-//   });
-
-//   console.log("Call initiated:", call.sid);
-// };
-
-// import processClientActionOnPatient from "./processClientActionOnPatient.mjs";
-// patientsStore.on("patientAccepted", async (patient) =>
-//   processClientActionOnPatient({
-//     browser,
-//     actionType: USER_ACTION_TYPES.ACCEPT,
-//     patient,
-//     patientsStore,
-//     sendWhatsappMessage,
-//     continueFetchingPatientsIfPaused,
-//   })
-// );
-
-// patientsStore.on("patientRejected", async (patient) =>
-//   processClientActionOnPatient({
-//     browser,
-//     actionType: USER_ACTION_TYPES.REJECT,
-//     patient,
-//     patientsStore,
-//     sendWhatsappMessage,
-//     continueFetchingPatientsIfPaused,
-//   })
-// );
