@@ -94,8 +94,6 @@ const currentProfile = "Profile 1";
     MONTHLY_REPORT_GENERATED_AT,
     DETAILED_REPORT_GENERATED_AT,
     RESEND_PATIENT_SUMMARY_FILE_PATH,
-    WAIT_FOR_ACCEPT_MS,
-    NEW_WAITING_TIME_FOR_PATIENT,
     TG_TOKEN,
   } = process.env;
 
@@ -406,10 +404,10 @@ const currentProfile = "Profile 1";
           process.env.NEW_WAITING_TIME_FOR_PATIENT || ""
         ).split(",");
 
-        const waitBeforeReady = Math.ceil(timeMsString || 0);
+        const waitBeforeReady = timeMsString || 0;
 
         const result = {
-          whatsAppWait: Math.floor(process.env.WAIT_FOR_ACCEPT_MS * 1000),
+          whatsAppWait: process.env.WAIT_FOR_ACCEPT_MS,
           waitBeforeReady: waitBeforeReady ? waitBeforeReady : undefined,
         };
 
@@ -430,13 +428,11 @@ const currentProfile = "Profile 1";
         const updates = {};
 
         if (whatsAppWait) {
-          const value = String(whatsAppWait / 1000);
-          updates.WAIT_FOR_ACCEPT_MS = value;
+          updates.WAIT_FOR_ACCEPT_MS = String(whatsAppWait || 2000);
         }
 
         if (waitBeforeReady) {
-          const value = String(waitBeforeReady);
-          updates.NEW_WAITING_TIME_FOR_PATIENT = value;
+          updates.NEW_WAITING_TIME_FOR_PATIENT = String(waitBeforeReady);
         }
 
         updateEnvFile(updates);

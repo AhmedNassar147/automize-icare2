@@ -105,6 +105,17 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       return;
     }
 
+    if (activeChatId) {
+      bot.sendMessage(
+        activeChatId,
+        `✅ Hi, \`${fromName}\` is active, You can rest for now.`,
+        {
+          parse_mode: "Markdown",
+        },
+      );
+      return;
+    }
+
     updateEnvFile({
       TG_CHAT_ID: chatId,
     });
