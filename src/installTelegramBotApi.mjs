@@ -155,7 +155,7 @@ const installTelegramBotApi = (
       const timeValidation = patientsStore.canStillProcessPatient(referralId);
 
       if (!timeValidation.success) {
-        const replyMessage = timeValidation.message;
+        const replyMessage = `${timeValidation.message} For (Referral ID: ${referralId})`;
 
         const actionNames = [
           ...new Set([storedPatient?.providerAction, action].filter(Boolean)),
@@ -169,6 +169,7 @@ const installTelegramBotApi = (
           providerAction: `${actionNames} with late reply`,
         });
 
+        createConsoleMessage(replyMessage, "info");
         return reply(replyMessage);
       }
 

@@ -74,7 +74,7 @@ export const USER_MESSAGES = {
   scheduleAcceptSuccess: "scheduled for acceptance.",
   scheduleRejectSuccess: "scheduled for rejection.",
   notFound: "Patient does not exist.",
-  expired: "Time expired.",
+  expired: "Time expired",
   canProcess: "Patient can still be processed.",
   cancelSuccess: "scheduled for cancellation.",
   noAction: "No-need, No scheduled action for this patient.",
