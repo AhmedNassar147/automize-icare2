@@ -139,7 +139,9 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     const allowedList = getAllowedList();
 
     updateEnvFile({
-      TG_CHAT_IDS: [...new Set([...allowedList, chatId])].join(","),
+      TG_CHAT_IDS: [...new Set([...allowedList, chatId].filter(Boolean))].join(
+        ",",
+      ),
     });
     bot.sendMessage(
       chatId,
