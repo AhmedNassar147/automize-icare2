@@ -81,10 +81,10 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
     const allowedList = getAllowedList();
 
-    if (allowedList.includes(chatId)) {
+    if (!allowedList.includes(chatId)) {
       bot.sendMessage(
         chatId,
-        `⛔ Hi, \`${fromName}\` you are already Authorized.`,
+        `⛔ Hi, \`${fromName}\` you are not Authorized.`,
         {
           parse_mode: "Markdown",
         },
