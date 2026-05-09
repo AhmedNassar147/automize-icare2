@@ -28,6 +28,34 @@ const buildButtons = (referralId) => ({
   ],
 });
 
+const prepareMessage = (message) => {
+  const hasHtmlTags = /<[^>]+>/.test(message);
+
+  if (hasHtmlTags) {
+    // Already HTML — use as is
+    return { text: message, parse_mode: "HTML" };
+  }
+
+  const hasMarkdown = /[*_`\[\]]/.test(message);
+
+  if (hasMarkdown) {
+    // Has Markdown — convert to HTML
+    const html = message
+      .replace(/\*(.*?)\*/g, "<b>$1</b>") // *bold*
+      .replace(/_(.*?)_/g, "<i>$1</i>") // _italic_
+      .replace(/`(.*?)`/g, "<code>$1</code>"); // `code`
+    return { text: html, parse_mode: "HTML" };
+  }
+
+  // Plain text — escape HTML special chars just in case
+  const escaped = message
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  return { text: escaped, parse_mode: "HTML" };
+};
+
 const installTelegramBotApi = (
   TG_TOKEN,
   TG_CHAT_ID,
@@ -185,8 +213,9 @@ const installTelegramBotApi = (
   ) => {
     try {
       if (message) {
-        await bot.sendMessage(TG_CHAT_ID, message, {
-          parse_mode: targetReferralIdForButtons ? "HTML" : "Markdown",
+        const { text, parse_mode } = prepareMessage(message);
+        await bot.sendMessage(TG_CHAT_ID, text, {
+          parse_mode: parse_mode,
           ...(targetReferralIdForButtons && {
             reply_markup: buildButtons(targetReferralIdForButtons),
           }),
@@ -232,9 +261,7 @@ const installTelegramBotApi = (
           batch.map((f, idx) => ({
             type: "photo",
             media: f.buffer,
-            contentType: "application/octet-stream",
-            ...(idx === 0 &&
-              batch.length > 1 && { caption: `🖼️ ${batch.length} photos` }),
+            fileOptions: { contentType: f.mimeType },
           })),
         );
       }

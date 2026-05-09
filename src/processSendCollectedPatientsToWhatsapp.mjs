@@ -134,12 +134,10 @@ const processSendCollectedPatientsToWhatsapp =
     ]);
 
     try {
-      speakText({
-        text: "Check your WhatsApp, there is a new patient",
-      });
-
+      // speakText({
+      //   text: "Check your WhatsApp, there is a new patient",
+      // });
       // const [{ referralId, referralEndDate }] = addedPatients;
-
       // const message =
       //   "At " +
       //   (BRANCH_NAME || CLIENT_ID) +
@@ -147,7 +145,6 @@ const processSendCollectedPatientsToWhatsapp =
       //   referralId +
       //   " Ends At " +
       //   referralEndDate;
-
       // await sendNtfyMessage(message);
     } catch (error) {
       createConsoleMessage(error, "error", "SOUND error");
