@@ -4,6 +4,7 @@
  *
  */
 import TelegramBot from "node-telegram-bot-api";
+import { PDFParse } from "pdf-parse";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import {
   createPatientRowKey,
@@ -16,6 +17,36 @@ import mergeAllToPdf from "./mergeFilesToOne.mjs";
 import compressPdfGentlly from "./compressPdfGentlly.mjs";
 
 // https://t.me/td_cases_bot
+
+const EXCLUDED_TEXT_PATTERNS = [
+  "chi.gov.sa", // insurance inquiry website
+  "مجلس الضمان الصحي", // Council of Health Insurance in Arabic
+  "checkinsurance", // URL pattern
+  "ليس لديك تأمين", // "You have no insurance" in Arabic
+  "الاستعلام عن معلومات التأمين",
+];
+
+const containsExcludedText = async ({ fileBase64, extension }) => {
+  // Only parse PDFs — keep everything else as is
+  if (extension !== "pdf") return false;
+
+  try {
+    const cleanBase64 = fileBase64.replace(/^data:.*?base64,/, "").trim();
+    const buffer = Buffer.from(cleanBase64, "base64");
+
+    const parser = new PDFParse({ data: buffer });
+    const result = await parser.getText({ first: 2 });
+
+    const text = result.text;
+    createConsoleMessage(`PDF text preview: ${text.slice(0, 200)}`, "info");
+
+    await parser.destroy();
+
+    return EXCLUDED_TEXT_PATTERNS.some((pattern) => text.includes(pattern));
+  } catch {
+    return false;
+  }
+};
 
 const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 
@@ -340,7 +371,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
   const sendTelegramMessage = async (
     message,
-    files = [],
+    _files = [],
     targetReferralIdForButtons,
   ) => {
     const TG_CHAT_ID = process.env.TG_CHAT_ID;
@@ -370,7 +401,23 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         messageId = res.message_id;
       }
 
-      if (!files?.length) return;
+      if (!_files?.length) return;
+
+      const fileChecks = await Promise.all(
+        _files.map(async (file) => ({
+          file,
+          exclude: await containsExcludedText(file),
+        })),
+      );
+
+      const files = fileChecks
+        .filter(({ exclude, file }) => {
+          if (exclude) {
+            createConsoleMessage(`⏩ Excluding file: ${file.fileName}`, "warn");
+          }
+          return !exclude;
+        })
+        .map(({ file }) => file);
 
       const photos = [];
       const docs = [];
@@ -455,6 +502,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         docs || [],
         finalMergedFileName,
       );
+
       const compressedMerged = await compressPdfGentlly(merged, {
         unlinkFilesFinally: true,
       });
