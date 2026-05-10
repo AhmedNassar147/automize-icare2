@@ -74,6 +74,9 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
   const getAllowedList = () =>
     process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || [];
 
+  const sendBotMessage = (chatId, message) =>
+    bot.sendMessage(chatId, message, { parse_mode: "Markdown" });
+
   const getIfNotAuthorizedMessage = (msg) => {
     const chatId = String(msg.chat.id);
     const fromName =
@@ -97,42 +100,30 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
-      bot.sendMessage(chatId, unAuthorizedMessage, {
-        parse_mode: "Markdown",
-      });
+      sendBotMessage(chatId, unAuthorizedMessage);
       return;
     }
 
     const activeChatId = process.env.TG_CHAT_ID;
 
     if (activeChatId === chatId) {
-      bot.sendMessage(
-        chatId,
-        `✅ Hi, \`${fromName}\` you are already active.`,
-        {
-          parse_mode: "Markdown",
-        },
-      );
+      sendBotMessage(chatId, `✅ Hi, \`${fromName}\` you are already active.`);
       return;
     }
 
     if (activeChatId) {
-      bot.sendMessage(
+      sendBotMessage(
         activeChatId,
         `🔔 \`${fromName}\` is now active and will receive cases. You are off duty.`,
-        { parse_mode: "Markdown" },
       );
     }
 
     updateEnvFile({
       TG_CHAT_ID: chatId,
     });
-    bot.sendMessage(
+    sendBotMessage(
       chatId,
       `✅ Hi, \`${fromName}\` you are active now, cases will be sent for you here, Chat ID \`${chatId}\` has been saved automatically.`,
-      {
-        parse_mode: "Markdown",
-      },
     );
   });
 
@@ -141,13 +132,11 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       getIfNotAuthorizedMessage(msg);
 
     if (!unAuthorizedMessage) {
-      bot.sendMessage(
+      sendBotMessage(
         chatId,
         `⛔ Hi, \`${fromName}\` you are already Authorized.`,
-        {
-          parse_mode: "Markdown",
-        },
       );
+
       return;
     }
 
@@ -156,12 +145,9 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         ",",
       ),
     });
-    bot.sendMessage(
+    sendBotMessage(
       chatId,
       `✅ Hi, \`${fromName}\` you are added now, Please send /me to get activated, Chat ID \`${chatId}\` has been saved automatically.`,
-      {
-        parse_mode: "Markdown",
-      },
     );
   });
 
@@ -169,13 +155,11 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     const { chatId, unAuthorizedMessage } = getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
-      bot.sendMessage(chatId, unAuthorizedMessage, {
-        parse_mode: "Markdown",
-      });
+      sendBotMessage(chatId, unAuthorizedMessage);
       return;
     }
 
-    bot.sendMessage(
+    sendBotMessage(
       chatId,
       `✅ Current wait is set to \`${process.env.WAIT_FOR_ACCEPT_MS}\`ms.`,
     );
@@ -186,16 +170,14 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
-      bot.sendMessage(chatId, unAuthorizedMessage, {
-        parse_mode: "Markdown",
-      });
+      sendBotMessage(chatId, unAuthorizedMessage);
       return;
     }
 
     const value = parseInt(match[1], 10);
 
     if (isNaN(value) || value < 1500) {
-      return bot.sendMessage(
+      return sendBotMessage(
         chatId,
         `⛔ Invalid number. Usage: /wait 2005 and value must be greater than 1500`,
       );
@@ -204,10 +186,9 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     // do something with value
     updateEnvFile({ WAIT_FOR_ACCEPT_MS: value });
 
-    bot.sendMessage(
+    sendBotMessage(
       chatId,
       `✅ Hi \`${fromName}\`, wait time set to \`${value}\`ms successfully.`,
-      { parse_mode: "Markdown" },
     );
   });
 
