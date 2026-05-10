@@ -203,11 +203,7 @@ const currentProfile = "Profile 1";
 
     await patientsStore.scheduleAllInitialPatients();
 
-    const sendTelegramMessage = installTelegramBotApi(
-      TG_TOKEN,
-      [],
-      patientsStore,
-    );
+    const sendTelegramMessage = installTelegramBotApi(TG_TOKEN, patientsStore);
 
     // WhatsApp client + outbound integration
     await initializeClient(CLIENT_WHATSAPP_NUMBER, patientsStore);
