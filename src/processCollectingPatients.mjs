@@ -11,12 +11,34 @@ import insureFetchedPatientData from "./insureFetchedPatientData.mjs";
 import formateDateToString from "./formateDateToString.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 
+const getLeftMsBasedCaseMessage = (caseAlertMessage) => {
+  const match = caseAlertMessage.match(
+    /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/,
+  );
+
+  if (!match) {
+    createConsoleMessage(
+      `⚠️ Could not parse time from caseAlertMessage: "${caseAlertMessage}"`,
+      "warn",
+    );
+  }
+
+  const minsLeft = parseInt(match?.[1], 10) || 0;
+  const secsLeft = parseInt(match?.[2], 10) || 0;
+
+  const _leftMs = (minsLeft * 60 + secsLeft) * 1000;
+
+  return _leftMs;
+};
+
 const getSaudiStartAndEndDate = ({
   referralDate,
   caseAlertMessage,
   cutoffTimeMs,
   detailsAPiFiresAtMS,
   detailsAPiServerResponseTimeMS,
+  serverNow,
+  serverDate,
 }) => {
   const currentDate = new Date();
   const utcDate = new Date(referralDate);
@@ -30,19 +52,11 @@ const getSaudiStartAndEndDate = ({
 
   const Min_15 = 15 * 60 * 1000;
   let isReferralOldDate = false;
+  const leftMsBasedMessage = getLeftMsBasedCaseMessage(caseAlertMessage);
 
   if (saStartDate < new Date(currentDate - Min_15) && caseAlertMessage) {
     isReferralOldDate = true;
-    const match = caseAlertMessage.match(
-      /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/,
-    );
-
-    const minsLeft = parseInt(match?.[1], 10) ?? 0;
-    const secsLeft = parseInt(match?.[2], 10) ?? 0;
-
-    const _leftMs = (minsLeft * 60 + secsLeft) * 1000;
-
-    const backExtraTime = Min_15 - _leftMs;
+    const backExtraTime = Min_15 - leftMsBasedMessage;
 
     saStartDate = new Date(
       detailsAPiFiresAtMS - detailsAPiServerResponseTimeMS - backExtraTime,
@@ -62,6 +76,10 @@ const getSaudiStartAndEndDate = ({
     ? referralEndTimestamp - cutoffTimeMs
     : referralEndTimestamp;
 
+  const endDateBasedServerDateMs = serverNow
+    ? serverNow + leftMsBasedMessage
+    : null;
+
   return {
     isReferralOldDate,
     cutoffTimeMs: shouldCutoffTime ? cutoffTimeMs : 0,
@@ -73,6 +91,13 @@ const getSaudiStartAndEndDate = ({
     referralEndDateActionablAt: formateDateToString(
       referralEndDateActionableAtMS,
     ),
+    serverDate,
+    serverNow,
+    serverFormatedDate: serverNow ? formateDateToString(serverNow) : null,
+    endDateBasedServerDateMs,
+    endDateBasedServerDate: endDateBasedServerDateMs
+      ? formateDateToString(endDateBasedServerDateMs)
+      : null,
   };
 };
 
@@ -121,11 +146,12 @@ const processCollectingPatients = async ({
       );
 
       // Call existing API function to get detailed patient info
-      const patientData = await insureFetchedPatientData(
-        () => getPatientReferralDataFromAPI(page, referralId),
-        3, // attempts
-        1200, // base backoff ms
-      );
+      const { serverDate, serverNow, ...patientData } =
+        (await insureFetchedPatientData(
+          () => getPatientReferralDataFromAPI(page, referralId),
+          3, // attempts
+          1200, // base backoff ms
+        )) || {};
 
       const {
         patientDetailsError,
@@ -158,9 +184,8 @@ const processCollectingPatients = async ({
           detailsAPiFiresAtMS,
           caseAlertMessage,
           cutoffTimeMs,
-          serverFormatedDate: patientData.serverNow
-            ? formateDateToString(patientData.serverNow)
-            : null,
+          serverDate,
+          serverNow,
         }),
         ...patientData,
       };
@@ -173,7 +198,7 @@ const processCollectingPatients = async ({
         generateAcceptancePdfLetters(browser, [finalData], false),
       ]);
 
-      await sleep(2500 + Math.random() * 3000);
+      await sleep(2000 + Math.random() * 2000);
     }
   } catch (err) {
     createConsoleMessage(
@@ -183,7 +208,7 @@ const processCollectingPatients = async ({
     );
   }
 
-  await sleep(2000 + Math.random() * 3000);
+  await sleep(2500 + Math.random() * 3000);
 
   return newPatientAdded;
 };
