@@ -12,6 +12,8 @@ import {
 } from "./db.mjs";
 import getMimeType from "./getMimeType.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
+import mergeAllToPdf from "./mergeFilesToOne.mjs";
+import compressPdfGentlly from "./compressPdfGentlly.mjs";
 
 // https://t.me/td_cases_bot
 
@@ -372,6 +374,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
       const photos = [];
       const docs = [];
+      const excelFiles = [];
 
       for (const file of files) {
         // Skip files that failed to download
@@ -392,12 +395,82 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         const filename = `${file.fileName}.${extension}`;
         const mimeType = getMimeType(extension);
 
-        if (imageExtensions.includes(extension)) {
-          photos.push({ buffer, filename, mimeType: mimeType });
+        const item = { buffer, filename, mimeType: mimeType };
+
+        if (extension === "xlsx") {
+          excelFiles.push(item);
+        } else if (imageExtensions.includes(extension)) {
+          photos.push(item);
         } else {
-          docs.push({ buffer, filename, mimeType: mimeType });
+          docs.push(item);
         }
       }
+
+      if (excelFiles.length) {
+        // Send PDFs individually
+        for (const doc of excelFiles) {
+          await bot.sendDocument(
+            TG_CHAT_ID,
+            doc.buffer,
+            { reply_to_message_id: messageId, caption: `📎 ${doc.filename}` },
+            { filename: doc.filename, contentType: doc.mimeType },
+          );
+        }
+      }
+
+      if (photos.length === 0 && docs.length === 0) {
+        return;
+      }
+
+      if (photos.length === 0 && docs.length === 1) {
+        const [{ buffer, filename, mimeType }] = docs;
+        await bot.sendDocument(
+          TG_CHAT_ID,
+          buffer,
+          { reply_to_message_id: messageId, caption: `📎 ${filename}` },
+          { filename: filename, contentType: mimeType },
+        );
+
+        return;
+      }
+
+      if (photos.length === 1 && docs.length === 0) {
+        const [{ buffer, filename, mimeType }] = photos;
+        await bot.sendPhoto(
+          TG_CHAT_ID,
+          buffer,
+          { reply_to_message_id: messageId, caption: `📎 ${filename}` },
+          { filename: filename, contentType: mimeType },
+        );
+        return;
+      }
+
+      const { fileName: firstFileName } =
+        files.find(({ fileName }) => !!fileName) ?? {};
+
+      const finalMergedFileName = `${firstFileName}_merged`;
+
+      const merged = await mergeAllToPdf(
+        photos || [],
+        docs || [],
+        finalMergedFileName,
+      );
+      const compressedMerged = await compressPdfGentlly(merged, {
+        unlinkFilesFinally: true,
+      });
+
+      await bot.sendDocument(
+        TG_CHAT_ID,
+        compressedMerged,
+        {
+          reply_to_message_id: messageId,
+          caption: `📎 ${finalMergedFileName}`,
+        },
+        {
+          filename: `${finalMergedFileName}.pdf`,
+          contentType: "application/pdf",
+        },
+      );
 
       // Send photos as album (batches of 10)
       for (let i = 0; i < photos.length; i += 10) {
@@ -407,7 +480,6 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
           batch.map((f, idx) => ({
             type: "photo",
             media: f.buffer,
-            ...(idx === 0 && { caption: `🖼️ ${batch.length} photo(s)` }),
             fileOptions: { contentType: f.mimeType, filename: f.filename },
           })),
           {
