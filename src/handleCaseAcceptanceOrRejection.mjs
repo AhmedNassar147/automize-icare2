@@ -94,6 +94,32 @@ const handleCaseAcceptanceOrRejection =
         noBundleCheck: true,
       });
 
+      await page.evaluate((referralId) => {
+        window.history.pushState(
+          {
+            usr: { idReferral: referralId, type: "Referral" },
+            key: "hh_bk",
+            idx: window.history.state?.idx + 1 || 1,
+          },
+          "",
+          "/referral/details",
+        );
+        window.dispatchEvent(
+          new PopStateEvent("popstate", { state: window.history.state }),
+        );
+      }, referralId);
+
+      const currentUrl_B = page.url().toLowerCase();
+      console.log("currentUrl_B", currentUrl_B);
+
+      // Wait for React Router to render the details page
+      await page.waitForFunction(
+        () => window.location.pathname.toLowerCase() === "/referral/details",
+      );
+
+      const currentUrl = page.url().toLowerCase();
+      console.log("currentUrl", currentUrl);
+
       const remainingMs = referralEndTimestamp - Date.now();
 
       const {
