@@ -18,33 +18,70 @@ import compressPdfGentlly from "./compressPdfGentlly.mjs";
 
 // https://t.me/td_cases_bot
 
+// ─── EXCLUDED PATTERNS ────────────────────────────────────────────────────────
+
+const EXCLUDED_TITLES = [
+  "'D'3*9D'E 9F E9DHE'* 'D*#EJF", // Arabizi encoding of chi.gov.sa insurance page title
+];
+
 const EXCLUDED_TEXT_PATTERNS = [
-  "chi.gov.sa", // insurance inquiry website
+  "https://www.chi.gov.sa", // insurance inquiry website URL
   "مجلس الضمان الصحي", // Council of Health Insurance in Arabic
   "checkinsurance", // URL pattern
   "ليس لديك تأمين", // "You have no insurance" in Arabic
-  "الاستعلام عن معلومات التأمين",
+  "الاستعلام عن معلومات التأمين", // Page title in Arabic
+  "جميع الحقوق محفوظة لمجلس الضمان", // Copyright footer
+  "ضمان يهتم", // App name in footer
 ];
 
+// ─── NORMALIZE ────────────────────────────────────────────────────────────────
+
+const normalizeStr = (str) => str.toLowerCase().trim();
+
+// ─── PDF EXCLUSION CHECK ──────────────────────────────────────────────────────
+
 const containsExcludedText = async ({ fileBase64, extension }) => {
-  // Only parse PDFs — keep everything else as is
+  // Only parse PDFs — keep photos/excel as is
   if (extension !== "pdf") return false;
 
   try {
     const cleanBase64 = fileBase64.replace(/^data:.*?base64,/, "").trim();
     const buffer = Buffer.from(cleanBase64, "base64");
-
     const parser = new PDFParse({ data: buffer });
-    const result = await parser.getText({ first: 2 });
 
-    const text = result.text;
-    createConsoleMessage(`PDF text preview: ${text.slice(0, 200)}`, "info");
+    // Check metadata first — faster than full text extraction
+    const info = await parser.getInfo();
+    const title = normalizeStr(info.info?.Title || "");
+
+    // createConsoleMessage(
+    //   `PDF Title: "${title}" | Producer: "${info.info?.Producer || ""}"`,
+    //   "info",
+    // );
+
+    // Primary check — encoded title unique to chi.gov.sa insurance page
+    const isExcludedByTitle = EXCLUDED_TITLES.some((t) =>
+      title.includes(normalizeStr(t)),
+    );
+
+    if (isExcludedByTitle) {
+      await parser.destroy();
+      return true;
+    }
+
+    // Fallback — check extracted text + links (for non-image PDFs)
+    const result = await parser.getText({ first: 2 });
+    const text = result.text || "";
+    const links = result.pages?.flatMap((p) => p.links || []) || [];
+    const urls = links.map((l) => l.url || "").join(" ");
+    const combined = normalizeStr(`${text} ${urls}`);
 
     await parser.destroy();
 
-    return EXCLUDED_TEXT_PATTERNS.some((pattern) => text.includes(pattern));
+    return EXCLUDED_TEXT_PATTERNS.some((pattern) =>
+      combined.includes(normalizeStr(pattern)),
+    );
   } catch {
-    return false;
+    return false; // on error keep the file
   }
 };
 
