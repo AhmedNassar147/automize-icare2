@@ -70,23 +70,6 @@ const handleCaseAcceptanceOrRejection =
         waitingTimeMSForAccept = undefined;
       }
 
-      broadcast({
-        type: "case-acceptance-or-rejection",
-        data: {
-          referralId,
-          filebase64,
-          referralEndTimestamp,
-          providerName,
-          clientName: CLIENT_NAME,
-          fileName,
-          actionType,
-          waitingTime: waitingTimeMSForAccept,
-          waitExtraTime: waitingTimeMSForAccept
-            ? NEW_EXTRA_WAITING_TIME_FOR_PATIENT
-            : undefined,
-        },
-      });
-
       const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
         browser,
         startingPageUrl: HOME_PAGE_URL,
@@ -118,6 +101,25 @@ const handleCaseAcceptanceOrRejection =
         "info",
       );
 
+      const onZeroSecond = () => {
+        broadcast({
+          type: "case-acceptance-or-rejection",
+          data: {
+            referralId,
+            filebase64,
+            referralEndTimestamp,
+            providerName,
+            clientName: CLIENT_NAME,
+            fileName,
+            actionType,
+            // waitingTime: waitingTimeMSForAccept,
+            // waitExtraTime: waitingTimeMSForAccept
+            //   ? NEW_EXTRA_WAITING_TIME_FOR_PATIENT
+            //   : undefined,
+          },
+        });
+      };
+
       const {
         reason,
         elapsedMs,
@@ -129,6 +131,7 @@ const handleCaseAcceptanceOrRejection =
         page,
         referralId,
         remainingMs,
+        onZeroSecond,
       });
 
       const isEndDateGreaterThanFinalCaseDate =

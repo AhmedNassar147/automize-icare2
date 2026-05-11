@@ -7,9 +7,17 @@ async function waitUntilCanTakeActionByWindow({
   page,
   referralId,
   remainingMs,
+  onZeroSecond,
 }) {
+  let fnName = null;
+
+  if (onZeroSecond) {
+    fnName = `onZeroSecond_${Date.now()}`;
+    await page.exposeFunction(fnName, onZeroSecond);
+  }
+
   return await page.evaluate(
-    async ({ globMedHeaders, referralId, remainingMs }) => {
+    async ({ globMedHeaders, referralId, remainingMs, fnName }) => {
       if (!Number.isFinite(remainingMs) || remainingMs <= 0) {
         return {
           isOk: true,
@@ -18,6 +26,10 @@ async function waitUntilCanTakeActionByWindow({
           attempts: 0,
         };
       }
+
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      let onZeroSecondCalled = false;
 
       async function fetchDetailsOnce() {
         try {
@@ -43,8 +55,36 @@ async function waitUntilCanTakeActionByWindow({
           const j = await r.json().catch(() => null);
           const { canTakeAction, canUpdate, status, message } = j?.data ?? {};
 
+          if (message) {
+            const match = message.match(
+              /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/,
+            );
+
+            const minsLeft = parseInt(match?.[1], 10) || 0;
+            const secsLeft = parseInt(match?.[2], 10) || 0;
+
+            const totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
+
+            if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
+              onZeroSecondCalled = true;
+              if (typeof window[fnName] === "function") {
+                await window[fnName]();
+              }
+            }
+          } else {
+            if (!onZeroSecondCalled && fnName) {
+              onZeroSecondCalled = true;
+              if (typeof window[fnName] === "function") {
+                await window[fnName]();
+              }
+            }
+          }
+
+          await sleep(800);
+
           const ok =
-            !!(canTakeAction && canUpdate && status === "P") && !message;
+            // !!(canTakeAction && canUpdate && status === "P") && !message;
+            !!(status === "C") && !message;
 
           return {
             ok,
@@ -62,8 +102,6 @@ async function waitUntilCanTakeActionByWindow({
           };
         }
       }
-
-      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
       const tStart = performance.now();
       let attempts = 0;
@@ -94,6 +132,7 @@ async function waitUntilCanTakeActionByWindow({
       globMedHeaders,
       referralId,
       remainingMs,
+      fnName,
     },
   );
 }
