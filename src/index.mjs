@@ -424,7 +424,7 @@ const currentProfile = "Profile 1";
         const updates = {};
 
         if (whatsAppWait) {
-          updates.WAIT_FOR_ACCEPT_MS = String(whatsAppWait || 2000);
+          updates.WAIT_FOR_ACCEPT_MS = whatsAppWait ? +whatsAppWait : 2000;
         }
 
         if (waitBeforeReady) {

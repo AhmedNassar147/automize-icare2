@@ -117,7 +117,7 @@ const handleCaseAcceptanceOrRejection =
 
       const diff = referralEndTimestamp - claimableServerTime;
 
-      let waitTime = WAIT_FOR_ACCEPT_MS;
+      let waitTime = +WAIT_FOR_ACCEPT_MS;
 
       waitTime = diff > 0 ? waitTime : waitTime + 2;
 
