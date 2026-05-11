@@ -71,20 +71,10 @@ async function waitUntilCanTakeActionByWindow({
                 await window[fnName]();
               }
             }
-          } else {
-            if (!onZeroSecondCalled && fnName) {
-              onZeroSecondCalled = true;
-              if (typeof window[fnName] === "function") {
-                await window[fnName]();
-              }
-            }
           }
 
-          await sleep(800);
-
           const ok =
-            // !!(canTakeAction && canUpdate && status === "P") && !message;
-            !!(status === "C") && !message;
+            !!(canTakeAction && canUpdate && status === "P") && !message;
 
           return {
             ok,
