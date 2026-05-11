@@ -8,11 +8,6 @@ import { PDFParse } from "pdf-parse";
 // import { readFile } from "fs/promises";
 // import { basename, extname } from "path";
 
-const EXCLUDED_TITLES = [
-  "'D'3*9D'E 9F E9DHE'* 'D*#EJF", // Arabizi encoding
-  "Ø§Ù—Ø§Ø³ØªØ¹Ù—Ø§Ù– Ø¹Ùƒ Ù–Ø¹Ù—Ù‹Ù–Ø§Øª Ø§Ù—ØªØ£Ù–Ù−Ùƒ", // URL-encoded Arabic
-];
-
 const EXCLUDED_TEXT_PATTERNS = [
   "https://www.chi.gov.sa", // insurance inquiry website URL
   "مجلس الضمان الصحي", // Council of Health Insurance in Arabic
@@ -21,6 +16,12 @@ const EXCLUDED_TEXT_PATTERNS = [
   "الاستعلام عن معلومات التأمين", // Page title in Arabic
   "جميع الحقوق محفوظة لمجلس الضمان", // Copyright footer
   "ضمان يهتم", // App name in footer
+];
+
+const EXCLUDED_TITLES = [
+  "'D'3*9D'E 9F E9DHE'* 'D*#EJF", // Arabizi encoding
+  "Ø§Ù—Ø§Ø³ØªØ¹Ù—Ø§Ù– Ø¹Ùƒ Ù–Ø¹Ù—Ù‹Ù–Ø§Øª Ø§Ù—ØªØ£Ù–Ù−Ùƒ", // URL-encoded Arabic
+  ...EXCLUDED_TEXT_PATTERNS,
 ];
 
 // ─── NORMALIZE ────────────────────────────────────────────────────────────────
@@ -68,8 +69,6 @@ const containsExcludedText = async ({ fileBase64, extension }) => {
     const links = result.pages?.flatMap((p) => p.links || []) || [];
     const urls = links.map((l) => l.url || "").join(" ");
     const combined = normalizeStr(`${text} ${urls}`);
-
-    console.log("combined", combined);
 
     await parser.destroy();
 
@@ -119,8 +118,10 @@ export default containsExcludedText;
 // };
 
 // const filePaths = [
-//   "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5767184761109881223.pdf",
-//   "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5767184761109881224.pdf",
+//   // "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5767184761109881223.pdf",
+//   // "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5767184761109881224.pdf",
+//   "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5769392597638325783.pdf",
+//   "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5769392597638325784.pdf",
 // ];
 // const res = await testExcludedText(filePaths);
 
