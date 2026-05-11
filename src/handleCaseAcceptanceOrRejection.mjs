@@ -109,18 +109,14 @@ const handleCaseAcceptanceOrRejection =
         );
       }, referralId);
 
-      const currentUrl_B = page.url().toLowerCase();
-      console.log("currentUrl_B", currentUrl_B);
-
-      // Wait for React Router to render the details page
-      await page.waitForFunction(
-        () => window.location.pathname.toLowerCase() === "/referral/details",
-      );
-
       const currentUrl = page.url().toLowerCase();
-      console.log("currentUrl", currentUrl);
 
       const remainingMs = referralEndTimestamp - Date.now();
+
+      createConsoleMessage(
+        `Navigated to details page refferredId=${referralId} remainingMs=${remainingMs} and URL=${currentUrl}`,
+        "info",
+      );
 
       const {
         reason,
