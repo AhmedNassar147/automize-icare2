@@ -77,20 +77,25 @@ const handleCaseAcceptanceOrRejection =
         noBundleCheck: true,
       });
 
-      await page.evaluate((referralId) => {
-        window.history.pushState(
-          {
-            usr: { idReferral: referralId, type: "Referral" },
-            key: "hh_bk",
-            idx: window.history.state?.idx + 1 || 1,
-          },
-          "",
-          "/referral/details",
-        );
-        window.dispatchEvent(
-          new PopStateEvent("popstate", { state: window.history.state }),
-        );
-      }, referralId);
+      const routerKey = Math.random().toString(36).slice(2, 8);
+
+      await page.evaluate(
+        ({ referralId, routerKey }) => {
+          window.history.pushState(
+            {
+              usr: { idReferral: referralId, type: "Referral" },
+              key: routerKey, // e.g. "a3f9kx"
+              idx: window.history.state?.idx + 1 || 1,
+            },
+            "",
+            "/referral/details",
+          );
+          window.dispatchEvent(
+            new PopStateEvent("popstate", { state: window.history.state }),
+          );
+        },
+        { referralId, routerKey },
+      );
 
       const currentUrl = page.url().toLowerCase();
 
@@ -112,6 +117,7 @@ const handleCaseAcceptanceOrRejection =
             clientName: CLIENT_NAME,
             fileName,
             actionType,
+            routerKey,
             // waitingTime: waitingTimeMSForAccept,
             // waitExtraTime: waitingTimeMSForAccept
             //   ? NEW_EXTRA_WAITING_TIME_FOR_PATIENT
