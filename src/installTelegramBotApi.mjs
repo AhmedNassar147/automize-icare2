@@ -81,6 +81,8 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
   const sendBotMessage = (chatId, message) =>
     bot.sendMessage(chatId, message, { parse_mode: "Markdown" });
 
+  const pendingContactRequests = new Map();
+
   const getIfNotAuthorizedMessage = (msg) => {
     const chatId = String(msg.chat.id);
     const fromName =
@@ -125,17 +127,21 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       );
     }
 
+    const { [`TG_PHONE_NUMBER_${chatId}`]: activePhoneNumber, CLIENT_ID } =
+      process.env;
+
     updateEnvFile({
       TG_CHAT_ID: chatId,
       TG_CHAT_USER_NAME: fromName,
+      ...(CLIENT_ID !== "TADAWI" && !!activePhoneNumber
+        ? { CLIENT_WHATSAPP_NUMBER: activePhoneNumber }
+        : null),
     });
     await sendBotMessage(
       chatId,
       `✅ Hi, \`${fromName}\` you are active now, cases will be sent for you here, Chat ID \`${chatId}\` has been saved automatically.`,
     );
   });
-
-  const pendingContactRequests = new Map();
 
   bot.on("contact", async (msg) => {
     const chatId = String(msg.chat.id);
