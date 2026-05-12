@@ -164,7 +164,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       TG_CHAT_IDS: [...new Set([...allowedList, chatId].filter(Boolean))].join(
         ",",
       ),
-      TG_PHONE_NUMBER: phoneNumber,
+      [`TG_PHONE_NUMBER_${chatId}`]: phoneNumber,
     });
 
     await bot.sendMessage(
