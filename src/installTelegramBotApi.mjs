@@ -124,6 +124,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
     updateEnvFile({
       TG_CHAT_ID: chatId,
+      TG_CHAT_USER_NAME: fromName,
     });
     sendBotMessage(
       chatId,
