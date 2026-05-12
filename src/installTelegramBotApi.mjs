@@ -99,24 +99,27 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     };
   };
 
-  bot.onText(/\/me/, (msg) => {
+  bot.onText(/\/me/, async (msg) => {
     const { chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
-      sendBotMessage(chatId, unAuthorizedMessage);
+      await sendBotMessage(chatId, unAuthorizedMessage);
       return;
     }
 
     const activeChatId = process.env.TG_CHAT_ID;
 
     if (activeChatId === chatId) {
-      sendBotMessage(chatId, `✅ Hi, \`${fromName}\` you are already active.`);
+      await sendBotMessage(
+        chatId,
+        `✅ Hi, \`${fromName}\` you are already active.`,
+      );
       return;
     }
 
     if (activeChatId) {
-      sendBotMessage(
+      await sendBotMessage(
         activeChatId,
         `🔔 \`${fromName}\` is now active and will receive cases. You are off duty.`,
       );
@@ -126,72 +129,126 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       TG_CHAT_ID: chatId,
       TG_CHAT_USER_NAME: fromName,
     });
-    sendBotMessage(
+    await sendBotMessage(
       chatId,
       `✅ Hi, \`${fromName}\` you are active now, cases will be sent for you here, Chat ID \`${chatId}\` has been saved automatically.`,
     );
   });
 
-  bot.onText(/\/add/, (msg) => {
-    const { allowedList, chatId, fromName, unAuthorizedMessage } =
-      getIfNotAuthorizedMessage(msg);
+  const pendingContactRequests = new Map();
 
-    if (!unAuthorizedMessage) {
-      sendBotMessage(
-        chatId,
-        `⛔ Hi, \`${fromName}\` you are already Authorized.`,
-      );
+  bot.on("contact", async (msg) => {
+    const chatId = String(msg.chat.id);
+    const pending = pendingContactRequests.get(chatId);
 
+    if (!pending) return;
+
+    const phoneNumber = msg.contact?.phone_number;
+
+    if (!phoneNumber) {
+      await sendBotMessage(chatId, "❌ No phone number received.");
       return;
     }
+
+    // Optional but recommended: make sure user shared HIS OWN phone
+    if (msg.contact.user_id && msg.contact.user_id !== msg.from.id) {
+      await sendBotMessage(chatId, "❌ Please share your own phone number.");
+      return;
+    }
+
+    pendingContactRequests.delete(chatId);
+
+    const { allowedList, fromName } = pending;
 
     updateEnvFile({
       TG_CHAT_IDS: [...new Set([...allowedList, chatId].filter(Boolean))].join(
         ",",
       ),
+      TG_PHONE_NUMBER: phoneNumber,
     });
-    sendBotMessage(
+
+    await bot.sendMessage(
       chatId,
-      `✅ Hi, \`${fromName}\` you are added now, Please send /me to get activated, Chat ID \`${chatId}\` has been saved automatically.`,
+      `✅ Hi, \`${fromName}\` you are added now, Please send /me to get activated, Chat ID \`${chatId}\` has been saved automatically. Phone: \`${phoneNumber}\``,
+      {
+        parse_mode: "Markdown",
+        reply_markup: {
+          remove_keyboard: true,
+        },
+      },
     );
   });
 
-  bot.onText(/\/wait$/, (msg) => {
-    const { chatId, unAuthorizedMessage } = getIfNotAuthorizedMessage(msg);
+  bot.onText(/\/add/, async (msg) => {
+    const { allowedList, chatId, fromName, unAuthorizedMessage } =
+      getIfNotAuthorizedMessage(msg);
 
-    if (unAuthorizedMessage) {
-      sendBotMessage(chatId, unAuthorizedMessage);
+    if (!unAuthorizedMessage) {
+      await sendBotMessage(
+        chatId,
+        `⛔ Hi, \`${fromName}\` you are already Authorized.`,
+      );
       return;
     }
 
-    sendBotMessage(
+    pendingContactRequests.set(chatId, {
+      allowedList,
+      fromName,
+    });
+
+    await bot.sendMessage(chatId, "Share your phone number", {
+      reply_markup: {
+        keyboard: [
+          [
+            {
+              text: "Share Phone",
+              request_contact: true,
+            },
+          ],
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      },
+    });
+  });
+
+  bot.onText(/\/wait$/, async (msg) => {
+    const { chatId, unAuthorizedMessage } = getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    await sendBotMessage(
       chatId,
       `✅ Current wait is set to \`${process.env.WAIT_FOR_ACCEPT_MS}\`ms.`,
     );
   });
 
-  bot.onText(/\/wait (\d+)/, (msg, match) => {
+  bot.onText(/\/wait (\d+)/, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName } =
       getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
-      sendBotMessage(chatId, unAuthorizedMessage);
+      await sendBotMessage(chatId, unAuthorizedMessage);
       return;
     }
 
     const value = parseInt(match[1], 10);
 
     if (isNaN(value) || value < 1500) {
-      return sendBotMessage(
+      await sendBotMessage(
         chatId,
         `⛔ Invalid number. Usage: /wait 2005 and value must be greater than 1500`,
       );
+      return;
     }
 
     // do something with value
     updateEnvFile({ WAIT_FOR_ACCEPT_MS: value });
 
-    sendBotMessage(
+    await sendBotMessage(
       chatId,
       `✅ Hi \`${fromName}\`, wait time set to \`${value}\`ms successfully.`,
     );
