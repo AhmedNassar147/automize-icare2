@@ -160,7 +160,7 @@ const handleCaseAcceptanceOrRejection =
             message: approvalMessage,
           }),
         ),
-        sleep(waitTime - 50).then(() => sendTelegramMessage(approvalMessage)),
+        sleep(waitTime - 48).then(() => sendTelegramMessage(approvalMessage)),
 
         sleep(waitTime - 34).then(() => sendNtfyMessage(approvalMessage)),
       ]);
