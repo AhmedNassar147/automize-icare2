@@ -10,7 +10,7 @@ import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs
 import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
-// import makeBeep from "./makeBeep.mjs";
+import summarizeLogsAfterAcceptance from "./summarizeLogsAfterAcceptance.mjs";
 import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
@@ -18,6 +18,7 @@ import {
   USER_ACTION_TYPES,
 } from "./constants.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
+import updateEnvFile from "./updateEnvFile.mjs";
 
 async function pdfToBase64(filePath) {
   const buf = await readFile(filePath);
@@ -136,8 +137,6 @@ const handleCaseAcceptanceOrRejection =
         elapsedMs,
         message,
         attempts,
-        claimableServerTime,
-        claimableLocalTime,
         zeroSeenAt,
         readySeenAt,
         extraBackendDelayMs,
@@ -149,56 +148,83 @@ const handleCaseAcceptanceOrRejection =
       });
 
       const isEndDateGreaterThanFinalCaseDate =
-        referralEndTimestamp > claimableServerTime;
+        referralEndTimestamp > readySeenAt;
 
       const isEndDateEqualToFinalCaseDate =
-        referralEndTimestamp === claimableServerTime;
+        referralEndTimestamp === readySeenAt;
 
-      const diff = referralEndTimestamp - claimableServerTime;
+      const diff = referralEndTimestamp - readySeenAt;
 
-      let waitTime = +WAIT_FOR_ACCEPT_MS;
+      let baseWaitingTime = +WAIT_FOR_ACCEPT_MS;
 
-      waitTime = diff > 0 ? waitTime : waitTime + 2;
+      if (Number.isNaN(baseWaitingTime)) {
+        baseWaitingTime = WAIT_FOR_ACCEPT_MS.match(/(\d+)s/)?.[1];
+      }
+
+      if (!Number.isFinite(baseWaitingTime) || baseWaitingTime <= 0) {
+        baseWaitingTime = 2000;
+      }
+
+      let extraWait = diff > 0 ? 0 : 2;
+
+      if (extraBackendDelayMs >= 2000) {
+        extraWait += extraWait > 0 ? 2 : 4;
+      }
+
+      const waitTime = baseWaitingTime + extraWait;
 
       const approvalMessage = `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`;
 
-      await Promise.all([
+      const telegramTime = waitTime - 25;
+
+      const promises = [
         sleep(waitTime).then(() =>
           sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
             message: approvalMessage,
           }),
         ),
-        sleep(waitTime - 46).then(() => sendTelegramMessage(approvalMessage)),
-
+        sleep(telegramTime).then(() => sendTelegramMessage(approvalMessage)),
         sleep(waitTime - 34).then(() => sendNtfyMessage(approvalMessage)),
-      ]);
+      ];
+
+      const isTimeChanged = waitTime !== baseWaitingTime;
+
+      if (isTimeChanged) {
+        promises.push(
+          sleep(waitTime).then(() =>
+            sendTelegramMessage(
+              `⚠️ waitTime auto-updated from \`${baseWaitingTime}\` to \`${waitTime}\` for referralId=\`${referralId}\``,
+            ),
+          ),
+        );
+      }
+
+      await Promise.all(promises);
+
+      if (isTimeChanged) {
+        updateEnvFile({
+          WAIT_FOR_ACCEPT_MS: waitTime,
+        });
+      }
 
       await closePageSafely(page);
 
       const logs = {
         referralId,
         waitTime,
-        remainingMs,
-        elapsedMs,
-        attempts,
-        waitingTimeMSForAccept,
-        reason,
-        message,
-        isEndDateGreaterThanFinalCaseDate,
-        isEndDateEqualToFinalCaseDate,
-        diff,
+        extraWait,
         referralEndTimestamp,
-        claimableServerTime,
         endDateBasedServerDateMs,
         zeroSeenAt,
         readySeenAt,
         extraBackendDelayMs,
+        isEndDateGreaterThanFinalCaseDate,
+        isEndDateEqualToFinalCaseDate,
       };
 
-      createConsoleMessage(
-        "✅ " + Object.keys(logs).map((k) => `${k}=${logs[k]} `),
-        "warn",
-      );
+      if (isAcceptanceAction) {
+        await summarizeLogsAfterAcceptance(logs);
+      }
 
       // continueFetchingPatientsIfPaused();
     } catch (error) {

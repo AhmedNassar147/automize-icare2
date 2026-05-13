@@ -7,6 +7,7 @@ export const cwd = process.cwd();
 
 export const siteCodeConfigFile = `${cwd}/sitecode_config.json`;
 export const screenshotsFolderDirectory = `${cwd}/screenshots`;
+export const casesTimingLogsFolderPath = `${cwd}/results/cases-timing-logs`;
 export const waitingPatientsFolderDirectory = `${cwd}/results/waiting-patients`;
 export const generatedPdfsPathForAcceptance = `${cwd}/results/generated-acceptance-pdf`;
 export const generatedPdfsPathForRejection = `${cwd}/results/generated-rejection-pdf`;
@@ -192,3 +193,22 @@ export const SUMMARY_TYPES = {
   WEEKLY: "WEEKLY",
   MONTHLY: "MONTHLY",
 };
+
+export const LOGS_SUMMARY_SEPARATOR = "|";
+
+export const LOGS_SUMMARY_HEADERS = [
+  "status",
+  "referralId",
+  "waitTime",
+  "extraWait",
+  "endTs",
+  "serverEndTs",
+  "endVsServerMs",
+  "zeroSeenAt",
+  "readySeenAt",
+  "endVsReady(diff)",
+  "backendDelayMs",
+  "readyVsServerMs",
+  "isEnd>ready",
+  "isEnd=ready",
+];

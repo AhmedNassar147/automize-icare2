@@ -116,8 +116,7 @@ async function waitUntilCanTakeActionByWindow({
       while (true) {
         attempts++;
 
-        const { totalMsLeft, ok, localNow, message, serverNow } =
-          await fetchDetailsOnce();
+        const { totalMsLeft, ok, localNow, message } = await fetchDetailsOnce();
 
         if (ok) {
           return {
@@ -126,7 +125,6 @@ async function waitUntilCanTakeActionByWindow({
             message: message,
             elapsedMs: Math.round(performance.now() - tStart),
             attempts,
-            claimableServerTime: serverNow,
             claimableLocalTime: localNow,
             zeroSeenAt,
             readySeenAt,

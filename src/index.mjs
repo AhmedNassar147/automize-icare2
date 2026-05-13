@@ -47,6 +47,7 @@ import {
   generatedPdfsPathForRejection,
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
+  casesTimingLogsFolderPath,
   TABS_COLLECTION_TYPES,
   APP_URL,
 } from "./constants.mjs";
@@ -159,8 +160,11 @@ const currentProfile = "Profile 1";
       generateFolderIfNotExisting(generatedPdfsPathForRejection),
       generateFolderIfNotExisting(htmlFilesPath),
       generateFolderIfNotExisting(generatedSummaryFolderPath),
+      generateFolderIfNotExisting(casesTimingLogsFolderPath),
       checkSiteCodeConfig(),
     ]);
+
+    return;
 
     // Launch browser with a fixed profile
     const profilePath = `${USER_PROFILE_PATH}/${currentProfile}`;
