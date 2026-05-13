@@ -127,9 +127,30 @@ const handleCaseAcceptanceOrRejection =
       const currentUrl = page.url().toLowerCase();
 
       createConsoleMessage(
-        `Navigated to details page refferredId=${referralId} and URL=${currentUrl}`,
+        `Navigated to details page referralId=${referralId} and URL=${currentUrl}`,
         "info",
       );
+
+      let extraBotMessages = [];
+
+      const rawWaitTime = WAIT_FOR_ACCEPT_MS || "";
+
+      let baseWaitingTime = +rawWaitTime;
+
+      if (Number.isNaN(baseWaitingTime)) {
+        const value = rawWaitTime.match(/(\d+)s/)?.[1] || 0;
+        baseWaitingTime = +value;
+        extraBotMessages.push(
+          `Found non numeric waitTime of \`${rawWaitTime}\`, Please set it as number not with characters where referralId=\`${referralId}\``,
+        );
+      }
+
+      if (!Number.isFinite(baseWaitingTime) || baseWaitingTime <= 0) {
+        baseWaitingTime = 2000;
+        extraBotMessages.push(
+          `Didn't find the waitTime=\`${WAIT_FOR_ACCEPT_MS}\` we forced to use \`${baseWaitingTime}\` for this case, Please set the proper waitTime from bot via \`/wait some time\``,
+        );
+      }
 
       const remainingMs = referralEndTimestamp - Date.now();
 
@@ -158,8 +179,6 @@ const handleCaseAcceptanceOrRejection =
 
       let extraWait = diff > 0 ? 0 : 2;
 
-      let extraBotMessages = [];
-
       if (extraBackendDelayMs >= 2000) {
         extraWait += extraWait > 0 ? 2 : 4;
       }
@@ -167,23 +186,6 @@ const handleCaseAcceptanceOrRejection =
       if (extraBackendDelayMs < 1000) {
         extraBotMessages.push(
           `Please Tell \`Ahmed\` of this: Found extra backend delay of \`${extraBackendDelayMs}\` Less than 1000 where referralId=\`${referralId}\``,
-        );
-      }
-
-      let baseWaitingTime = +WAIT_FOR_ACCEPT_MS;
-
-      if (Number.isNaN(baseWaitingTime)) {
-        const value = WAIT_FOR_ACCEPT_MS.match(/(\d+)s/)?.[1] || 0;
-        baseWaitingTime = +value;
-        extraBotMessages.push(
-          `Found non numeric waitTime of \`${WAIT_FOR_ACCEPT_MS}\`, Please set it as number not with characters where referralId=\`${referralId}\``,
-        );
-      }
-
-      if (!Number.isFinite(baseWaitingTime) || baseWaitingTime <= 0) {
-        baseWaitingTime = 2000;
-        extraBotMessages.push(
-          `Didn't find the waitTime=\`${WAIT_FOR_ACCEPT_MS}\` we forced to use \`${baseWaitingTime}\` for this case, Please set the proper waitTime from bot via \`/wait some time\``,
         );
       }
 
