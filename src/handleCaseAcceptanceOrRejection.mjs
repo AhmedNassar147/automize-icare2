@@ -173,11 +173,18 @@ const handleCaseAcceptanceOrRejection =
       let baseWaitingTime = +WAIT_FOR_ACCEPT_MS;
 
       if (Number.isNaN(baseWaitingTime)) {
-        baseWaitingTime = WAIT_FOR_ACCEPT_MS.match(/(\d+)s/)?.[1];
+        const value = WAIT_FOR_ACCEPT_MS.match(/(\d+)s/)?.[1] || 0;
+        baseWaitingTime = +value;
+        extraBotMessages.push(
+          `Found non numeric waitTime of \`${WAIT_FOR_ACCEPT_MS}\`, Please set it as number not with characters where referralId=\`${referralId}\``,
+        );
       }
 
       if (!Number.isFinite(baseWaitingTime) || baseWaitingTime <= 0) {
         baseWaitingTime = 2000;
+        extraBotMessages.push(
+          `Didn't find the waitTime=\`${WAIT_FOR_ACCEPT_MS}\` we forced to use \`${baseWaitingTime}\` for this case, Please set the proper waitTime from bot via \`/wait some time\``,
+        );
       }
 
       const waitTime = baseWaitingTime + extraWait;
@@ -212,8 +219,10 @@ const handleCaseAcceptanceOrRejection =
 
       if (extraBotMessages.length) {
         await Promise.all(
-          extraBotMessages.map((message) =>
-            sleep(telegramTime).then(() => sendTelegramMessage(message)),
+          extraBotMessages.map((message, index) =>
+            sleep(Math.floor(telegramTime / 2 + index * 20)).then(() =>
+              sendTelegramMessage(message),
+            ),
           ),
         );
       }
