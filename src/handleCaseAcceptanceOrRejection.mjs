@@ -51,6 +51,7 @@ const handleCaseAcceptanceOrRejection =
         NTFY_TOPIC,
         NEW_WAITING_TIME_FOR_PATIENT,
         NEW_EXTRA_WAITING_TIME_FOR_PATIENT,
+        TG_CHAT_ID,
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
@@ -187,7 +188,8 @@ const handleCaseAcceptanceOrRejection =
 
       const approvalMessage = `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`;
 
-      const telegramTime = waitTime - 20;
+      const telegramTime =
+        TG_CHAT_ID === "8075412902" ? waitTime : waitTime - 20;
 
       const promises = [
         sleep(waitTime).then(() =>
