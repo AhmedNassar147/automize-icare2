@@ -59,11 +59,11 @@ const withLock = async (key, fn) => {
 };
 
 export const initializeClient = async (
-  number,
   patientsStore,
   { headless = false } = {},
-) =>
-  withLock(number, async () => {
+) => {
+  const number = normalizePhoneNumber(process.env.CLIENT_WHATSAPP_NUMBER);
+  return await withLock(number, async () => {
     const chatId = getChatId(number);
     const authId = `client-${number}`;
 
@@ -163,10 +163,7 @@ export const initializeClient = async (
         "info",
       );
 
-      setTimeout(
-        () => initializeClient(number, patientsStore, { headless }),
-        delay,
-      );
+      setTimeout(() => initializeClient(patientsStore, { headless }), delay);
     });
 
     client.on("message", async (message) => {
@@ -328,6 +325,7 @@ export const initializeClient = async (
 
     await client.initialize();
   });
+};
 
 const sendMessageWithFiles = async (number, msgWithFiles) => {
   if (!msgWithFiles) return;
@@ -368,7 +366,7 @@ const sendMessageUsingWhatsapp =
   (patientsStore, options = {}) =>
   async (number, messages) => {
     const phoneNo = normalizePhoneNumber(number);
-    await initializeClient(phoneNo, patientsStore, options);
+    await initializeClient(patientsStore, options);
 
     const safeMessages = Array.isArray(messages) ? messages : [messages];
     const state = clients.get(phoneNo);

@@ -34,8 +34,6 @@ const waitForWaitingCountWithInterval = async ({
 }) => {
   let page, cursor;
 
-  const clientPhoneNumber = process.env.CLIENT_WHATSAPP_NUMBER;
-
   let apiHadData = false;
 
   const { targetText, categoryReference } =
@@ -113,7 +111,7 @@ const waitForWaitingCountWithInterval = async ({
           "\n────────────────────────\n" +
           "_App is Closed, Please check the app, try to open it manually_";
 
-        await sendWhatsappMessage(clientPhoneNumber, [
+        await sendWhatsappMessage(process.env.CLIENT_WHATSAPP_NUMBER, [
           {
             message: message,
           },

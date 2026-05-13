@@ -81,7 +81,6 @@ const currentProfile = "Profile 1";
   const {
     CHROME_EXECUTABLE_PATH,
     USER_PROFILE_PATH,
-    CLIENT_WHATSAPP_NUMBER,
     SUMMARY_REPORT_GENERATED_AT,
     EXECLUDE_WHATSAPP_MSG_FOOTER,
     FIRST_SUMMARY_REPORT_STARTS_AT,
@@ -206,7 +205,7 @@ const currentProfile = "Profile 1";
     const sendTelegramMessage = installTelegramBotApi(TG_TOKEN, patientsStore);
 
     // WhatsApp client + outbound integration
-    await initializeClient(CLIENT_WHATSAPP_NUMBER, patientsStore);
+    await initializeClient(patientsStore);
 
     const sendWhatsappMessage = sendMessageUsingWhatsapp(patientsStore);
 

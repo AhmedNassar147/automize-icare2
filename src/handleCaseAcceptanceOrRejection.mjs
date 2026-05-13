@@ -75,6 +75,8 @@ const handleCaseAcceptanceOrRejection =
         waitingTimeMSForAccept = undefined;
       }
 
+      const routerKey = Math.random().toString(36).slice(2, 8);
+
       const onZeroSecond = () => {
         broadcast({
           type: "case-acceptance-or-rejection",
@@ -101,8 +103,6 @@ const handleCaseAcceptanceOrRejection =
         noCursor: true,
         noBundleCheck: true,
       });
-
-      const routerKey = Math.random().toString(36).slice(2, 8);
 
       await page.evaluate(
         ({ referralId, routerKey }) => {
