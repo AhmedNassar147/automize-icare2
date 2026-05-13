@@ -164,8 +164,6 @@ const currentProfile = "Profile 1";
       checkSiteCodeConfig(),
     ]);
 
-    return;
-
     // Launch browser with a fixed profile
     const profilePath = `${USER_PROFILE_PATH}/${currentProfile}`;
 
