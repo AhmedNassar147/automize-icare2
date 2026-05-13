@@ -19,6 +19,8 @@ async function waitUntilCanTakeActionByWindow({
   return await page.evaluate(
     async ({ globMedHeaders, referralId, remainingMs, fnName }) => {
       if (!Number.isFinite(remainingMs) || remainingMs <= 0) {
+        await window[fnName]?.();
+
         return {
           isOk: true,
           reason: `invalid remainingMs=${remainingMs}`,
@@ -30,6 +32,8 @@ async function waitUntilCanTakeActionByWindow({
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
       let onZeroSecondCalled = false;
+      let zeroSeenAt = 0;
+      let readySeenAt = 0;
 
       async function fetchDetailsOnce() {
         try {
@@ -55,6 +59,8 @@ async function waitUntilCanTakeActionByWindow({
           const j = await r.json().catch(() => null);
           const { canTakeAction, canUpdate, status, message } = j?.data ?? {};
 
+          let totalMsLeft = -1;
+
           if (message) {
             const match = message.match(
               /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/,
@@ -63,18 +69,21 @@ async function waitUntilCanTakeActionByWindow({
             const minsLeft = parseInt(match?.[1], 10) || 0;
             const secsLeft = parseInt(match?.[2], 10) || 0;
 
-            const totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
+            totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
 
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
+              await window[fnName]?.();
               onZeroSecondCalled = true;
-              if (typeof window[fnName] === "function") {
-                await window[fnName]();
-              }
+              zeroSeenAt = serverNow || localNow;
             }
           }
 
           const ok =
             !!(canTakeAction && canUpdate && status === "P") && !message;
+
+          if (ok) {
+            readySeenAt = serverNow || localNow;
+          }
 
           return {
             ok,
@@ -82,6 +91,7 @@ async function waitUntilCanTakeActionByWindow({
             message: message || null,
             serverNow,
             localNow,
+            totalMsLeft,
           };
         } catch (e) {
           return {
@@ -93,29 +103,39 @@ async function waitUntilCanTakeActionByWindow({
         }
       }
 
+      const getPollDelay = (totalMsLeft) => {
+        if (totalMsLeft <= 1000) return 0;
+        if (totalMsLeft <= 3000) return 75;
+        if (totalMsLeft <= 10000) return 150;
+        return 500;
+      };
+
       const tStart = performance.now();
       let attempts = 0;
 
       while (true) {
         attempts++;
 
-        const result = await fetchDetailsOnce();
+        const { totalMsLeft, ok, localNow, message, serverNow } =
+          await fetchDetailsOnce();
 
-        if (result.ok) {
+        if (ok) {
           return {
             isOk: true,
             reason: "ready",
-            message: result.message,
+            message: message,
             elapsedMs: Math.round(performance.now() - tStart),
             attempts,
-            claimableServerTime: result.serverNow,
-            claimableLocalTime: result.localNow,
+            claimableServerTime: serverNow,
+            claimableLocalTime: localNow,
+            zeroSeenAt,
+            readySeenAt,
+            extraBackendDelayMs:
+              zeroSeenAt && readySeenAt ? readySeenAt - zeroSeenAt : null,
           };
         }
 
-        if (attempts % 6 === 0) {
-          await sleep(0);
-        }
+        await sleep(getPollDelay(totalMsLeft));
       }
     },
     {

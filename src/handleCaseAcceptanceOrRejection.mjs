@@ -34,7 +34,12 @@ const handleCaseAcceptanceOrRejection =
     browser,
   }) =>
   async (patient) => {
-    const { referralId, referralEndTimestamp, providerName } = patient;
+    const {
+      referralId,
+      referralEndTimestamp,
+      providerName,
+      endDateBasedServerDateMs,
+    } = patient;
 
     try {
       const {
@@ -70,6 +75,26 @@ const handleCaseAcceptanceOrRejection =
         waitingTimeMSForAccept = undefined;
       }
 
+      const onZeroSecond = () => {
+        broadcast({
+          type: "case-acceptance-or-rejection",
+          data: {
+            referralId,
+            filebase64,
+            referralEndTimestamp,
+            providerName,
+            clientName: CLIENT_NAME,
+            fileName,
+            actionType,
+            routerKey,
+            // waitingTime: waitingTimeMSForAccept,
+            // waitExtraTime: waitingTimeMSForAccept
+            //   ? NEW_EXTRA_WAITING_TIME_FOR_PATIENT
+            //   : undefined,
+          },
+        });
+      };
+
       const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
         browser,
         startingPageUrl: HOME_PAGE_URL,
@@ -99,32 +124,12 @@ const handleCaseAcceptanceOrRejection =
 
       const currentUrl = page.url().toLowerCase();
 
-      const remainingMs = referralEndTimestamp - Date.now();
-
       createConsoleMessage(
-        `Navigated to details page refferredId=${referralId} remainingMs=${remainingMs} and URL=${currentUrl}`,
+        `Navigated to details page refferredId=${referralId} and URL=${currentUrl}`,
         "info",
       );
 
-      const onZeroSecond = () => {
-        broadcast({
-          type: "case-acceptance-or-rejection",
-          data: {
-            referralId,
-            filebase64,
-            referralEndTimestamp,
-            providerName,
-            clientName: CLIENT_NAME,
-            fileName,
-            actionType,
-            routerKey,
-            // waitingTime: waitingTimeMSForAccept,
-            // waitExtraTime: waitingTimeMSForAccept
-            //   ? NEW_EXTRA_WAITING_TIME_FOR_PATIENT
-            //   : undefined,
-          },
-        });
-      };
+      const remainingMs = referralEndTimestamp - Date.now();
 
       const {
         reason,
@@ -133,6 +138,9 @@ const handleCaseAcceptanceOrRejection =
         attempts,
         claimableServerTime,
         claimableLocalTime,
+        zeroSeenAt,
+        readySeenAt,
+        extraBackendDelayMs,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
@@ -170,19 +178,25 @@ const handleCaseAcceptanceOrRejection =
       const logs = {
         referralId,
         waitTime,
-        waitingTimeMSForAccept,
         remainingMs,
         elapsedMs,
         attempts,
+        waitingTimeMSForAccept,
         reason,
         message,
         isEndDateGreaterThanFinalCaseDate,
         isEndDateEqualToFinalCaseDate,
         diff,
+        referralEndTimestamp,
+        claimableServerTime,
+        endDateBasedServerDateMs,
+        zeroSeenAt,
+        readySeenAt,
+        extraBackendDelayMs,
       };
 
       createConsoleMessage(
-        "✅ " + Object.keys(logs).map((k) => `${k}: ${logs[k]} `),
+        "✅ " + Object.keys(logs).map((k) => `${k}=${logs[k]} `),
         "warn",
       );
 
