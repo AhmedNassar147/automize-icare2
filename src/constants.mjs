@@ -211,4 +211,5 @@ export const LOGS_SUMMARY_HEADERS = [
   "readyVsServerMs",
   "isEnd>ready",
   "isEnd=ready",
+  "endDateString",
 ];

@@ -42,7 +42,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
   const outputFile = getCurrentActiveLogsSummaryFile(caseMonth);
 
   const widths = {
-    status: 13,
+    status: 17,
     referralId: 12,
     waitTime: 10,
     extraWait: 11,
@@ -57,10 +57,11 @@ const summarizeLogsAfterAcceptance = async (data) => {
     readyVsServerMs: 17,
     "isEnd>ready": 13,
     "isEnd=ready": 13,
+    endDateString: 20,
   };
 
   const row = {
-    status: "",
+    status: data.status || "",
     referralId: data.referralId,
     waitTime: data.waitTime,
     extraWait: data.extraWait || 0,
@@ -74,6 +75,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     readyVsServerMs: data.readySeenAt - data.endDateBasedServerDateMs,
     "isEnd>ready": data.isEndDateGreaterThanFinalCaseDate,
     "isEnd=ready": data.isEndDateEqualToFinalCaseDate,
+    endDateString: data.referralEndDate,
   };
 
   const exists = await checkPathExists(outputFile);
@@ -152,6 +154,7 @@ export default summarizeLogsAfterAcceptance;
 //     zeroSeenAt: 1778680706000,
 //     readySeenAt: 1778680707000,
 //     extraBackendDelayMs: 1000,
+//     referralEndDate: "13/05/2026 09:20:53 am",
 //   },
 // ];
 

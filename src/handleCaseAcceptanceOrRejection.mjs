@@ -40,6 +40,7 @@ const handleCaseAcceptanceOrRejection =
       referralEndTimestamp,
       providerName,
       endDateBasedServerDateMs,
+      referralEndDate,
     } = patient;
 
     try {
@@ -155,6 +156,20 @@ const handleCaseAcceptanceOrRejection =
 
       const diff = referralEndTimestamp - readySeenAt;
 
+      let extraWait = diff > 0 ? 0 : 2;
+
+      let extraBotMessages = [];
+
+      if (extraBackendDelayMs >= 2000) {
+        extraWait += extraWait > 0 ? 2 : 4;
+      }
+
+      if (extraBackendDelayMs < 1000) {
+        extraBotMessages.push(
+          `Found extra backend delay of \`${extraBackendDelayMs}\` Less than 1000 where referralId=\`${referralId}\``,
+        );
+      }
+
       let baseWaitingTime = +WAIT_FOR_ACCEPT_MS;
 
       if (Number.isNaN(baseWaitingTime)) {
@@ -163,12 +178,6 @@ const handleCaseAcceptanceOrRejection =
 
       if (!Number.isFinite(baseWaitingTime) || baseWaitingTime <= 0) {
         baseWaitingTime = 2000;
-      }
-
-      let extraWait = diff > 0 ? 0 : 2;
-
-      if (extraBackendDelayMs >= 2000) {
-        extraWait += extraWait > 0 ? 2 : 4;
       }
 
       const waitTime = baseWaitingTime + extraWait;
@@ -187,24 +196,26 @@ const handleCaseAcceptanceOrRejection =
         sleep(waitTime - 34).then(() => sendNtfyMessage(approvalMessage)),
       ];
 
+      await Promise.all(promises);
+
       const isTimeChanged = waitTime !== baseWaitingTime;
 
       if (isTimeChanged) {
-        promises.push(
-          sleep(waitTime).then(() =>
-            sendTelegramMessage(
-              `⚠️ waitTime auto-updated from \`${baseWaitingTime}\` to \`${waitTime}\` for referralId=\`${referralId}\``,
-            ),
-          ),
+        extraBotMessages.push(
+          `⚠️ waitTime auto-updated from \`${baseWaitingTime}\` to \`${waitTime}\` where referralId=\`${referralId}\``,
         );
-      }
 
-      await Promise.all(promises);
-
-      if (isTimeChanged) {
         updateEnvFile({
           WAIT_FOR_ACCEPT_MS: waitTime,
         });
+      }
+
+      if (extraBotMessages.length) {
+        await Promise.all(
+          extraBotMessages.map((message) =>
+            sleep(telegramTime).then(() => sendTelegramMessage(message)),
+          ),
+        );
       }
 
       await closePageSafely(page);
@@ -220,6 +231,7 @@ const handleCaseAcceptanceOrRejection =
         extraBackendDelayMs,
         isEndDateGreaterThanFinalCaseDate,
         isEndDateEqualToFinalCaseDate,
+        referralEndDate,
       };
 
       if (isAcceptanceAction) {
