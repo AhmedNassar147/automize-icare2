@@ -231,9 +231,10 @@ const currentProfile = "Profile 1";
       }))();
 
     if (RESEND_PATIENT_SUMMARY_FILE_PATH) {
-      await sleep(15_000); // delay to ensure everything is up before sending
+      await sleep(10_000); // delay to ensure everything is up before sending
       await sendRefferalsToWhatsAppAsExcel(
         sendWhatsappMessage,
+        sendTelegramMessage,
         RESEND_PATIENT_SUMMARY_FILE_PATH,
       );
     }
@@ -247,6 +248,7 @@ const currentProfile = "Profile 1";
           await processCollectReferralSummary(
             browser,
             sendWhatsappMessage,
+            sendTelegramMessage,
             FIRST_SUMMARY_REPORT_STARTS_AT,
             SUMMARY_REPORT_ENDS_AT,
           );
@@ -271,6 +273,7 @@ const currentProfile = "Profile 1";
           await processCollectReferralWeeklySummary(
             browser,
             sendWhatsappMessage,
+            sendTelegramMessage,
           );
           createConsoleMessage("✅ weekly report job done.", "info");
         } catch (err) {
@@ -296,6 +299,7 @@ const currentProfile = "Profile 1";
             await processCollectReferralWeeklySummary(
               browser,
               sendWhatsappMessage,
+              sendTelegramMessage,
               true,
             );
             createConsoleMessage(
@@ -324,6 +328,7 @@ const currentProfile = "Profile 1";
             await processCollectRefferalMonthlySummary(
               browser,
               sendWhatsappMessage,
+              sendTelegramMessage,
             );
             createConsoleMessage("✅ monthly report job done.", "info");
           } catch (err) {

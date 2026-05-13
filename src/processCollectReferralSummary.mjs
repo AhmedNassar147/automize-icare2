@@ -18,6 +18,7 @@ import { HOME_PAGE_URL, SUMMARY_TYPES } from "./constants.mjs";
 const processCollectReferralSummary = async (
   browser,
   sendWhatsappMessage,
+  sendTelegramMessage,
   firstSummaryReportStartsAt,
   summaryReportEndsAt,
 ) => {
@@ -67,6 +68,7 @@ const processCollectReferralSummary = async (
 
   const isSent = await sendSummaryExcelToWhatsapp(
     sendWhatsappMessage,
+    sendTelegramMessage,
     allNewPatients,
     SUMMARY_TYPES.NORMAL,
   );

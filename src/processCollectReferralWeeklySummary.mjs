@@ -82,6 +82,7 @@ const getLastThursdayToWednesdayRange = (baseDate = new Date()) => {
 const processCollectReferralWeeklySummary = async (
   browser,
   sendWhatsappMessage,
+  sendTelegramMessage,
   isMonthlySummary = false,
 ) => {
   const useCurrentMonthForSummary =
@@ -269,6 +270,7 @@ const processCollectReferralWeeklySummary = async (
 
   const isSent = await sendSummaryExcelToWhatsapp(
     sendWhatsappMessage,
+    sendTelegramMessage,
     fullPatients,
     SUMMARY_TYPES.WEEKLY,
   );

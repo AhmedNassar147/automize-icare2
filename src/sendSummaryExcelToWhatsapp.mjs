@@ -57,6 +57,7 @@ const styleSheet = (sheet) => {
 
 const sendSummaryExcelToWhatsapp = async (
   sendWhatsappMessage,
+  sendTelegramMessage,
   allPatients,
   summaryType = SUMMARY_TYPES.NORMAL,
 ) => {
@@ -191,14 +192,17 @@ const sendSummaryExcelToWhatsapp = async (
 
   const buffer = await workbook.xlsx.writeBuffer();
 
+  const files = [
+    {
+      fileName: fullFileTitle,
+      fileBase64: buffer.toString("base64"),
+      extension: "xlsx",
+    },
+  ];
+
+  await sendTelegramMessage(fullFileTitle, files);
   await sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-    files: [
-      {
-        fileName: fullFileTitle,
-        fileBase64: buffer.toString("base64"),
-        extension: "xlsx",
-      },
-    ],
+    files: files,
   });
 
   return true;

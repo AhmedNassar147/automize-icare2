@@ -26,6 +26,7 @@ const useCurrentMonth = false; // Set to true to use the current month instead o
 const processCollectRefferalMonthlySummary = async (
   browser,
   sendWhatsappMessage,
+  sendTelegramMessage,
 ) => {
   const { newPage: page, isLoggedIn } = await makeUserLoggedInOrOpenHomePage({
     browser,
@@ -110,6 +111,7 @@ const processCollectRefferalMonthlySummary = async (
 
   const isSent = await sendSummaryExcelToWhatsapp(
     sendWhatsappMessage,
+    sendTelegramMessage,
     fullPatients,
     SUMMARY_TYPES.MONTHLY,
   );

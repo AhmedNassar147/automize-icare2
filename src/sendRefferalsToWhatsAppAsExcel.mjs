@@ -10,12 +10,14 @@ import sendSummaryExcelToWhatsapp from "./sendSummaryExcelToWhatsapp.mjs";
 
 const sendRefferalsToWhatsAppAsExcel = async (
   sendWhatsappMessage,
+  sendTelegramMessage,
   filePath,
 ) => {
   const fileData = await readJsonFile(filePath, true);
 
   const isSent = await sendSummaryExcelToWhatsapp(
     sendWhatsappMessage,
+    sendTelegramMessage,
     fileData,
     SUMMARY_TYPES.NORMAL,
   );
