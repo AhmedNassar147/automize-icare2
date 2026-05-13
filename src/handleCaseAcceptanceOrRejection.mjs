@@ -166,7 +166,7 @@ const handleCaseAcceptanceOrRejection =
 
       if (extraBackendDelayMs < 1000) {
         extraBotMessages.push(
-          `Found extra backend delay of \`${extraBackendDelayMs}\` Less than 1000 where referralId=\`${referralId}\``,
+          `Please Tell \`Ahmed\` of this: Found extra backend delay of \`${extraBackendDelayMs}\` Less than 1000 where referralId=\`${referralId}\``,
         );
       }
 
