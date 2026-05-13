@@ -193,7 +193,7 @@ const handleCaseAcceptanceOrRejection =
 
       const approvalMessage = `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`;
 
-      const telegramTime = waitTime - 25;
+      const telegramTime = waitTime - 28;
 
       const promises = [
         sleep(waitTime).then(() =>
