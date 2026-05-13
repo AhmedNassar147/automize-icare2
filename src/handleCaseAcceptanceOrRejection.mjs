@@ -189,7 +189,7 @@ const handleCaseAcceptanceOrRejection =
       const approvalMessage = `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`;
 
       const telegramTime =
-        TG_CHAT_ID === "8075412902" ? waitTime : waitTime - 20;
+        TG_CHAT_ID === "8075412902" ? waitTime : waitTime - 10;
 
       const promises = [
         sleep(waitTime).then(() =>
