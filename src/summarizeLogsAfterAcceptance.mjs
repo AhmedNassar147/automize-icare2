@@ -38,43 +38,65 @@ const createPrettyRow = (row, widths) => {
 };
 
 const summarizeLogsAfterAcceptance = async (data) => {
-  const caseMonth = new Date(data.referralEndTimestamp).getMonth() + 1;
+  const {
+    waitTime,
+    extraWait,
+    referralEndTimestamp,
+    isEndDateGreaterThanFinalCaseDate,
+    isEndDateEqualToFinalCaseDate,
+    referralId,
+    endDateBasedServerDateMs,
+    readySeenAt,
+    zeroSeenAt,
+    extraBackendDelayMs,
+  } = data;
+
+  const caseMonth = new Date(referralEndTimestamp).getMonth() + 1;
   const outputFile = getCurrentActiveLogsSummaryFile(caseMonth);
 
   const widths = {
-    status: 17,
-    referralId: 12,
-    waitTime: 10,
-    extraWait: 11,
-    endTs: 15,
-    serverEndTs: 13,
-    zeroSeenAt: 15,
-    readySeenAt: 15,
-    backendDelayMs: 16,
-    endVsServerMs: 15,
-    // readyVsZeroMs: 15,
-    "endVsReady(diff)": 18,
-    readyVsServerMs: 17,
-    "isEnd>ready": 13,
-    "isEnd=ready": 13,
+    ID: 6,
+    waitTime: 8,
+    end: 13,
+    serverEnd: 13,
+    endVsServer: 11,
+    readyAt: 13,
+    "endVsReady(diff)": 16,
+    zeroAt: 13,
+    backendDelay: 12,
+    readyVsServer: 13,
+    status: 16,
     endDateString: 20,
   };
 
+  let endToReady = "";
+
+  if (referralEndTimestamp > readySeenAt) {
+    endToReady = ">";
+  }
+
+  if (referralEndTimestamp === readySeenAt) {
+    endToReady = "=";
+  }
+
+  if (referralEndTimestamp < readySeenAt) {
+    endToReady = "<";
+  }
+
+  const diff = referralEndTimestamp - readySeenAt;
+
   const row = {
     status: data.status || "",
-    referralId: data.referralId,
-    waitTime: data.waitTime,
-    extraWait: data.extraWait || 0,
-    endTs: data.referralEndTimestamp,
-    serverEndTs: data.endDateBasedServerDateMs,
-    endVsServerMs: data.referralEndTimestamp - data.endDateBasedServerDateMs,
-    zeroSeenAt: data.zeroSeenAt,
-    readySeenAt: data.readySeenAt,
-    "endVsReady(diff)": data.referralEndTimestamp - data.readySeenAt,
-    backendDelayMs: data.extraBackendDelayMs,
-    readyVsServerMs: data.readySeenAt - data.endDateBasedServerDateMs,
-    "isEnd>ready": data.isEndDateGreaterThanFinalCaseDate,
-    "isEnd=ready": data.isEndDateEqualToFinalCaseDate,
+    ID: referralId,
+    waitTime: `${waitTime}_${extraWait || 0}`,
+    end: referralEndTimestamp,
+    serverEnd: endDateBasedServerDateMs,
+    endVsServer: referralEndTimestamp - endDateBasedServerDateMs,
+    readyAt: readySeenAt,
+    zeroAt: zeroSeenAt,
+    "endVsReady(diff)": `${diff} - (${endToReady})`,
+    backendDelay: extraBackendDelayMs,
+    readyVsServer: readySeenAt - endDateBasedServerDateMs,
     endDateString: data.referralEndDate,
   };
 
@@ -107,9 +129,6 @@ export default summarizeLogsAfterAcceptance;
 //     referralId: 376980,
 //     waitTime: 2012,
 //     extraWait: 2,
-//     isEndDateGreaterThanFinalCaseDate: false,
-//     isEndDateEqualToFinalCaseDate: true,
-//     diff: 0,
 //     referralEndTimestamp: 1778652562000,
 //     endDateBasedServerDateMs: 1778652561000,
 //     zeroSeenAt: 1778652560000,
@@ -120,9 +139,6 @@ export default summarizeLogsAfterAcceptance;
 //     status: "blocked",
 //     referralId: 376981,
 //     waitTime: 2012,
-//     isEndDateGreaterThanFinalCaseDate: true,
-//     isEndDateEqualToFinalCaseDate: false,
-//     diff: 1000,
 //     referralEndTimestamp: 1778653039000,
 //     endDateBasedServerDateMs: 1778653037000,
 //     zeroSeenAt: 1778653037000,
@@ -133,9 +149,6 @@ export default summarizeLogsAfterAcceptance;
 //     status: "were blocked",
 //     referralId: 376983,
 //     waitTime: 2012,
-//     isEndDateGreaterThanFinalCaseDate: false,
-//     isEndDateEqualToFinalCaseDate: true,
-//     diff: 0,
 //     referralEndTimestamp: 1778653253000,
 //     endDateBasedServerDateMs: 1778653252000,
 //     zeroSeenAt: 1778653252000,
@@ -146,10 +159,7 @@ export default summarizeLogsAfterAcceptance;
 //     status: "",
 //     referralId: 377042,
 //     waitTime: 2016,
-//     isEndDateGreaterThanFinalCaseDate: true,
-//     isEndDateEqualToFinalCaseDate: false,
 //     referralEndTimestamp: 1778680708000,
-//     claimableServerTime: 1778680707000,
 //     endDateBasedServerDateMs: 1778680706000,
 //     zeroSeenAt: 1778680706000,
 //     readySeenAt: 1778680707000,

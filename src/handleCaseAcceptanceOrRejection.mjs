@@ -169,12 +169,6 @@ const handleCaseAcceptanceOrRejection =
         onZeroSecond,
       });
 
-      const isEndDateGreaterThanFinalCaseDate =
-        referralEndTimestamp > readySeenAt;
-
-      const isEndDateEqualToFinalCaseDate =
-        referralEndTimestamp === readySeenAt;
-
       const diff = referralEndTimestamp - readySeenAt;
 
       let extraWait = diff > 0 ? 0 : 2;
@@ -240,8 +234,6 @@ const handleCaseAcceptanceOrRejection =
         zeroSeenAt,
         readySeenAt,
         extraBackendDelayMs,
-        isEndDateGreaterThanFinalCaseDate,
-        isEndDateEqualToFinalCaseDate,
         referralEndDate,
       };
 

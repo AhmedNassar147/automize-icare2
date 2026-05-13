@@ -197,19 +197,16 @@ export const SUMMARY_TYPES = {
 export const LOGS_SUMMARY_SEPARATOR = "|";
 
 export const LOGS_SUMMARY_HEADERS = [
-  "status",
-  "referralId",
+  "ID",
   "waitTime",
-  "extraWait",
-  "endTs",
-  "serverEndTs",
-  "endVsServerMs",
-  "zeroSeenAt",
-  "readySeenAt",
+  "end",
+  "readyAt",
   "endVsReady(diff)",
-  "backendDelayMs",
-  "readyVsServerMs",
-  "isEnd>ready",
-  "isEnd=ready",
+  "zeroAt",
+  "backendDelay",
+  "serverEnd",
+  "endVsServer",
+  "readyVsServer",
+  "status",
   "endDateString",
 ];
