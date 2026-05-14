@@ -171,7 +171,7 @@ const handleCaseAcceptanceOrRejection =
 
       const diff = referralEndTimestamp - readySeenAt;
 
-      let extraWait = diff > 0 ? 0 : diff < 0 ? 4 : 2;
+      let extraWait = diff > 0 ? 0 : diff < 0 ? 2 : 2;
 
       if (diff < 0) {
         extraBotMessages.push(
