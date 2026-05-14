@@ -171,7 +171,13 @@ const handleCaseAcceptanceOrRejection =
 
       const diff = referralEndTimestamp - readySeenAt;
 
-      let extraWait = diff > 0 ? 0 : 2;
+      let extraWait = diff > 0 ? 0 : diff < 0 ? 4 : 2;
+
+      if (diff < 0) {
+        extraBotMessages.push(
+          `Please Tell \`Ahmed\` of this: Found diff of \`${diff}\` Less than 0 where referralId=\`${referralId}\``,
+        );
+      }
 
       if (extraBackendDelayMs >= 2000) {
         extraWait += extraWait > 0 ? 2 : 4;
