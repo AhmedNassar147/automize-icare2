@@ -55,13 +55,13 @@ const handleCaseAcceptanceOrRejection =
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
 
-      const folderPathe = isAcceptanceAction
+      const folderPath = isAcceptanceAction
         ? generatedPdfsPathForAcceptance
         : generatedPdfsPathForRejection;
 
       const fileName = `${actionType}-${referralId}.pdf`;
 
-      const filePath = join(folderPathe, fileName);
+      const filePath = join(folderPath, fileName);
 
       const filebase64 = await pdfToBase64(filePath);
 
