@@ -28,8 +28,10 @@ const buildButtons = (referralId) => ({
       { text: "❌ Reject", callback_data: `reject_${referralId}` },
       { text: "❌ Cancel", callback_data: `cancel_${referralId}` },
     ],
-    [{ text: "🔕 No Reply", callback_data: `noreply_${referralId}` }],
-    [{ text: "⏳ Left Time", callback_data: `lefttime_${referralId}` }],
+    [
+      { text: "🔕 No Reply", callback_data: `noreply_${referralId}` },
+      { text: "⏳ Left Time", callback_data: `lefttime_${referralId}` },
+    ],
   ],
 });
 
@@ -273,8 +275,13 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
     const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
 
+    //     [1:15:23 AM]  unhandledRejection:   Error: Cannot destructure property 'referralId' of 'firstGoindToAccept' as it is undefined.
+    // TypeError: Cannot destructure property 'referralId' of 'firstGoindToAccept' as it is undefined.
+    //     at Object.callback (file:///C:/work/tadawi-auto/src/installTelegramBotApi.mjs:283:13)
+    // [1:15:23 AM]
+
     if (!firstGoindToAccept) {
-      await sendBotMessage(
+      return await sendBotMessage(
         chatId,
         `⛔ Currently there is no patient going to be accepted.`,
       );

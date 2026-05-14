@@ -171,7 +171,7 @@ const handleCaseAcceptanceOrRejection =
 
       const diff = referralEndTimestamp - readySeenAt;
 
-      let extraWait = diff > 0 ? 0 : diff < 0 ? 2 : 2;
+      let extraWait = diff > 0 ? 0 : diff < 0 ? -1 : 2;
 
       if (diff < 0) {
         extraBotMessages.push(
@@ -180,7 +180,7 @@ const handleCaseAcceptanceOrRejection =
       }
 
       if (extraBackendDelayMs >= 2000) {
-        extraWait += extraWait > 0 ? 2 : 4;
+        extraWait += extraWait === 0 ? 4 : 2;
       }
 
       if (extraBackendDelayMs < 1000) {
