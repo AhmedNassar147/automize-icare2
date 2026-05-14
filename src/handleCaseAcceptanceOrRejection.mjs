@@ -51,7 +51,6 @@ const handleCaseAcceptanceOrRejection =
         NTFY_TOPIC,
         NEW_WAITING_TIME_FOR_PATIENT,
         NEW_EXTRA_WAITING_TIME_FOR_PATIENT,
-        TG_CHAT_ID,
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
@@ -188,16 +187,13 @@ const handleCaseAcceptanceOrRejection =
 
       const approvalMessage = `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`;
 
-      const telegramTime =
-        TG_CHAT_ID === "8075412902" ? waitTime : waitTime - 10;
-
       const promises = [
         sleep(waitTime).then(() =>
           sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
             message: approvalMessage,
           }),
         ),
-        sleep(telegramTime).then(() => sendTelegramMessage(approvalMessage)),
+        sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
         sleep(waitTime - 34).then(() => sendNtfyMessage(approvalMessage)),
       ];
 
@@ -218,7 +214,7 @@ const handleCaseAcceptanceOrRejection =
       if (extraBotMessages.length) {
         await Promise.all(
           extraBotMessages.map((message, index) =>
-            sleep(Math.floor(telegramTime / 2 + index * 20)).then(() =>
+            sleep(Math.floor(waitTime / 2 + index * 20)).then(() =>
               sendTelegramMessage(message),
             ),
           ),
