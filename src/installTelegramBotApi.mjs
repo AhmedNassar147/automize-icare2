@@ -26,12 +26,10 @@ const buildButtons = (referralId) => ({
     [
       { text: "✅ Accept", callback_data: `accept_${referralId}` },
       { text: "❌ Reject", callback_data: `reject_${referralId}` },
-    ],
-    [
       { text: "❌ Cancel", callback_data: `cancel_${referralId}` },
-      { text: "🔕 No Reply", callback_data: `noreply_${referralId}` },
     ],
-    // [{ text: "⏳ Get Time Left", callback_data: `timeleft_${referralId}` }],
+    [{ text: "🔕 No Reply", callback_data: `noreply_${referralId}` }],
+    [{ text: "⏳ Left Time", callback_data: `lefttime_${referralId}` }],
   ],
 });
 
@@ -78,8 +76,11 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
   const getAllowedList = () =>
     process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || [];
 
-  const sendBotMessage = (chatId, message) =>
-    bot.sendMessage(chatId, message, { parse_mode: "Markdown" });
+  const sendBotMessage = (chatId, message, options = {}) =>
+    bot.sendMessage(chatId, message, {
+      parse_mode: "Markdown",
+      ...(options || null),
+    });
 
   const pendingContactRequests = new Map();
 
@@ -95,9 +96,10 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       chatId,
       fromName,
       allowedList,
+      msgId: msg.message_id,
       unAuthorizedMessage: isAuthorized
         ? undefined
-        : `⛔ Hi, \`${fromName}\` you are not Authorized.`,
+        : `⛔ \`${fromName}\` you are not Authorized.`,
     };
   };
 
@@ -260,6 +262,38 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
+  bot.onText(/\/f_accept$/, async (msg, match) => {
+    const { unAuthorizedMessage, chatId, fromName, msgId } =
+      getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
+
+    if (!firstGoindToAccept) {
+      await sendBotMessage(
+        chatId,
+        `⛔ Currently there is no patient going to be accepted.`,
+      );
+    }
+
+    const { referralId, patientName } = firstGoindToAccept;
+    const { message, timeMs } = patientsStore.getReferralLeftTime(referralId);
+
+    await sendBotMessage(
+      chatId,
+      `✅ Referral ID: \`${referralId}\`\n` +
+        `Patient: ${patientName}\n` +
+        `${message}`,
+      {
+        reply_to_message_id: msgId,
+      },
+    );
+  });
+
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {
     await bot.answerCallbackQuery(queryId, {
       text: message,
@@ -347,6 +381,13 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         return reply(messageReply);
       }
 
+      if (action === "lefttime") {
+        const { message, timeMs } =
+          patientsStore.getReferralLeftTime(referralId);
+
+        return reply(message);
+      }
+
       const timeValidation = patientsStore.canStillProcessPatient(referralId);
 
       if (!timeValidation.success) {
@@ -425,7 +466,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
       if (message) {
         const { text, parse_mode } = prepareMessage(message);
-        const res = await bot.sendMessage(TG_CHAT_ID, text, {
+        const res = await sendBotMessage(TG_CHAT_ID, text, {
           parse_mode: parse_mode,
           disable_notification: false,
           ...(targetReferralIdForButtons && {

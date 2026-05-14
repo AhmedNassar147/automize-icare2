@@ -32,7 +32,7 @@ async function safeWritePatientData(data, retries = 3, delay = 200) {
     try {
       await writePatientData(
         (data || []).reverse(),
-        COLLECTD_PATIENTS_FILE_NAME
+        COLLECTD_PATIENTS_FILE_NAME,
       );
       return;
     } catch (err) {
@@ -40,7 +40,7 @@ async function safeWritePatientData(data, retries = 3, delay = 200) {
         createConsoleMessage(
           err,
           "error",
-          "❌ Failed to write patient data after retries:"
+          "❌ Failed to write patient data after retries:",
         );
       }
       await new Promise((res) => setTimeout(res, delay));
@@ -180,20 +180,20 @@ class PatientStore extends EventEmitter {
     try {
       const acceptanceFilePath = join(
         generatedPdfsPathForAcceptance,
-        `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`
+        `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`,
       );
 
       const rejectionFilePath = join(
         generatedPdfsPathForRejection,
-        `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`
+        `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`,
       );
 
       await Promise.allSettled([
         checkPathExists(acceptanceFilePath).then(
-          (exists) => exists && unlink(acceptanceFilePath)
+          (exists) => exists && unlink(acceptanceFilePath),
         ),
         checkPathExists(rejectionFilePath).then(
-          (exists) => exists && unlink(rejectionFilePath)
+          (exists) => exists && unlink(rejectionFilePath),
         ),
       ]);
     } catch (error) {
@@ -212,7 +212,7 @@ class PatientStore extends EventEmitter {
   }
 
   findPatientByReferralId(referralId) {
-    const patient = this.patientsById.get(referralId);
+    const patient = this.getPatientByReferralId(referralId);
     return { patient, message: patient ? undefined : USER_MESSAGES.notFound };
   }
 
@@ -270,8 +270,8 @@ class PatientStore extends EventEmitter {
         message: isAccepting
           ? USER_MESSAGES.alreadyScheduledAccept
           : this.goingPatientsToBeRejected.has(referralId)
-          ? USER_MESSAGES.alreadyScheduledReject
-          : USER_MESSAGES.scheduleRejectSuccess,
+            ? USER_MESSAGES.alreadyScheduledReject
+            : USER_MESSAGES.scheduleRejectSuccess,
       };
     }
 
@@ -289,7 +289,7 @@ class PatientStore extends EventEmitter {
         this.emit(eventName, currentPatient);
       },
       referralId,
-      isAccepting
+      isAccepting,
     );
 
     actionSet.add(referralId);
@@ -304,7 +304,7 @@ class PatientStore extends EventEmitter {
           [
             storedPatient?.providerAction,
             isAccepting ? "accepted" : "rejected",
-          ].filter(Boolean)
+          ].filter(Boolean),
         ),
       ].join(" then ");
 
@@ -383,7 +383,7 @@ class PatientStore extends EventEmitter {
     }
 
     [this.goingPatientsToBeAccepted, this.goingPatientsToBeRejected].forEach(
-      (set) => set.delete(referralId)
+      (set) => set.delete(referralId),
     );
 
     const { patient } = this.findPatientByReferralId(referralId);
@@ -396,7 +396,7 @@ class PatientStore extends EventEmitter {
 
       const actionNames = [
         ...new Set(
-          [updatedPatient?.providerAction, "cancelled"].filter(Boolean)
+          [updatedPatient?.providerAction, "cancelled"].filter(Boolean),
         ),
       ].join(" then ");
 
@@ -415,6 +415,50 @@ class PatientStore extends EventEmitter {
     }
 
     return { success: true, message: USER_MESSAGES.cancelSuccess };
+  }
+
+  getFirstGoingToAccept() {
+    return this.getAllPatients()
+      ?.filter(
+        (patient) =>
+          patient?.userActionName === "accept" &&
+          Number.isFinite(patient?.referralEndTimestamp),
+      )
+      .reduce(
+        (earliest, current) =>
+          !earliest ||
+          current.referralEndTimestamp < earliest.referralEndTimestamp
+            ? current
+            : earliest,
+        undefined,
+      );
+  }
+
+  getReferralLeftTime(referralId) {
+    const { message, patient } = this.findPatientByReferralId(referralId);
+
+    if (message) {
+      return {
+        message,
+        timeMs: undefined,
+      };
+    }
+
+    const leftMs = Math.max(patient.referralEndTimestamp - Date.now(), 0);
+
+    const minutes = Math.floor(leftMs / 60000);
+    const seconds = Math.floor((leftMs % 60000) / 1000);
+    const milliseconds = leftMs % 1000;
+
+    const formatted =
+      `Left Time: ${minutes} minute(s), ` +
+      `${seconds} second(s), and ` +
+      `${String(milliseconds).padStart(3, "0")} ms`;
+
+    return {
+      message: formatted,
+      timeMs: leftMs,
+    };
   }
 
   has(referralId) {
