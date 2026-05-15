@@ -466,13 +466,12 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       await sendBotMessage(
         chatId,
         `✅ Code updated successfully!\n\n` +
-          `📦 *Changes:*\n\`\`\`\n${logPreview || "No log available"}\n\`\`\`\n` +
+          `📦 *Changes:*\n\`\`\`\n${logPreview || "No log available"}\n\`\`\`` +
           `🔁 *Current commit:* \`${beforeHash}\`\n\n` +
           `⏳ Pulling and restarting server...`,
+        `🔁 *Please check if the app is running*`,
       );
 
-      await sleep(500);
-      await sendBotMessage(chatId, `🔁 *Please check if the app is running*`);
       await sleep(1000); // wait after second message before pulling
       await execAsync("git pull --rebase origin master", gitOptions);
     } catch (err) {
