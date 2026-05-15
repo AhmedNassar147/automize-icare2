@@ -438,10 +438,10 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       );
       const beforeHash = beforeHashRaw.trim();
 
-      // 2. Fetch latest from remote
+      // 3. Fetch latest from remote
       await execAsync("git fetch origin", gitOptions);
 
-      // 3. Check if already up to date
+      // 4. Check if already up to date
       const { stdout: statusRaw } = await execAsync(
         "git status -uno",
         gitOptions,
