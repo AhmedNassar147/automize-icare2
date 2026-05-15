@@ -428,7 +428,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       if (isUpToDate) {
         return sendBotMessage(
           chatId,
-          `✅ Already up to date\\. No restart needed\\.\n\`Commit: ${beforeHash}\``,
+          `✅ Already up to date. No restart needed.\n\`Commit: ${beforeHash}\``,
         );
       }
 
