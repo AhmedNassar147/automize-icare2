@@ -473,6 +473,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       const log = logRaw.trim();
 
       // 8. Notify user then wait for nodemon to restart
+      // 8. testing new update
       await sendBotMessage(
         chatId,
         `✅ Code updated successfully!\n\n` +
