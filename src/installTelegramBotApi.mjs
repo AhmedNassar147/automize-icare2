@@ -416,7 +416,22 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     try {
       await sendBotMessage(chatId, `🔄 Checking for updates...`);
 
-      // 1. Get current commit before pull
+      // 4. Check for local uncommitted changes
+      const { stdout: localChangesRaw } = await execAsync(
+        "git status --porcelain",
+        gitOptions,
+      );
+      const localChanges = localChangesRaw.trim();
+
+      if (localChanges) {
+        return sendBotMessage(
+          chatId,
+          `⚠️ Local changes detected — cannot pull:\n\`\`\`\n${localChanges}\n\`\`\`\n\n` +
+            `Please tell Ahmed Nassar to fix this.`,
+        );
+      }
+
+      // 1. Get current commit
       const { stdout: beforeHashRaw } = await execAsync(
         "git rev-parse --short HEAD",
         gitOptions,
@@ -440,54 +455,26 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         );
       }
 
-      // 4. Check for local uncommitted changes
-      const { stdout: localChangesRaw } = await execAsync(
-        "git status --porcelain",
+      // 5. Get commits that WILL change (before pulling)
+      const { stdout: logPreviewRaw } = await execAsync(
+        "git log HEAD..origin/master --oneline",
         gitOptions,
       );
-      const localChanges = localChangesRaw.trim();
+      const logPreview = logPreviewRaw.trim();
 
-      if (localChanges) {
-        return sendBotMessage(
-          chatId,
-          `⚠️ Local changes detected — cannot pull:\n\`\`\`\n${localChanges}\n\`\`\`\n\n` +
-            `Please tell Ahmed Nassar to fix this.`,
-        );
-      }
-
-      // 5. Safe to pull
-      await execAsync("git pull --rebase origin master", gitOptions);
-
-      // 6. Get new commit after pull
-      const { stdout: afterHashRaw } = await execAsync(
-        "git rev-parse --short HEAD",
-        gitOptions,
-      );
-      const afterHash = afterHashRaw.trim();
-
-      // 7. Get commit log of what changed
-      const { stdout: logRaw } = await execAsync(
-        `git log ${beforeHash}..${afterHash} --oneline`,
-        gitOptions,
-      );
-      const log = logRaw.trim();
-
-      // 8. Notify user then wait for nodemon to restart
-      // 8. testing new update
+      // 6. Notify user BEFORE pulling — message sends before nodemon restarts
       await sendBotMessage(
         chatId,
         `✅ Code updated successfully!\n\n` +
-          `📦 *Changes:*\n\`\`\`\n${log || "No log available"}\n\`\`\`\n\n` +
-          `🔁 *Before:* \`${beforeHash}\`\n` +
-          `🔁 *After:*  \`${afterHash}\`\n\n` +
-          `⏳ Restarting server...`,
+          `📦 *Changes:*\n\`\`\`\n${logPreview || "No log available"}\n\`\`\`\n\n` +
+          `🔁 *Current commit:* \`${beforeHash}\`\n\n` +
+          `⏳ Pulling and restarting server...`,
       );
 
-      await sleep(1500);
-      await sendBotMessage(
-        chatId,
-        `✅ code updated successfully! and app restarted please check if app running or not`,
-      );
+      await sleep(500);
+      await sendBotMessage(chatId, `🔁 *Please check if the app is running*`);
+      await sleep(1000); // wait after second message before pulling
+      await execAsync("git pull --rebase origin master", gitOptions);
     } catch (err) {
       createConsoleMessage(err, "error", "❌ updatecode failed:");
       await sendBotMessage(
