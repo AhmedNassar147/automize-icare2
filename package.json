@@ -7,7 +7,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "nodemon --watch src --ext mjs,js,json ./src/index.mjs"
+    "start": "nodemon --watch src --ext mjs,js,json --ignore .git ./src/index.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^12.2.0",

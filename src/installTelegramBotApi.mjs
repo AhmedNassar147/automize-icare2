@@ -5,7 +5,8 @@
  */
 import TelegramBot from "node-telegram-bot-api";
 import { PDFParse } from "pdf-parse";
-import { execSync } from "child_process";
+import { exec } from "child_process";
+import { promisify } from "util";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import {
   createPatientRowKey,
@@ -18,6 +19,8 @@ import mergeAllToPdf from "./mergeFilesToOne.mjs";
 import compressPdfGentlly from "./compressPdfGentlly.mjs";
 import formatFilesToTelegram from "./formatFilesToTelgram.mjs";
 import sleep from "./sleep.mjs";
+
+const execAsync = promisify(exec);
 
 // https://t.me/td_cases_bot
 
@@ -414,16 +417,21 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       await sendBotMessage(chatId, `🔄 Checking for updates...`);
 
       // 1. Get current commit before pull
-      const beforeHash = execSync("git rev-parse --short HEAD", gitOptions)
-        .toString()
-        .trim();
+      const { stdout: beforeHashRaw } = await execAsync(
+        "git rev-parse --short HEAD",
+        gitOptions,
+      );
+      const beforeHash = beforeHashRaw.trim();
 
       // 2. Fetch latest from remote
-      execSync("git fetch origin", gitOptions);
+      await execAsync("git fetch origin", gitOptions);
 
       // 3. Check if already up to date
-      const status = execSync("git status -uno", gitOptions).toString().trim();
-      const isUpToDate = status.includes("Your branch is up to date");
+      const { stdout: statusRaw } = await execAsync(
+        "git status -uno",
+        gitOptions,
+      );
+      const isUpToDate = statusRaw.trim().includes("Your branch is up to date");
 
       if (isUpToDate) {
         return sendBotMessage(
@@ -433,45 +441,52 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       }
 
       // 4. Check for local uncommitted changes
-      const localChanges = execSync("git status --porcelain", gitOptions)
-        .toString()
-        .trim();
+      const { stdout: localChangesRaw } = await execAsync(
+        "git status --porcelain",
+        gitOptions,
+      );
+      const localChanges = localChangesRaw.trim();
 
       if (localChanges) {
         return sendBotMessage(
           chatId,
           `⚠️ Local changes detected — cannot pull:\n\`\`\`\n${localChanges}\n\`\`\`\n\n` +
-            `Please Tell ahmed nassar to fix this\\.`,
+            `Please tell Ahmed Nassar to fix this.`,
         );
       }
 
       // 5. Safe to pull
-      execSync("git pull --rebase origin master", gitOptions);
+      await execAsync("git pull --rebase origin master", gitOptions);
 
       // 6. Get new commit after pull
-      const afterHash = execSync("git rev-parse --short HEAD", gitOptions)
-        .toString()
-        .trim();
+      const { stdout: afterHashRaw } = await execAsync(
+        "git rev-parse --short HEAD",
+        gitOptions,
+      );
+      const afterHash = afterHashRaw.trim();
 
       // 7. Get commit log of what changed
-      const log = execSync(
+      const { stdout: logRaw } = await execAsync(
         `git log ${beforeHash}..${afterHash} --oneline`,
         gitOptions,
-      )
-        .toString()
-        .trim();
+      );
+      const log = logRaw.trim();
 
       // 8. Notify user then wait for nodemon to restart
       await sendBotMessage(
         chatId,
-        `✅ Code updated successfully\\!\n\n` +
+        `✅ Code updated successfully!\n\n` +
           `📦 *Changes:*\n\`\`\`\n${log || "No log available"}\n\`\`\`\n\n` +
           `🔁 *Before:* \`${beforeHash}\`\n` +
           `🔁 *After:*  \`${afterHash}\`\n\n` +
-          `⏳ Restarting server\\.\\.\\.`,
+          `⏳ Restarting server...`,
       );
 
       await sleep(1500);
+      await sendBotMessage(
+        chatId,
+        `✅ code updated successfully! and app restarted please check if app running or not`,
+      );
     } catch (err) {
       createConsoleMessage(err, "error", "❌ updatecode failed:");
       await sendBotMessage(
