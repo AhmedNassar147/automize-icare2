@@ -390,7 +390,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
     await sendBotMessage(
       chatId,
-      `✅ Auto waiting is ${isActive ? "enabled" : "disabled"} `,
+      `✅ Auto waiting just ${isActive ? "enabled" : "disabled"} `,
     );
   });
 
