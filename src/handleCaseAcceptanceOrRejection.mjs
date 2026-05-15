@@ -51,6 +51,7 @@ const handleCaseAcceptanceOrRejection =
         NTFY_TOPIC,
         NEW_WAITING_TIME_FOR_PATIENT,
         NEW_EXTRA_WAITING_TIME_FOR_PATIENT,
+        ENABLE_AUTO_WAITING,
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
@@ -171,22 +172,26 @@ const handleCaseAcceptanceOrRejection =
 
       const diff = referralEndTimestamp - readySeenAt;
 
-      let extraWait = diff > 0 ? 0 : diff < 0 ? -1 : 2;
+      let extraWait = 0;
 
-      if (diff < 0) {
-        extraBotMessages.push(
-          `Please Tell \`Ahmed\` of this: Found diff of \`${diff}\` Less than 0 where referralId=\`${referralId}\``,
-        );
-      }
+      if (ENABLE_AUTO_WAITING === "1") {
+        extraWait = diff > 0 ? 0 : diff < 0 ? -1 : 2;
 
-      if (extraBackendDelayMs >= 2000) {
-        extraWait += extraWait === 0 ? 4 : 2;
-      }
+        if (diff < 0) {
+          extraBotMessages.push(
+            `Please Tell \`Ahmed\` of this: Found diff of \`${diff}\` Less than 0 where referralId=\`${referralId}\``,
+          );
+        }
 
-      if (extraBackendDelayMs < 1000) {
-        extraBotMessages.push(
-          `Please Tell \`Ahmed\` of this: Found extra backend delay of \`${extraBackendDelayMs}\` Less than 1000 where referralId=\`${referralId}\``,
-        );
+        if (extraBackendDelayMs >= 2000) {
+          extraWait += extraWait === 0 ? 4 : 2;
+        }
+
+        if (extraBackendDelayMs < 1000) {
+          extraBotMessages.push(
+            `Please Tell \`Ahmed\` of this: Found extra backend delay of \`${extraBackendDelayMs}\` Less than 1000 where referralId=\`${referralId}\``,
+          );
+        }
       }
 
       const waitTime = baseWaitingTime + extraWait;

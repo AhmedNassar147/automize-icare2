@@ -140,7 +140,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     setAutoWait: {
       value: /\/auto_wait (\d+)/,
       desc: "enable auto update wait time",
-      example: "/auto_wait y OR /auto_wait n",
+      example: "/auto_wait 1 OR /auto_wait 0",
     },
     cmds: {
       value: /\/cmds$/,
@@ -350,7 +350,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       return;
     }
 
-    const isAutoWaitingActive = process.env.ENABLE_AUTO_WAITING === "Y";
+    const isAutoWaitingActive = process.env.ENABLE_AUTO_WAITING === "1";
 
     await sendBotMessage(
       chatId,
@@ -367,16 +367,16 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       return;
     }
 
-    const value = (match[1] || "").toLowerCase();
+    const value = match[1] || "";
 
-    if (!["y", "n"].includes(value)) {
+    if (!["1", "0"].includes(value)) {
       return await sendBotMessage(
         chatId,
-        `⛔ Invalid value. Usage: /auto_wait \`y or n\` LIKE: /auto_wait n`,
+        `⛔ Invalid value. Usage: /auto_wait \`1 or 0\` LIKE: /auto_wait 1`,
       );
     }
 
-    const isActive = value === "y";
+    const isActive = value === "1";
     const isSame = process.env.ENABLE_AUTO_WAITING === value;
 
     if (isSame) {
