@@ -15,7 +15,7 @@ import getMimeType from "./getMimeType.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import mergeAllToPdf from "./mergeFilesToOne.mjs";
 import compressPdfGentlly from "./compressPdfGentlly.mjs";
-import containsExcludedText from "./containsExcludedText.mjs";
+import formatFilesToTelegram from "./formatFilesToTelgram.mjs";
 
 // https://t.me/td_cases_bot
 
@@ -275,15 +275,13 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
     const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
 
-    //     [1:15:23 AM]  unhandledRejection:   Error: Cannot destructure property 'referralId' of 'firstGoindToAccept' as it is undefined.
-    // TypeError: Cannot destructure property 'referralId' of 'firstGoindToAccept' as it is undefined.
-    //     at Object.callback (file:///C:/work/tadawi-auto/src/installTelegramBotApi.mjs:283:13)
-    // [1:15:23 AM]
-
     if (!firstGoindToAccept) {
       return await sendBotMessage(
         chatId,
         `⛔ Currently there is no patient going to be accepted.`,
+        {
+          reply_to_message_id: msgId,
+        },
       );
     }
 
@@ -484,38 +482,15 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         messageId = res.message_id;
       }
 
-      if (!_files?.length) return;
+      const files = await formatFilesToTelegram(_files);
 
-      const fileChecks = await Promise.all(
-        _files.map(async (file) => ({
-          file,
-          exclude: await containsExcludedText(file),
-        })),
-      );
-
-      const files = fileChecks
-        .filter(({ exclude, file }) => {
-          if (exclude) {
-            createConsoleMessage(`⏩ Excluding file: ${file.fileName}`, "warn");
-          }
-          return !exclude;
-        })
-        .map(({ file }) => file);
+      if (!files?.length) return;
 
       const photos = [];
       const docs = [];
       const excelFiles = [];
 
       for (const file of files) {
-        // Skip files that failed to download
-        if (file.downloadError || !file.fileBase64) {
-          createConsoleMessage(
-            `⚠️ Skipping file ${file.fileName} — ${file.downloadError || "no base64"} for targetReferralIdForButtons=${targetReferralIdForButtons}`,
-            "warn",
-          );
-          continue;
-        }
-
         const cleanBase64 = file.fileBase64
           .replace(/^data:.*?base64,/, "")
           .trim();

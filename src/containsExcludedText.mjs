@@ -4,6 +4,7 @@
  *
  */
 import { PDFParse } from "pdf-parse";
+// import formatFilesToTelegram from "./formatFilesToTelgram.mjs";
 // import createConsoleMessage from "./createConsoleMessage.mjs";
 // import { readFile } from "fs/promises";
 // import { basename, extname } from "path";
@@ -43,11 +44,26 @@ const containsExcludedText = async ({ fileBase64, extension }) => {
     const info = await parser.getInfo();
     const nonNormalizedTitle = info.info?.Title || "";
     const title = normalizeStr(nonNormalizedTitle || "");
+    const producer = (info.info?.Producer || "").toLowerCase().trim();
 
     // createConsoleMessage(
-    //   `PDF Title: "${title}" | Producer: "${info.info?.Producer || ""} | nonNormalizedTitle: "${nonNormalizedTitle}"`,
+    //   `PDF Title: "${title}" | Producer: "${producer || ""} | nonNormalizedTitle: "${nonNormalizedTitle}"`,
     //   "info",
     // );
+
+    // Garbled title = contains ? characters (encoding failure)
+    const isGarbledTitle =
+      nonNormalizedTitle.includes("?") &&
+      !nonNormalizedTitle.match(/[\u0600-\u06FFa-zA-Z0-9]/);
+
+    const isExcludedByProducer =
+      // Acrobat Distiller + garbled title = insurance file printed via PostScript
+      producer.includes("acrobat distiller") && isGarbledTitle;
+
+    if (isExcludedByProducer) {
+      await parser.destroy();
+      return true;
+    }
 
     const _isExcludedByTitle = EXCLUDED_TITLES.some(
       (t) => nonNormalizedTitle.includes(t), // no normalizeStr — keep raw to match encoding
@@ -64,7 +80,7 @@ const containsExcludedText = async ({ fileBase64, extension }) => {
     }
 
     // Fallback — check extracted text + links (for non-image PDFs)
-    const result = await parser.getText({ first: 2 });
+    const result = await parser.getText({ first: 3 });
     const text = result.text || "";
     const links = result.pages?.flatMap((p) => p.links || []) || [];
     const urls = links.map((l) => l.url || "").join(" ");
@@ -98,30 +114,16 @@ export default containsExcludedText;
 //     }),
 //   );
 
-//   const fileChecks = await Promise.all(
-//     _files.map(async (file) => ({
-//       file,
-//       exclude: await containsExcludedText(file),
-//     })),
-//   );
+//   const files = await formatFilesToTelegram(_files);
 
-//   const files = fileChecks
-//     .filter(({ exclude, file }) => {
-//       if (exclude) {
-//         createConsoleMessage(`⏩ Excluding file: ${file.fileName}`, "warn");
-//       }
-//       return !exclude;
-//     })
-//     .map(({ file }) => file);
-
-//   return files.length;
+//   return files.map(({ fileName }) => fileName);
 // };
 
 // const filePaths = [
-//   // "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5767184761109881223.pdf",
 //   // "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5767184761109881224.pdf",
-//   "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5769392597638325783.pdf",
-//   "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5769392597638325784.pdf",
+//   // "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5769392597638325783.pdf",
+//   // "D:/work/future/clone-icare/automize-icare/results/test-insurance/4_5778414691839652703.pdf",
+//   // "D:/work/future/clone-icare/automize-icare/results/test-insurance/377144_Internal Medicine_1030700098.pdf",
 // ];
 // const res = await testExcludedText(filePaths);
 

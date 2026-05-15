@@ -160,6 +160,12 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
         attachmentsError,
       };
 
+      const saveName = (name) =>
+        (name || "")
+          .replace(/\s+/g, "_") // spaces → underscore
+          .replace(/[^\w\-_.]/g, "") // remove anything not alphanumeric, dash, dot, underscore
+          .trim();
+
       if (Array.isArray(attachmentList) && attachmentList.length) {
         function arrayBufferToBase64(buffer) {
           const bytes = new Uint8Array(buffer);
@@ -229,7 +235,7 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
               const name = parts.join(".");
 
               return {
-                fileName: `${idReferral}_${_specialty}_${name}`,
+                fileName: `${idReferral}_${saveName(_specialty)}_${saveName(name)}`,
                 extension: extension,
                 fileBase64: base64,
                 idAttachment,
