@@ -466,7 +466,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       await sendBotMessage(
         chatId,
         `✅ Code updated successfully!\n\n` +
-          `📦 *Changes:*\n\`\`\`\n${logPreview || "No log available"}\n\`\`\`\n\n` +
+          `📦 *Changes:*\n\`\`\`\n${logPreview || "No log available"}\n\`\`\`\n` +
           `🔁 *Current commit:* \`${beforeHash}\`\n\n` +
           `⏳ Pulling and restarting server...`,
       );
