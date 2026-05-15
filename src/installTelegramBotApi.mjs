@@ -139,7 +139,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     },
     setAutoWait: {
       value: /\/auto_wait (\d+)/,
-      desc: "enable auto update wait time",
+      desc: "enable or disable auto update wait time",
       example: "/auto_wait 1 OR /auto_wait 0",
     },
     cmds: {
