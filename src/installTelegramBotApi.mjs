@@ -472,7 +472,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
           `🔁 *Please check if the app is running after restart*`,
       );
 
-      await sleep(1000); // wait after second message before pulling
+      await sleep(900); // wait after second message before pulling
       await execAsync("git pull --rebase origin master", gitOptions);
     } catch (err) {
       createConsoleMessage(err, "error", "❌ updatecode failed:");
