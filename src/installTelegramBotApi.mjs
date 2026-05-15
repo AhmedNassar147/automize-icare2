@@ -5,6 +5,7 @@
  */
 import TelegramBot from "node-telegram-bot-api";
 import { PDFParse } from "pdf-parse";
+import { execSync } from "child_process";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import {
   createPatientRowKey,
@@ -16,6 +17,7 @@ import updateEnvFile from "./updateEnvFile.mjs";
 import mergeAllToPdf from "./mergeFilesToOne.mjs";
 import compressPdfGentlly from "./compressPdfGentlly.mjs";
 import formatFilesToTelegram from "./formatFilesToTelgram.mjs";
+import sleep from "./sleep.mjs";
 
 // https://t.me/td_cases_bot
 
@@ -141,6 +143,11 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       value: /\/auto_wait (\d+)/,
       desc: "enable or disable auto update wait time",
       example: "/auto_wait 1 OR /auto_wait 0",
+    },
+    updateCode: {
+      value: /\/update_code$/,
+      desc: "pull latest code from master and restart the server",
+      example: "/update_code",
     },
     cmds: {
       value: /\/cmds$/,
@@ -392,6 +399,86 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       chatId,
       `✅ Auto waiting just ${isActive ? "enabled" : "disabled"} `,
     );
+  });
+
+  bot.onText(COMMANDS.updateCode.value, async (msg) => {
+    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      return await sendBotMessage(chatId, unAuthorizedMessage);
+    }
+
+    const gitOptions = { cwd: process.cwd() };
+
+    try {
+      await sendBotMessage(chatId, `🔄 Checking for updates...`);
+
+      // 1. Get current commit before pull
+      const beforeHash = execSync("git rev-parse --short HEAD", gitOptions)
+        .toString()
+        .trim();
+
+      // 2. Fetch latest from remote
+      execSync("git fetch origin", gitOptions);
+
+      // 3. Check if already up to date
+      const status = execSync("git status -uno", gitOptions).toString().trim();
+      const isUpToDate = status.includes("Your branch is up to date");
+
+      if (isUpToDate) {
+        return sendBotMessage(
+          chatId,
+          `✅ Already up to date\\. No restart needed\\.\n\`Commit: ${beforeHash}\``,
+        );
+      }
+
+      // 4. Check for local uncommitted changes
+      const localChanges = execSync("git status --porcelain", gitOptions)
+        .toString()
+        .trim();
+
+      if (localChanges) {
+        return sendBotMessage(
+          chatId,
+          `⚠️ Local changes detected — cannot pull:\n\`\`\`\n${localChanges}\n\`\`\`\n\n` +
+            `Please Tell ahmed nassar to fix this\\.`,
+        );
+      }
+
+      // 5. Safe to pull
+      execSync("git pull --rebase origin master", gitOptions);
+
+      // 6. Get new commit after pull
+      const afterHash = execSync("git rev-parse --short HEAD", gitOptions)
+        .toString()
+        .trim();
+
+      // 7. Get commit log of what changed
+      const log = execSync(
+        `git log ${beforeHash}..${afterHash} --oneline`,
+        gitOptions,
+      )
+        .toString()
+        .trim();
+
+      // 8. Notify user then wait for nodemon to restart
+      await sendBotMessage(
+        chatId,
+        `✅ Code updated successfully\\!\n\n` +
+          `📦 *Changes:*\n\`\`\`\n${log || "No log available"}\n\`\`\`\n\n` +
+          `🔁 *Before:* \`${beforeHash}\`\n` +
+          `🔁 *After:*  \`${afterHash}\`\n\n` +
+          `⏳ Restarting server\\.\\.\\.`,
+      );
+
+      await sleep(1500);
+    } catch (err) {
+      createConsoleMessage(err, "error", "❌ updatecode failed:");
+      await sendBotMessage(
+        chatId,
+        `❌ Update failed:\n\`\`\`\n${err.message}\n\`\`\``,
+      );
+    }
   });
 
   bot.onText(COMMANDS.cmds.value, async (msg, match) => {
