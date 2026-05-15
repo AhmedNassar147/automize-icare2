@@ -416,7 +416,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     try {
       await sendBotMessage(chatId, `🔄 Checking for updates...`);
 
-      // 4. Check for local uncommitted changes
+      // 1. Check for local uncommitted changes
       const { stdout: localChangesRaw } = await execAsync(
         "git status --porcelain",
         gitOptions,
@@ -431,7 +431,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         );
       }
 
-      // 1. Get current commit
+      // 2. Get current commit
       const { stdout: beforeHashRaw } = await execAsync(
         "git rev-parse --short HEAD",
         gitOptions,
