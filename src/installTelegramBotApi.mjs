@@ -509,10 +509,18 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
   });
 
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {
-    await bot.answerCallbackQuery(queryId, {
-      text: message,
-      show_alert: false,
-    });
+    try {
+      await bot.answerCallbackQuery(queryId, {
+        text: message,
+        show_alert: false,
+      });
+    } catch (err) {
+      // Query expired — ignore silently
+      createConsoleMessage(
+        `⚠️ answerCallbackQuery expired: ${err.message}`,
+        "warn",
+      );
+    }
 
     if (chatId) {
       // 2. Reply to the original case message
@@ -523,6 +531,10 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       });
     }
   };
+
+  bot.on("polling_error", (err) => {
+    createConsoleMessage(err.message, "warn", "⚠️ Telegram polling error:");
+  });
 
   bot.on("callback_query", async (query) => {
     try {
