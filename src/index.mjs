@@ -454,15 +454,17 @@ const currentProfile = "Profile 1";
         const { elapsedMs, clickedAt } = req.body;
 
         const outcome =
-          elapsedMs < 1400
-            ? "low"
-            : elapsedMs <= 1700
-              ? "good"
-              : elapsedMs <= 2000
-                ? "need more"
-                : elapsedMs <= 2600
-                  ? "near to block"
-                  : "blocked";
+          elapsedMs <= 1000
+            ? "need-less-wait"
+            : elapsedMs <= 1300
+              ? "moderate-waiting"
+              : elapsedMs <= 1500
+                ? "good-waiting"
+                : elapsedMs <= 1800
+                  ? "need-more-wait"
+                  : elapsedMs <= 2100
+                    ? "near to block"
+                    : "blocked";
 
         const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
 
@@ -482,7 +484,7 @@ const currentProfile = "Profile 1";
           await updateCaseInLog(referralId, referralEndTimestamp, {
             status: `${outcome}_${elapsedMs}`,
             clickedAt,
-            tookMS: clickedAt - (readySeenAtLocalMs + waitTime),
+            tookMS: clickedAt - readySeenAtLocalMs - (waitTime || 0),
           });
         }
 
