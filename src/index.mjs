@@ -454,15 +454,15 @@ const currentProfile = "Profile 1";
         const { elapsedMs, clickedAt } = req.body;
 
         const outcome =
-          elapsedMs <= 1000
+          elapsedMs <= 780
             ? "need-less-wait"
-            : elapsedMs <= 1300
+            : elapsedMs <= 850
               ? "moderate-waiting"
-              : elapsedMs <= 1500
+              : elapsedMs <= 900
                 ? "good-waiting"
-                : elapsedMs <= 1700
+                : elapsedMs <= 1100
                   ? "need-more-wait"
-                  : elapsedMs <= 1900
+                  : elapsedMs <= 1200
                     ? "near-to-block"
                     : "blocked";
 
