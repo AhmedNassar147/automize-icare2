@@ -39,6 +39,7 @@ const htmlLayouts = {
     clientMangerName,
     clientManagerPhone,
     showLetterFinalFooter,
+    __reasonName__,
   }) => {
     return `
   <!DOCTYPE html>
@@ -196,7 +197,7 @@ const htmlLayouts = {
         <tr class="section-title"><td colspan="4">سبب الرفض</td></tr>
         <tr>
           <td colspan="4" style="text-align:center; font-weight:bold;">
-            لا يوجد سرير متاح
+            ${__reasonName__ ? __reasonName__ : "لا يوجد سرير متاح"}
           </td>
         </tr>
         `
@@ -571,6 +572,7 @@ const generateAcceptanceLetterHtml = ({
   clientMangerName,
   clientManagerPhone,
   clientId,
+  __reasonName__,
 }) => {
   const [date] = _requestDate.split("T");
   const [year, month, day] = date.split("-");
@@ -597,6 +599,7 @@ const generateAcceptanceLetterHtml = ({
     clientMangerName,
     clientManagerPhone,
     showLetterFinalFooter,
+    __reasonName__,
   });
 };
 
