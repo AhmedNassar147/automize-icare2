@@ -663,16 +663,17 @@ const currentProfile = "Profile 1";
 
 // const patientsArray = [
 //   {
-//     nationalId: "123456789",
+//     nationalId: "1071035784",
 //     nationality: "SAUDI",
-//     patientName: "John Doe",
-//     requestDate: "2023-01-01T00:00:00.000Z",
-//     referralId: "ADC12521",
-//     specialty: "ICDS",
-//     subSpecialty: "ICDS",
-//     sourceProvider: "Al-Zahraa Hospital",
-//     mobileNumber: "1234567890",
-//     requestedBedType: "Ward",
+//     patientName: "اسماء الشاعري",
+//     requestDate: "2026-05-22:24:00.000Z",
+//     referralId: "377331",
+//     specialty: "Radiology Diagnostic",
+//     subSpecialty: "Radiology Diagnostic",
+//     sourceProvider: "Asir Central Hospital",
+//     mobileNumber: "+966552041449",
+//     requestedBedType: "Intensive Care Unit (ICU)",
+//     __reasonName__: "device unavailable"
 //   },
 // ];
 
