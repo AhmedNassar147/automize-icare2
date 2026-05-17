@@ -187,8 +187,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
   bot.onText(/\/clear_commands/, async (msg) => {
     await bot.deleteMyCommands({
       scope: {
-        type: "chat",
-        chat_id: msg.chat.id,
+        type: "default",
       },
     });
 
