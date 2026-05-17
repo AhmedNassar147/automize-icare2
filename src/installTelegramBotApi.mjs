@@ -290,32 +290,32 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.setWait.value, async (msg, match) => {
-    const { unAuthorizedMessage, chatId, fromName } =
-      getIfNotAuthorizedMessage(msg);
+  // bot.onText(COMMANDS.setWait.value, async (msg, match) => {
+  //   const { unAuthorizedMessage, chatId, fromName } =
+  //     getIfNotAuthorizedMessage(msg);
 
-    if (unAuthorizedMessage) {
-      await sendBotMessage(chatId, unAuthorizedMessage);
-      return;
-    }
+  //   if (unAuthorizedMessage) {
+  //     await sendBotMessage(chatId, unAuthorizedMessage);
+  //     return;
+  //   }
 
-    const value = parseInt(match[1], 10);
+  //   const value = parseInt(match[1], 10);
 
-    if (isNaN(value) || value < 1600) {
-      await sendBotMessage(
-        chatId,
-        `⛔ Invalid number. Usage: /wait 2005 and value must be greater than 1600`,
-      );
-      return;
-    }
+  //   if (isNaN(value) || value < 1600) {
+  //     await sendBotMessage(
+  //       chatId,
+  //       `⛔ Invalid number. Usage: /wait 2005 and value must be greater than 1600`,
+  //     );
+  //     return;
+  //   }
 
-    updateEnvFile({ WAIT_FOR_ACCEPT_MS: value });
+  //   updateEnvFile({ WAIT_FOR_ACCEPT_MS: value });
 
-    await sendBotMessage(
-      chatId,
-      `✅ Hi \`${fromName}\`, wait time set to \`${value}\`ms successfully.`,
-    );
-  });
+  //   await sendBotMessage(
+  //     chatId,
+  //     `✅ Hi \`${fromName}\`, wait time set to \`${value}\`ms successfully.`,
+  //   );
+  // });
 
   bot.onText(COMMANDS.f_accept.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName, msgId } =
@@ -368,41 +368,41 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.setAutoWait.value, async (msg, match) => {
-    const { unAuthorizedMessage, chatId, fromName } =
-      getIfNotAuthorizedMessage(msg);
+  // bot.onText(COMMANDS.setAutoWait.value, async (msg, match) => {
+  //   const { unAuthorizedMessage, chatId, fromName } =
+  //     getIfNotAuthorizedMessage(msg);
 
-    if (unAuthorizedMessage) {
-      await sendBotMessage(chatId, unAuthorizedMessage);
-      return;
-    }
+  //   if (unAuthorizedMessage) {
+  //     await sendBotMessage(chatId, unAuthorizedMessage);
+  //     return;
+  //   }
 
-    const value = match[1] || "";
+  //   const value = match[1] || "";
 
-    if (!["1", "0"].includes(value)) {
-      return await sendBotMessage(
-        chatId,
-        `⛔ Invalid value. Usage: /auto_wait \`1 or 0\` LIKE: /auto_wait 1`,
-      );
-    }
+  //   if (!["1", "0"].includes(value)) {
+  //     return await sendBotMessage(
+  //       chatId,
+  //       `⛔ Invalid value. Usage: /auto_wait \`1 or 0\` LIKE: /auto_wait 1`,
+  //     );
+  //   }
 
-    const isActive = value === "1";
-    const isSame = process.env.ENABLE_AUTO_WAITING === value;
+  //   const isActive = value === "1";
+  //   const isSame = process.env.ENABLE_AUTO_WAITING === value;
 
-    if (isSame) {
-      return await sendBotMessage(
-        chatId,
-        `⛔ Auto waiting is already ${isActive ? "enabled" : "disabled"} `,
-      );
-    }
+  //   if (isSame) {
+  //     return await sendBotMessage(
+  //       chatId,
+  //       `⛔ Auto waiting is already ${isActive ? "enabled" : "disabled"} `,
+  //     );
+  //   }
 
-    updateEnvFile({ ENABLE_AUTO_WAITING: value });
+  //   updateEnvFile({ ENABLE_AUTO_WAITING: value });
 
-    await sendBotMessage(
-      chatId,
-      `✅ Auto waiting just ${isActive ? "enabled" : "disabled"} `,
-    );
-  });
+  //   await sendBotMessage(
+  //     chatId,
+  //     `✅ Auto waiting just ${isActive ? "enabled" : "disabled"} `,
+  //   );
+  // });
 
   bot.onText(COMMANDS.updateCode.value, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
