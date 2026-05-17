@@ -112,7 +112,29 @@ const prepareMessage = (message) => {
   return { text: escaped, parse_mode: "HTML" };
 };
 
-const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
+const getAllowedList = () =>
+  process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || [];
+
+const getIfNotAuthorizedMessage = (msg) => {
+  const chatId = String(msg.chat.id);
+  const fromName =
+    msg.from.first_name || msg.chat.first_name || msg.from.last_name;
+
+  const allowedList = getAllowedList();
+  const isAuthorized = allowedList.includes(chatId);
+
+  return {
+    chatId,
+    fromName,
+    allowedList,
+    msgId: msg.message_id,
+    unAuthorizedMessage: isAuthorized
+      ? undefined
+      : `⛔ \`${fromName}\` you are not Authorized.`,
+  };
+};
+
+const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
   const bot = new TelegramBot(TG_TOKEN, { polling: true, filepath: false });
 
   createConsoleMessage("🤖 Telegram Case Bot is running...", "info");
@@ -124,9 +146,6 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   }
 
-  const getAllowedList = () =>
-    process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || [];
-
   const sendBotMessage = (chatId, message, options = {}) =>
     bot.sendMessage(chatId, message, {
       parse_mode: "Markdown",
@@ -135,39 +154,34 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
   const pendingContactRequests = new Map();
 
-  const getIfNotAuthorizedMessage = (msg) => {
-    const chatId = String(msg.chat.id);
-    const fromName =
-      msg.from.first_name || msg.chat.first_name || msg.from.last_name;
+  async function setupCommands() {
+    const commands = Object.values(COMMANDS)
+      .filter((item) => item.command !== "add")
+      .map((item) => ({
+        command: item.command,
+        description: item.description,
+      }));
 
-    const allowedList = getAllowedList();
-    const isAuthorized = allowedList.includes(chatId);
+    const result = await bot.setMyCommands(commands, {
+      scope: { type: "default" },
+    });
 
-    return {
-      chatId,
-      fromName,
-      allowedList,
-      msgId: msg.message_id,
-      unAuthorizedMessage: isAuthorized
-        ? undefined
-        : `⛔ \`${fromName}\` you are not Authorized.`,
-    };
-  };
+    createConsoleMessage(`commandsSet=> ${result}`, "info");
+  }
 
-  bot.onText(/\/start$/, async (msg) => {
-    const { unAuthorizedMessage } = getIfNotAuthorizedMessage(msg);
+  await setupCommands();
 
-    if (!unAuthorizedMessage) {
-      await bot.setMyCommands(
-        Object.values(COMMANDS)
-          .filter((item) => item.command !== "add")
-          .map((item) => ({
-            command: item.command,
-            description: item.description,
-          })),
-        { scope: { type: "default" } },
-      );
-    }
+  bot.onText(/\/start/, async (msg) => {
+    const commands = await bot.getMyCommands({
+      scope: { type: "default" },
+    });
+
+    console.log("saved commands", commands);
+
+    await bot.sendMessage(
+      msg.chat.id,
+      "Bot started. Type / to see available commands.",
+    );
   });
 
   bot.onText(COMMANDS.me.value, async (msg) => {
@@ -493,31 +507,6 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       );
     }
   });
-
-  // bot.onText(COMMANDS.cmds.value, async (msg, match) => {
-  //   const { unAuthorizedMessage, chatId, fromName } =
-  //     getIfNotAuthorizedMessage(msg);
-
-  //   if (unAuthorizedMessage) {
-  //     await sendBotMessage(chatId, unAuthorizedMessage);
-  //     return;
-  //   }
-
-  //   const formattedMessage =
-  //     `📋 *Available Commands*\n` +
-  //     `─────────────────────────\n\n` +
-  //     Object.entries(COMMANDS)
-  //       .map(([key, { desc, example, exampleNote }]) => {
-  //         const exampleLine = exampleNote
-  //           ? `\`${example}\` _← ${exampleNote}_`
-  //           : `\`${example}\``;
-
-  //         return `▶️ ${exampleLine}\n_${desc}_`;
-  //       })
-  //       .join("\n\n");
-
-  //   await sendBotMessage(chatId, formattedMessage);
-  // });
 
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {
     try {
