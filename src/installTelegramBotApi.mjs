@@ -222,9 +222,10 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
     updateEnvFile({
       TG_CHAT_ID: chatId,
       TG_CHAT_USER_NAME: fromName,
-      ...(CLIENT_ID !== "TADAWI" && !!activePhoneNumber
-        ? { CLIENT_WHATSAPP_NUMBER: activePhoneNumber }
-        : null),
+      CLIENT_WHATSAPP_NUMBER: activePhoneNumber,
+      // ...(CLIENT_ID !== "TADAWI" && !!activePhoneNumber
+      //   ? { CLIENT_WHATSAPP_NUMBER: activePhoneNumber }
+      //   : null),
     });
     await sendBotMessage(
       chatId,

@@ -62,6 +62,10 @@ export const initializeClient = async (
   patientsStore,
   { headless = false } = {},
 ) => {
+  if (process.env.WHATSAPP_DISABLED === "Y") {
+    return;
+  }
+
   const number = normalizePhoneNumber(process.env.CLIENT_WHATSAPP_NUMBER);
   return await withLock(number, async () => {
     const chatId = getChatId(number);
@@ -365,6 +369,10 @@ const sendMessageWithFiles = async (number, msgWithFiles) => {
 const sendMessageUsingWhatsapp =
   (patientsStore, options = {}) =>
   async (number, messages) => {
+    if (process.env.WHATSAPP_DISABLED === "Y") {
+      return;
+    }
+
     const phoneNo = normalizePhoneNumber(number);
     await initializeClient(patientsStore, options);
 
