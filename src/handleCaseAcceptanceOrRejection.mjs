@@ -143,6 +143,7 @@ const handleCaseAcceptanceOrRejection =
             fileName,
             actionType,
             routerKey,
+            blockTimeMs: Number(process.env.BLOCK_TIME_MS || 1201),
             // waitingTime: waitingTimeMSForAccept,
             // waitExtraTime: waitingTimeMSForAccept
             //   ? NEW_EXTRA_WAITING_TIME_FOR_PATIENT
