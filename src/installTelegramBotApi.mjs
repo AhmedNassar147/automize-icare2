@@ -160,7 +160,12 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
     if (!unAuthorizedMessage) {
       await bot.setMyCommands(
-        Object.values(COMMANDS).filter((item) => item.command !== "add"),
+        Object.values(COMMANDS)
+          .filter((item) => item.command !== "add")
+          .map((item) => ({
+            command: item.command,
+            description: item.description,
+          })),
         { scope: { type: "default" } },
       );
     }
@@ -490,30 +495,30 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     }
   });
 
-  bot.onText(COMMANDS.cmds.value, async (msg, match) => {
-    const { unAuthorizedMessage, chatId, fromName } =
-      getIfNotAuthorizedMessage(msg);
+  // bot.onText(COMMANDS.cmds.value, async (msg, match) => {
+  //   const { unAuthorizedMessage, chatId, fromName } =
+  //     getIfNotAuthorizedMessage(msg);
 
-    if (unAuthorizedMessage) {
-      await sendBotMessage(chatId, unAuthorizedMessage);
-      return;
-    }
+  //   if (unAuthorizedMessage) {
+  //     await sendBotMessage(chatId, unAuthorizedMessage);
+  //     return;
+  //   }
 
-    const formattedMessage =
-      `📋 *Available Commands*\n` +
-      `─────────────────────────\n\n` +
-      Object.entries(COMMANDS)
-        .map(([key, { desc, example, exampleNote }]) => {
-          const exampleLine = exampleNote
-            ? `\`${example}\` _← ${exampleNote}_`
-            : `\`${example}\``;
+  //   const formattedMessage =
+  //     `📋 *Available Commands*\n` +
+  //     `─────────────────────────\n\n` +
+  //     Object.entries(COMMANDS)
+  //       .map(([key, { desc, example, exampleNote }]) => {
+  //         const exampleLine = exampleNote
+  //           ? `\`${example}\` _← ${exampleNote}_`
+  //           : `\`${example}\``;
 
-          return `▶️ ${exampleLine}\n_${desc}_`;
-        })
-        .join("\n\n");
+  //         return `▶️ ${exampleLine}\n_${desc}_`;
+  //       })
+  //       .join("\n\n");
 
-    await sendBotMessage(chatId, formattedMessage);
-  });
+  //   await sendBotMessage(chatId, formattedMessage);
+  // });
 
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {
     try {
