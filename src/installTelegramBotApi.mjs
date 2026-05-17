@@ -26,6 +26,43 @@ const execAsync = promisify(exec);
 
 const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 
+const COMMANDS = {
+  add: {
+    command: /\/add/,
+    description: "add your self for authorization",
+  },
+  me: {
+    command: /\/me/,
+    description: "make your self active to receive and control cases",
+  },
+  f_accept: {
+    command: /\/f_accept$/,
+    description:
+      "get First going to be accepted patient with time left details",
+  },
+  wait: {
+    command: /\/wait$/,
+    description: "get current wait time before hitting the accept button",
+  },
+  auto_wait: {
+    command: /\/auto_wait$/,
+    description: "get if auto update wait time is enabled or not",
+  },
+  updateCode: {
+    command: /\/update_code$/,
+    description: "pull latest code from master and restart the server",
+  },
+  setWait: {
+    command: /\/wait (\d+)/,
+    description: `set wait time to wait before hitting the accept button. \'Example: /wait 2010\'`,
+  },
+  setAutoWait: {
+    command: /\/auto_wait (\d+)/,
+    description:
+      "enable or disable auto update wait time. \'Example: /auto_wait 1 OR /auto_wait 0\'",
+  },
+};
+
 const buildButtons = (referralId) => ({
   inline_keyboard: [
     [
@@ -80,6 +117,14 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   }
 
+  bot.onText(/\/start$/, async (msg) => {
+    bot.setMyCommands(
+      Object.values(COMMANDS).fill(
+        (item) => !item.description.includes("add your self"),
+      ),
+    );
+  });
+
   const getAllowedList = () =>
     process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || [];
 
@@ -110,56 +155,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     };
   };
 
-  const COMMANDS = {
-    add: {
-      value: /\/add/,
-      desc: "add your self for authorization",
-      example: "/add",
-    },
-    me: {
-      value: /\/me/,
-      desc: "make your self active to receive and control cases",
-      example: "/me",
-    },
-    wait: {
-      value: /\/wait$/,
-      desc: "get current wait time before hitting the accept button",
-      example: "/wait",
-    },
-    setWait: {
-      value: /\/wait (\d+)/,
-      desc: "set wait time to wait before hitting the accept button",
-      example: "/wait 2010",
-      exampleNote: "2010 is an example, use any number above 1600",
-    },
-    f_accept: {
-      value: /\/f_accept$/,
-      desc: "get First going to be accepted patient with time left details",
-      example: "/f_accept",
-    },
-    auto_wait: {
-      value: /\/auto_wait$/,
-      desc: "get if auto update wait time is enabled or not",
-      example: "/auto_wait",
-    },
-    setAutoWait: {
-      value: /\/auto_wait (\d+)/,
-      desc: "enable or disable auto update wait time",
-      example: "/auto_wait 1 OR /auto_wait 0",
-    },
-    updateCode: {
-      value: /\/update_code$/,
-      desc: "pull latest code from master and restart the server",
-      example: "/update_code",
-    },
-    cmds: {
-      value: /\/cmds$/,
-      desc: "get all available commands",
-      example: "/cmds",
-    },
-  };
-
-  bot.onText(COMMANDS.me.value, async (msg) => {
+  bot.onText(COMMANDS.me.command, async (msg) => {
     const { chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
 
@@ -243,7 +239,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.add.value, async (msg) => {
+  bot.onText(COMMANDS.add.command, async (msg) => {
     const { allowedList, chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
 
@@ -276,7 +272,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     });
   });
 
-  bot.onText(COMMANDS.wait.value, async (msg) => {
+  bot.onText(COMMANDS.wait.command, async (msg) => {
     const { chatId, unAuthorizedMessage } = getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
@@ -290,7 +286,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.setWait.value, async (msg, match) => {
+  bot.onText(COMMANDS.setWait.command, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName } =
       getIfNotAuthorizedMessage(msg);
 
@@ -317,7 +313,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.f_accept.value, async (msg, match) => {
+  bot.onText(COMMANDS.f_accept.command, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName, msgId } =
       getIfNotAuthorizedMessage(msg);
 
@@ -351,7 +347,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.auto_wait.value, async (msg, match) => {
+  bot.onText(COMMANDS.auto_wait.command, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName } =
       getIfNotAuthorizedMessage(msg);
 
@@ -368,7 +364,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.setAutoWait.value, async (msg, match) => {
+  bot.onText(COMMANDS.setAutoWait.command, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName } =
       getIfNotAuthorizedMessage(msg);
 
@@ -404,7 +400,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.updateCode.value, async (msg) => {
+  bot.onText(COMMANDS.updateCode.command, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
@@ -481,31 +477,6 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         `❌ Update failed:\n\`\`\`\n${err.message}\n\`\`\``,
       );
     }
-  });
-
-  bot.onText(COMMANDS.cmds.value, async (msg, match) => {
-    const { unAuthorizedMessage, chatId, fromName } =
-      getIfNotAuthorizedMessage(msg);
-
-    if (unAuthorizedMessage) {
-      await sendBotMessage(chatId, unAuthorizedMessage);
-      return;
-    }
-
-    const formattedMessage =
-      `📋 *Available Commands*\n` +
-      `─────────────────────────\n\n` +
-      Object.entries(COMMANDS)
-        .map(([key, { desc, example, exampleNote }]) => {
-          const exampleLine = exampleNote
-            ? `\`${example}\` _← ${exampleNote}_`
-            : `\`${example}\``;
-
-          return `▶️ ${exampleLine}\n_${desc}_`;
-        })
-        .join("\n\n");
-
-    await sendBotMessage(chatId, formattedMessage);
   });
 
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {
