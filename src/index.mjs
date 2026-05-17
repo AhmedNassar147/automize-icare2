@@ -460,10 +460,10 @@ const currentProfile = "Profile 1";
               ? "moderate-waiting"
               : elapsedMs <= 1500
                 ? "good-waiting"
-                : elapsedMs <= 1800
+                : elapsedMs <= 1700
                   ? "need-more-wait"
-                  : elapsedMs <= 2100
-                    ? "near to block"
+                  : elapsedMs <= 1900
+                    ? "near-to-block"
                     : "blocked";
 
         const firstGoindToAccept = patientsStore.getFirstGoingToAccept();

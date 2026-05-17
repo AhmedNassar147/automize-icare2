@@ -45,7 +45,7 @@ const widths = {
   readyVsServer: 13,
   clickedAt: 14,
   tookMS: 10,
-  status: 21,
+  status: 25,
   endDateString: 22,
 };
 
@@ -292,4 +292,4 @@ export async function migrateLogWidths(referralEndTimestamp) {
   createConsoleMessage(`✅ Log migrated → ${file}`, "info");
 }
 
-// await migrateLogWidths(1779014471000);
+await migrateLogWidths(1779014471000);
