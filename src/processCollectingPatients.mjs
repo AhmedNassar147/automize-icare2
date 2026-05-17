@@ -48,8 +48,6 @@ const getSaudiStartAndEndDate = ({
     utcDate.toLocaleString("en-US", { timeZone: "Asia/Riyadh" }),
   );
 
-  let leftMs = 15 * 60 * 1000;
-
   const Min_15 = 15 * 60 * 1000;
   let isReferralOldDate = false;
   const leftMsBasedMessage = getLeftMsBasedCaseMessage(caseAlertMessage);
@@ -65,9 +63,14 @@ const getSaudiStartAndEndDate = ({
 
   // Clone for end date
   const saEndDate = new Date(saStartDate);
-  saEndDate.setMilliseconds(saEndDate.getMilliseconds() + leftMs);
+  saEndDate.setMilliseconds(saEndDate.getMilliseconds() + Min_15);
 
-  const referralEndTimestamp = saEndDate.getTime();
+  const endDateBasedServerDateMs =
+    serverNow && leftMsBasedMessage ? serverNow + leftMsBasedMessage : null;
+
+  // prefer server time, fall back to client time
+  const referralEndTimestamp = endDateBasedServerDateMs ?? saEndDate.getTime();
+  // const referralEndTimestamp = saEndDate.getTime();
   const timeWithUserReaction = cutoffTimeMs + 2000;
 
   const shouldCutoffTime = referralEndTimestamp > timeWithUserReaction;
@@ -76,17 +79,13 @@ const getSaudiStartAndEndDate = ({
     ? referralEndTimestamp - cutoffTimeMs
     : referralEndTimestamp;
 
-  const endDateBasedServerDateMs = serverNow
-    ? serverNow + leftMsBasedMessage
-    : null;
-
   return {
     isReferralOldDate,
     cutoffTimeMs: shouldCutoffTime ? cutoffTimeMs : 0,
     referralDate,
     referralStartDate: formateDateToString(saStartDate),
-    referralEndDate: formateDateToString(saEndDate),
-    referralEndTimestamp: referralEndTimestamp,
+    referralEndDate: formateDateToString(referralEndTimestamp), // server-based when available, client fallback
+    referralEndTimestamp,
     referralEndDateActionableAtMS,
     referralEndDateActionablAt: formateDateToString(
       referralEndDateActionableAtMS,
