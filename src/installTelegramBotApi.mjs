@@ -119,7 +119,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
   bot.onText(/\/start$/, async (msg) => {
     bot.setMyCommands(
-      Object.values(COMMANDS).fill(
+      Object.values(COMMANDS).filter(
         (item) => !item.description.includes("add your self"),
       ),
     );
