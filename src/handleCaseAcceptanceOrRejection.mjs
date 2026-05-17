@@ -175,7 +175,7 @@ const handleCaseAcceptanceOrRejection =
       let extraWait = 0;
 
       if (ENABLE_AUTO_WAITING === "1") {
-        extraWait = diff > 0 ? 0 : diff < 0 ? -1 : 3;
+        extraWait = diff > 0 ? 0 : diff < 0 ? -1 : 4;
 
         if (diff < 0) {
           extraBotMessages.push(
