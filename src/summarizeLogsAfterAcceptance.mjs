@@ -3,26 +3,21 @@
  * Helper: `summarizeLogsAfterAcceptance`.
  *
  */
-import { writeFile, appendFile } from "fs/promises";
+import { writeFile, appendFile, readFile } from "fs/promises";
 import checkPathExists from "./checkPathExists.mjs";
 import getCurrentActiveLogsSummaryFile from "./getCurrentActiveLogsSummaryFile.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import { LOGS_SUMMARY_SEPARATOR, LOGS_SUMMARY_HEADERS } from "./constants.mjs";
 
 const sanitize = (value) => {
-  if (value === undefined || value === null) {
-    return "";
-  }
-
+  if (value === undefined || value === null) return "";
   return String(value).replaceAll("\n", " ").replaceAll("|", "/");
 };
 
 const centerText = (text, width) => {
   text = sanitize(text);
 
-  if (text.length >= width) {
-    return text;
-  }
+  if (text.length >= width) return text;
 
   const totalPadding = width - text.length;
   const leftPadding = Math.floor(totalPadding / 2);
@@ -35,6 +30,29 @@ const createPrettyRow = (row, widths) => {
   return LOGS_SUMMARY_HEADERS.map((key) =>
     centerText(row[key], widths[key]),
   ).join(LOGS_SUMMARY_SEPARATOR);
+};
+
+const widths = {
+  ID: 6,
+  waitTime: 8,
+  end: 13,
+  serverEnd: 13,
+  endVsServer: 11,
+  readyAt: 13,
+  "endVsReady(diff)": 16,
+  zeroAt: 13,
+  backendDelay: 12,
+  readyVsServer: 13,
+  clickedAt: 14,
+  status: 21,
+  endDateString: 22,
+};
+
+const getOutputFileBasedOnCaseEndTime = (referralEndTimestamp) => {
+  const caseMonth = new Date(referralEndTimestamp).getMonth() + 1;
+  const outputFile = getCurrentActiveLogsSummaryFile(caseMonth);
+
+  return outputFile;
 };
 
 const summarizeLogsAfterAcceptance = async (data) => {
@@ -51,23 +69,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     extraBackendDelayMs,
   } = data;
 
-  const caseMonth = new Date(referralEndTimestamp).getMonth() + 1;
-  const outputFile = getCurrentActiveLogsSummaryFile(caseMonth);
-
-  const widths = {
-    ID: 6,
-    waitTime: 8,
-    end: 13,
-    serverEnd: 13,
-    endVsServer: 11,
-    readyAt: 13,
-    "endVsReady(diff)": 16,
-    zeroAt: 13,
-    backendDelay: 12,
-    readyVsServer: 13,
-    status: 16,
-    endDateString: 20,
-  };
+  const outputFile = getOutputFileBasedOnCaseEndTime(referralEndTimestamp);
 
   let endToReady = "";
 
@@ -98,6 +100,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     backendDelay: extraBackendDelayMs,
     readyVsServer: readySeenAt - endDateBasedServerDateMs,
     endDateString: data.referralEndDate,
+    clickedAt: "",
   };
 
   const exists = await checkPathExists(outputFile);
@@ -121,53 +124,109 @@ const summarizeLogsAfterAcceptance = async (data) => {
   );
 };
 
+/**
+ * Updates fields of a specific case row in the log file.
+ *
+ * @param {number|string} referralId  - case to find
+ * @param {number} referralEndTimestamp  - case end timestamp to
+ * @param {object}        updates     - fields to change e.g. { status: "good" }
+ */
+export async function updateCaseInLog(
+  referralId,
+  referralEndTimestamp,
+  updates,
+) {
+  const currentMonthOutputFile =
+    getOutputFileBasedOnCaseEndTime(referralEndTimestamp);
+
+  const raw = await readFile(currentMonthOutputFile, "utf8");
+
+  const target = String(referralId).trim();
+  let found = false;
+
+  const updatedLines = raw.split("\n").map((line) => {
+    // keep header and blank lines untouched
+    if (!line.trim() || /^\s*ID\s*\|/.test(line)) return line;
+
+    const cols = line.split("|").map((c) => c.trim());
+    if (cols[0] !== target) return line;
+
+    found = true;
+
+    // parse current row into a key→value map
+    const current = {};
+    LOGS_SUMMARY_HEADERS.forEach((key, i) => {
+      current[key] = cols[i] ?? "";
+    });
+
+    // apply updates (map field names to header keys)
+    const fieldMap = {
+      status: "status",
+      waitTime: "waitTime",
+      endDateString: "endDateString",
+      referralEndDate: "endDateString",
+      endVsServer: "endVsServer",
+      readyVsServer: "readyVsServer",
+      backendDelay: "backendDelay",
+      clickedAt: "clickedAt",
+    };
+
+    for (const [field, value] of Object.entries(updates)) {
+      const key = fieldMap[field] ?? field;
+      if (key in current) current[key] = String(value);
+    }
+
+    // re-render the row with same fixed widths
+    return createPrettyRow(current, widths);
+  });
+
+  if (!found) {
+    throw new Error(`updateCaseInLog: referralId ${referralId} not found`);
+  }
+
+  await writeFile(currentMonthOutputFile, updatedLines.join("\n"), "utf8");
+}
+
 export default summarizeLogsAfterAcceptance;
 
-// const logs = [
-//   {
-//     status: "high-not-taken",
-//     referralId: 376980,
-//     waitTime: 2012,
-//     extraWait: 2,
-//     referralEndTimestamp: 1778652562000,
-//     endDateBasedServerDateMs: 1778652561000,
-//     zeroSeenAt: 1778652560000,
-//     readySeenAt: 1778652562000,
-//     extraBackendDelayMs: 2000,
-//   },
-//   {
-//     status: "blocked",
-//     referralId: 376981,
-//     waitTime: 2012,
-//     referralEndTimestamp: 1778653039000,
-//     endDateBasedServerDateMs: 1778653037000,
-//     zeroSeenAt: 1778653037000,
-//     readySeenAt: 1778653038000,
-//     extraBackendDelayMs: 1000,
-//   },
-//   {
-//     status: "were blocked",
-//     referralId: 376983,
-//     waitTime: 2012,
-//     referralEndTimestamp: 1778653253000,
-//     endDateBasedServerDateMs: 1778653252000,
-//     zeroSeenAt: 1778653252000,
-//     readySeenAt: 1778653253000,
-//     extraBackendDelayMs: 1000,
-//   },
-//   {
-//     status: "",
-//     referralId: 377042,
-//     waitTime: 2016,
-//     referralEndTimestamp: 1778680708000,
-//     endDateBasedServerDateMs: 1778680706000,
-//     zeroSeenAt: 1778680706000,
-//     readySeenAt: 1778680707000,
-//     extraBackendDelayMs: 1000,
-//     referralEndDate: "13/05/2026 09:20:53 am",
-//   },
-// ];
+export async function migrateLogWidths(referralEndTimestamp) {
+  const file = getOutputFileBasedOnCaseEndTime(referralEndTimestamp);
+  const raw = await readFile(file, "utf8");
+  const lines = raw.split("\n");
 
-// for (const log of logs) {
-//   await summarizeLogsAfterAcceptance(log);
-// }
+  // read old column order from existing header line
+  const headerLine = lines.find((l) => /^\s*ID\s*\|/.test(l));
+  const oldHeaders = headerLine
+    ? headerLine.split("|").map((c) => c.trim())
+    : LOGS_SUMMARY_HEADERS;
+
+  const updatedLines = lines.map((line) => {
+    if (!line.trim()) return line;
+
+    // re-render header with new order
+    if (/^\s*ID\s*\|/.test(line)) {
+      return createPrettyRow(
+        Object.fromEntries(LOGS_SUMMARY_HEADERS.map((h) => [h, h])),
+        widths,
+      );
+    }
+
+    // parse using OLD order
+    const cols = line.split("|").map((c) => c.trim());
+    const current = Object.fromEntries(
+      oldHeaders.map((key, i) => [key, cols[i] ?? ""]),
+    );
+
+    // fill any new columns that didn't exist before
+    LOGS_SUMMARY_HEADERS.forEach((key) => {
+      if (!(key in current)) current[key] = "";
+    });
+
+    return createPrettyRow(current, widths);
+  });
+
+  await writeFile(file, updatedLines.join("\n"), "utf8");
+  createConsoleMessage(`✅ Log migrated → ${file}`, "info");
+}
+
+// await migrateLogWidths(1779014471000);

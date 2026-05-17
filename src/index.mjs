@@ -57,6 +57,7 @@ import sleep from "./sleep.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs";
 import installTelegramBotApi from "./installTelegramBotApi.mjs";
+import { updateCaseInLog } from "./summarizeLogsAfterAcceptance.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -438,6 +439,43 @@ const currentProfile = "Profile 1";
         }
 
         updateEnvFile(updates);
+
+        return res.status(200).json({ success: true });
+      } catch (err) {
+        return res.status(500).json({ success: false });
+      }
+    });
+
+    app.post("/setCaseOutcome", async (req, res) => {
+      try {
+        const { elapsedMs, clickedAt } = req.body;
+
+        const outcome =
+          elapsedMs < 1400
+            ? "low"
+            : elapsedMs <= 1700
+              ? "good"
+              : elapsedMs <= 2000
+                ? "need more"
+                : elapsedMs <= 2600
+                  ? "near to block"
+                  : "blocked";
+
+        const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
+
+        const { referralId, referralEndTimestamp } = firstGoindToAccept || {};
+
+        createConsoleMessage(
+          `caseId=${referralId} case-outcome=${outcome} clickedAt=${clickedAt} elapsed=${elapsedMs}ms`,
+          "info",
+        );
+
+        if (firstGoindToAccept) {
+          await updateCaseInLog(referralId, referralEndTimestamp, {
+            status: `${outcome}_${elapsedMs}`,
+            clickedAt,
+          });
+        }
 
         return res.status(200).json({ success: true });
       } catch (err) {
