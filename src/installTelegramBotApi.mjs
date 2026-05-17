@@ -29,12 +29,12 @@ const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 const COMMANDS = {
   add: {
     value: /\/add/,
-    description: "add your self for authorization",
+    description: "add yourself for authorization",
     command: "add",
   },
   me: {
     value: /\/me/,
-    description: "make your self active to receive and control cases",
+    description: "make yourself active to receive and control cases",
     command: "me",
   },
   wait: {
@@ -43,15 +43,13 @@ const COMMANDS = {
     command: "wait",
   },
   setWait: {
-    value: /\/setWait (\d+)/,
-    description:
-      "(Long press) to set wait time to wait before hitting the accept button _Example: \`/setWait 2050\`_",
-    command: "setWait",
+    value: /\/set_wait (\d+)/,
+    description: "Long press → set wait time. Example: /set_wait 2050",
+    command: "set_wait",
   },
   f_accept: {
     value: /\/f_accept$/,
-    description:
-      "get First going to be accepted patient with time left details",
+    description: "get first patient to be accepted with time left details",
     command: "f_accept",
   },
   auto_wait: {
@@ -60,9 +58,10 @@ const COMMANDS = {
     command: "auto_wait",
   },
   setAutoWait: {
-    value: /\/setAutoWait (\d+)/,
-    description: `(Long press) to Enable or disable auto update wait time, Example: \`/auto_wait 1\` OR \`/auto_wait 0\``,
-    command: "setAutoWait",
+    value: /\/set_auto_wait (\d+)/,
+    description:
+      "Long press → enable/disable auto wait. Example: /set_auto_wait 1",
+    command: "set_auto_wait",
   },
   updateCode: {
     value: /\/update_code$/,
@@ -316,7 +315,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     if (isNaN(value) || value < 1600) {
       await sendBotMessage(
         chatId,
-        `⛔ Invalid number. Usage: /setWait 2005 and value must be greater than 1600`,
+        `⛔ Invalid number. Usage: /set_wait 2005 and value must be greater than 1600`,
       );
       return;
     }
@@ -394,7 +393,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     if (!["1", "0"].includes(value)) {
       return await sendBotMessage(
         chatId,
-        `⛔ Invalid value. Usage: /setAutoWait \`1 or 0\` LIKE: /setAutoWait 1`,
+        `⛔ Invalid value. Usage: /set_auto_wait \`1 or 0\` LIKE: /set_auto_wait 1`,
       );
     }
 
