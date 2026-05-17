@@ -124,6 +124,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
   }
 
   bot.onText(/\/start$/, async (msg) => {
+    console.log("SETTTTTT");
     bot.setMyCommands(
       Object.values(COMMANDS).filter((item) => item.command !== "add"),
       {
