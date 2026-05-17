@@ -10,7 +10,9 @@ import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs
 import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
-import summarizeLogsAfterAcceptance from "./summarizeLogsAfterAcceptance.mjs";
+import summarizeLogsAfterAcceptance, {
+  readLogsAsArray,
+} from "./summarizeLogsAfterAcceptance.mjs";
 import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
@@ -24,6 +26,54 @@ async function pdfToBase64(filePath) {
   const buf = await readFile(filePath);
   return buf.toString("base64");
 }
+
+const getWaitBasedRefferalDatesAndLogs = async ({
+  referralId,
+  referralEndTimestamp,
+  diff,
+  extraBackendDelayMs,
+}) => {
+  let extraWait = diff > 0 ? 0 : diff < 0 ? 0 : 4;
+  const extraBotMessages = [];
+
+  const logsData = await readLogsAsArray(referralEndTimestamp);
+
+  let lastReferralLog = {};
+
+  if (logsData?.length) {
+    lastReferralLog = logsData[logsData.length - 1] || {};
+  }
+
+  const { diff: lastDiff } = lastReferralLog || {};
+
+  if (diff < 0) {
+    if (lastDiff < 0) {
+      extraWait = 5;
+    } else {
+      extraWait = -1;
+    }
+    extraBotMessages.push(
+      // `Please Tell \`Ahmed\` of this: Found diff of \`${diff}\` Less than 0 where referralId=\`${referralId}\``,
+      `Found diff of \`${diff}\` Less than 0`,
+    );
+  }
+
+  if (extraBackendDelayMs >= 2000) {
+    extraWait += 4;
+  }
+
+  if (extraBackendDelayMs < 1000) {
+    extraBotMessages.push(
+      // `Please Tell \`Ahmed\` of this: Found extra backend delay of \`${extraBackendDelayMs}\` < 1000 where referralId=\`${referralId}\``,
+      `Found extra backend delay of \`${extraBackendDelayMs}\` < 1000`,
+    );
+  }
+
+  return {
+    computedExtraWait: extraWait,
+    computedExtraBotMessages: extraBotMessages,
+  };
+};
 
 const handleCaseAcceptanceOrRejection =
   ({
@@ -176,24 +226,17 @@ const handleCaseAcceptanceOrRejection =
 
       let extraWait = 0;
 
+      const { computedExtraBotMessages, computedExtraWait } =
+        await getWaitBasedRefferalDatesAndLogs({
+          referralId,
+          referralEndTimestamp,
+          diff,
+          extraBackendDelayMs,
+        });
+
       if (ENABLE_AUTO_WAITING === "1") {
-        extraWait = diff > 0 ? 0 : diff < 0 ? -1 : 4;
-
-        if (diff < 0) {
-          extraBotMessages.push(
-            `Please Tell \`Ahmed\` of this: Found diff of \`${diff}\` Less than 0 where referralId=\`${referralId}\``,
-          );
-        }
-
-        if (extraBackendDelayMs >= 2000) {
-          extraWait += extraWait === 0 ? 4 : 2;
-        }
-
-        if (extraBackendDelayMs < 1000) {
-          extraBotMessages.push(
-            `Please Tell \`Ahmed\` of this: Found extra backend delay of \`${extraBackendDelayMs}\` Less than 1000 where referralId=\`${referralId}\``,
-          );
-        }
+        extraWait = computedExtraWait;
+        extraBotMessages = extraBotMessages.concat(computedExtraBotMessages);
       }
 
       const waitTime = baseWaitingTime + extraWait;
@@ -260,6 +303,11 @@ const handleCaseAcceptanceOrRejection =
       if (isAcceptanceAction) {
         await summarizeLogsAfterAcceptance(logs);
       }
+
+      createConsoleMessage(
+        `patient=${referralId}, computedExtraWait=${computedExtraWait} computedExtraBotMessages=${computedExtraBotMessages.join("\n")}`,
+        "warn",
+      );
 
       // continueFetchingPatientsIfPaused();
     } catch (error) {

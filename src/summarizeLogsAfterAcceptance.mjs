@@ -126,6 +126,8 @@ const summarizeLogsAfterAcceptance = async (data) => {
   );
 };
 
+export default summarizeLogsAfterAcceptance;
+
 /**
  * Updates fields of a specific case row in the log file.
  *
@@ -190,7 +192,65 @@ export async function updateCaseInLog(
   await writeFile(currentMonthOutputFile, updatedLines.join("\n"), "utf8");
 }
 
-export default summarizeLogsAfterAcceptance;
+export async function readLogsAsArray(referralEndTimestamp) {
+  const ts = referralEndTimestamp ?? Date.now();
+  const file = getOutputFileBasedOnCaseEndTime(ts);
+
+  let raw;
+
+  if (await checkPathExists(file)) {
+    raw = await readFile(file, "utf8");
+  } else {
+    // fall back to previous month
+    const prevMonthTs = new Date(ts);
+    prevMonthTs.setMonth(prevMonthTs.getMonth() - 1);
+    const prevFile = getOutputFileBasedOnCaseEndTime(prevMonthTs.getTime());
+
+    if (await checkPathExists(prevFile)) {
+      raw = await readFile(prevFile, "utf8");
+    } else {
+      return [];
+    }
+  }
+
+  return raw
+    .split("\n")
+    .filter((line) => line.trim() && !/^\s*ID\s*\|/.test(line))
+    .map((line) => {
+      const cols = line.split("|").map((c) => c.trim());
+
+      const current = {};
+      LOGS_SUMMARY_HEADERS.forEach((key, i) => {
+        current[key] = cols[i] ?? "";
+      });
+
+      const [base, extra] = (current.waitTime || "0_0").split("_").map(Number);
+
+      const diff = parseInt(
+        current["endVsReady(diff)"]?.match(/-?\d+/)?.[0] ?? "0",
+        10,
+      );
+
+      return {
+        referralId: current.ID,
+        waitTime: base,
+        extraWait: extra || 0,
+        referralEndTimestamp: parseInt(current.end, 10) || null,
+        readySeenAt: parseInt(current.readyAt, 10) || null,
+        diff,
+        zeroSeenAt: parseInt(current.zeroAt, 10) || null,
+        extraBackendDelayMs: parseInt(current.backendDelay, 10) || null,
+        endDateBasedServerDateMs: parseInt(current.serverEnd, 10) || null,
+        endVsServer: parseInt(current.endVsServer, 10) || 0,
+        readyVsServer: parseInt(current.readyVsServer, 10) || null,
+        clickedAt: parseInt(current.clickedAt, 10) || null,
+        tookMS: parseInt(current.tookMS, 10) || null,
+        status: current.status || "",
+        referralEndDate: current.endDateString || "",
+      };
+    })
+    .filter((r) => !isNaN(r.referralId) && r.referralId > 0);
+}
 
 export async function migrateLogWidths(referralEndTimestamp) {
   const file = getOutputFileBasedOnCaseEndTime(referralEndTimestamp);
