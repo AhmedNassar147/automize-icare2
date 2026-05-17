@@ -26,49 +26,6 @@ const execAsync = promisify(exec);
 
 const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 
-const COMMANDS = {
-  add: {
-    value: /\/add/,
-    command: "add",
-    description: "add your self for authorization",
-  },
-  me: {
-    value: /\/me/,
-    command: "me",
-    description: "make your self active to receive and control cases",
-  },
-  f_accept: {
-    value: /\/f_accept$/,
-    command: "f_accept",
-    description:
-      "get First going to be accepted patient with time left details",
-  },
-  wait: {
-    value: /\/wait$/,
-    command: "wait",
-    description: "get current wait time before hitting the accept button",
-  },
-  auto_wait: {
-    value: /\/auto_wait$/,
-    command: "auto_wait",
-    description: "get if auto update wait time is enabled or not",
-  },
-  updateCode: {
-    value: /\/update_code$/,
-    command: "update_code",
-    description: "pull latest code from master and restart the server",
-  },
-  // setWait: {
-  //   command: /\/wait (\d+)/,
-  //   description: `set wait time to wait before hitting the accept button. \'Example: /wait 2010\'`,
-  // },
-  // setAutoWait: {
-  //   command: /\/auto_wait (\d+)/,
-  //   description:
-  //     "enable or disable auto update wait time. \'Example: /auto_wait 1 OR /auto_wait 0\'",
-  // },
-};
-
 const buildButtons = (referralId) => ({
   inline_keyboard: [
     [
@@ -123,17 +80,6 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   }
 
-  bot.onText(/\/start$/, async (msg) => {
-    console.log("SETTTTTT");
-    bot.setMyCommands(
-      Object.values(COMMANDS).filter((item) => item.command !== "add"),
-      {
-        language_code: "en",
-        scope: { type: "default" },
-      },
-    );
-  });
-
   const getAllowedList = () =>
     process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || [];
 
@@ -162,6 +108,55 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         ? undefined
         : `⛔ \`${fromName}\` you are not Authorized.`,
     };
+  };
+
+  const COMMANDS = {
+    add: {
+      value: /\/add/,
+      desc: "add your self for authorization",
+      example: "/add",
+    },
+    me: {
+      value: /\/me/,
+      desc: "make your self active to receive and control cases",
+      example: "/me",
+    },
+    wait: {
+      value: /\/wait$/,
+      desc: "get current wait time before hitting the accept button",
+      example: "/wait",
+    },
+    setWait: {
+      value: /\/wait (\d+)/,
+      desc: "set wait time to wait before hitting the accept button",
+      example: "/wait 2010",
+      exampleNote: "2010 is an example, use any number above 1600",
+    },
+    f_accept: {
+      value: /\/f_accept$/,
+      desc: "get First going to be accepted patient with time left details",
+      example: "/f_accept",
+    },
+    auto_wait: {
+      value: /\/auto_wait$/,
+      desc: "get if auto update wait time is enabled or not",
+      example: "/auto_wait",
+    },
+    setAutoWait: {
+      value: /\/auto_wait (\d+)/,
+      desc: "enable or disable auto update wait time",
+      example: "/auto_wait 1 OR /auto_wait 0",
+    },
+    updateCode: {
+      value: /\/update_code$/,
+      desc: "pull latest code from master and restart the server",
+      example: "/update_code",
+    },
+    cmds: {
+      value: /\/cmds$/,
+      desc: "get all available commands",
+      example: "/cmds",
+    },
   };
 
   bot.onText(COMMANDS.me.value, async (msg) => {
@@ -295,32 +290,32 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  // bot.onText(COMMANDS.setWait.value, async (msg, match) => {
-  //   const { unAuthorizedMessage, chatId, fromName } =
-  //     getIfNotAuthorizedMessage(msg);
+  bot.onText(COMMANDS.setWait.value, async (msg, match) => {
+    const { unAuthorizedMessage, chatId, fromName } =
+      getIfNotAuthorizedMessage(msg);
 
-  //   if (unAuthorizedMessage) {
-  //     await sendBotMessage(chatId, unAuthorizedMessage);
-  //     return;
-  //   }
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
 
-  //   const value = parseInt(match[1], 10);
+    const value = parseInt(match[1], 10);
 
-  //   if (isNaN(value) || value < 1600) {
-  //     await sendBotMessage(
-  //       chatId,
-  //       `⛔ Invalid number. Usage: /wait 2005 and value must be greater than 1600`,
-  //     );
-  //     return;
-  //   }
+    if (isNaN(value) || value < 1600) {
+      await sendBotMessage(
+        chatId,
+        `⛔ Invalid number. Usage: /wait 2005 and value must be greater than 1600`,
+      );
+      return;
+    }
 
-  //   updateEnvFile({ WAIT_FOR_ACCEPT_MS: value });
+    updateEnvFile({ WAIT_FOR_ACCEPT_MS: value });
 
-  //   await sendBotMessage(
-  //     chatId,
-  //     `✅ Hi \`${fromName}\`, wait time set to \`${value}\`ms successfully.`,
-  //   );
-  // });
+    await sendBotMessage(
+      chatId,
+      `✅ Hi \`${fromName}\`, wait time set to \`${value}\`ms successfully.`,
+    );
+  });
 
   bot.onText(COMMANDS.f_accept.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName, msgId } =
@@ -373,41 +368,41 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  // bot.onText(COMMANDS.setAutoWait.value, async (msg, match) => {
-  //   const { unAuthorizedMessage, chatId, fromName } =
-  //     getIfNotAuthorizedMessage(msg);
+  bot.onText(COMMANDS.setAutoWait.value, async (msg, match) => {
+    const { unAuthorizedMessage, chatId, fromName } =
+      getIfNotAuthorizedMessage(msg);
 
-  //   if (unAuthorizedMessage) {
-  //     await sendBotMessage(chatId, unAuthorizedMessage);
-  //     return;
-  //   }
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
 
-  //   const value = match[1] || "";
+    const value = match[1] || "";
 
-  //   if (!["1", "0"].includes(value)) {
-  //     return await sendBotMessage(
-  //       chatId,
-  //       `⛔ Invalid value. Usage: /auto_wait \`1 or 0\` LIKE: /auto_wait 1`,
-  //     );
-  //   }
+    if (!["1", "0"].includes(value)) {
+      return await sendBotMessage(
+        chatId,
+        `⛔ Invalid value. Usage: /auto_wait \`1 or 0\` LIKE: /auto_wait 1`,
+      );
+    }
 
-  //   const isActive = value === "1";
-  //   const isSame = process.env.ENABLE_AUTO_WAITING === value;
+    const isActive = value === "1";
+    const isSame = process.env.ENABLE_AUTO_WAITING === value;
 
-  //   if (isSame) {
-  //     return await sendBotMessage(
-  //       chatId,
-  //       `⛔ Auto waiting is already ${isActive ? "enabled" : "disabled"} `,
-  //     );
-  //   }
+    if (isSame) {
+      return await sendBotMessage(
+        chatId,
+        `⛔ Auto waiting is already ${isActive ? "enabled" : "disabled"} `,
+      );
+    }
 
-  //   updateEnvFile({ ENABLE_AUTO_WAITING: value });
+    updateEnvFile({ ENABLE_AUTO_WAITING: value });
 
-  //   await sendBotMessage(
-  //     chatId,
-  //     `✅ Auto waiting just ${isActive ? "enabled" : "disabled"} `,
-  //   );
-  // });
+    await sendBotMessage(
+      chatId,
+      `✅ Auto waiting just ${isActive ? "enabled" : "disabled"} `,
+    );
+  });
 
   bot.onText(COMMANDS.updateCode.value, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
@@ -486,6 +481,31 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
         `❌ Update failed:\n\`\`\`\n${err.message}\n\`\`\``,
       );
     }
+  });
+
+  bot.onText(COMMANDS.cmds.value, async (msg, match) => {
+    const { unAuthorizedMessage, chatId, fromName } =
+      getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    const formattedMessage =
+      `📋 *Available Commands*\n` +
+      `─────────────────────────\n\n` +
+      Object.entries(COMMANDS)
+        .map(([key, { desc, example, exampleNote }]) => {
+          const exampleLine = exampleNote
+            ? `\`${example}\` _← ${exampleNote}_`
+            : `\`${example}\``;
+
+          return `▶️ ${exampleLine}\n_${desc}_`;
+        })
+        .join("\n\n");
+
+    await sendBotMessage(chatId, formattedMessage);
   });
 
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {
