@@ -169,21 +169,18 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
 
   await setupCommands();
 
-  bot.onText(/\/start/, async (msg) => {
-    const commands = await bot.getMyCommands({
-      scope: { type: "default" },
-    });
-
-    await bot.sendMessage(
-      msg.chat.id,
-      "Bot started. Type / to see available commands.",
-    );
-  });
-
   bot.onText(/\/clear_commands/, async (msg) => {
+    const chatId = msg.chat.id;
+
+    await bot.deleteMyCommands({ scope: { type: "default" } });
+    await bot.deleteMyCommands({ scope: { type: "all_private_chats" } });
+    await bot.deleteMyCommands({ scope: { type: "all_group_chats" } });
+    await bot.deleteMyCommands({ scope: { type: "all_chat_administrators" } });
+
     await bot.deleteMyCommands({
       scope: {
-        type: "default",
+        type: "chat",
+        chat_id: chatId,
       },
     });
 
