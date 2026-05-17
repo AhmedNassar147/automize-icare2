@@ -37,15 +37,21 @@ const COMMANDS = {
     description: "make yourself active to receive and control cases",
     command: "me",
   },
-  wait: {
-    value: /\/wait$/,
-    description: "get current wait time before hitting the accept button",
-    command: "wait",
-  },
   setWait: {
     value: /\/set_wait (\d+)/,
     description: "Long press → set wait time. Example: /set_wait 2050",
     command: "set_wait",
+  },
+  setAutoWait: {
+    value: /\/set_auto_wait (\d+)/,
+    description:
+      "Long press → enable/disable auto wait. Example: /set_auto_wait 1",
+    command: "set_auto_wait",
+  },
+  wait: {
+    value: /\/wait$/,
+    description: "get current wait time before hitting the accept button",
+    command: "wait",
   },
   f_accept: {
     value: /\/f_accept$/,
@@ -56,12 +62,6 @@ const COMMANDS = {
     value: /\/auto_wait$/,
     description: "get if auto update wait time is enabled or not",
     command: "auto_wait",
-  },
-  setAutoWait: {
-    value: /\/set_auto_wait (\d+)/,
-    description:
-      "Long press → enable/disable auto wait. Example: /set_auto_wait 1",
-    command: "set_auto_wait",
   },
   updateCode: {
     value: /\/update_code$/,
@@ -175,8 +175,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
     const commands = await bot.getMyCommands({
       scope: { type: "default" },
     });
-
-    console.log("saved commands", commands);
 
     await bot.sendMessage(
       msg.chat.id,
