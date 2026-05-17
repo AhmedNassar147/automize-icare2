@@ -184,6 +184,20 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
     );
   });
 
+  bot.onText(/\/clear_commands/, async (msg) => {
+    await bot.deleteMyCommands({
+      scope: {
+        type: "chat",
+        chat_id: msg.chat.id,
+      },
+    });
+
+    await bot.sendMessage(
+      msg.chat.id,
+      "Commands cleared for this chat. Reopen the bot chat.",
+    );
+  });
+
   bot.onText(COMMANDS.me.value, async (msg) => {
     const { chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
