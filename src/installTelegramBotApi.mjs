@@ -28,39 +28,45 @@ const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 
 const COMMANDS = {
   add: {
-    command: /\/add/,
+    value: /\/add/,
+    command: "add",
     description: "add your self for authorization",
   },
   me: {
-    command: /\/me/,
+    value: /\/me/,
+    command: "me",
     description: "make your self active to receive and control cases",
   },
   f_accept: {
-    command: /\/f_accept$/,
+    value: /\/f_accept$/,
+    command: "f_accept",
     description:
       "get First going to be accepted patient with time left details",
   },
   wait: {
-    command: /\/wait$/,
+    value: /\/wait$/,
+    command: "wait",
     description: "get current wait time before hitting the accept button",
   },
   auto_wait: {
-    command: /\/auto_wait$/,
+    value: /\/auto_wait$/,
+    command: "auto_wait",
     description: "get if auto update wait time is enabled or not",
   },
   updateCode: {
-    command: /\/update_code$/,
+    value: /\/update_code$/,
+    command: "update_code",
     description: "pull latest code from master and restart the server",
   },
-  setWait: {
-    command: /\/wait (\d+)/,
-    description: `set wait time to wait before hitting the accept button. \'Example: /wait 2010\'`,
-  },
-  setAutoWait: {
-    command: /\/auto_wait (\d+)/,
-    description:
-      "enable or disable auto update wait time. \'Example: /auto_wait 1 OR /auto_wait 0\'",
-  },
+  // setWait: {
+  //   command: /\/wait (\d+)/,
+  //   description: `set wait time to wait before hitting the accept button. \'Example: /wait 2010\'`,
+  // },
+  // setAutoWait: {
+  //   command: /\/auto_wait (\d+)/,
+  //   description:
+  //     "enable or disable auto update wait time. \'Example: /auto_wait 1 OR /auto_wait 0\'",
+  // },
 };
 
 const buildButtons = (referralId) => ({
@@ -119,9 +125,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
   bot.onText(/\/start$/, async (msg) => {
     bot.setMyCommands(
-      Object.values(COMMANDS).filter(
-        (item) => !item.description.includes("add your self"),
-      ),
+      Object.values(COMMANDS).filter((item) => item.command !== "add"),
     );
   });
 
@@ -155,7 +159,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     };
   };
 
-  bot.onText(COMMANDS.me.command, async (msg) => {
+  bot.onText(COMMANDS.me.value, async (msg) => {
     const { chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
 
@@ -239,7 +243,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.add.command, async (msg) => {
+  bot.onText(COMMANDS.add.value, async (msg) => {
     const { allowedList, chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
 
@@ -272,7 +276,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     });
   });
 
-  bot.onText(COMMANDS.wait.command, async (msg) => {
+  bot.onText(COMMANDS.wait.value, async (msg) => {
     const { chatId, unAuthorizedMessage } = getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
@@ -286,7 +290,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.setWait.command, async (msg, match) => {
+  bot.onText(COMMANDS.setWait.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName } =
       getIfNotAuthorizedMessage(msg);
 
@@ -313,7 +317,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.f_accept.command, async (msg, match) => {
+  bot.onText(COMMANDS.f_accept.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName, msgId } =
       getIfNotAuthorizedMessage(msg);
 
@@ -347,7 +351,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.auto_wait.command, async (msg, match) => {
+  bot.onText(COMMANDS.auto_wait.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName } =
       getIfNotAuthorizedMessage(msg);
 
@@ -364,7 +368,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.setAutoWait.command, async (msg, match) => {
+  bot.onText(COMMANDS.setAutoWait.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName } =
       getIfNotAuthorizedMessage(msg);
 
@@ -400,7 +404,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     );
   });
 
-  bot.onText(COMMANDS.updateCode.command, async (msg) => {
+  bot.onText(COMMANDS.updateCode.value, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
