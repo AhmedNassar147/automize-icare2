@@ -22,8 +22,6 @@ import sleep from "./sleep.mjs";
 
 const execAsync = promisify(exec);
 
-// https://t.me/td_cases_bot
-
 const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 
 const COMMANDS = {
