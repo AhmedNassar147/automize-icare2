@@ -129,7 +129,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
       Object.values(COMMANDS).filter((item) => item.command !== "add"),
       {
         language_code: "en",
-        scope: { type: "chat" },
+        scope: { type: "default" },
       },
     );
   });
