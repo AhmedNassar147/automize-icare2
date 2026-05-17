@@ -232,4 +232,4 @@ export async function migrateLogWidths(referralEndTimestamp) {
   createConsoleMessage(`✅ Log migrated → ${file}`, "info");
 }
 
-await migrateLogWidths(1779014471000);
+// await migrateLogWidths(1779014471000);
