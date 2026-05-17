@@ -26,6 +26,51 @@ const execAsync = promisify(exec);
 
 const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 
+const COMMANDS = {
+  add: {
+    value: /\/add/,
+    description: "add your self for authorization",
+    command: "add",
+  },
+  me: {
+    value: /\/me/,
+    description: "make your self active to receive and control cases",
+    command: "me",
+  },
+  wait: {
+    value: /\/wait$/,
+    description: "get current wait time before hitting the accept button",
+    command: "wait",
+  },
+  setWait: {
+    value: /\/setWait (\d+)/,
+    description:
+      "(Long press) to set wait time to wait before hitting the accept button _Example: \`/setWait 2050\`_",
+    command: "setWait",
+  },
+  f_accept: {
+    value: /\/f_accept$/,
+    description:
+      "get First going to be accepted patient with time left details",
+    command: "f_accept",
+  },
+  auto_wait: {
+    value: /\/auto_wait$/,
+    description: "get if auto update wait time is enabled or not",
+    command: "auto_wait",
+  },
+  setAutoWait: {
+    value: /\/setAutoWait (\d+)/,
+    description: `(Long press) to Enable or disable auto update wait time, Example: \`/auto_wait 1\` OR \`/auto_wait 0\``,
+    command: "setAutoWait",
+  },
+  updateCode: {
+    value: /\/update_code$/,
+    description: "pull latest code from master and restart the server",
+    command: "update_code",
+  },
+};
+
 const buildButtons = (referralId) => ({
   inline_keyboard: [
     [
@@ -110,54 +155,16 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     };
   };
 
-  const COMMANDS = {
-    add: {
-      value: /\/add/,
-      desc: "add your self for authorization",
-      example: "/add",
-    },
-    me: {
-      value: /\/me/,
-      desc: "make your self active to receive and control cases",
-      example: "/me",
-    },
-    wait: {
-      value: /\/wait$/,
-      desc: "get current wait time before hitting the accept button",
-      example: "/wait",
-    },
-    setWait: {
-      value: /\/wait (\d+)/,
-      desc: "set wait time to wait before hitting the accept button",
-      example: "/wait 2010",
-      exampleNote: "2010 is an example, use any number above 1600",
-    },
-    f_accept: {
-      value: /\/f_accept$/,
-      desc: "get First going to be accepted patient with time left details",
-      example: "/f_accept",
-    },
-    auto_wait: {
-      value: /\/auto_wait$/,
-      desc: "get if auto update wait time is enabled or not",
-      example: "/auto_wait",
-    },
-    setAutoWait: {
-      value: /\/auto_wait (\d+)/,
-      desc: "enable or disable auto update wait time",
-      example: "/auto_wait 1 OR /auto_wait 0",
-    },
-    updateCode: {
-      value: /\/update_code$/,
-      desc: "pull latest code from master and restart the server",
-      example: "/update_code",
-    },
-    cmds: {
-      value: /\/cmds$/,
-      desc: "get all available commands",
-      example: "/cmds",
-    },
-  };
+  bot.onText(/\/start$/, async (msg) => {
+    const { unAuthorizedMessage } = getIfNotAuthorizedMessage(msg);
+
+    if (!unAuthorizedMessage) {
+      await bot.setMyCommands(
+        Object.values(COMMANDS).filter((item) => item.command !== "add"),
+        { scope: { type: "default" } },
+      );
+    }
+  });
 
   bot.onText(COMMANDS.me.value, async (msg) => {
     const { chatId, fromName, unAuthorizedMessage } =
@@ -304,7 +311,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     if (isNaN(value) || value < 1600) {
       await sendBotMessage(
         chatId,
-        `⛔ Invalid number. Usage: /wait 2005 and value must be greater than 1600`,
+        `⛔ Invalid number. Usage: /setWait 2005 and value must be greater than 1600`,
       );
       return;
     }
@@ -382,7 +389,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
     if (!["1", "0"].includes(value)) {
       return await sendBotMessage(
         chatId,
-        `⛔ Invalid value. Usage: /auto_wait \`1 or 0\` LIKE: /auto_wait 1`,
+        `⛔ Invalid value. Usage: /setAutoWait \`1 or 0\` LIKE: /setAutoWait 1`,
       );
     }
 
@@ -400,7 +407,7 @@ const installTelegramBotApi = (TG_TOKEN, patientsStore) => {
 
     await sendBotMessage(
       chatId,
-      `✅ Auto waiting just ${isActive ? "enabled" : "disabled"} `,
+      `✅ Auto waiting just just updated to be ${isActive ? "enabled" : "disabled"} `,
     );
   });
 
