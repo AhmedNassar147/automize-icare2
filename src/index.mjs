@@ -463,10 +463,15 @@ const currentProfile = "Profile 1";
 
         const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
 
-        const { referralId, referralEndTimestamp } = firstGoindToAccept || {};
+        const {
+          referralId,
+          referralEndTimestamp,
+          readySeenAtLocalMs,
+          waitTime,
+        } = firstGoindToAccept || {};
 
         createConsoleMessage(
-          `caseId=${referralId} case-outcome=${outcome} clickedAt=${clickedAt} elapsed=${elapsedMs}ms`,
+          `caseId=${referralId} case-outcome=${outcome} clickedAt=${clickedAt} elapsed=${elapsedMs}ms readySeenAtLocalMs=${readySeenAtLocalMs} waitTime=${waitTime}ms`,
           "info",
         );
 
@@ -474,6 +479,7 @@ const currentProfile = "Profile 1";
           await updateCaseInLog(referralId, referralEndTimestamp, {
             status: `${outcome}_${elapsedMs}`,
             clickedAt,
+            tookMS: clickedAt - (readySeenAtLocalMs + waitTime),
           });
         }
 
@@ -539,6 +545,7 @@ const currentProfile = "Profile 1";
         sendWhatsappMessage,
         sendTelegramMessage,
         continueFetchingPatientsIfPaused,
+        patientStore: patientsStore,
       }),
     );
 
@@ -551,6 +558,7 @@ const currentProfile = "Profile 1";
         sendWhatsappMessage,
         sendTelegramMessage,
         continueFetchingPatientsIfPaused,
+        patientStore: patientsStore,
       }),
     );
 

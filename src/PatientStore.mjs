@@ -417,6 +417,35 @@ class PatientStore extends EventEmitter {
     return { success: true, message: USER_MESSAGES.cancelSuccess };
   }
 
+  async updatePatient(referralId, updates) {
+    try {
+      const patient = this.patientsById.get(referralId);
+
+      if (!patient) {
+        return {
+          success: false,
+          message: `❌ Patient ${referralId} Not found for update, (readySeenAtLocalMs)`,
+        };
+      }
+
+      const updatedPatient = { ...patient, ...updates };
+      this.patientsById.set(referralId, updatedPatient);
+      this.invalidateCache();
+
+      await safeWritePatientData(this.getAllPatients());
+
+      return {
+        success: true,
+        message: `✅ Patient ${referralId} updated (readySeenAtLocalMs).`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `❌ Patient ${referralId} not updated (readySeenAtLocalMs).`,
+      };
+    }
+  }
+
   getFirstGoingToAccept() {
     return this.getAllPatients()
       ?.filter(

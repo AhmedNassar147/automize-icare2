@@ -208,6 +208,7 @@ export const LOGS_SUMMARY_HEADERS = [
   "endVsServer",
   "readyVsServer",
   "clickedAt",
+  "tookMS",
   "status",
   "endDateString",
 ];

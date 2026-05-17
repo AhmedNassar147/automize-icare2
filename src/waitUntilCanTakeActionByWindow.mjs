@@ -34,6 +34,7 @@ async function waitUntilCanTakeActionByWindow({
       let onZeroSecondCalled = false;
       let zeroSeenAt = 0;
       let readySeenAt = 0;
+      let readySeenAtLocalMs = 0;
 
       async function fetchDetailsOnce() {
         try {
@@ -83,6 +84,7 @@ async function waitUntilCanTakeActionByWindow({
 
           if (ok) {
             readySeenAt = serverNow || localNow;
+            readySeenAtLocalMs = localNow;
           }
 
           return {
@@ -130,6 +132,7 @@ async function waitUntilCanTakeActionByWindow({
             readySeenAt,
             extraBackendDelayMs:
               zeroSeenAt && readySeenAt ? readySeenAt - zeroSeenAt : null,
+            readySeenAtLocalMs,
           };
         }
 

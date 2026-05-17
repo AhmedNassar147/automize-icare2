@@ -33,6 +33,7 @@ const handleCaseAcceptanceOrRejection =
     sendTelegramMessage,
     continueFetchingPatientsIfPaused,
     browser,
+    patientStore,
   }) =>
   async (patient) => {
     const {
@@ -163,6 +164,7 @@ const handleCaseAcceptanceOrRejection =
         zeroSeenAt,
         readySeenAt,
         extraBackendDelayMs,
+        readySeenAtLocalMs,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
@@ -209,6 +211,15 @@ const handleCaseAcceptanceOrRejection =
       ];
 
       await Promise.all(promises);
+
+      const updateResult = await patientStore.updatePatient(referralId, {
+        readySeenAtLocalMs,
+        waitTime: waitTime,
+      });
+
+      if (!updateResult.success) {
+        extraBotMessages.push(updateResult.message);
+      }
 
       const isTimeChanged = waitTime !== baseWaitingTime;
 

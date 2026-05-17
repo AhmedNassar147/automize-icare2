@@ -44,6 +44,7 @@ const widths = {
   backendDelay: 12,
   readyVsServer: 13,
   clickedAt: 14,
+  tookMS: 10,
   status: 21,
   endDateString: 22,
 };
@@ -101,6 +102,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     readyVsServer: readySeenAt - endDateBasedServerDateMs,
     endDateString: data.referralEndDate,
     clickedAt: "",
+    tookMS: "",
   };
 
   const exists = await checkPathExists(outputFile);
@@ -169,6 +171,7 @@ export async function updateCaseInLog(
       readyVsServer: "readyVsServer",
       backendDelay: "backendDelay",
       clickedAt: "clickedAt",
+      tookMS: "tookMS",
     };
 
     for (const [field, value] of Object.entries(updates)) {
@@ -229,4 +232,4 @@ export async function migrateLogWidths(referralEndTimestamp) {
   createConsoleMessage(`✅ Log migrated → ${file}`, "info");
 }
 
-// await migrateLogWidths(1779014471000);
+await migrateLogWidths(1779014471000);
