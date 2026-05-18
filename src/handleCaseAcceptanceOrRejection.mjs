@@ -27,31 +27,65 @@ async function pdfToBase64(filePath) {
   return buf.toString("base64");
 }
 
+const NEARST_CASE_IN_MIN = 6;
+const NEARST_CASE_IN_MS = NEARST_CASE_IN_MIN * 60000;
+
+const MAX_CASE_REVIEW_MIN = 13;
+const MAX_CASE_REVIEW_MS = MAX_CASE_REVIEW_MIN * 60000;
+
 const getWaitBasedRefferalDatesAndLogs = async ({
   referralId,
   referralEndTimestamp,
   diff,
   extraBackendDelayMs,
 }) => {
-  let extraWait = diff === 0 ? 4 : 0;
-  const extraBotMessages = [];
-
   const logsData = await readLogsAsArray(referralEndTimestamp);
 
-  let lastReferralLog = {};
+  let lastReferralLog = logsData?.[logsData.length - 1] || {};
 
-  if (logsData?.length) {
-    lastReferralLog = logsData[logsData.length - 1] || {};
+  const {
+    diff: lastDiff,
+    extraWait: lastExtraWait,
+    referralEndTimestamp: lastReferralEndTimestamp,
+    referralId: lastReferralId,
+  } = lastReferralLog || {};
+
+  const diffBetweenLastAndCurrent = lastReferralEndTimestamp
+    ? referralEndTimestamp - lastReferralEndTimestamp
+    : 0;
+
+  const isNearToLastCase =
+    diffBetweenLastAndCurrent > 0 &&
+    diffBetweenLastAndCurrent <= NEARST_CASE_IN_MS;
+
+  let extraWait = isNearToLastCase ? 3 : diff >= 0 ? 5 : 0;
+  const extraBotMessages = [];
+
+  if (isNearToLastCase) {
+    extraBotMessages.push(
+      // `Please Tell \`Ahmed\` of this: Found diff between last and current of \`${diffBetweenLastAndCurrent}\` <= ${NEARST_CASE_IN_MIN} minutes where referralId=\`${referralId}\``,
+      `Found diff between last and current endTime of \`${diffBetweenLastAndCurrent / 60000}mins\` <= ${NEARST_CASE_IN_MIN} minutes`,
+    );
   }
 
-  const { diff: lastDiff, extraWait: lastExtraWait } = lastReferralLog || {};
+  let hasExtraWaitBasedMinusDiff = diff < 0;
 
   if (diff < 0) {
-    if (lastDiff < 0) {
+    if (typeof lastDiff === "number" && lastDiff < 0) {
       const _lastExtraWait = lastExtraWait || 0;
-      extraWait = 5 + (_lastExtraWait < 0 ? 3 : 5);
+      extraWait =
+        _lastExtraWait === 0
+          ? 9
+          : _lastExtraWait === 3
+            ? 6
+            : _lastExtraWait < 10
+              ? 10 - _lastExtraWait
+              : 10;
+
+      hasExtraWaitBasedMinusDiff = true;
     } else {
-      extraWait = -1;
+      extraWait += 0;
+      hasExtraWaitBasedMinusDiff = false;
     }
     extraBotMessages.push(
       // `Please Tell \`Ahmed\` of this: Found diff of \`${diff}\` Less than 0 where referralId=\`${referralId}\``,
@@ -61,13 +95,29 @@ const getWaitBasedRefferalDatesAndLogs = async ({
 
   if (extraBackendDelayMs >= 2000) {
     extraWait += 6;
-    extraWait = Math.max(extraWait, 13);
+    extraWait = Math.max(extraWait, 12);
   }
 
   if (extraBackendDelayMs < 1000) {
     extraBotMessages.push(
       // `Please Tell \`Ahmed\` of this: Found extra backend delay of \`${extraBackendDelayMs}\` < 1000 where referralId=\`${referralId}\``,
       `Found extra backend delay of \`${extraBackendDelayMs}\` < 1000`,
+    );
+  }
+
+  const isFarFromLastCase =
+    diffBetweenLastAndCurrent > 0 &&
+    diffBetweenLastAndCurrent >= MAX_CASE_REVIEW_MS;
+
+  if (
+    (diff >= 0 || (diff < 0 && !hasExtraWaitBasedMinusDiff)) &&
+    isFarFromLastCase
+  ) {
+    extraWait += 5;
+    extraWait = Math.min(extraWait, 12);
+    extraBotMessages.push(
+      // `Please Tell \`Ahmed\` of this: Found diff between last and current of \`${diffBetweenLastAndCurrent}\` >= ${MAX_CASE_REVIEW_MIN} minutes where referralId=\`${referralId}\``,
+      `Found diff between last and current endTime of \`${diffBetweenLastAndCurrent / 60000}mins\` >= ${MAX_CASE_REVIEW_MIN} minutes`,
     );
   }
 
