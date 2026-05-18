@@ -44,11 +44,12 @@ const getWaitBasedRefferalDatesAndLogs = async ({
     lastReferralLog = logsData[logsData.length - 1] || {};
   }
 
-  const { diff: lastDiff } = lastReferralLog || {};
+  const { diff: lastDiff, extraWait: lastExtraWait } = lastReferralLog || {};
 
   if (diff < 0) {
     if (lastDiff < 0) {
-      extraWait = 5;
+      const _lastExtraWait = lastExtraWait || 0;
+      extraWait = 6 + _lastExtraWait < 0 ? 2 : 4;
     } else {
       extraWait = -1;
     }
