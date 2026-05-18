@@ -456,9 +456,9 @@ const currentProfile = "Profile 1";
         const outcome =
           elapsedMs <= 570
             ? "need-less-wait"
-            : elapsedMs <= 800
+            : elapsedMs <= 700
               ? "moderate-waiting"
-              : elapsedMs <= 960
+              : elapsedMs <= 830
                 ? "good-waiting"
                 : elapsedMs <= 1100
                   ? "need-more-wait"
