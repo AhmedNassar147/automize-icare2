@@ -137,6 +137,7 @@ const getIfNotAuthorizedMessage = (msg) => {
   };
 };
 
+// ahmed
 const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
   const bot = new TelegramBot(TG_TOKEN, { polling: true, filepath: false });
 
