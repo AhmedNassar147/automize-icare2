@@ -61,6 +61,7 @@ const getWaitBasedRefferalDatesAndLogs = async ({
 
   if (extraBackendDelayMs >= 2000) {
     extraWait += 6;
+    extraWait = Math.max(extraWait, 13);
   }
 
   if (extraBackendDelayMs < 1000) {
