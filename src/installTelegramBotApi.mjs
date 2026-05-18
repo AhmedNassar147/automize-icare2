@@ -209,8 +209,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
     const { chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
 
-    await setupCommands();
-
     if (unAuthorizedMessage) {
       await sendBotMessage(chatId, unAuthorizedMessage);
       return;
