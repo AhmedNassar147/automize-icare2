@@ -66,6 +66,11 @@ const COMMANDS = {
     description: "pull latest code from master and restart the server",
     command: "update_code",
   },
+  clearCmds: {
+    value: /\/clear_commands/,
+    description: "clear commands from the bot",
+    command: "clear_commands",
+  },
 };
 
 const buildButtons = (referralId) => ({
@@ -174,9 +179,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
     createConsoleMessage(`commandsSet`, "info");
   }
 
-  await setupCommands();
-
-  bot.onText(/\/clear_commands/, async (msg) => {
+  bot.onText(COMMANDS.clearCmds.value, async (msg) => {
     const chatId = String(msg.chat.id);
 
     await bot.deleteMyCommands({ scope: { type: "default" } });
@@ -269,6 +272,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
       ),
       [`TG_PHONE_NUMBER_${chatId}`]: phoneNumber,
     });
+
+    await setupCommands();
 
     await bot.sendMessage(
       chatId,
