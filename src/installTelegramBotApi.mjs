@@ -42,8 +42,7 @@ const COMMANDS = {
   },
   setAutoWait: {
     value: /\/set_auto_wait (\d+)/,
-    description:
-      "Long press → enable/disable auto wait. Example: /set_auto_wait 1",
+    description: "Long press → control auto wait. Example: /set_auto_wait 1",
     command: "set_auto_wait",
   },
   wait: {
@@ -66,9 +65,14 @@ const COMMANDS = {
     description: "pull latest code from master and restart the server",
     command: "update_code",
   },
+  updateCmds: {
+    value: /\/update_commands/,
+    description: "update bot commands",
+    command: "update_commands",
+  },
   clearCmds: {
     value: /\/clear_commands/,
-    description: "clear commands from the bot",
+    description: "clear bot commands",
     command: "clear_commands",
   },
 };
@@ -205,6 +209,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
     const { chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
 
+    await setupCommands();
+
     if (unAuthorizedMessage) {
       await sendBotMessage(chatId, unAuthorizedMessage);
       return;
@@ -319,6 +325,17 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
         one_time_keyboard: true,
       },
     });
+  });
+
+  bot.onText(COMMANDS.updateCmds.value, async (msg) => {
+    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+    await setupCommands();
+
+    await sendBotMessage(chatId, `✅ Bot commands updated.`);
   });
 
   bot.onText(COMMANDS.wait.value, async (msg) => {
