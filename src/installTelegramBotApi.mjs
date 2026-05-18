@@ -160,17 +160,24 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
         description: item.description,
       }));
 
-    const result = await bot.setMyCommands(commands, {
-      scope: { type: "default" },
-    });
+    const TG_CHAT_ID = process.env.TG_CHAT_ID;
 
-    createConsoleMessage(`commandsSet=> ${result}`, "info");
+    await bot.setMyCommands(commands, { scope: { type: "default" } });
+
+    // also set for the active chat specifically so it takes precedence
+    if (TG_CHAT_ID) {
+      await bot.setMyCommands(commands, {
+        scope: { type: "chat", chat_id: TG_CHAT_ID },
+      });
+    }
+
+    createConsoleMessage(`commandsSet`, "info");
   }
 
   await setupCommands();
 
   bot.onText(/\/clear_commands/, async (msg) => {
-    const chatId = msg.chat.id;
+    const chatId = String(msg.chat.id);
 
     await bot.deleteMyCommands({ scope: { type: "default" } });
     await bot.deleteMyCommands({ scope: { type: "all_private_chats" } });
@@ -185,7 +192,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
     });
 
     await bot.sendMessage(
-      msg.chat.id,
+      chatId,
       "Commands cleared for this chat. Reopen the bot chat.",
     );
   });
