@@ -58,12 +58,10 @@ const getOutputFileBasedOnCaseEndTime = (referralEndTimestamp) => {
 
 const summarizeLogsAfterAcceptance = async (data) => {
   const {
+    referralId,
     waitTime,
     extraWait,
     referralEndTimestamp,
-    isEndDateGreaterThanFinalCaseDate,
-    isEndDateEqualToFinalCaseDate,
-    referralId,
     endDateBasedServerDateMs,
     readySeenAt,
     zeroSeenAt,
