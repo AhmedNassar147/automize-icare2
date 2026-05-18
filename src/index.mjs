@@ -462,7 +462,7 @@ const currentProfile = "Profile 1";
                 ? "good-waiting"
                 : elapsedMs <= 1100
                   ? "need-more-wait"
-                  : elapsedMs < Number(process.env.BLOCK_TIME_MS) - 1
+                  : elapsedMs <= Number(process.env.BLOCK_TIME_MS) - 1
                     ? "near-to-block"
                     : "blocked";
 
