@@ -49,9 +49,9 @@ const getWaitBasedRefferalDatesAndLogs = async ({
   if (diff < 0) {
     if (lastDiff < 0) {
       const _lastExtraWait = lastExtraWait || 0;
-      extraWait = 5 + (_lastExtraWait === 1 ? 2 : 4);
+      extraWait = 5 + (_lastExtraWait === 0 ? 2 : 4);
     } else {
-      extraWait = 1;
+      extraWait = 0;
     }
     extraBotMessages.push(
       // `Please Tell \`Ahmed\` of this: Found diff of \`${diff}\` Less than 0 where referralId=\`${referralId}\``,
