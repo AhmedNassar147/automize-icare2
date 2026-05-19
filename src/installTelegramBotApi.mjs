@@ -26,6 +26,7 @@ import { HOME_PAGE_URL, USER_ACTION_TYPES } from "./constants.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
+import closePageSafely from "./closePageSafely.mjs";
 
 const execAsync = promisify(exec);
 
@@ -780,6 +781,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
           noCursor: true,
           noBundleCheck: true,
         });
+
+      await closePageSafely(newPage);
 
       if (isErrorAboutLockedOut) {
         return await sendBotMessage(
