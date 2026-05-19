@@ -74,7 +74,8 @@ const getWaitBasedRefferalDatesAndLogs = async ({
   if (diff < 0) {
     if (typeof lastDiff === "number" && lastDiff < 0) {
       const _lastExtraWait = lastExtraWait || 0;
-      extraWait = (_lastExtraWait === 3 ? 6 : 8) + isNearToLastCase ? -2 : 0;
+      const computedWait = _lastExtraWait === 3 ? 6 : 10 - _lastExtraWait;
+      extraWait = Math.max(computedWait || 6) + isNearToLastCase ? -2 : 0;
     } else {
       extraWait += isFarFromLastCase ? 6 : 0;
     }
