@@ -221,7 +221,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
   const sendBotMessage = async (chatId, message, options = {}) => {
     const { parse_mode, text } = prepareMessage(message);
 
-    await bot.sendMessage(chatId, text, {
+    return await bot.sendMessage(chatId, text, {
       parse_mode: parse_mode,
       ...(options || null),
     });
