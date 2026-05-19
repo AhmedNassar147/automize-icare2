@@ -146,7 +146,7 @@ const processSendCollectedPatientsToWhatsapp =
 
       try {
         speakText({
-          text: `Check your ${clientOrBranchName} bot, there is a new patient`,
+          text: `Check ${clientOrBranchName} bot, there is a new patient`,
         });
         const [{ referralId, referralEndDate }] = addedPatients;
         const message =
