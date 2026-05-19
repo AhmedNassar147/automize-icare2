@@ -164,13 +164,11 @@ const makeLetterGenerationAndReturnFile = async ({
   try {
     const isAcceptanceLetter = actionType === USER_ACTION_TYPES.ACCEPT;
 
-    const _patientData =
-      !isAcceptanceLetter && !!reason
-        ? {
-            ...patientData,
-            __reasonName__: reason,
-          }
-        : patientData;
+    const _patientData = {
+      referralId,
+      ...patientData,
+      __reasonName__: !isAcceptanceLetter && !!reason ? reason : undefined,
+    };
 
     await generateAcceptancePdfLetters(
       browser,
