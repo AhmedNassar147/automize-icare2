@@ -73,11 +73,11 @@ const getWaitBasedRefferalDatesAndLogs = async ({
     } else {
       extraWait = isFarFromLastCase
         ? IS_UNIZA_BRANCH
-          ? 8
-          : 4
+          ? 9
+          : 7
         : IS_UNIZA_BRANCH
           ? 6
-          : 3;
+          : 4;
     }
   }
 
