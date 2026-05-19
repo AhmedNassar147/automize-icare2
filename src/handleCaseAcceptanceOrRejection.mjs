@@ -10,9 +10,7 @@ import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs
 import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
-import summarizeLogsAfterAcceptance, {
-  readLogsAsArray,
-} from "./summarizeLogsAfterAcceptance.mjs";
+import summarizeLogsAfterAcceptance from "./summarizeLogsAfterAcceptance.mjs";
 import {
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
@@ -21,95 +19,12 @@ import {
 } from "./constants.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
+import getWaitBasedRefferalDatesAndLogs from "./getWaitBasedRefferalDatesAndLogs.mjs";
 
 async function pdfToBase64(filePath) {
   const buf = await readFile(filePath);
   return buf.toString("base64");
 }
-
-const NEARST_CASE_IN_MIN = 6;
-const NEARST_CASE_IN_MS = NEARST_CASE_IN_MIN * 60000;
-
-const FAR_CASE_MIN = 1.5 * 60;
-const FAR_CASE_MS = FAR_CASE_MIN * 60000;
-
-const getWaitBasedRefferalDatesAndLogs = async ({
-  referralId,
-  referralEndTimestamp,
-  diff,
-  extraBackendDelayMs,
-}) => {
-  const logsData = await readLogsAsArray(referralEndTimestamp);
-
-  let lastReferralLog = logsData?.[logsData.length - 1] || {};
-
-  const {
-    diff: lastDiff,
-    extraWait: lastExtraWait,
-    referralEndTimestamp: lastReferralEndTimestamp,
-    referralId: lastReferralId,
-  } = lastReferralLog || {};
-
-  const diffBetweenLastAndCurrent = lastReferralEndTimestamp
-    ? referralEndTimestamp - lastReferralEndTimestamp
-    : 0;
-
-  const isNearToLastCase =
-    diffBetweenLastAndCurrent > 0 &&
-    diffBetweenLastAndCurrent <= NEARST_CASE_IN_MS;
-
-  let extraWait = isNearToLastCase ? 3 : diff >= 0 ? 5 : 0;
-  const extraBotMessages = [];
-
-  if (isNearToLastCase) {
-    extraBotMessages.push(
-      // `Please Tell \`Ahmed\` of this: Found Near case \`${diffBetweenLastAndCurrent}\` <= ${NEARST_CASE_IN_MIN} minutes where referralId=\`${referralId}\``,
-      `Found Near case  \`${diffBetweenLastAndCurrent / 60000}mins\` <= ${NEARST_CASE_IN_MIN} minutes`,
-    );
-  }
-
-  const isFarFromLastCase =
-    diffBetweenLastAndCurrent > 0 && diffBetweenLastAndCurrent >= FAR_CASE_MS;
-
-  if (diff < 0) {
-    if (typeof lastDiff === "number" && lastDiff < 0) {
-      const _lastExtraWait = lastExtraWait || 0;
-      const computedWait = _lastExtraWait === 3 ? 6 : 10 - _lastExtraWait;
-      extraWait = Math.max(computedWait || 6) + isNearToLastCase ? -2 : 0;
-    } else {
-      extraWait += isFarFromLastCase ? 6 : 0;
-    }
-    extraBotMessages.push(
-      // `Please Tell \`Ahmed\` of this: Found diff of \`${diff}\` Less than 0 where referralId=\`${referralId}\``,
-      `Found diff of \`${diff}\` Less than 0`,
-    );
-  }
-
-  if (isFarFromLastCase && diff >= 0) {
-    extraWait = Math.max(extraWait, 7);
-    extraBotMessages.push(
-      // `Please Tell \`Ahmed\` of this: Found far case \`${diffBetweenLastAndCurrent}\` >= ${FAR_CASE_MIN} minutes where referralId=\`${referralId}\``,
-      `Found far case \`${diffBetweenLastAndCurrent / 60000}mins\` >= ${FAR_CASE_MIN} minutes`,
-    );
-  }
-
-  if (extraBackendDelayMs >= 2000) {
-    extraWait += 6;
-    extraWait = Math.max(extraWait, 12);
-  }
-
-  if (extraBackendDelayMs < 1000) {
-    extraBotMessages.push(
-      // `Please Tell \`Ahmed\` of this: Found extra backend delay of \`${extraBackendDelayMs}\` < 1000 where referralId=\`${referralId}\``,
-      `Found extra backend delay of \`${extraBackendDelayMs}\` < 1000`,
-    );
-  }
-
-  return {
-    computedExtraWait: extraWait,
-    computedExtraBotMessages: extraBotMessages,
-  };
-};
 
 const handleCaseAcceptanceOrRejection =
   ({
