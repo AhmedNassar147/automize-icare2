@@ -16,6 +16,7 @@ import {
   PATIENT_SECTIONS_STATUS,
   TABS_COLLECTION_TYPES,
 } from "./constants.mjs";
+import { updateCaseInLog } from "./summarizeLogsAfterAcceptance.mjs";
 
 const { ACCEPTED, ADMITTED, CONFIRMED } = TABS_COLLECTION_TYPES;
 
@@ -23,6 +24,13 @@ const checkTabType = (tabName, type) =>
   tabName === PATIENT_SECTIONS_STATUS[type].categoryReference;
 
 const tabsToCheck = [
+  {
+    // Still accepted
+    includeAccepted: true,
+    noDischarged: true,
+    noAdmitted: true,
+    claimStatus: "AC",
+  },
   {
     // Confirmed only
     includeConfirmed: true,
@@ -41,13 +49,6 @@ const tabsToCheck = [
     noAdmitted: true,
     claimStatus: "DS",
   },
-  {
-    // Still accepted
-    includeAccepted: true,
-    noDischarged: true,
-    noAdmitted: true,
-    claimStatus: "AC",
-  },
 ];
 
 const fetchCase = async (page, refferalId, referralEndTimestamp) => {
@@ -60,11 +61,13 @@ const fetchCase = async (page, refferalId, referralEndTimestamp) => {
     });
 
     if (patients?.length) {
+      const isClaimed = ["AD", "CF", "DS"].includes(claimStatus);
       return {
         referralEndTimestamp,
         refferalId,
-        claimStatus,
+        claimStatus: isClaimed ? "Yes" : "No",
         errors,
+        shouldUpdateAndNotify: isClaimed,
       };
     }
   }
@@ -74,8 +77,25 @@ const fetchCase = async (page, refferalId, referralEndTimestamp) => {
     referralEndTimestamp,
     refferalId,
     claimStatus: "No",
+    shouldUpdateAndNotify: true,
     errors: null,
   };
+};
+
+const updateAndNotifyUser = async ({
+  sendTelegramMessage,
+  referralId,
+  referralEndTimestamp,
+  claimStatus,
+}) => {
+  const telegramMessage = `*Referral ID*: ${referralId} ${claimStatus === "Yes" ? "has claimed" : "has not claimed"}`;
+
+  await Promise.all([
+    updateCaseInLog(referralId, referralEndTimestamp, {
+      claimed: claimStatus,
+    }),
+    sendTelegramMessage(telegramMessage),
+  ]);
 };
 
 const checlRefferalClaimedStatus = async (
@@ -103,19 +123,17 @@ const checlRefferalClaimedStatus = async (
     return;
   }
 
-  let cases = patientsStore.getAllNonClaimableCases();
+  const cases = patientsStore.getAllNonClaimableCases();
 
   if (!cases?.length) {
     await closePageSafely(page);
     return;
   }
 
-  cases = cases.filter((_, index) => index < 10);
-
   const cpuCount = os.cpus().length; // Get the number of CPU cores
   const limit = pLimit(Math.min(4, cpuCount));
 
-  const results = await Promise.all(
+  const settledResults = await Promise.allSettled(
     cases.map(({ referralId, referralEndTimestamp }) =>
       limit(
         async () => await fetchCase(page, referralId, referralEndTimestamp),
@@ -123,70 +141,22 @@ const checlRefferalClaimedStatus = async (
     ),
   );
 
-  await writeFile(checkStatusPath, JSON.stringify(results, null, 2));
+  const results = settledResults
+    .filter(({ status }) => status === "fulfilled")
+    .map(({ value }) => value)
+    .filter((item) => item.shouldUpdateAndNotify);
 
-  console.log("results", JSON.stringify(results, null, 2));
+  if (results.length) {
+    for (const item of results) {
+      await updateAndNotifyUser({
+        sendTelegramMessage,
+        ...item,
+      });
+      patientsStore.removeNonClaimableCase(item.refferalId);
+    }
+  }
+
   await closePageSafely(page);
-
-  // tabName
-
-  // if (errors.length) {
-  //   errors.forEach((error) =>
-  //     createConsoleMessage(error, "error", "checlRefferalClaimedStatus"),
-  //   );
-  //   await closePageSafely(page);
-  //   return;
-  // }
-
-  // for (const { referralId, referralEndTimestamp } of cases) {
-  //   try {
-  //     const result = await page.evaluate(
-  //       async ({ baseGlobMedAPiUrl, globMedHeaders, referralId }) => {
-  //         const res = await fetch(`${baseGlobMedAPiUrl}/referrals/listing`, {
-  //           method: "POST",
-  //           headers: globMedHeaders,
-  //           body: JSON.stringify({
-  //             pageSize: 1,
-  //             pageNumber: 1,
-  //             categoryReference: "accepted",
-  //             genericSearch: referralId,
-  //           }),
-  //         });
-  //         const data = await res.json();
-  //         return data?.data?.referrals || [];
-  //       },
-  //       { baseGlobMedAPiUrl, globMedHeaders, referralId },
-  //     );
-
-  //     const stillAccepted = result.some(
-  //       (r) => String(r.idReferral) === String(referralId),
-  //     );
-
-  //     if (!stillAccepted) {
-  //       // Case moved out of accepted → confirmed or admitted
-  //       createConsoleMessage(
-  //         `🎉 Case ${referralId} moved out of accepted`,
-  //         "info",
-  //       );
-
-  //       await updateCaseInLog(referralId, referralEndTimestamp, {
-  //         claimed: "confirmed",
-  //       });
-
-  //       patientsStore.removeNonClaimableCase(referralId);
-
-  //       await sendTelegramMessage(
-  //         `🎉 Case \`${referralId}\` has been *confirmed/admitted*!`,
-  //       );
-  //     }
-  //   } catch (err) {
-  //     createConsoleMessage(
-  //       err,
-  //       "error",
-  //       `❌ checlRefferalClaimedStatus failed for ${referralId}:`,
-  //     );
-  //   }
-  // }
 };
 
 export default checlRefferalClaimedStatus;
