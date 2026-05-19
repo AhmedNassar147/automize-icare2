@@ -422,7 +422,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       },
     });
 
-    await bot.sendMessage(
+    await sendBotMessage(
       chatId,
       "Commands cleared for this chat. Reopen the bot chat.",
     );
@@ -518,11 +518,10 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
 
     await setupCommands();
 
-    await bot.sendMessage(
+    await sendBotMessage(
       chatId,
       `✅ Hi, \`${fromName}\` you are added now, Please send /me to get activated, Chat ID \`${chatId}\` has been saved automatically. Phone: \`${phoneNumber}\``,
       {
-        parse_mode: "Markdown",
         reply_markup: {
           remove_keyboard: true,
         },
@@ -955,8 +954,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
 
     if (chatId) {
       // 2. Reply to the original case message
-      await bot.sendMessage(chatId, message, {
-        parse_mode: "Markdown",
+      await sendBotMessage(chatId, message, {
         disable_notification: false,
         reply_to_message_id: replyMesgId,
       });

@@ -57,7 +57,10 @@ import sleep from "./sleep.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs";
 import installTelegramBotApi from "./installTelegramBotApi.mjs";
-import { updateCaseInLog } from "./summarizeLogsAfterAcceptance.mjs";
+import {
+  makeLogsFileMigration,
+  updateCaseInLog,
+} from "./summarizeLogsAfterAcceptance.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -95,6 +98,7 @@ const currentProfile = "Profile 1";
     MONTHLY_REPORT_GENERATED_AT,
     DETAILED_REPORT_GENERATED_AT,
     RESEND_PATIENT_SUMMARY_FILE_PATH,
+    RUN_LOGS_FILE_MIRGATION,
     TG_TOKEN,
   } = process.env;
 
@@ -242,6 +246,11 @@ const currentProfile = "Profile 1";
         sendTelegramMessage,
         RESEND_PATIENT_SUMMARY_FILE_PATH,
       );
+    }
+
+    if (RUN_LOGS_FILE_MIRGATION === "Y") {
+      await sleep(5_000);
+      await makeLogsFileMigration();
     }
 
     // Summary cron

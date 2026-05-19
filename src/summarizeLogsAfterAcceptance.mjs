@@ -32,21 +32,43 @@ const createPrettyRow = (row, widths) => {
   ).join(LOGS_SUMMARY_SEPARATOR);
 };
 
+// Column renames: old name → new name
+const COLUMN_RENAMES = {
+  backendDelay: "delay",
+  "endVsReady(diff)": "diff",
+  endDateString: "endDate",
+};
+
+const ALL_KNOWN_HEADERS = [
+  ...LOGS_SUMMARY_HEADERS,
+  // old names
+  ...Object.keys(COLUMN_RENAMES),
+];
+
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const isHeaderLine = (line) =>
+  LOGS_SUMMARY_HEADERS.some((keyword) => {
+    const regex = new RegExp(`^\\s*${escapeRegex(keyword)}\\s*[|]`);
+    return regex.test(line);
+  });
+
 const widths = {
+  endDate: 22,
   ID: 6,
-  waitTime: 8,
+  waitTime: 9,
   end: 13,
   serverEnd: 13,
   endVsServer: 11,
   readyAt: 13,
-  "endVsReady(diff)": 16,
+  diff: 11,
   zeroAt: 13,
-  backendDelay: 12,
+  delay: 5,
   readyVsServer: 13,
-  clickedAt: 14,
-  tookMS: 10,
-  status: 25,
-  endDateString: 22,
+  clickedAt: 13,
+  tookMS: 6,
+  status: 22,
+  claimed: 7,
 };
 
 const getOutputFileBasedOnCaseEndTime = (referralEndTimestamp) => {
@@ -66,28 +88,22 @@ const summarizeLogsAfterAcceptance = async (data) => {
     readySeenAt,
     zeroSeenAt,
     extraBackendDelayMs,
+    referralEndDate,
+    status,
+    claimed,
   } = data;
 
   const outputFile = getOutputFileBasedOnCaseEndTime(referralEndTimestamp);
 
   let endToReady = "";
-
-  if (referralEndTimestamp > readySeenAt) {
-    endToReady = ">";
-  }
-
-  if (referralEndTimestamp === readySeenAt) {
-    endToReady = "=";
-  }
-
-  if (referralEndTimestamp < readySeenAt) {
-    endToReady = "<";
-  }
+  if (referralEndTimestamp > readySeenAt) endToReady = ">";
+  if (referralEndTimestamp === readySeenAt) endToReady = "=";
+  if (referralEndTimestamp < readySeenAt) endToReady = "<";
 
   const diff = referralEndTimestamp - readySeenAt;
 
   const row = {
-    status: data.status || "",
+    endDate: referralEndDate,
     ID: referralId,
     waitTime: `${waitTime}_${extraWait || 0}`,
     end: referralEndTimestamp,
@@ -95,12 +111,13 @@ const summarizeLogsAfterAcceptance = async (data) => {
     endVsServer: referralEndTimestamp - endDateBasedServerDateMs,
     readyAt: readySeenAt,
     zeroAt: zeroSeenAt,
-    "endVsReady(diff)": `${diff} - (${endToReady})`,
-    backendDelay: extraBackendDelayMs,
+    diff: `${diff} - (${endToReady})`,
+    delay: extraBackendDelayMs,
     readyVsServer: readySeenAt - endDateBasedServerDateMs,
-    endDateString: data.referralEndDate,
     clickedAt: "",
     tookMS: "",
+    status: status || "",
+    claimed: claimed || "",
   };
 
   const exists = await checkPathExists(outputFile);
@@ -115,7 +132,6 @@ const summarizeLogsAfterAcceptance = async (data) => {
   }
 
   const line = createPrettyRow(row, widths);
-
   await appendFile(outputFile, `${line}\n`, "utf8");
 
   createConsoleMessage(
@@ -140,38 +156,34 @@ export async function updateCaseInLog(
 ) {
   const currentMonthOutputFile =
     getOutputFileBasedOnCaseEndTime(referralEndTimestamp);
-
   const raw = await readFile(currentMonthOutputFile, "utf8");
 
   const target = String(referralId).trim();
   let found = false;
 
   const updatedLines = raw.split("\n").map((line) => {
-    // keep header and blank lines untouched
-    if (!line.trim() || /^\s*ID\s*\|/.test(line)) return line;
+    if (!line.trim() || isHeaderLine(line)) return line;
 
     const cols = line.split("|").map((c) => c.trim());
-    if (cols[0] !== target) return line;
+    const idIndex = LOGS_SUMMARY_HEADERS.indexOf("ID");
+    if (cols[idIndex].trim() !== target) return line;
 
     found = true;
 
-    // parse current row into a key→value map
     const current = {};
     LOGS_SUMMARY_HEADERS.forEach((key, i) => {
       current[key] = cols[i] ?? "";
     });
 
-    // apply updates (map field names to header keys)
     const fieldMap = {
       status: "status",
       waitTime: "waitTime",
-      endDateString: "endDateString",
-      referralEndDate: "endDateString",
       endVsServer: "endVsServer",
       readyVsServer: "readyVsServer",
-      backendDelay: "backendDelay",
+      delay: "delay",
       clickedAt: "clickedAt",
       tookMS: "tookMS",
+      claimed: "claimed",
     };
 
     for (const [field, value] of Object.entries(updates)) {
@@ -179,7 +191,6 @@ export async function updateCaseInLog(
       if (key in current) current[key] = String(value);
     }
 
-    // re-render the row with same fixed widths
     return createPrettyRow(current, widths);
   });
 
@@ -213,7 +224,7 @@ export async function readLogsAsArray(referralEndTimestamp) {
 
   return raw
     .split("\n")
-    .filter((line) => line.trim() && !/^\s*ID\s*\|/.test(line))
+    .filter((line) => line.trim() && !isHeaderLine(line))
     .map((line) => {
       const cols = line.split("|").map((c) => c.trim());
 
@@ -224,10 +235,7 @@ export async function readLogsAsArray(referralEndTimestamp) {
 
       const [base, extra] = (current.waitTime || "0_0").split("_").map(Number);
 
-      const diff = parseInt(
-        current["endVsReady(diff)"]?.match(/-?\d+/)?.[0] ?? "0",
-        10,
-      );
+      const diff = parseInt(current.diff?.match(/-?\d+/)?.[0] ?? "0", 10);
 
       return {
         referralId: current.ID,
@@ -237,14 +245,15 @@ export async function readLogsAsArray(referralEndTimestamp) {
         readySeenAt: parseInt(current.readyAt, 10) || null,
         diff,
         zeroSeenAt: parseInt(current.zeroAt, 10) || null,
-        extraBackendDelayMs: parseInt(current.backendDelay, 10) || null,
+        extraBackendDelayMs: parseInt(current.delay, 10) || null,
         endDateBasedServerDateMs: parseInt(current.serverEnd, 10) || null,
         endVsServer: parseInt(current.endVsServer, 10) || 0,
         readyVsServer: parseInt(current.readyVsServer, 10) || null,
         clickedAt: parseInt(current.clickedAt, 10) || null,
         tookMS: parseInt(current.tookMS, 10) || null,
         status: current.status || "",
-        referralEndDate: current.endDateString || "",
+        referralEndDate: current.endDate || "",
+        claimed: current.claimed || "",
       };
     })
     .filter((r) => !isNaN(r.referralId) && r.referralId > 0);
@@ -255,8 +264,8 @@ export async function migrateLogWidths(referralEndTimestamp) {
   const raw = await readFile(file, "utf8");
   const lines = raw.split("\n");
 
-  // read old column order from existing header line
-  const headerLine = lines.find((l) => /^\s*ID\s*\|/.test(l));
+  // Read old column order from existing header line
+  const headerLine = lines.find(isHeaderLine);
   const oldHeaders = headerLine
     ? headerLine.split("|").map((c) => c.trim())
     : LOGS_SUMMARY_HEADERS;
@@ -264,21 +273,29 @@ export async function migrateLogWidths(referralEndTimestamp) {
   const updatedLines = lines.map((line) => {
     if (!line.trim()) return line;
 
-    // re-render header with new order
-    if (/^\s*ID\s*\|/.test(line)) {
+    // Re-render header with new names and order
+    if (isHeaderLine(line)) {
       return createPrettyRow(
         Object.fromEntries(LOGS_SUMMARY_HEADERS.map((h) => [h, h])),
         widths,
       );
     }
 
-    // parse using OLD order
+    // Parse using OLD order
     const cols = line.split("|").map((c) => c.trim());
     const current = Object.fromEntries(
       oldHeaders.map((key, i) => [key, cols[i] ?? ""]),
     );
 
-    // fill any new columns that didn't exist before
+    // Apply renames
+    for (const [oldKey, newKey] of Object.entries(COLUMN_RENAMES)) {
+      if (oldKey in current) {
+        current[newKey] = current[oldKey];
+        delete current[oldKey];
+      }
+    }
+
+    // Fill missing new columns
     LOGS_SUMMARY_HEADERS.forEach((key) => {
       if (!(key in current)) current[key] = "";
     });
@@ -290,4 +307,8 @@ export async function migrateLogWidths(referralEndTimestamp) {
   createConsoleMessage(`✅ Log migrated → ${file}`, "info");
 }
 
-// await migrateLogWidths(1779014471000);
+export const makeLogsFileMigration = async () => {
+  const data = readLogsAsArray();
+  const [{ referralEndTimestamp }] = data;
+  await migrateLogWidths(referralEndTimestamp);
+};
