@@ -58,7 +58,7 @@ import updateEnvFile from "./updateEnvFile.mjs";
 import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs";
 import installTelegramBotApi from "./installTelegramBotApi.mjs";
 import {
-  makeLogsFileMigration,
+  migrateLogWidths,
   updateCaseInLog,
 } from "./summarizeLogsAfterAcceptance.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
@@ -248,9 +248,8 @@ const currentProfile = "Profile 1";
       );
     }
 
-    if (RUN_LOGS_FILE_MIRGATION === "Y") {
-      await sleep(5_000);
-      await makeLogsFileMigration();
+    if (RUN_LOGS_FILE_MIRGATION && !Number.isNaN(RUN_LOGS_FILE_MIRGATION)) {
+      await migrateLogWidths(Number(RUN_LOGS_FILE_MIRGATION));
     }
 
     // Summary cron

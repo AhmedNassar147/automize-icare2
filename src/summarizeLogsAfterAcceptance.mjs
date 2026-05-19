@@ -306,8 +306,3 @@ export async function migrateLogWidths(referralEndTimestamp) {
   await writeFile(file, updatedLines.join("\n"), "utf8");
   createConsoleMessage(`✅ Log migrated → ${file}`, "info");
 }
-
-export const makeLogsFileMigration = async () => {
-  const [{ referralEndTimestamp }] = await readLogsAsArray();
-  await migrateLogWidths(referralEndTimestamp);
-};
