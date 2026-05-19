@@ -72,7 +72,7 @@ const checlRefferalClaimedStatus = async (
     return;
   }
 
-  cases = cases.map((_, index) => index < 3);
+  cases = cases.filter((_, index) => index < 3);
 
   const cpuCount = os.cpus().length; // Get the number of CPU cores
   const limit = pLimit(Math.min(4, cpuCount));
