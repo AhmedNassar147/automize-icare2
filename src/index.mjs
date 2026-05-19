@@ -218,9 +218,9 @@ const currentProfile = "Profile 1";
     patientsStore.on(
       "patientsAdded",
       processSendCollectedPatientsToWhatsapp(
-        sendWhatsappMessage,
         sendTelegramMessage,
-        EXECLUDE_WHATSAPP_MSG_FOOTER === "Y",
+        sendWhatsappMessage,
+        false,
       ),
     );
 

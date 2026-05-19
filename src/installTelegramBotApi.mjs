@@ -8,6 +8,7 @@ import { PDFParse } from "pdf-parse";
 import { exec } from "child_process";
 import { promisify } from "util";
 import createConsoleMessage from "./createConsoleMessage.mjs";
+import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import {
   createPatientRowKey,
   getWeeklyHistoryPatient,
@@ -154,13 +155,171 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
     );
   }
 
+  const pendingContactRequests = new Map();
+
   const sendBotMessage = (chatId, message, options = {}) =>
     bot.sendMessage(chatId, message, {
       parse_mode: "Markdown",
       ...(options || null),
     });
 
-  const pendingContactRequests = new Map();
+  const sendTelegramMessage = async (
+    message,
+    _files = [],
+    targetReferralIdForButtons,
+  ) => {
+    const TG_CHAT_ID = process.env.TG_CHAT_ID;
+
+    // ✅ Add this
+    if (!TG_CHAT_ID) {
+      createConsoleMessage(
+        "⚠️ sendTelegramMessage skipped — send /start to the bot first",
+        "warn",
+      );
+      return;
+    }
+
+    try {
+      let messageId = undefined;
+
+      if (message) {
+        const { text, parse_mode } = prepareMessage(message);
+        const res = await sendBotMessage(TG_CHAT_ID, text, {
+          parse_mode: parse_mode,
+          disable_notification: false,
+          ...(targetReferralIdForButtons && {
+            reply_markup: buildButtons(targetReferralIdForButtons),
+          }),
+        });
+
+        messageId = res.message_id;
+      }
+
+      const files = await formatFilesToTelegram(_files);
+
+      if (!files?.length) return;
+
+      const photos = [];
+      const docs = [];
+      const excelFiles = [];
+
+      for (const file of files) {
+        const cleanBase64 = file.fileBase64
+          .replace(/^data:.*?base64,/, "")
+          .trim();
+
+        const buffer = Buffer.from(cleanBase64, "base64");
+        const extension = (file.extension || "pdf").toLowerCase();
+        const filename = `${file.fileName}.${extension}`;
+        const mimeType = getMimeType(extension);
+
+        const item = { buffer, filename, mimeType: mimeType };
+
+        if (extension === "xlsx") {
+          excelFiles.push(item);
+        } else if (imageExtensions.includes(extension)) {
+          photos.push(item);
+        } else {
+          docs.push(item);
+        }
+      }
+
+      if (excelFiles.length) {
+        // Send PDFs individually
+        for (const doc of excelFiles) {
+          await bot.sendDocument(
+            TG_CHAT_ID,
+            doc.buffer,
+            { reply_to_message_id: messageId, caption: `📎 ${doc.filename}` },
+            { filename: doc.filename, contentType: doc.mimeType },
+          );
+        }
+      }
+
+      if (photos.length === 0 && docs.length === 0) {
+        return;
+      }
+
+      if (photos.length === 0 && docs.length === 1) {
+        const [{ buffer, filename, mimeType }] = docs;
+        await bot.sendDocument(
+          TG_CHAT_ID,
+          buffer,
+          { reply_to_message_id: messageId, caption: `📎 ${filename}` },
+          { filename: filename, contentType: mimeType },
+        );
+
+        return;
+      }
+
+      if (photos.length === 1 && docs.length === 0) {
+        const [{ buffer, filename, mimeType }] = photos;
+        await bot.sendPhoto(
+          TG_CHAT_ID,
+          buffer,
+          { reply_to_message_id: messageId, caption: `📎 ${filename}` },
+          { filename: filename, contentType: mimeType },
+        );
+        return;
+      }
+
+      const { fileName: firstFileName } =
+        files.find(({ fileName }) => !!fileName) ?? {};
+
+      const finalMergedFileName = `${firstFileName}_merged`;
+
+      const merged = await mergeAllToPdf(
+        photos || [],
+        docs || [],
+        finalMergedFileName,
+      );
+
+      const compressedMerged = await compressPdfGentlly(merged, {
+        unlinkFilesFinally: true,
+      });
+
+      await bot.sendDocument(
+        TG_CHAT_ID,
+        compressedMerged,
+        {
+          reply_to_message_id: messageId,
+          caption: `📎 ${finalMergedFileName}`,
+        },
+        {
+          filename: `${finalMergedFileName}.pdf`,
+          contentType: "application/pdf",
+        },
+      );
+
+      // Send photos as album (batches of 10)
+      for (let i = 0; i < photos.length; i += 10) {
+        const batch = photos.slice(i, i + 10);
+        await bot.sendMediaGroup(
+          TG_CHAT_ID,
+          batch.map((f, idx) => ({
+            type: "photo",
+            media: f.buffer,
+            fileOptions: { contentType: f.mimeType, filename: f.filename },
+          })),
+          {
+            reply_to_message_id: messageId,
+          },
+        );
+      }
+
+      // Send PDFs individually
+      for (const doc of docs) {
+        await bot.sendDocument(
+          TG_CHAT_ID,
+          doc.buffer,
+          { reply_to_message_id: messageId, caption: `📎 ${doc.filename}` },
+          { filename: doc.filename, contentType: doc.mimeType },
+        );
+      }
+    } catch (error) {
+      createConsoleMessage(error, "error", "❌ sendTelegramMessage failed:");
+    }
+  };
 
   async function setupCommands() {
     const commands = Object.values(COMMANDS)
@@ -246,6 +405,21 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
       chatId,
       `✅ Hi, \`${fromName}\` you are active now, cases will be sent for you here, Chat ID \`${chatId}\` has been saved automatically.`,
     );
+
+    const allPatients = patientsStore.getAllPatients();
+
+    if (allPatients?.length) {
+      await sendBotMessage(
+        chatId,
+        `*Current patients:*\n\`\`\`\nHere are the current (${allPatients.length}) patients to process\n\`\`\``,
+      );
+
+      await processSendCollectedPatientsToWhatsapp(
+        sendTelegramMessage,
+        undefined,
+        true,
+      )(allPatients);
+    }
   });
 
   bot.on("contact", async (msg) => {
@@ -375,6 +549,15 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
       chatId,
       `✅ Hi \`${fromName}\`, wait time set to \`${value}\`ms successfully.`,
     );
+
+    const activeChatId = process.env.TG_CHAT_ID;
+
+    if (activeChatId !== chatId) {
+      await sendBotMessage(
+        activeChatId,
+        `🔔 \`${fromName}\` just changed waitTime to \`${value}\`ms.`,
+      );
+    }
   });
 
   bot.onText(COMMANDS.f_accept.value, async (msg, match) => {
@@ -449,10 +632,12 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
     const isActive = value === "1";
     const isSame = process.env.ENABLE_AUTO_WAITING === value;
 
+    const status = isActive ? "enabled" : "disabled";
+
     if (isSame) {
       return await sendBotMessage(
         chatId,
-        `⛔ Auto waiting is already ${isActive ? "enabled" : "disabled"} `,
+        `⛔ Auto waiting is already \`${status}\`.`,
       );
     }
 
@@ -460,8 +645,17 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
 
     await sendBotMessage(
       chatId,
-      `✅ Auto waiting just just updated to be ${isActive ? "enabled" : "disabled"} `,
+      `✅ Auto waiting just updated to \`${status}\`.`,
     );
+
+    const activeChatId = process.env.TG_CHAT_ID;
+
+    if (activeChatId !== chatId) {
+      await sendBotMessage(
+        activeChatId,
+        `🔔 \`${fromName}\` just changed \`autoWait\` to \`${status}\`.`,
+      );
+    }
   });
 
   bot.onText(COMMANDS.updateCode.value, async (msg) => {
@@ -705,164 +899,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
       );
     }
   });
-
-  const sendTelegramMessage = async (
-    message,
-    _files = [],
-    targetReferralIdForButtons,
-  ) => {
-    const TG_CHAT_ID = process.env.TG_CHAT_ID;
-
-    // ✅ Add this
-    if (!TG_CHAT_ID) {
-      createConsoleMessage(
-        "⚠️ sendTelegramMessage skipped — send /start to the bot first",
-        "warn",
-      );
-      return;
-    }
-
-    try {
-      let messageId = undefined;
-
-      if (message) {
-        const { text, parse_mode } = prepareMessage(message);
-        const res = await sendBotMessage(TG_CHAT_ID, text, {
-          parse_mode: parse_mode,
-          disable_notification: false,
-          ...(targetReferralIdForButtons && {
-            reply_markup: buildButtons(targetReferralIdForButtons),
-          }),
-        });
-
-        messageId = res.message_id;
-      }
-
-      const files = await formatFilesToTelegram(_files);
-
-      if (!files?.length) return;
-
-      const photos = [];
-      const docs = [];
-      const excelFiles = [];
-
-      for (const file of files) {
-        const cleanBase64 = file.fileBase64
-          .replace(/^data:.*?base64,/, "")
-          .trim();
-
-        const buffer = Buffer.from(cleanBase64, "base64");
-        const extension = (file.extension || "pdf").toLowerCase();
-        const filename = `${file.fileName}.${extension}`;
-        const mimeType = getMimeType(extension);
-
-        const item = { buffer, filename, mimeType: mimeType };
-
-        if (extension === "xlsx") {
-          excelFiles.push(item);
-        } else if (imageExtensions.includes(extension)) {
-          photos.push(item);
-        } else {
-          docs.push(item);
-        }
-      }
-
-      if (excelFiles.length) {
-        // Send PDFs individually
-        for (const doc of excelFiles) {
-          await bot.sendDocument(
-            TG_CHAT_ID,
-            doc.buffer,
-            { reply_to_message_id: messageId, caption: `📎 ${doc.filename}` },
-            { filename: doc.filename, contentType: doc.mimeType },
-          );
-        }
-      }
-
-      if (photos.length === 0 && docs.length === 0) {
-        return;
-      }
-
-      if (photos.length === 0 && docs.length === 1) {
-        const [{ buffer, filename, mimeType }] = docs;
-        await bot.sendDocument(
-          TG_CHAT_ID,
-          buffer,
-          { reply_to_message_id: messageId, caption: `📎 ${filename}` },
-          { filename: filename, contentType: mimeType },
-        );
-
-        return;
-      }
-
-      if (photos.length === 1 && docs.length === 0) {
-        const [{ buffer, filename, mimeType }] = photos;
-        await bot.sendPhoto(
-          TG_CHAT_ID,
-          buffer,
-          { reply_to_message_id: messageId, caption: `📎 ${filename}` },
-          { filename: filename, contentType: mimeType },
-        );
-        return;
-      }
-
-      const { fileName: firstFileName } =
-        files.find(({ fileName }) => !!fileName) ?? {};
-
-      const finalMergedFileName = `${firstFileName}_merged`;
-
-      const merged = await mergeAllToPdf(
-        photos || [],
-        docs || [],
-        finalMergedFileName,
-      );
-
-      const compressedMerged = await compressPdfGentlly(merged, {
-        unlinkFilesFinally: true,
-      });
-
-      await bot.sendDocument(
-        TG_CHAT_ID,
-        compressedMerged,
-        {
-          reply_to_message_id: messageId,
-          caption: `📎 ${finalMergedFileName}`,
-        },
-        {
-          filename: `${finalMergedFileName}.pdf`,
-          contentType: "application/pdf",
-        },
-      );
-
-      // Send photos as album (batches of 10)
-      for (let i = 0; i < photos.length; i += 10) {
-        const batch = photos.slice(i, i + 10);
-        await bot.sendMediaGroup(
-          TG_CHAT_ID,
-          batch.map((f, idx) => ({
-            type: "photo",
-            media: f.buffer,
-            fileOptions: { contentType: f.mimeType, filename: f.filename },
-          })),
-          {
-            reply_to_message_id: messageId,
-          },
-        );
-      }
-
-      // Send PDFs individually
-      for (const doc of docs) {
-        await bot.sendDocument(
-          TG_CHAT_ID,
-          doc.buffer,
-          { reply_to_message_id: messageId, caption: `📎 ${doc.filename}` },
-          { filename: doc.filename, contentType: doc.mimeType },
-        );
-      }
-    } catch (error) {
-      createConsoleMessage(error, "error", "❌ sendTelegramMessage failed:");
-    }
-  };
 
   return sendTelegramMessage;
 };

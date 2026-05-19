@@ -9,8 +9,17 @@ import createConsoleMessage from "./createConsoleMessage.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 
 const processSendCollectedPatientsToWhatsapp =
-  (sendWhatsappMessage, sendTelegramMessage, execludeWhatsAppMsgFooter) =>
+  (sendTelegramMessage, sendWhatsappMessage, skipNotify = false) =>
   async (addedPatients) => {
+    const {
+      BRANCH_NAME,
+      CLIENT_WHATSAPP_NUMBER,
+      CLIENT_ID,
+      EXECLUDE_WHATSAPP_MSG_FOOTER,
+    } = process.env;
+
+    const execludeWhatsAppMsgFooter = EXECLUDE_WHATSAPP_MSG_FOOTER === "Y";
+
     const formatPatient =
       (forTelegram) =>
       ({
@@ -114,40 +123,43 @@ const processSendCollectedPatientsToWhatsapp =
         };
       };
 
-    const { BRANCH_NAME, CLIENT_WHATSAPP_NUMBER, CLIENT_ID } = process.env;
-
-    const formattedMessages = addedPatients
-      .map(formatPatient())
-      .filter(Boolean);
+    const formatted_WA_Messages = sendWhatsappMessage
+      ? addedPatients.map(formatPatient(false)).filter(Boolean)
+      : [];
 
     const telgramAPis = addedPatients
       .map(formatPatient(true))
       .filter(Boolean)
       .map(({ message, files, referralId }) =>
         sendTelegramMessage(message, files, referralId),
-      )
-      .flat();
+      );
 
     await Promise.all([
       ...telgramAPis,
-      sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, formattedMessages),
+      ...(sendWhatsappMessage
+        ? [sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, formatted_WA_Messages)]
+        : []),
     ]);
 
-    try {
-      speakText({
-        text: "Check your WhatsApp, there is a new patient",
-      });
-      const [{ referralId, referralEndDate }] = addedPatients;
-      const message =
-        "At " +
-        (BRANCH_NAME || CLIENT_ID) +
-        " NEW PAtient " +
-        referralId +
-        " Ends At " +
-        referralEndDate;
-      await sendNtfyMessage(message);
-    } catch (error) {
-      createConsoleMessage(error, "error", "SOUND error");
+    if (!skipNotify) {
+      const clientOrBranchName = BRANCH_NAME || CLIENT_ID;
+
+      try {
+        speakText({
+          text: `Check your ${clientOrBranchName} bot, there is a new patient`,
+        });
+        const [{ referralId, referralEndDate }] = addedPatients;
+        const message =
+          "At " +
+          clientOrBranchName +
+          " NEW PAtient " +
+          referralId +
+          " Ends At " +
+          referralEndDate;
+        await sendNtfyMessage(message);
+      } catch (error) {
+        createConsoleMessage(error, "error", "SOUND error");
+      }
     }
   };
 
