@@ -218,13 +218,14 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
 
   const pendingContactRequests = new Map();
 
-  const sendBotMessage = (chatId, message, options = {}) => {
+  const sendBotMessage = async (chatId, message, options = {}) => {
     const { parse_mode, text } = prepareMessage(message);
+
+    await bot.sendMessage(chatId, text, {
+      parse_mode: parse_mode,
+      ...(options || null),
+    });
   };
-  bot.sendMessage(chatId, text, {
-    parse_mode: parse_mode,
-    ...(options || null),
-  });
 
   const sendTelegramMessage = async (
     message,
