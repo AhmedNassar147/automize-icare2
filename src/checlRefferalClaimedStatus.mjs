@@ -5,11 +5,13 @@
  */
 import pLimit from "p-limit";
 import os from "os";
+import { writeFile } from "fs/promises";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import {
+  checkStatusPath,
   HOME_PAGE_URL,
   PATIENT_SECTIONS_STATUS,
   TABS_COLLECTION_TYPES,
@@ -20,24 +22,60 @@ const { ACCEPTED, ADMITTED, CONFIRMED } = TABS_COLLECTION_TYPES;
 const checkTabType = (tabName, type) =>
   tabName === PATIENT_SECTIONS_STATUS[type].categoryReference;
 
-const fetchCase = async (page, refferalId, referralEndTimestamp) => {
-  const { patients: apisPatients, errors } = await getSummaryFromTabs({
-    page,
-    includeAccepted: true,
+const tabsToCheck = [
+  {
+    // Confirmed only
     includeConfirmed: true,
-    includeAdmitted: true,
-    noDates: true,
     noDischarged: true,
-    extraParams: {
-      genericSearch: refferalId,
-    },
-  });
+    noAdmitted: true,
+    claimStatus: "CF",
+  },
+  {
+    // Admitted only
+    noDischarged: true,
+    claimStatus: "AD",
+  },
+  {
+    // Discharged only
+    noDischarged: false,
+    noAdmitted: true,
+    claimStatus: "DS",
+  },
+  {
+    // Still accepted
+    includeAccepted: true,
+    noDischarged: true,
+    noAdmitted: true,
+    claimStatus: "AC",
+  },
+];
 
-  // const isAccepted = checkTabType(tabName, ACCEPTED);
-  // const isAccepted = checkTabType(tabName, CONFIRMED);
-  // const isAdmitted = checkTabType(tabName, ADMITTED);
+const fetchCase = async (page, refferalId, referralEndTimestamp) => {
+  for (const { claimStatus, ...tabParams } of tabsToCheck) {
+    const { patients, errors } = await getSummaryFromTabs({
+      page,
+      noDates: true,
+      extraParams: { genericSearch: refferalId },
+      ...tabParams,
+    });
 
-  return { referralEndTimestamp, refferalId, apisPatients, errors };
+    if (patients?.length) {
+      return {
+        referralEndTimestamp,
+        refferalId,
+        claimStatus,
+        errors,
+      };
+    }
+  }
+
+  // Not found in any tab
+  return {
+    referralEndTimestamp,
+    refferalId,
+    claimStatus: "No",
+    errors: null,
+  };
 };
 
 const checlRefferalClaimedStatus = async (
@@ -72,7 +110,7 @@ const checlRefferalClaimedStatus = async (
     return;
   }
 
-  cases = cases.filter((_, index) => index < 3);
+  cases = cases.filter((_, index) => index < 10);
 
   const cpuCount = os.cpus().length; // Get the number of CPU cores
   const limit = pLimit(Math.min(4, cpuCount));
@@ -84,6 +122,8 @@ const checlRefferalClaimedStatus = async (
       ),
     ),
   );
+
+  await writeFile(checkStatusPath, JSON.stringify(results, null, 2));
 
   console.log("results", JSON.stringify(results, null, 2));
   await closePageSafely(page);

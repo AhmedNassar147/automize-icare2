@@ -12,6 +12,7 @@ export const waitingPatientsFolderDirectory = `${cwd}/results/waiting-patients`;
 export const generatedPdfsPathForAcceptance = `${cwd}/results/generated-acceptance-pdf`;
 export const generatedPdfsPathForRejection = `${cwd}/results/generated-rejection-pdf`;
 export const generatedSummaryFolderPath = `${cwd}/results/summary`;
+export const checkStatusPath = `${cwd}/results/check.json`;
 export const htmlFilesPath = `${cwd}/results/html`;
 export const COLLECTD_PATIENTS_FILE_NAME = "collectedPatients";
 export const COLLECTD_PATIENTS_FULL_FILE_PATH = `${waitingPatientsFolderDirectory}/${COLLECTD_PATIENTS_FILE_NAME}.json`;
