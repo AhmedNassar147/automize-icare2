@@ -782,9 +782,9 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
           noBundleCheck: true,
         });
 
-      await closePageSafely(newPage);
-
       if (isErrorAboutLockedOut) {
+        await closePageSafely(newPage);
+
         return await sendBotMessage(
           chatId,
           `⛔ Could not loginin, We are blocked`,
@@ -795,6 +795,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       }
 
       if (!isLoggedIn) {
+        await closePageSafely(newPage);
         return await sendBotMessage(
           chatId,
           `⛔ Could not loginin, Please check the app`,
@@ -809,6 +810,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         referralId,
         true,
       );
+
+      await closePageSafely(newPage);
 
       const { patientDetailsError, patientInfoError } =
         fetchedPatientData || {};
