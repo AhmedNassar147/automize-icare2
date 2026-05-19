@@ -59,7 +59,9 @@ const getWaitBasedRefferalDatesAndLogs = async ({
   }
 
   if (diff >= 0) {
-    const isLastDiffEqualOrGreaterThanZero = lastDiff >= 0;
+    const isLastDiffEqualOrGreaterThanZero =
+      typeof lastDiff === "number" ? lastDiff >= 0 : true; // default to normal when no history
+
     if (isLastDiffEqualOrGreaterThanZero) {
       extraWait = isFarFromLastCase
         ? IS_UNIZA_BRANCH
