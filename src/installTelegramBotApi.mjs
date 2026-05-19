@@ -4,6 +4,7 @@
  *
  */
 import TelegramBot from "node-telegram-bot-api";
+import { unlink } from "fs/promises";
 import { PDFParse } from "pdf-parse";
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -20,6 +21,11 @@ import mergeAllToPdf from "./mergeFilesToOne.mjs";
 import compressPdfGentlly from "./compressPdfGentlly.mjs";
 import formatFilesToTelegram from "./formatFilesToTelgram.mjs";
 import sleep from "./sleep.mjs";
+import generateAcceptancePdfLetters from "./generatePdfs.mjs";
+import { HOME_PAGE_URL, USER_ACTION_TYPES } from "./constants.mjs";
+import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
+import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
+import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
 
 const execAsync = promisify(exec);
 
@@ -65,6 +71,12 @@ const COMMANDS = {
     value: /\/update_code$/,
     description: "pull latest code from master and restart the server",
     command: "update_code",
+  },
+  getRefferalLetter: {
+    value: /\/letter (.+)/,
+    description:
+      "Long press → get refferal letter, Example: /letter a 12345 OR /letter r 12345 OR /letter r 12345 reason",
+    command: "letter",
   },
   updateCmds: {
     value: /\/update_commands/,
@@ -142,8 +154,58 @@ const getIfNotAuthorizedMessage = (msg) => {
   };
 };
 
-// ahmed
-const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
+const makeLetterGenerationAndReturnFile = async ({
+  browser,
+  patientData,
+  reason,
+  referralId,
+  actionType,
+}) => {
+  try {
+    const isAcceptanceLetter = actionType === USER_ACTION_TYPES.ACCEPT;
+
+    const _patientData =
+      !isAcceptanceLetter && !!reason
+        ? {
+            ...patientData,
+            __reasonName__: reason,
+          }
+        : patientData;
+
+    await generateAcceptancePdfLetters(
+      browser,
+      [_patientData],
+      isAcceptanceLetter,
+    );
+
+    const { fileData, filePath } = await getCurrentActionLetterFile(
+      referralId,
+      actionType,
+      true,
+    );
+
+    try {
+      await unlink(filePath);
+    } catch (error) {
+      createConsoleMessage(
+        error,
+        "error",
+        `❌ makeLetterGenerationAndReturnFile failed when removing filePath=${filePath} :`,
+      );
+    }
+
+    return fileData;
+  } catch (error) {
+    createConsoleMessage(
+      error,
+      "error",
+      "❌ makeLetterGenerationAndReturnFile failed:",
+    );
+    return null; // caller already handles null
+  }
+};
+
+const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
   const bot = new TelegramBot(TG_TOKEN, { polling: true, filepath: false });
 
   createConsoleMessage("🤖 Telegram Case Bot is running...", "info");
@@ -656,6 +718,139 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore) => {
         `🔔 \`${fromName}\` just changed \`autoWait\` to \`${status}\`.`,
       );
     }
+  });
+
+  bot.onText(COMMANDS.getRefferalLetter.value, async (msg, match) => {
+    const { unAuthorizedMessage, chatId, fromName, msgId } =
+      getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    const raw = (match[1] || "").trim();
+
+    const parts = raw.split(/\s+/); // split by spaces
+    const action = parts[0]?.toLowerCase(); // "a" or "r"
+    const referralId = parts[1]; // "125225"
+    const reason = (parts.slice(2) || []).join(" "); // "some reason" or ""
+
+    if (!["a", "r"].includes(action)) {
+      return sendBotMessage(
+        chatId,
+        `⛔ Invalid action \`${action}\`.\nUse *a* for accept or *r* for reject.\nExample: \`/letter a 125225\``,
+      );
+    }
+
+    if (!referralId || !/^\d+$/.test(referralId)) {
+      return sendBotMessage(
+        chatId,
+        `⛔ Invalid referral ID \`${referralId}\`.\nExample: \`/letter a 125225\``,
+      );
+    }
+
+    const actionType =
+      action === "a" ? USER_ACTION_TYPES.ACCEPT : USER_ACTION_TYPES.REJECT;
+
+    const patientData = patientsStore.getPatientByReferralId(referralId);
+
+    if (!patientData) {
+      await sendBotMessage(
+        chatId,
+        "⛔ Patient removed from the store, searching the app....",
+      );
+    }
+
+    let fileBuffer = null;
+
+    if (patientData) {
+      fileBuffer = await makeLetterGenerationAndReturnFile({
+        actionType,
+        browser,
+        patientData,
+        reason,
+        referralId,
+      });
+    }
+
+    if (!fileBuffer) {
+      const { isLoggedIn, newPage, isErrorAboutLockedOut } =
+        await makeUserLoggedInOrOpenHomePage({
+          browser,
+          startingPageUrl: HOME_PAGE_URL,
+          noCursor: true,
+          noBundleCheck: true,
+        });
+
+      if (isErrorAboutLockedOut) {
+        return await sendBotMessage(
+          chatId,
+          `⛔ Could not loginin, We are blocked`,
+          {
+            reply_to_message_id: msgId,
+          },
+        );
+      }
+
+      if (!isLoggedIn) {
+        return await sendBotMessage(
+          chatId,
+          `⛔ Could not loginin, Please check the app`,
+          {
+            reply_to_message_id: msgId,
+          },
+        );
+      }
+
+      const fetchedPatientData = await getPatientReferralDataFromAPI(
+        newPage,
+        referralId,
+        true,
+      );
+
+      const { patientDetailsError, patientInfoError } =
+        fetchedPatientData || {};
+
+      if (patientDetailsError || patientInfoError || !fetchedPatientData) {
+        return await sendBotMessage(
+          chatId,
+          fetchedPatientData
+            ? `⛔ Could Find the patient in the app, please try again`
+            : `⛔ Error: ${patientDetailsError || patientInfoError}`,
+          {
+            reply_to_message_id: msgId,
+          },
+        );
+      }
+
+      fileBuffer = await makeLetterGenerationAndReturnFile({
+        actionType,
+        browser,
+        patientData: fetchedPatientData,
+        reason,
+        referralId,
+      });
+    }
+
+    if (!fileBuffer) {
+      return await sendBotMessage(
+        chatId,
+        `⛔ Could Find the patient while searching the app, please try again`,
+        {
+          reply_to_message_id: msgId,
+        },
+      );
+    }
+
+    const fileName = `letter_${actionType}_${referralId}`;
+
+    await bot.sendDocument(
+      chatId,
+      fileBuffer,
+      { reply_to_message_id: msgId, caption: `📎 ${fileName}` },
+      { filename: `${fileName}.pdf`, contentType: "application/pdf" },
+    );
   });
 
   bot.onText(COMMANDS.updateCode.value, async (msg) => {

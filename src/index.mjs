@@ -208,6 +208,7 @@ const currentProfile = "Profile 1";
     const sendTelegramMessage = await installTelegramBotApi(
       TG_TOKEN,
       patientsStore,
+      browser,
     );
 
     // WhatsApp client + outbound integration

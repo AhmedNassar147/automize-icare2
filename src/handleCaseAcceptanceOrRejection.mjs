@@ -3,8 +3,6 @@
  * Helper: `handleCaseAcceptanceOrRejection`.
  *
  */
-import { join } from "path";
-import { readFile } from "node:fs/promises";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs";
 import closePageSafely from "./closePageSafely.mjs";
@@ -20,11 +18,7 @@ import {
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import getWaitBasedRefferalDatesAndLogs from "./getWaitBasedRefferalDatesAndLogs.mjs";
-
-async function pdfToBase64(filePath) {
-  const buf = await readFile(filePath);
-  return buf.toString("base64");
-}
+import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
 
 const handleCaseAcceptanceOrRejection =
   ({
@@ -58,15 +52,8 @@ const handleCaseAcceptanceOrRejection =
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
 
-      const folderPath = isAcceptanceAction
-        ? generatedPdfsPathForAcceptance
-        : generatedPdfsPathForRejection;
-
-      const fileName = `${actionType}-${referralId}.pdf`;
-
-      const filePath = join(folderPath, fileName);
-
-      const filebase64 = await pdfToBase64(filePath);
+      const { fileName, fileData: filebase64 } =
+        await getCurrentActionLetterFile(referralId, actionType);
 
       const [timeMsString, checkingReferralId] = (
         NEW_WAITING_TIME_FOR_PATIENT || ""
@@ -273,3 +260,6 @@ const handleCaseAcceptanceOrRejection =
   };
 
 export default handleCaseAcceptanceOrRejection;
+
+// {"pageSize":100,"pageNumber":1,"categoryReference":"accepted","providerZone":[],"providerName":[],"specialtyCode":[],"referralTypeCode":[],"referralReasonCode":[],"genericSearch":"377404","sortOrder":"asc"}
+// https://referralprogram.globemedsaudi.com/referrals/listing

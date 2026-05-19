@@ -3,6 +3,7 @@
  * Helper: `getPatientReferralDataFromAPI`.
  *
  */
+
 import { globMedHeaders, baseGlobMedAPiUrl } from "./constants.mjs";
 
 const urls = [
@@ -11,9 +12,23 @@ const urls = [
   `${baseGlobMedAPiUrl}/details`,
 ];
 
-const getPatientReferralDataFromAPI = async (page, idReferral) => {
+const getPatientReferralDataFromAPI = async (
+  page,
+  idReferral,
+  skippAttachments,
+) => {
   const results = await page.evaluate(
-    async ({ urls, globMedHeaders, idReferral, baseGlobMedAPiUrl }) => {
+    async ({
+      urls: _urls,
+      globMedHeaders,
+      idReferral,
+      baseGlobMedAPiUrl,
+      skippAttachments,
+    }) => {
+      const urls = skippAttachments
+        ? _urls.filter((url) => !url.includes("attachments"))
+        : _urls;
+
       const responses = await Promise.allSettled(
         urls.map(async (url) => {
           const apiFiresAtMS = new Date().getTime();
@@ -84,7 +99,9 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
       };
 
       const [attachmentResponse, patientInfoResponse, detailsResponse] =
-        responses;
+        skippAttachments
+          ? [null, ...responses] // pad with null for attachments
+          : responses;
 
       const {
         data: detailsData,
@@ -260,7 +277,7 @@ const getPatientReferralDataFromAPI = async (page, idReferral) => {
 
       return finalData;
     },
-    { urls, globMedHeaders, idReferral, baseGlobMedAPiUrl },
+    { urls, globMedHeaders, idReferral, baseGlobMedAPiUrl, skippAttachments },
   );
 
   return results;
