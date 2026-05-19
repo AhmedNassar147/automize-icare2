@@ -43,6 +43,11 @@ const COMMANDS = {
     description: "make yourself active to receive and control cases",
     command: "me",
   },
+  notfiyCaseStatus: {
+    value: /\/notifty_case_status/,
+    description: "Check if we selected for accepted case or not and notify me",
+    command: "notifty_case_status",
+  },
   setWait: {
     value: /\/set_wait (\d+)/,
     description: "Long press → set wait time. Example: /set_wait 2050",
@@ -936,6 +941,40 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         `❌ Update failed:\n\`\`\`\n${err.message}\n\`\`\``,
       );
     }
+  });
+
+  bot.onText(COMMANDS.notfiyCaseStatus.value, async (msg) => {
+    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      return await sendBotMessage(chatId, unAuthorizedMessage);
+    }
+
+    const hasLength = patientsStore.hasNonClaimableCases();
+
+    if (!hasLength) {
+      return await sendBotMessage(
+        chatId,
+        `⚠️ There are no cases in accepted tab to check status for.`,
+      );
+    }
+
+    const IsCheckingCasesStatus = patientsStore.getIsCheckingCasesStatus();
+
+    if (IsCheckingCasesStatus) {
+      await sendBotMessage(
+        chatId,
+        `⏳ Already running — cancelling and restarting...`,
+      );
+      patientsStore.cancelAllCheckingCasesStatusListeners();
+      await sleep(1000); // ← give current run time to notice flag change
+    }
+
+    patientsStore.setCheckingCasesStatus();
+    await sendBotMessage(
+      chatId,
+      `⏳ Checking cases status, just wait for results ...`,
+    );
   });
 
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {

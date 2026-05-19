@@ -53,10 +53,6 @@ const handleCaseAcceptanceOrRejection =
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
 
-      if (isAcceptanceAction && trackingStatusJob) {
-        await trackingStatusJob.stop();
-      }
-
       const { fileName, fileData: filebase64 } =
         await getCurrentActionLetterFile(referralId, actionType);
 
@@ -247,9 +243,6 @@ const handleCaseAcceptanceOrRejection =
       if (isAcceptanceAction) {
         await summarizeLogsAfterAcceptance(logs);
         patientStore.addNonClaimableCase(referralId, referralEndTimestamp);
-        if (trackingStatusJob) {
-          await trackingStatusJob.start();
-        }
       }
 
       createConsoleMessage(

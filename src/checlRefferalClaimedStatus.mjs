@@ -3,6 +3,7 @@
  * Helper: `checlRefferalClaimedStatus`.
  *
  */
+import sleep from "./sleep.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
 import closePageSafely from "./closePageSafely.mjs";
@@ -23,12 +24,12 @@ const tabsToCheck = [
     noDischarged: true,
     claimStatus: "AD",
   },
-  {
-    // Discharged only
-    noDischarged: false,
-    noAdmitted: true,
-    claimStatus: "DS",
-  },
+  // {
+  //   // Discharged only
+  //   noDischarged: false,
+  //   noAdmitted: true,
+  //   claimStatus: "DS",
+  // },
   {
     // Still accepted
     includeAccepted: true,
@@ -118,47 +119,52 @@ const checlRefferalClaimedStatus = async (
     return;
   }
 
-  const cases = patientsStore.getAllNonClaimableCases();
+  patientsStore.setCurrentCheckStatusPage(page);
 
-  if (!cases?.length) {
-    await closePageSafely(page);
-    return;
-  }
+  try {
+    while (patientsStore.isCheckingCasesStatus) {
+      const cases = patientsStore.getAllNonClaimableCases();
 
-  const settledResults = [];
-  for (const { referralId, referralEndTimestamp } of cases) {
-    const result = await fetchCase(
-      page,
-      referralId,
-      referralEndTimestamp,
-    ).catch((err) => {
-      createConsoleMessage(
-        err,
-        "error",
-        `❌ fetchCase failed for ${referralId}:`,
+      if (!cases?.length) break;
+
+      const settledResults = [];
+      for (const { referralId, referralEndTimestamp } of cases) {
+        const result = await fetchCase(
+          page,
+          referralId,
+          referralEndTimestamp,
+        ).catch((err) => {
+          createConsoleMessage(
+            err,
+            "error",
+            `❌ fetchCase failed for ${referralId}:`,
+          );
+          return null;
+        });
+        if (result) settledResults.push(result);
+      }
+
+      const results = settledResults.filter(
+        (item) => item.shouldUpdateAndNotify,
       );
-      return null;
-    });
-    if (result) settledResults.push(result);
-  }
 
-  const results = settledResults.filter((item) => item.shouldUpdateAndNotify);
+      for (const item of results) {
+        await updateAndNotifyUser({ sendTelegramMessage, ...item });
+        patientsStore.removeNonClaimableCase(item.referralId);
+      }
 
-  if (results.length) {
-    for (const item of results) {
-      await updateAndNotifyUser({
-        sendTelegramMessage,
-        ...item,
-      });
-      patientsStore.removeNonClaimableCase(item.referralId);
+      const remaining = patientsStore.getAllNonClaimableCases();
+
+      if (!remaining.length) {
+        break;
+      }
+
+      if (!patientsStore.isCheckingCasesStatus) break;
+      await sleep(10 * 60 * 1000); // ← wait 10 min before next check
     }
+  } finally {
+    patientsStore.cancelAllCheckingCasesStatusListeners();
   }
-
-  createConsoleMessage(
-    `📊 cases check done: ${settledResults.length} checked, ${results.length} to update`,
-    "info",
-  );
-  await closePageSafely(page);
 };
 
 export default checlRefferalClaimedStatus;

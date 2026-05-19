@@ -101,7 +101,6 @@ const currentProfile = "Profile 1";
     DETAILED_REPORT_GENERATED_AT,
     RESEND_PATIENT_SUMMARY_FILE_PATH,
     RUN_LOGS_FILE_MIRGATION,
-    CHECK_CONFIRMED_PATIENT_EVERY,
     TG_TOKEN,
   } = process.env;
 
@@ -254,38 +253,6 @@ const currentProfile = "Profile 1";
 
     if (RUN_LOGS_FILE_MIRGATION && !Number.isNaN(RUN_LOGS_FILE_MIRGATION)) {
       await migrateLogWidths(Number(RUN_LOGS_FILE_MIRGATION));
-    }
-
-    let trackingStatusJob = null;
-
-    if (CHECK_CONFIRMED_PATIENT_EVERY) {
-      let isCheckingClaims = false;
-
-      trackingStatusJob = cron.schedule(
-        CHECK_CONFIRMED_PATIENT_EVERY,
-        async () => {
-          if (isCheckingClaims) {
-            createConsoleMessage(
-              "⏰ Claim check already running — skipping",
-              "warn",
-            );
-            return;
-          }
-
-          isCheckingClaims = true;
-          createConsoleMessage("⏰ Claim status cron started", "info");
-
-          try {
-            await checlRefferalClaimedStatus(
-              browser,
-              patientsStore,
-              sendTelegramMessage,
-            );
-          } finally {
-            isCheckingClaims = false;
-          }
-        },
-      );
     }
 
     // Summary cron
@@ -596,7 +563,6 @@ const currentProfile = "Profile 1";
         sendTelegramMessage,
         continueFetchingPatientsIfPaused,
         patientStore: patientsStore,
-        trackingStatusJob,
       }),
     );
 
@@ -610,9 +576,17 @@ const currentProfile = "Profile 1";
         sendTelegramMessage,
         continueFetchingPatientsIfPaused,
         patientStore: patientsStore,
-        trackingStatusJob,
       }),
     );
+
+    patientsStore.on("checkCasesStatus", async () => {
+      if (!patientsStore.isCheckingCasesStatus) return;
+      await checlRefferalClaimedStatus(
+        browser,
+        patientsStore,
+        sendTelegramMessage,
+      );
+    });
 
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {

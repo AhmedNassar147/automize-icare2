@@ -26,6 +26,7 @@ import {
   insertWeeklyHistoryPatients,
   updateWeeklyHistoryPatients,
 } from "./db.mjs";
+import closePageSafely from "./closePageSafely.mjs";
 
 async function safeWritePatientData(data, retries = 3, delay = 200) {
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -63,6 +64,9 @@ class PatientStore extends EventEmitter {
         referralEndTimestamp,
       ]),
     );
+
+    this.isCheckingCasesStatus = false;
+    this.casesStatusPage = null;
 
     for (const patient of initialPatients) {
       if (!patient) continue;
@@ -518,6 +522,31 @@ class PatientStore extends EventEmitter {
     return this.nonClaimableCases.get(String(referralId)); // returns referralEndTimestamp
   }
 
+  hasNonClaimableCases() {
+    return this.nonClaimableCases.size;
+  }
+
+  setCurrentCheckStatusPage(casesStatusPage) {
+    this.casesStatusPage = casesStatusPage;
+  }
+
+  getIsCheckingCasesStatus() {
+    return this.isCheckingCasesStatus;
+  }
+
+  setCheckingCasesStatus() {
+    this.isCheckingCasesStatus = true;
+    this.emit("checkCasesStatus", true);
+  }
+
+  cancelAllCheckingCasesStatusListeners() {
+    this.isCheckingCasesStatus = false;
+
+    if (this.casesStatusPage) {
+      closePageSafely(this.casesStatusPage).catch(() => {});
+      this.casesStatusPage = null;
+    }
+  }
   getAllNonClaimableCases() {
     return [...this.nonClaimableCases.entries()].map(
       ([referralId, referralEndTimestamp]) => ({
