@@ -256,33 +256,35 @@ const currentProfile = "Profile 1";
       await migrateLogWidths(Number(RUN_LOGS_FILE_MIRGATION));
     }
 
-    let isCheckingClaims = false;
+    if (CHECK_CONFIRMED_PATIENT_EVERY) {
+      let isCheckingClaims = false;
 
-    const trackingStatusJob = cron.schedule(
-      CHECK_CONFIRMED_PATIENT_EVERY,
-      async () => {
-        if (isCheckingClaims) {
-          createConsoleMessage(
-            "⏰ Claim check already running — skipping",
-            "warn",
-          );
-          return;
-        }
+      const trackingStatusJob = cron.schedule(
+        CHECK_CONFIRMED_PATIENT_EVERY,
+        async () => {
+          if (isCheckingClaims) {
+            createConsoleMessage(
+              "⏰ Claim check already running — skipping",
+              "warn",
+            );
+            return;
+          }
 
-        isCheckingClaims = true;
-        createConsoleMessage("⏰ Claim status cron started", "info");
+          isCheckingClaims = true;
+          createConsoleMessage("⏰ Claim status cron started", "info");
 
-        try {
-          await checlRefferalClaimedStatus(
-            browser,
-            patientsStore,
-            sendTelegramMessage,
-          );
-        } finally {
-          isCheckingClaims = false;
-        }
-      },
-    );
+          try {
+            await checlRefferalClaimedStatus(
+              browser,
+              patientsStore,
+              sendTelegramMessage,
+            );
+          } finally {
+            isCheckingClaims = false;
+          }
+        },
+      );
+    }
 
     // Summary cron
     cron.schedule(
