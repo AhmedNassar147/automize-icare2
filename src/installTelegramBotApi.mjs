@@ -43,11 +43,6 @@ const COMMANDS = {
     description: "make yourself active to receive and control cases",
     command: "me",
   },
-  notfiyCaseStatus: {
-    value: /\/notifty_case_status/,
-    description: "Check if we selected for accepted case or not and notify me",
-    command: "notifty_case_status",
-  },
   setWait: {
     value: /\/set_wait (\d+)/,
     description: "Long press → set wait time. Example: /set_wait 2050",
@@ -62,6 +57,11 @@ const COMMANDS = {
     value: /\/wait$/,
     description: "get current wait time before hitting the accept button",
     command: "wait",
+  },
+  notfiyCaseStatus: {
+    value: /\/notifty_case_status/,
+    description: "Check if we selected for accepted case.",
+    command: "notifty_case_status",
   },
   f_accept: {
     value: /\/f_accept$/,
@@ -81,7 +81,7 @@ const COMMANDS = {
   getRefferalLetter: {
     value: /\/letter (.+)/,
     description:
-      "Long press → get refferal letter, Example: /letter a 12345 OR /letter r 12345 OR /letter r 12345 reason",
+      "Long press → get letter, Example: /letter a 12345 OR /letter r 12345 OR /letter r 12345 reason",
     command: "letter",
   },
   updateCmds: {
