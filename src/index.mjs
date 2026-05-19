@@ -256,10 +256,12 @@ const currentProfile = "Profile 1";
       await migrateLogWidths(Number(RUN_LOGS_FILE_MIRGATION));
     }
 
+    let trackingStatusJob = null;
+
     if (CHECK_CONFIRMED_PATIENT_EVERY) {
       let isCheckingClaims = false;
 
-      const trackingStatusJob = cron.schedule(
+      trackingStatusJob = cron.schedule(
         CHECK_CONFIRMED_PATIENT_EVERY,
         async () => {
           if (isCheckingClaims) {
