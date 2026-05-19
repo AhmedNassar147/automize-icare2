@@ -77,7 +77,15 @@ const updateAndNotifyUser = async ({
   referralEndTimestamp,
   claimStatus,
 }) => {
-  const telegramMessage = `*Referral ID*: ${referralId} ${claimStatus === "Yes" ? "has claimed" : "has not claimed"}`;
+  const statusEmoji = claimStatus === "Yes" ? "✅" : "❌";
+  const statusText =
+    claimStatus === "Yes" ? "has been selected" : "has NOT been selected";
+
+  const telegramMessage =
+    `${statusEmoji} *Eeferral Status Update*\n` +
+    `────────────────────────\n` +
+    `🔢 *Referral ID:* \`${referralId}\`\n` +
+    `📋 *Status:* ${statusText}`;
 
   await Promise.all([
     updateCaseInLog(referralId, referralEndTimestamp, {
