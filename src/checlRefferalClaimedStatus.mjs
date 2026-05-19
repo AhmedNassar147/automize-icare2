@@ -5,32 +5,14 @@
  */
 import pLimit from "p-limit";
 import os from "os";
-import { writeFile } from "fs/promises";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-import {
-  checkStatusPath,
-  HOME_PAGE_URL,
-  PATIENT_SECTIONS_STATUS,
-  TABS_COLLECTION_TYPES,
-} from "./constants.mjs";
+import { HOME_PAGE_URL } from "./constants.mjs";
 import { updateCaseInLog } from "./summarizeLogsAfterAcceptance.mjs";
 
-const { ACCEPTED, ADMITTED, CONFIRMED } = TABS_COLLECTION_TYPES;
-
-const checkTabType = (tabName, type) =>
-  tabName === PATIENT_SECTIONS_STATUS[type].categoryReference;
-
 const tabsToCheck = [
-  {
-    // Still accepted
-    includeAccepted: true,
-    noDischarged: true,
-    noAdmitted: true,
-    claimStatus: "AC",
-  },
   {
     // Confirmed only
     includeConfirmed: true,
@@ -48,6 +30,13 @@ const tabsToCheck = [
     noDischarged: false,
     noAdmitted: true,
     claimStatus: "DS",
+  },
+  {
+    // Still accepted
+    includeAccepted: true,
+    noDischarged: true,
+    noAdmitted: true,
+    claimStatus: "AC",
   },
 ];
 
