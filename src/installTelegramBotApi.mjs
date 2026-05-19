@@ -955,7 +955,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     if (!hasLength) {
       return await sendBotMessage(
         chatId,
-        `⚠️ There are no cases in accepted tab to check status for.`,
+        `⚠️ There are no cases to check status for.`,
       );
     }
 
