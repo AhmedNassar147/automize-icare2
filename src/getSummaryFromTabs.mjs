@@ -77,6 +77,7 @@ const getSummaryFromTabs = async ({
                 categoryReference,
                 startDate: reportStartsAt || undefined,
                 endDate: reportStartsAt ? endDate : undefined,
+                ...(extraParams || null),
               }),
             });
 
