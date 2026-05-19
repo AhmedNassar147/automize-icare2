@@ -181,7 +181,12 @@ const currentProfile = "Profile 1";
       userDataDir: profilePath,
       protocolTimeout: 180000,
       ignoreDefaultArgs: ["--enable-automation"],
-      args: ["--start-maximized"],
+      args: [
+        "--start-maximized",
+        "--disable-background-timer-throttling", // ← don't slow down background tabs
+        "--disable-backgrounding-occluded-windows", // ← don't suspend hidden windows
+        "--disable-renderer-backgrounding", // ← keep renderer active in background
+      ],
     });
 
     // Restore collected patients, bootstrap store
