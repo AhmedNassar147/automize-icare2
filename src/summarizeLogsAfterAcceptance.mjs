@@ -306,3 +306,22 @@ export async function migrateLogWidths(referralEndTimestamp) {
   await writeFile(file, updatedLines.join("\n"), "utf8");
   createConsoleMessage(`✅ Log migrated → ${file}`, "info");
 }
+
+export async function getCasesWithEmptyClaimStatus(
+  referralEndTimestamp = Date.now(),
+) {
+  const logs = await readLogsAsArray(referralEndTimestamp);
+
+  return logs
+    .filter(
+      (row) =>
+        !!row.referralId &&
+        Number(row.referralId) > 0 &&
+        !!row.referralEndTimestamp &&
+        (!row.claimed || row.claimed.trim() === ""),
+    )
+    .map(({ referralId, referralEndTimestamp: caseEndTimestamp }) => ({
+      referralId: referralId,
+      referralEndTimestamp: caseEndTimestamp,
+    }));
+}

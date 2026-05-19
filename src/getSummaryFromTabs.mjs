@@ -34,6 +34,8 @@ const getSummaryFromTabs = async ({
   includeDeclined = false,
   includeConfirmed = false,
   includeAccepted = false,
+  noDates,
+  extraParams,
 }) => {
   const categoryReferences = [
     includeAccepted
@@ -47,9 +49,11 @@ const getSummaryFromTabs = async ({
     includeDeclined ? "declined" : null,
   ].filter(Boolean);
 
-  const endDate = reportEndsAt
-    ? reportEndsAt
-    : getFormattedDateForSummary(new Date());
+  const endDate = noDates
+    ? undefined
+    : reportEndsAt
+      ? reportEndsAt
+      : getFormattedDateForSummary(new Date());
 
   const tabsResults = await page.evaluate(
     async ({
@@ -59,6 +63,7 @@ const getSummaryFromTabs = async ({
       globMedBodyData,
       reportStartsAt,
       endDate,
+      extraParams,
     }) => {
       const responses = await Promise.allSettled(
         categoryReferences.map(async (categoryReference) => {
@@ -143,6 +148,7 @@ const getSummaryFromTabs = async ({
       globMedBodyData,
       reportStartsAt,
       endDate,
+      extraParams,
     },
   );
 

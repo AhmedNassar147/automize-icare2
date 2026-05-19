@@ -25,6 +25,8 @@ const processCollectReferralSummary = async (
   const { newPage: page, isLoggedIn } = await makeUserLoggedInOrOpenHomePage({
     browser,
     startingPageUrl: HOME_PAGE_URL,
+    noBundleCheck: true,
+    noCursor: true,
   });
 
   if (!isLoggedIn) {

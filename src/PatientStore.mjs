@@ -49,15 +49,20 @@ async function safeWritePatientData(data, retries = 3, delay = 200) {
 }
 
 class PatientStore extends EventEmitter {
-  constructor(initialPatients = [], pauseFetchingPatients) {
+  constructor(initialPatients = [], nonClaimableCases = []) {
     super();
     this.patientsById = new Map();
     this.goingPatientsToBeAccepted = new Set();
     this.goingPatientsToBeRejected = new Set();
     this.patientTimers = new Map();
     this.cachedPatientsArray = null;
-    this.pauseFetchingPatients = pauseFetchingPatients;
     this.lastActionablePatient = null;
+    this.nonClaimableCases = new Map(
+      nonClaimableCases.map(({ referralId, referralEndTimestamp }) => [
+        String(referralId),
+        referralEndTimestamp,
+      ]),
+    );
 
     for (const patient of initialPatients) {
       if (!patient) continue;
@@ -283,7 +288,6 @@ class PatientStore extends EventEmitter {
           : patient;
 
         this.lastActionablePatient = currentPatient;
-        // this.pauseFetchingPatients?.();
         actionSet.delete(referralId);
         this.patientTimers.delete(referralId);
         this.emit(eventName, currentPatient);
@@ -496,6 +500,31 @@ class PatientStore extends EventEmitter {
 
   size() {
     return this.patientsById.size;
+  }
+
+  addNonClaimableCase(referralId, referralEndTimestamp) {
+    this.nonClaimableCases.set(String(referralId), referralEndTimestamp);
+  }
+
+  removeNonClaimableCase(referralId) {
+    this.nonClaimableCases.delete(String(referralId));
+  }
+
+  hasNonClaimableCase(referralId) {
+    return this.nonClaimableCases.has(String(referralId));
+  }
+
+  getNonClaimableCase(referralId) {
+    return this.nonClaimableCases.get(String(referralId)); // returns referralEndTimestamp
+  }
+
+  getAllNonClaimableCases() {
+    return [...this.nonClaimableCases.entries()].map(
+      ([referralId, referralEndTimestamp]) => ({
+        referralId,
+        referralEndTimestamp,
+      }),
+    );
   }
 
   async clear() {

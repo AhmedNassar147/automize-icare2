@@ -58,9 +58,11 @@ import updateEnvFile from "./updateEnvFile.mjs";
 import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs";
 import installTelegramBotApi from "./installTelegramBotApi.mjs";
 import {
+  getCasesWithEmptyClaimStatus,
   migrateLogWidths,
   updateCaseInLog,
 } from "./summarizeLogsAfterAcceptance.mjs";
+import checlRefferalClaimedStatus from "./checlRefferalClaimedStatus.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -99,6 +101,7 @@ const currentProfile = "Profile 1";
     DETAILED_REPORT_GENERATED_AT,
     RESEND_PATIENT_SUMMARY_FILE_PATH,
     RUN_LOGS_FILE_MIRGATION,
+    CHECK_CONFIRMED_PATIENT_EVERY,
     TG_TOKEN,
   } = process.env;
 
@@ -202,9 +205,10 @@ const currentProfile = "Profile 1";
     //   return item;
     // });
 
+    const nonClaimableCases = await getCasesWithEmptyClaimStatus();
     const patientsStore = new PatientStore(
       collectedPatients || [],
-      pauseFetchingPatients,
+      nonClaimableCases,
     );
 
     await patientsStore.scheduleAllInitialPatients();
@@ -240,7 +244,7 @@ const currentProfile = "Profile 1";
       }))();
 
     if (RESEND_PATIENT_SUMMARY_FILE_PATH) {
-      await sleep(10_000); // delay to ensure everything is up before sending
+      await sleep(8_000); // delay to ensure everything is up before sending
       await sendRefferalsToWhatsAppAsExcel(
         sendWhatsappMessage,
         sendTelegramMessage,
@@ -251,6 +255,34 @@ const currentProfile = "Profile 1";
     if (RUN_LOGS_FILE_MIRGATION && !Number.isNaN(RUN_LOGS_FILE_MIRGATION)) {
       await migrateLogWidths(Number(RUN_LOGS_FILE_MIRGATION));
     }
+
+    let isCheckingClaims = false;
+
+    const trackingStatusJob = cron.schedule(
+      CHECK_CONFIRMED_PATIENT_EVERY,
+      async () => {
+        if (isCheckingClaims) {
+          createConsoleMessage(
+            "⏰ Claim check already running — skipping",
+            "warn",
+          );
+          return;
+        }
+
+        isCheckingClaims = true;
+        createConsoleMessage("⏰ Claim status cron started", "info");
+
+        try {
+          await checlRefferalClaimedStatus(
+            browser,
+            patientsStore,
+            sendTelegramMessage,
+          );
+        } finally {
+          isCheckingClaims = false;
+        }
+      },
+    );
 
     // Summary cron
     cron.schedule(
@@ -560,6 +592,7 @@ const currentProfile = "Profile 1";
         sendTelegramMessage,
         continueFetchingPatientsIfPaused,
         patientStore: patientsStore,
+        trackingStatusJob,
       }),
     );
 
@@ -573,6 +606,7 @@ const currentProfile = "Profile 1";
         sendTelegramMessage,
         continueFetchingPatientsIfPaused,
         patientStore: patientsStore,
+        trackingStatusJob,
       }),
     );
 

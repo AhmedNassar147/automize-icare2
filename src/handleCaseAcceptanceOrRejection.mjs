@@ -29,6 +29,7 @@ const handleCaseAcceptanceOrRejection =
     continueFetchingPatientsIfPaused,
     browser,
     patientStore,
+    trackingStatusJob,
   }) =>
   async (patient) => {
     const {
@@ -51,6 +52,10 @@ const handleCaseAcceptanceOrRejection =
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
+
+      if (isAcceptanceAction) {
+        await trackingStatusJob.stop();
+      }
 
       const { fileName, fileData: filebase64 } =
         await getCurrentActionLetterFile(referralId, actionType);
@@ -241,6 +246,8 @@ const handleCaseAcceptanceOrRejection =
 
       if (isAcceptanceAction) {
         await summarizeLogsAfterAcceptance(logs);
+        patientStore.addNonClaimableCase(referralId, referralEndTimestamp);
+        await trackingStatusJob.start();
       }
 
       createConsoleMessage(
@@ -260,6 +267,3 @@ const handleCaseAcceptanceOrRejection =
   };
 
 export default handleCaseAcceptanceOrRejection;
-
-// {"pageSize":100,"pageNumber":1,"categoryReference":"accepted","providerZone":[],"providerName":[],"specialtyCode":[],"referralTypeCode":[],"referralReasonCode":[],"genericSearch":"377404","sortOrder":"asc"}
-// https://referralprogram.globemedsaudi.com/referrals/listing
