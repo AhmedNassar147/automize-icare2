@@ -107,8 +107,6 @@ const waitForWaitingCountWithInterval = async ({
 
       if (shouldCloseApp) {
         const message =
-          "⚠️ *‼️ Login Errors Detected ‼️*\n" +
-          "\n────────────────────────\n" +
           "App is Closed, Please check the app, try to open it manually";
 
         await sendWhatsappMessage(process.env.CLIENT_WHATSAPP_NUMBER, [

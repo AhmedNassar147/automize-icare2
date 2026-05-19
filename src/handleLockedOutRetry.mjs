@@ -23,18 +23,13 @@ const createSendLockedMessage =
       });
     }
 
-    const _message =
-      "⚠️ *‼️ Login Errors Detected ‼️*\n" +
-      "────────────────────────\n" +
-      `${message}`;
-
     await sendWhatsappMessage(clientPhoneNumber, [
       {
-        message: _message,
+        message: message,
       },
     ]);
 
-    await sendTelegramMessage(_message);
+    await sendTelegramMessage(message);
   };
 
 async function handleLockedOutRetry({
