@@ -34,6 +34,7 @@ const getSummaryFromTabs = async ({
   includeDeclined = false,
   includeConfirmed = false,
   includeAccepted = false,
+  noDischarged = false,
   noDates,
   extraParams,
 }) => {
@@ -45,7 +46,7 @@ const getSummaryFromTabs = async ({
       ? PATIENT_SECTIONS_STATUS[CONFIRMED].categoryReference
       : null,
     PATIENT_SECTIONS_STATUS[ADMITTED].categoryReference,
-    PATIENT_SECTIONS_STATUS[DISCHARGED].categoryReference,
+    noDischarged ? null : PATIENT_SECTIONS_STATUS[DISCHARGED].categoryReference,
     includeDeclined ? "declined" : null,
   ].filter(Boolean);
 

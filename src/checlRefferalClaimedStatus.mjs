@@ -27,6 +27,7 @@ const fetchCase = async (page, refferalId, referralEndTimestamp) => {
     includeConfirmed: true,
     includeAdmitted: true,
     noDates: true,
+    noDischarged: true,
     extraParams: {
       genericSearch: refferalId,
     },
@@ -64,12 +65,14 @@ const checlRefferalClaimedStatus = async (
     return;
   }
 
-  const cases = patientsStore.getAllNonClaimableCases();
+  let cases = patientsStore.getAllNonClaimableCases();
 
   if (!cases?.length) {
     await closePageSafely(page);
     return;
   }
+
+  cases = cases.map((_, index) => index < 3);
 
   const cpuCount = os.cpus().length; // Get the number of CPU cores
   const limit = pLimit(Math.min(4, cpuCount));
@@ -83,6 +86,7 @@ const checlRefferalClaimedStatus = async (
   );
 
   console.log("results", JSON.stringify(results, null, 2));
+  await closePageSafely(page);
 
   // tabName
 
