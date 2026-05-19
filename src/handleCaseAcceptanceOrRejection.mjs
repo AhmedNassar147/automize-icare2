@@ -180,7 +180,7 @@ const handleCaseAcceptanceOrRejection =
 
       const waitTime = baseWaitingTime + extraWait;
 
-      const approvalMessage = `*${actionType} ${referralId}* _waitTime=${waitTime / 1000}s_`;
+      const approvalMessage = `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\``;
 
       const promises = [
         sleep(waitTime).then(() =>

@@ -26,7 +26,7 @@ const createSendLockedMessage =
     const _message =
       "⚠️ *‼️ Login Errors Detected ‼️*\n" +
       "────────────────────────\n" +
-      `_${message}_`;
+      `${message}`;
 
     await sendWhatsappMessage(clientPhoneNumber, [
       {
