@@ -3,8 +3,6 @@
  * Helper: `checlRefferalClaimedStatus`.
  *
  */
-import pLimit from "p-limit";
-import os from "os";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
 import closePageSafely from "./closePageSafely.mjs";
@@ -40,12 +38,12 @@ const tabsToCheck = [
   },
 ];
 
-const fetchCase = async (page, refferalId, referralEndTimestamp) => {
+const fetchCase = async (page, referralId, referralEndTimestamp) => {
   for (const { claimStatus, ...tabParams } of tabsToCheck) {
     const { patients, errors } = await getSummaryFromTabs({
       page,
       noDates: true,
-      extraParams: { genericSearch: refferalId },
+      extraParams: { genericSearch: referralId },
       ...tabParams,
     });
 
@@ -53,7 +51,7 @@ const fetchCase = async (page, refferalId, referralEndTimestamp) => {
       const isClaimed = ["AD", "CF", "DS"].includes(claimStatus);
       return {
         referralEndTimestamp,
-        refferalId,
+        referralId,
         claimStatus: isClaimed ? "Yes" : "No",
         errors,
         shouldUpdateAndNotify: isClaimed,
@@ -64,7 +62,7 @@ const fetchCase = async (page, refferalId, referralEndTimestamp) => {
   // Not found in any tab
   return {
     referralEndTimestamp,
-    refferalId,
+    referralId,
     claimStatus: "No",
     shouldUpdateAndNotify: true,
     errors: null,
@@ -82,7 +80,7 @@ const updateAndNotifyUser = async ({
     claimStatus === "Yes" ? "has been selected" : "has NOT been selected";
 
   const telegramMessage =
-    `${statusEmoji} *Eeferral Status Update*\n` +
+    `${statusEmoji} *Referral Status Update*\n` +
     `────────────────────────\n` +
     `🔢 *Referral ID:* \`${referralId}\`\n` +
     `📋 *Status:* ${statusText}`;
@@ -127,21 +125,24 @@ const checlRefferalClaimedStatus = async (
     return;
   }
 
-  const cpuCount = os.cpus().length; // Get the number of CPU cores
-  const limit = pLimit(Math.min(4, cpuCount));
+  const settledResults = [];
+  for (const { referralId, referralEndTimestamp } of cases) {
+    const result = await fetchCase(
+      page,
+      referralId,
+      referralEndTimestamp,
+    ).catch((err) => {
+      createConsoleMessage(
+        err,
+        "error",
+        `❌ fetchCase failed for ${referralId}:`,
+      );
+      return null;
+    });
+    if (result) settledResults.push(result);
+  }
 
-  const settledResults = await Promise.allSettled(
-    cases.map(({ referralId, referralEndTimestamp }) =>
-      limit(
-        async () => await fetchCase(page, referralId, referralEndTimestamp),
-      ),
-    ),
-  );
-
-  const results = settledResults
-    .filter(({ status }) => status === "fulfilled")
-    .map(({ value }) => value)
-    .filter((item) => item.shouldUpdateAndNotify);
+  const results = settledResults.filter((item) => item.shouldUpdateAndNotify);
 
   if (results.length) {
     for (const item of results) {
@@ -149,10 +150,14 @@ const checlRefferalClaimedStatus = async (
         sendTelegramMessage,
         ...item,
       });
-      patientsStore.removeNonClaimableCase(item.refferalId);
+      patientsStore.removeNonClaimableCase(item.referralId);
     }
   }
 
+  createConsoleMessage(
+    `📊 cases check done: ${settledResults.length} checked, ${results.length} to update`,
+    "info",
+  );
   await closePageSafely(page);
 };
 
