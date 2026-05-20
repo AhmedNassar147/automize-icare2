@@ -66,10 +66,10 @@ const getWaitBasedRefferalDatesAndLogs = async ({
       extraWait = isFarFromLastCase
         ? IS_UNIZA_BRANCH
           ? 9
-          : 6
+          : 7
         : IS_UNIZA_BRANCH
           ? 6
-          : 3;
+          : 4;
     } else {
       extraWait = isFarFromLastCase
         ? IS_UNIZA_BRANCH
@@ -83,7 +83,7 @@ const getWaitBasedRefferalDatesAndLogs = async ({
 
   if (diff < 0) {
     const diffToWaitValue = (Math.abs(diff) / 1000) * 2;
-    const maxNewWait = (IS_UNIZA_BRANCH ? 5 : 4) + diffToWaitValue;
+    const maxNewWait = (IS_UNIZA_BRANCH ? 6 : 5) + diffToWaitValue;
 
     if (typeof lastDiff === "number" && lastDiff < 0) {
       const _lastExtraWait = lastExtraWait || 0;
