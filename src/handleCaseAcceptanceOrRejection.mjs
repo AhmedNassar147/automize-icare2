@@ -118,8 +118,10 @@ const handleCaseAcceptanceOrRejection =
 
       const currentUrl = page.url().toLowerCase();
 
+      const remainingMs = referralEndTimestamp - Date.now();
+
       createConsoleMessage(
-        `Navigated to details page referralId=${referralId} and URL=${currentUrl}`,
+        `Navigated to details page referralId=${referralId} remainingMs=${remainingMs} and URL=${currentUrl}`,
         "info",
       );
 
@@ -144,8 +146,6 @@ const handleCaseAcceptanceOrRejection =
         );
       }
 
-      const remainingMs = referralEndTimestamp - Date.now();
-
       const {
         reason,
         elapsedMs,
@@ -158,7 +158,6 @@ const handleCaseAcceptanceOrRejection =
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
-        remainingMs,
         onZeroSecond,
       });
 

@@ -6,7 +6,6 @@ import { globMedHeaders } from "./constants.mjs";
 async function waitUntilCanTakeActionByWindow({
   page,
   referralId,
-  remainingMs,
   onZeroSecond,
 }) {
   let fnName = null;
@@ -17,18 +16,7 @@ async function waitUntilCanTakeActionByWindow({
   }
 
   return await page.evaluate(
-    async ({ globMedHeaders, referralId, remainingMs, fnName }) => {
-      if (!Number.isFinite(remainingMs) || remainingMs <= 0) {
-        await window[fnName]?.();
-
-        return {
-          isOk: true,
-          reason: `invalid remainingMs=${remainingMs}`,
-          elapsedMs: 0,
-          attempts: 0,
-        };
-      }
-
+    async ({ globMedHeaders, referralId, fnName }) => {
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
       let onZeroSecondCalled = false;
@@ -49,10 +37,14 @@ async function waitUntilCanTakeActionByWindow({
             cache: "no-store",
             credentials: "include",
           });
-
-          if (!r.ok) return { ok: false, reason: `HTTP ${r.status}` };
-
           const localNow = Date.now();
+
+          if (!r?.ok)
+            return {
+              ok: false,
+              reason: `HTTP ${r.status}`,
+            };
+
           // 🕒 Read server time from response header
           const serverDate = r.headers.get("Date");
           const serverNow = serverDate ? new Date(serverDate).getTime() : null;
@@ -83,6 +75,12 @@ async function waitUntilCanTakeActionByWindow({
             !!(canTakeAction && canUpdate && status === "P") && !message;
 
           if (ok) {
+            if (!onZeroSecondCalled && fnName) {
+              await window[fnName]?.();
+              onZeroSecondCalled = true;
+              zeroSeenAt = serverNow || localNow;
+            }
+
             readySeenAt = serverNow || localNow;
             readySeenAtLocalMs = localNow;
           }
@@ -142,7 +140,6 @@ async function waitUntilCanTakeActionByWindow({
     {
       globMedHeaders,
       referralId,
-      remainingMs,
       fnName,
     },
   );
