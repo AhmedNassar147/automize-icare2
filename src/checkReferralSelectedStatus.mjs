@@ -1,6 +1,6 @@
 /**
  *
- * Helper: `checlRefferalClaimedStatus`.
+ * Helper: `checkReferralSelectedStatus`.
  *
  */
 import createConsoleMessage from "./createConsoleMessage.mjs";
@@ -90,14 +90,14 @@ const updateAndNotifyUser = async ({
   ]);
 };
 
-const checlRefferalClaimedStatus = async (
+const checkReferralSelectedStatus = async (
   page,
   patientsStore,
   sendTelegramMessage,
 ) => {
   const cases = patientsStore.getAllNonClaimableCases();
 
-  if (!cases?.length) return;
+  if (!cases?.length) return false;
 
   const settledResults = [];
   for (const { referralId, referralEndTimestamp } of cases) {
@@ -119,9 +119,11 @@ const checlRefferalClaimedStatus = async (
   const results = settledResults.filter((item) => item.shouldUpdateAndNotify);
 
   for (const item of results) {
-    patientsStore.removeNonClaimableCase(item.referralId);
     await updateAndNotifyUser({ sendTelegramMessage, ...item });
+    patientsStore.removeNonClaimableCase(item.referralId);
   }
+
+  return results.length > 0;
 };
 
-export default checlRefferalClaimedStatus;
+export default checkReferralSelectedStatus;

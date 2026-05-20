@@ -6,7 +6,7 @@ import speakText from "./speakText.mjs";
 import createReloadAndCheckIfShouldCreateNewPage from "./createReloadAndCheckIfShouldCreateNewPage.mjs";
 import handleLockedOutRetry from "./handleLockedOutRetry.mjs";
 import sleep from "./sleep.mjs";
-import checlRefferalClaimedStatus from "./checlRefferalClaimedStatus.mjs";
+import checkReferralSelectedStatus from "./checkReferralSelectedStatus.mjs";
 import {
   pauseController,
   pause,
@@ -174,11 +174,27 @@ const waitForWaitingCountWithInterval = async ({
         createConsoleMessage(
           `⏳ There are (${nonClaimableCasesSize}) cases that need to be checked`,
         );
-        await checlRefferalClaimedStatus(
-          page,
-          patientsStore,
-          sendTelegramMessage,
-        );
+        const haveCasesCheckedAndNeedsUpdate =
+          await checkReferralSelectedStatus(
+            page,
+            patientsStore,
+            sendTelegramMessage,
+          );
+
+        if (haveCasesCheckedAndNeedsUpdate) {
+          const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
+            page,
+            "accepted cases checked and needs update,",
+            1000,
+          );
+
+          if (shouldCreateNewPage) {
+            page = null;
+            cursor = null;
+          }
+
+          continue;
+        }
 
         const waitTime = 1500 + Math.random() * 3000;
         createConsoleMessage(

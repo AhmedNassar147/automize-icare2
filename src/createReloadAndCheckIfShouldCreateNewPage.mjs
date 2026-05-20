@@ -7,11 +7,11 @@ import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const createReloadAndCheckIfShouldCreateNewPage =
   (pauseController, pausableSleep, INTERVAL) =>
-  async (page, logString = "", internal = false) => {
-    const _interval = typeof internal === "number" ? internal : INTERVAL;
+  async (page, logString = "", interval = false) => {
+    const _interval = typeof interval === "number" ? interval : INTERVAL;
 
     try {
-      const intervalTime = _interval + Math.random() * 9000;
+      const intervalTime = _interval + Math.random() * 8000;
 
       await pauseController.waitIfPaused();
 
@@ -22,14 +22,14 @@ const createReloadAndCheckIfShouldCreateNewPage =
           `Will recreate page on next loop iteration, refreshing in ${
             intervalTime / 1000
           }s...`,
-          "warn"
+          "warn",
         );
         return true;
       }
 
       createConsoleMessage(
         `✅ ${logString} refreshing in ${intervalTime / 1000}s...`,
-        "info"
+        "info",
       );
       await pausableSleep(intervalTime);
 
@@ -44,7 +44,7 @@ const createReloadAndCheckIfShouldCreateNewPage =
         "error",
         `Will recreate page on next loop iteration, refreshing in ${
           intervalTime / 1000
-        }s...`
+        }s...`,
       );
       return true;
     }
