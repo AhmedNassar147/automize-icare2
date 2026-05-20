@@ -65,9 +65,6 @@ class PatientStore extends EventEmitter {
       ]),
     );
 
-    this.isCheckingCasesStatus = false;
-    this.casesStatusPage = null;
-
     for (const patient of initialPatients) {
       if (!patient) continue;
       const key = this.keyExtractor(patient);
@@ -514,38 +511,8 @@ class PatientStore extends EventEmitter {
     this.nonClaimableCases.delete(String(referralId));
   }
 
-  hasNonClaimableCase(referralId) {
-    return this.nonClaimableCases.has(String(referralId));
-  }
-
-  getNonClaimableCase(referralId) {
-    return this.nonClaimableCases.get(String(referralId)); // returns referralEndTimestamp
-  }
-
   hasNonClaimableCases() {
     return this.nonClaimableCases.size;
-  }
-
-  setCurrentCheckStatusPage(casesStatusPage) {
-    this.casesStatusPage = casesStatusPage;
-  }
-
-  getIsCheckingCasesStatus() {
-    return this.isCheckingCasesStatus;
-  }
-
-  setCheckingCasesStatus() {
-    this.isCheckingCasesStatus = true;
-    this.emit("checkCasesStatus", true);
-  }
-
-  cancelAllCheckingCasesStatusListeners() {
-    this.isCheckingCasesStatus = false;
-
-    if (this.casesStatusPage) {
-      closePageSafely(this.casesStatusPage).catch(() => {});
-      this.casesStatusPage = null;
-    }
   }
   getAllNonClaimableCases() {
     return [...this.nonClaimableCases.entries()].map(
@@ -581,13 +548,13 @@ class PatientStore extends EventEmitter {
   //   this.removeAllListeners("forceReloadHomePage");
   // }
 
-  hasReloadListener() {
-    return this.listenerCount("forceReloadHomePage") > 0;
-  }
+  // hasReloadListener() {
+  //   return this.listenerCount("forceReloadHomePage") > 0;
+  // }
 
-  forceReloadHomePage() {
-    this.emit("forceReloadHomePage", true);
-  }
+  // forceReloadHomePage() {
+  //   this.emit("forceReloadHomePage", true);
+  // }
 
   toJSON() {
     return {

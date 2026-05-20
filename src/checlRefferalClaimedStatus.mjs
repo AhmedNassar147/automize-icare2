@@ -3,12 +3,8 @@
  * Helper: `checlRefferalClaimedStatus`.
  *
  */
-import sleep from "./sleep.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
-import closePageSafely from "./closePageSafely.mjs";
-import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
-import { HOME_PAGE_URL } from "./constants.mjs";
 import { updateCaseInLog } from "./summarizeLogsAfterAcceptance.mjs";
 
 const tabsToCheck = [
@@ -95,75 +91,36 @@ const updateAndNotifyUser = async ({
 };
 
 const checlRefferalClaimedStatus = async (
-  browser,
+  page,
   patientsStore,
   sendTelegramMessage,
 ) => {
-  const {
-    newPage: page,
-    isLoggedIn,
-    isErrorAboutLockedOut,
-    shouldCloseApp,
-  } = await makeUserLoggedInOrOpenHomePage({
-    browser,
-    startingPageUrl: HOME_PAGE_URL,
-    noBundleCheck: true,
-    noCursor: true,
-  });
+  const cases = patientsStore.getAllNonClaimableCases();
 
-  if (!isLoggedIn || isErrorAboutLockedOut || shouldCloseApp) {
-    createConsoleMessage(
-      "User is not logged in, when calling checlRefferalClaimedStatus.",
-      "error",
-    );
-    return;
+  if (!cases?.length) return;
+
+  const settledResults = [];
+  for (const { referralId, referralEndTimestamp } of cases) {
+    const result = await fetchCase(
+      page,
+      referralId,
+      referralEndTimestamp,
+    ).catch((err) => {
+      createConsoleMessage(
+        err,
+        "error",
+        `❌ fetchCase failed for ${referralId}:`,
+      );
+      return null;
+    });
+    if (result) settledResults.push(result);
   }
 
-  patientsStore.setCurrentCheckStatusPage(page);
+  const results = settledResults.filter((item) => item.shouldUpdateAndNotify);
 
-  try {
-    while (patientsStore.isCheckingCasesStatus) {
-      const cases = patientsStore.getAllNonClaimableCases();
-
-      if (!cases?.length) break;
-
-      const settledResults = [];
-      for (const { referralId, referralEndTimestamp } of cases) {
-        const result = await fetchCase(
-          page,
-          referralId,
-          referralEndTimestamp,
-        ).catch((err) => {
-          createConsoleMessage(
-            err,
-            "error",
-            `❌ fetchCase failed for ${referralId}:`,
-          );
-          return null;
-        });
-        if (result) settledResults.push(result);
-      }
-
-      const results = settledResults.filter(
-        (item) => item.shouldUpdateAndNotify,
-      );
-
-      for (const item of results) {
-        await updateAndNotifyUser({ sendTelegramMessage, ...item });
-        patientsStore.removeNonClaimableCase(item.referralId);
-      }
-
-      const remaining = patientsStore.getAllNonClaimableCases();
-
-      if (!remaining.length) {
-        break;
-      }
-
-      if (!patientsStore.isCheckingCasesStatus) break;
-      await sleep(10 * 60 * 1000); // ← wait 10 min before next check
-    }
-  } finally {
-    patientsStore.cancelAllCheckingCasesStatusListeners();
+  for (const item of results) {
+    patientsStore.removeNonClaimableCase(item.referralId);
+    await updateAndNotifyUser({ sendTelegramMessage, ...item });
   }
 };
 

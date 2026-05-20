@@ -6,6 +6,7 @@ import speakText from "./speakText.mjs";
 import createReloadAndCheckIfShouldCreateNewPage from "./createReloadAndCheckIfShouldCreateNewPage.mjs";
 import handleLockedOutRetry from "./handleLockedOutRetry.mjs";
 import sleep from "./sleep.mjs";
+import checlRefferalClaimedStatus from "./checlRefferalClaimedStatus.mjs";
 import {
   pauseController,
   pause,
@@ -61,29 +62,29 @@ const waitForWaitingCountWithInterval = async ({
     sortOrder: "asc",
   });
 
-  if (!patientsStore.hasReloadListener()) {
-    patientsStore.on("forceReloadHomePage", async () => {
-      createConsoleMessage(`📢 Received forceReloadHomePage event`, "info");
-      if (page) {
-        try {
-          await pauseController.waitIfPaused();
-          await page.reload({ waitUntil: "domcontentloaded" });
-          createConsoleMessage(`🔄 Page reloaded successfully from event.`);
-        } catch (err) {
-          createConsoleMessage(
-            err,
-            "error",
-            `❌ Error during manual homepage reload:`,
-          );
-        }
-      } else {
-        createConsoleMessage(
-          `⚠️ forceReloadHomePage event fired but page is null`,
-          "warn",
-        );
-      }
-    });
-  }
+  // if (!patientsStore.hasReloadListener()) {
+  //   patientsStore.on("forceReloadHomePage", async () => {
+  //     createConsoleMessage(`📢 Received forceReloadHomePage event`, "info");
+  //     if (page) {
+  //       try {
+  //         await pauseController.waitIfPaused();
+  //         await page.reload({ waitUntil: "domcontentloaded" });
+  //         createConsoleMessage(`🔄 Page reloaded successfully from event.`);
+  //       } catch (err) {
+  //         createConsoleMessage(
+  //           err,
+  //           "error",
+  //           `❌ Error during manual homepage reload:`,
+  //         );
+  //       }
+  //     } else {
+  //       createConsoleMessage(
+  //         `⚠️ forceReloadHomePage event fired but page is null`,
+  //         "warn",
+  //       );
+  //     }
+  //   });
+  // }
 
   while (true) {
     try {
@@ -167,6 +168,16 @@ const waitForWaitingCountWithInterval = async ({
         continue;
       }
 
+      const hasCasesNeedToBeChecked = patientsStore.hasNonClaimableCases();
+
+      if (hasCasesNeedToBeChecked && page) {
+        await checlRefferalClaimedStatus(
+          page,
+          patientsStore,
+          sendTelegramMessage,
+        );
+      }
+
       const patientsLength = patients.length ?? 0;
 
       if (!patientsLength) {
@@ -177,22 +188,14 @@ const waitForWaitingCountWithInterval = async ({
 
         if (apiHadData && patientsStore.size()) {
           apiHadData = false;
-          try {
-            await patientsStore.clear();
-            createConsoleMessage(`✅ Patient store with files cleared`);
-          } catch (error) {
-            createConsoleMessage(
-              error,
-              "error",
-              `Error clearing patients store`,
-            );
-          }
-
+          await patientsStore.clear();
+          createConsoleMessage(`✅ Patient store with files cleared`);
           const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
             page,
             "🛑 cleared patients store and files",
             0,
           );
+
           if (shouldCreateNewPage) {
             page = null;
             cursor = null;

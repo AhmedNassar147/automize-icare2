@@ -58,11 +58,11 @@ const COMMANDS = {
     description: "get current wait time before hitting the accept button",
     command: "wait",
   },
-  notfiyCaseStatus: {
-    value: /\/notifty_case_status/,
-    description: "Check if we selected for accepted case.",
-    command: "notifty_case_status",
-  },
+  // notfiyCaseStatus: {
+  //   value: /\/notifty_case_status/,
+  //   description: "Check if we selected for accepted case.",
+  //   command: "notifty_case_status",
+  // },
   f_accept: {
     value: /\/f_accept$/,
     description: "get first patient to be accepted with time left details",
@@ -943,39 +943,40 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.notfiyCaseStatus.value, async (msg) => {
-    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
+  // bot.onText(COMMANDS.notfiyCaseStatus.value, async (msg) => {
+  //   const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
 
-    if (unAuthorizedMessage) {
-      return await sendBotMessage(chatId, unAuthorizedMessage);
-    }
+  //   if (unAuthorizedMessage) {
+  //     return await sendBotMessage(chatId, unAuthorizedMessage);
+  //   }
 
-    const hasLength = patientsStore.hasNonClaimableCases();
+  //   const hasLength = patientsStore.hasNonClaimableCases();
 
-    if (!hasLength) {
-      return await sendBotMessage(
-        chatId,
-        `⚠️ There are no cases to check status for.`,
-      );
-    }
+  //   if (!hasLength) {
+  //     return await sendBotMessage(
+  //       chatId,
+  //       `⚠️ There are no cases to check status for.`,
+  //     );
+  //   }
 
-    const IsCheckingCasesStatus = patientsStore.getIsCheckingCasesStatus();
+  //   const IsCheckingCasesStatus = patientsStore.getIsCheckingCasesStatus();
 
-    if (IsCheckingCasesStatus) {
-      await sendBotMessage(
-        chatId,
-        `⏳ Already running — cancelling and restarting...`,
-      );
-      patientsStore.cancelAllCheckingCasesStatusListeners();
-      await sleep(1000); // ← give current run time to notice flag change
-    }
+  //   if (IsCheckingCasesStatus) {
+  //     patientsStore.cancelCheckingCasesStatus();
 
-    patientsStore.setCheckingCasesStatus();
-    await sendBotMessage(
-      chatId,
-      `⏳ Checking cases status, just wait for results ...`,
-    );
-  });
+  //     await sendBotMessage(
+  //       chatId,
+  //       `⏳ Already running — cancelling and restarting...`,
+  //     );
+  //     await sleep(1000); // ← give current run time to notice flag change
+  //   }
+
+  //   patientsStore.setCheckingCasesStatus();
+  //   await sendBotMessage(
+  //     chatId,
+  //     `⏳ Checking cases status, just wait for results ...`,
+  //   );
+  // });
 
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {
     try {

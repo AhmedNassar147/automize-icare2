@@ -62,7 +62,6 @@ import {
   migrateLogWidths,
   updateCaseInLog,
 } from "./summarizeLogsAfterAcceptance.mjs";
-import checlRefferalClaimedStatus from "./checlRefferalClaimedStatus.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -583,15 +582,6 @@ const currentProfile = "Profile 1";
         patientStore: patientsStore,
       }),
     );
-
-    patientsStore.on("checkCasesStatus", async () => {
-      if (!patientsStore.isCheckingCasesStatus) return;
-      await checlRefferalClaimedStatus(
-        browser,
-        patientsStore,
-        sendTelegramMessage,
-      );
-    });
 
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {

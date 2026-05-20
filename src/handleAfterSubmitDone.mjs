@@ -29,10 +29,10 @@ const handleAfterSubmitDone = async ({
 
   const durationText = buildDurationText(
     startTime,
-    Date.now() - (leftTime || 0)
+    Date.now() - (leftTime || 0),
   );
   createConsoleMessage(`durationText=${durationText}`);
-  patientsStore.forceReloadHomePage();
+  // patientsStore.forceReloadHomePage();
 
   await sleep(5000 + Math.random() * 2000);
 
@@ -42,7 +42,7 @@ const handleAfterSubmitDone = async ({
         ? errorMessage
         : "app didn't redirect to home after submission",
       `no-home-redirect-action-${actionName}`,
-      durationText
+      durationText,
     );
 
     await closeCurrentPage(true);
