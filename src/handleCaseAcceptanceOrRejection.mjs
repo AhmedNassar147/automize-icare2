@@ -188,7 +188,7 @@ const handleCaseAcceptanceOrRejection =
           `Missing readySeenAt=${readySeenAt} zeroSeenAt=${zeroSeenAt} readySeenAtLocalMs=${readySeenAtLocalMs} extraBackendDelayMs=${extraBackendDelayMs} for referralId=${referralId}`,
         );
 
-        extraWait = 700;
+        extraWait += 100;
       }
       const waitTime = baseWaitingTime + extraWait;
 
