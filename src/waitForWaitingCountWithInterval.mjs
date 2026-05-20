@@ -168,9 +168,12 @@ const waitForWaitingCountWithInterval = async ({
         continue;
       }
 
-      const hasCasesNeedToBeChecked = patientsStore.hasNonClaimableCases();
+      const nonClaimableCasesSize = patientsStore.getNonClaimableCasesSize();
 
-      if (hasCasesNeedToBeChecked && page) {
+      if (nonClaimableCasesSize && page) {
+        createConsoleMessage(
+          `⏳ There are (${nonClaimableCasesSize}) cases that need to be checked`,
+        );
         await checlRefferalClaimedStatus(
           page,
           patientsStore,

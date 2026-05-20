@@ -511,7 +511,7 @@ class PatientStore extends EventEmitter {
     this.nonClaimableCases.delete(String(referralId));
   }
 
-  hasNonClaimableCases() {
+  getNonClaimableCasesSize() {
     return this.nonClaimableCases.size;
   }
   getAllNonClaimableCases() {

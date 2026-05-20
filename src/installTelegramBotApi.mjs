@@ -943,41 +943,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  // bot.onText(COMMANDS.notfiyCaseStatus.value, async (msg) => {
-  //   const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
-
-  //   if (unAuthorizedMessage) {
-  //     return await sendBotMessage(chatId, unAuthorizedMessage);
-  //   }
-
-  //   const hasLength = patientsStore.hasNonClaimableCases();
-
-  //   if (!hasLength) {
-  //     return await sendBotMessage(
-  //       chatId,
-  //       `⚠️ There are no cases to check status for.`,
-  //     );
-  //   }
-
-  //   const IsCheckingCasesStatus = patientsStore.getIsCheckingCasesStatus();
-
-  //   if (IsCheckingCasesStatus) {
-  //     patientsStore.cancelCheckingCasesStatus();
-
-  //     await sendBotMessage(
-  //       chatId,
-  //       `⏳ Already running — cancelling and restarting...`,
-  //     );
-  //     await sleep(1000); // ← give current run time to notice flag change
-  //   }
-
-  //   patientsStore.setCheckingCasesStatus();
-  //   await sendBotMessage(
-  //     chatId,
-  //     `⏳ Checking cases status, just wait for results ...`,
-  //   );
-  // });
-
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {
     try {
       await bot.answerCallbackQuery(queryId, {
