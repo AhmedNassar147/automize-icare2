@@ -179,6 +179,13 @@ const waitForWaitingCountWithInterval = async ({
           patientsStore,
           sendTelegramMessage,
         );
+
+        const waitTime = 1500 + Math.random() * 3000;
+        createConsoleMessage(
+          `📋 sleep for ${waitTime / 1000}s after checking accepted case status ...`,
+          "info",
+        );
+        await pausableSleep(waitTime);
       }
 
       const patientsLength = patients.length ?? 0;
@@ -192,7 +199,7 @@ const waitForWaitingCountWithInterval = async ({
         if (apiHadData && patientsStore.size()) {
           apiHadData = false;
           await patientsStore.clear();
-          createConsoleMessage(`✅ Patient store with files cleared`);
+          createConsoleMessage(`✅ Patient store with files cleared`, "info");
           const shouldCreateNewPage = await reloadAndCheckIfShouldCreateNewPage(
             page,
             "🛑 cleared patients store and files",
@@ -209,6 +216,7 @@ const waitForWaitingCountWithInterval = async ({
         const waitingMs = INTERVAL + Math.random() * 5000;
         createConsoleMessage(
           `📋 sleep for ${waitingMs / 1000} s before next search ...`,
+          "info",
         );
         await pausableSleep(waitingMs);
         continue;
