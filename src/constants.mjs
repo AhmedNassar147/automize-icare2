@@ -207,7 +207,6 @@ export const LOGS_SUMMARY_HEADERS = [
   "delay",
   "serverEnd",
   "endVsServer",
-  "readyVsServer",
   "clickedAt",
   "tookMS",
   "claimed",

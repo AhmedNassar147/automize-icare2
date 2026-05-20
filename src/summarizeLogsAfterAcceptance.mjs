@@ -45,6 +45,8 @@ const ALL_KNOWN_HEADERS = [
   ...Object.keys(COLUMN_RENAMES),
 ];
 
+const COLUMNS_TO_REMOVE = ["readyVsServer"];
+
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const isHeaderLine = (line) =>
@@ -64,7 +66,6 @@ const widths = {
   diff: 11,
   zeroAt: 13,
   delay: 5,
-  readyVsServer: 13,
   clickedAt: 13,
   tookMS: 6,
   status: 22,
@@ -113,7 +114,6 @@ const summarizeLogsAfterAcceptance = async (data) => {
     zeroAt: zeroSeenAt,
     diff: `${diff} - (${endToReady})`,
     delay: extraBackendDelayMs,
-    readyVsServer: readySeenAt - endDateBasedServerDateMs,
     clickedAt: "",
     tookMS: "",
     status: status || "",
@@ -179,7 +179,6 @@ export async function updateCaseInLog(
       status: "status",
       waitTime: "waitTime",
       endVsServer: "endVsServer",
-      readyVsServer: "readyVsServer",
       delay: "delay",
       clickedAt: "clickedAt",
       tookMS: "tookMS",
@@ -248,7 +247,6 @@ export async function readLogsAsArray(referralEndTimestamp) {
         extraBackendDelayMs: parseInt(current.delay, 10) || null,
         endDateBasedServerDateMs: parseInt(current.serverEnd, 10) || null,
         endVsServer: parseInt(current.endVsServer, 10) || 0,
-        readyVsServer: parseInt(current.readyVsServer, 10) || null,
         clickedAt: parseInt(current.clickedAt, 10) || null,
         tookMS: parseInt(current.tookMS, 10) || null,
         status: current.status || "",
@@ -293,6 +291,10 @@ export async function migrateLogWidths(referralEndTimestamp) {
         current[newKey] = current[oldKey];
         delete current[oldKey];
       }
+    }
+
+    for (const key of COLUMNS_TO_REMOVE) {
+      delete current[key];
     }
 
     // Fill missing new columns
