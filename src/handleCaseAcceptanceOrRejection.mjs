@@ -178,6 +178,18 @@ const handleCaseAcceptanceOrRejection =
         extraBotMessages = extraBotMessages.concat(computedExtraBotMessages);
       }
 
+      if (
+        !readySeenAt ||
+        !zeroSeenAt ||
+        !readySeenAtLocalMs ||
+        typeof extraBackendDelayMs !== "number"
+      ) {
+        extraBotMessages.push(
+          `Missing readySeenAt=${readySeenAt} zeroSeenAt=${zeroSeenAt} readySeenAtLocalMs=${readySeenAtLocalMs} extraBackendDelayMs=${extraBackendDelayMs} for referralId=${referralId}`,
+        );
+
+        extraWait = 700;
+      }
       const waitTime = baseWaitingTime + extraWait;
 
       const approvalMessage = `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\``;
