@@ -468,6 +468,26 @@ const currentProfile = "Profile 1";
     app.post("/setCaseOutcome", async (req, res) => {
       try {
         const { elapsedMs, clickedAt } = req.body;
+
+        const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
+
+        const {
+          referralId,
+          referralEndTimestamp,
+          readySeenAtLocalMs,
+          waitTime,
+        } = firstGoindToAccept || {};
+
+        if (typeof elapsedMs !== "number") {
+          createConsoleMessage(
+            `Missed elapsedMs=${elapsedMs}ms where caseId=${referralId}`,
+            "error",
+          );
+          return res
+            .status(200)
+            .json({ success: false, reason: "missing elapsedMs" });
+        }
+
         const outcome =
           elapsedMs < 600
             ? "need-less-wait" // 0% — definitely too late
@@ -483,15 +503,6 @@ const currentProfile = "Profile 1";
                       ? "near-to-block"
                       : "blocked";
 
-        const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
-
-        const {
-          referralId,
-          referralEndTimestamp,
-          readySeenAtLocalMs,
-          waitTime,
-        } = firstGoindToAccept || {};
-
         createConsoleMessage(
           `caseId=${referralId} case-outcome=${outcome} clickedAt=${clickedAt} elapsed=${elapsedMs}ms readySeenAtLocalMs=${readySeenAtLocalMs} waitTime=${waitTime}ms`,
           "warn",
@@ -503,6 +514,33 @@ const currentProfile = "Profile 1";
             clickedAt,
             tookMS: clickedAt - readySeenAtLocalMs - (waitTime || 0),
           });
+        }
+
+        if (process.env.ENABLE_AUTO_WAITING === "1" && firstGoindToAccept) {
+          const delta =
+            {
+              blocked: +6,
+              "near-to-block": +3,
+              "need-more-wait": +2,
+              "good-waiting": -1,
+              "moderate-waiting": elapsedMs < 770 ? 0 : -1,
+              "low-waiting": -2,
+              "need-less-wait": -3,
+            }[outcome] ?? 0;
+
+          if (delta !== 0) {
+            const current = Number(process.env.WAIT_FOR_ACCEPT_MS);
+            const nextWaitTime = current + delta;
+            updateEnvFile({ WAIT_FOR_ACCEPT_MS: nextWaitTime });
+            const arrow = delta > 0 ? "⬆️" : "⬇️";
+            const sign = delta > 0 ? "+" : "";
+
+            sendTelegramMessage(
+              `${arrow} waitTime \`${current}\`→\`${nextWaitTime}\`ms (${sign}${delta}ms)\n` +
+                `📋 outcome: \`${outcome}\` elapsed: \`${elapsedMs}\`ms\n` +
+                `🆔 case: \`${referralId}\``,
+            );
+          }
         }
 
         return res.status(200).json({ success: true });

@@ -45,9 +45,10 @@ const getExtraTimeBasedLogs = async ({
 
   const afternoonAlreadyStarted = logsData.some(
     ({ referralEndTimestamp: e, diff }) => {
+      if (!e || diff >= 0) return false;
       const h = new Date(e).getHours();
       const d = new Date(e).getDate();
-      return d === todayDate && diff < 0 && h >= 13 && h < 16;
+      return d === todayDate && h >= 13 && h < 16;
     },
   );
 
