@@ -167,19 +167,19 @@ const handleCaseAcceptanceOrRejection =
 
       const diff = referralEndTimestamp - readySeenAt;
 
-      const extraTimeFunctionOptions = {
-        referralId,
-        referralEndTimestamp,
-        diff,
-        extraBackendDelayMs,
-      };
-
       let extraWait = 0;
 
+      const extraTimeFuntion = IS_UNIZA_BRANCH
+        ? getWaitBasedRefferalDatesAndLogs
+        : getExtraTimeBasedLogs;
+
       const { computedExtraBotMessages, computedExtraWait } =
-        await (IS_UNIZA_BRANCH
-          ? getExtraTimeBasedLogs(extraTimeFunctionOptions)
-          : getWaitBasedRefferalDatesAndLogs(extraTimeFunctionOptions));
+        await extraTimeFuntion({
+          referralId,
+          referralEndTimestamp,
+          diff,
+          extraBackendDelayMs,
+        });
 
       if (ENABLE_AUTO_WAITING === "1") {
         extraWait = computedExtraWait;
