@@ -20,6 +20,7 @@ import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import getWaitBasedRefferalDatesAndLogs from "./getWaitBasedRefferalDatesAndLogs.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
+import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
 
 const handleCaseAcceptanceOrRejection =
   ({
@@ -52,6 +53,7 @@ const handleCaseAcceptanceOrRejection =
         ENABLE_AUTO_WAITING,
       } = process.env;
 
+      const IS_UNIZA_BRANCH = process.env.BRANCH_NAME === "Unizah";
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
 
       const { fileName, fileData: filebase64 } =
@@ -68,11 +70,6 @@ const handleCaseAcceptanceOrRejection =
       if (checkingReferralId && checkingReferralId !== referralId) {
         waitingTimeMSForAccept = undefined;
       }
-
-      const IS_UNIZA_BRANCH = process.env.BRANCH_NAME === "Unizah";
-      const logsData = await readLogsAsArray(referralEndTimestamp);
-
-      let lastReferralLog = logsData?.[logsData.length - 1] || {};
 
       const routerKey = Math.random().toString(36).slice(2, 8);
 
@@ -170,32 +167,17 @@ const handleCaseAcceptanceOrRejection =
 
       const diff = referralEndTimestamp - readySeenAt;
 
-      const { diff: lastDiff } = lastReferralLog || {};
-
-      let extraWait = 0;
-
-      if (diff < 0) {
-        const diffToWaitValue = (Math.abs(diff) / 1000) * 2;
-        const maxNewWait = (IS_UNIZA_BRANCH ? 6 : 4) + diffToWaitValue;
-
-        if (typeof lastDiff === "number" && lastDiff < 0) {
-          extraWait = Math.ceil(maxNewWait / 2);
-        } else {
-          extraWait = 9;
-        }
-      }
-
-      if (diff >= 0) {
-        extraWait = 3;
-      }
+      const extraTimeFunctionOptions = {
+        referralId,
+        referralEndTimestamp,
+        diff,
+        extraBackendDelayMs,
+      };
 
       const { computedExtraBotMessages, computedExtraWait } =
-        await getWaitBasedRefferalDatesAndLogs({
-          referralId,
-          referralEndTimestamp,
-          diff,
-          extraBackendDelayMs,
-        });
+        await (IS_UNIZA_BRANCH
+          ? getExtraTimeBasedLogs(extraTimeFunctionOptions)
+          : getWaitBasedRefferalDatesAndLogs(extraTimeFunctionOptions));
 
       if (ENABLE_AUTO_WAITING === "1") {
         extraWait = computedExtraWait;
