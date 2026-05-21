@@ -171,7 +171,7 @@ const handleCaseAcceptanceOrRejection =
 
       const { diff: lastDiff } = lastReferralLog || {};
 
-      let extraWait = diff < 0 && lastDiff >= 0 ? 10 : 2;
+      let extraWait = diff < 0 && lastDiff >= 0 ? 10 : 1;
 
       const { computedExtraBotMessages, computedExtraWait } =
         await getWaitBasedRefferalDatesAndLogs({
