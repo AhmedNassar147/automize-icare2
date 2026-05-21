@@ -69,7 +69,7 @@ const getExtraTimeBasedLogs = async ({
           : `🔁 Consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`,
       );
     } else if (isDangerousAfternoonTransition) {
-      extraWait = 10;
+      extraWait = 11;
       extraBotMessages.push(
         `⚠️ First dangerous afternoon (prev ${lastCaseHour}:xx → now 13-16h) + diff ${diff} → +${extraWait}ms`,
       );
