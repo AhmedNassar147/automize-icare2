@@ -210,5 +210,6 @@ export const LOGS_SUMMARY_HEADERS = [
   "clickedAt",
   "tookMS",
   "claimed",
+  "rtt",
   "status",
 ];

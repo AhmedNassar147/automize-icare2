@@ -26,6 +26,7 @@ async function waitUntilCanTakeActionByWindow({
 
       async function fetchDetailsOnce() {
         try {
+          const requestStartsAt = Date.now();
           const r = await fetch(`/referrals/details?_=${Date.now()}`, {
             method: "POST",
             headers: {
@@ -92,6 +93,7 @@ async function waitUntilCanTakeActionByWindow({
             serverNow,
             localNow,
             totalMsLeft,
+            rtt: localNow - requestStartsAt,
           };
         } catch (e) {
           return {
@@ -116,7 +118,8 @@ async function waitUntilCanTakeActionByWindow({
       while (true) {
         attempts++;
 
-        const { totalMsLeft, ok, localNow, message } = await fetchDetailsOnce();
+        const { totalMsLeft, ok, localNow, message, rtt } =
+          await fetchDetailsOnce();
 
         if (ok) {
           return {
@@ -128,6 +131,7 @@ async function waitUntilCanTakeActionByWindow({
             claimableLocalTime: localNow,
             zeroSeenAt,
             readySeenAt,
+            rtt,
             extraBackendDelayMs:
               zeroSeenAt && readySeenAt ? readySeenAt - zeroSeenAt : null,
             readySeenAtLocalMs,

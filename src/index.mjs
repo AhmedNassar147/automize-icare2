@@ -468,19 +468,20 @@ const currentProfile = "Profile 1";
     app.post("/setCaseOutcome", async (req, res) => {
       try {
         const { elapsedMs, clickedAt } = req.body;
-
         const outcome =
-          elapsedMs <= 570
-            ? "need-less-wait"
-            : elapsedMs <= 730
-              ? "moderate-waiting"
-              : elapsedMs <= 830
-                ? "good-waiting"
-                : elapsedMs <= 1100
-                  ? "need-more-wait"
-                  : elapsedMs <= Number(process.env.BLOCK_TIME_MS) - 1
-                    ? "near-to-block"
-                    : "blocked";
+          elapsedMs < 600
+            ? "need-less-wait" // 0% — definitely too late
+            : elapsedMs < 650
+              ? "low-waiting" // 25% — borderline, slight nudge
+              : elapsedMs < 800
+                ? "moderate-waiting" // 33-50% — ok but not optimal
+                : elapsedMs < 890
+                  ? "good-waiting" // 75% — TARGET
+                  : elapsedMs < 1100
+                    ? "need-more-wait" // 0% above range
+                    : elapsedMs < Number(process.env.BLOCK_TIME_MS)
+                      ? "near-to-block"
+                      : "blocked";
 
         const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
 
@@ -493,7 +494,7 @@ const currentProfile = "Profile 1";
 
         createConsoleMessage(
           `caseId=${referralId} case-outcome=${outcome} clickedAt=${clickedAt} elapsed=${elapsedMs}ms readySeenAtLocalMs=${readySeenAtLocalMs} waitTime=${waitTime}ms`,
-          "info",
+          "warn",
         );
 
         if (firstGoindToAccept) {

@@ -155,6 +155,7 @@ const handleCaseAcceptanceOrRejection =
         readySeenAt,
         extraBackendDelayMs,
         readySeenAtLocalMs,
+        rtt,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
@@ -249,6 +250,7 @@ const handleCaseAcceptanceOrRejection =
         readySeenAt,
         extraBackendDelayMs,
         referralEndDate,
+        rtt,
       };
 
       if (isAcceptanceAction) {

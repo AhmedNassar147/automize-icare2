@@ -102,17 +102,17 @@ const getWaitBasedRefferalDatesAndLogs = async ({
     );
   }
 
-  // if (extraBackendDelayMs >= 2000) {
-  //   extraWait += 6;
-  //   extraWait = Math.max(extraWait, 12);
-  // }
+  if (extraBackendDelayMs >= 2000) {
+    extraWait += 4;
+    extraWait = Math.max(extraWait, 12);
+  }
 
-  // if (extraBackendDelayMs < 1000) {
-  //   extraBotMessages.push(
-  //     // `Please Tell \`Ahmed\` of this: Found extra backend delay of \`${extraBackendDelayMs}\` < 1000 where referralId=\`${referralId}\``,
-  //     `Found extra backend delay of \`${extraBackendDelayMs}\` < 1000`,
-  //   );
-  // }
+  if (extraBackendDelayMs < 1000) {
+    extraBotMessages.push(
+      // `Please Tell \`Ahmed\` of this: Found extra backend delay of \`${extraBackendDelayMs}\` < 1000 where referralId=\`${referralId}\``,
+      `Found extra backend delay of \`${extraBackendDelayMs}\` < 1000`,
+    );
+  }
 
   return {
     computedExtraWait: extraWait,

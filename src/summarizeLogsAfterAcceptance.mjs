@@ -70,6 +70,7 @@ const widths = {
   tookMS: 6,
   status: 22,
   claimed: 7,
+  rtt: 5,
 };
 
 const getOutputFileBasedOnCaseEndTime = (referralEndTimestamp) => {
@@ -92,6 +93,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     referralEndDate,
     status,
     claimed,
+    rtt,
   } = data;
 
   const outputFile = getOutputFileBasedOnCaseEndTime(referralEndTimestamp);
@@ -118,6 +120,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     tookMS: "",
     status: status || "",
     claimed: claimed || "",
+    rtt: rtt || "",
   };
 
   const exists = await checkPathExists(outputFile);
@@ -252,6 +255,7 @@ export async function readLogsAsArray(referralEndTimestamp) {
         status: current.status || "",
         referralEndDate: current.endDate || "",
         claimed: current.claimed || "",
+        rtt: parseInt(current.rtt, 10),
       };
     })
     .filter((r) => !isNaN(r.referralId) && r.referralId > 0);
@@ -327,3 +331,5 @@ export async function getCasesWithEmptyClaimStatus(
       referralEndTimestamp: caseEndTimestamp,
     }));
 }
+
+// await migrateLogWidths(Date.now());
