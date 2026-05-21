@@ -174,6 +174,8 @@ const handleCaseAcceptanceOrRejection =
         extraBackendDelayMs,
       };
 
+      let extraWait = 0;
+
       const { computedExtraBotMessages, computedExtraWait } =
         await (IS_UNIZA_BRANCH
           ? getExtraTimeBasedLogs(extraTimeFunctionOptions)
