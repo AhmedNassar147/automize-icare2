@@ -52,8 +52,7 @@ const getExtraTimeBasedLogs = async ({
   let extraWait = 0;
 
   if (diff < 0) {
-    const diffToWaitValue = (Math.abs(diff) / 1000) * 2;
-    const maxNewWait = diffToWaitValue + 2;
+    const maxNewWait = (Math.abs(diff) / 1000) * 2 + 1;
 
     if (typeof lastDiff === "number" && lastDiff < 0) {
       extraWait = isFarFromLastCase ? maxNewWait : Math.ceil(maxNewWait / 2);
@@ -63,12 +62,12 @@ const getExtraTimeBasedLogs = async ({
           : `🔁 Consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`,
       );
     } else if (isFirstDangerousAfternoon) {
-      extraWait = 10;
+      extraWait = 11;
       extraBotMessages.push(
         `⚠️ First dangerous afternoon (prev ${lastCaseHour}:xx → now 13-16h) + diff ${diff} → +${extraWait}ms`,
       );
     } else {
-      extraWait = maxNewWait;
+      extraWait = isFarFromLastCase ? maxNewWait * 2 : maxNewWait;
       extraBotMessages.push(
         `📉 diff transition (${lastDiff ?? "none"}→${diff}) → +${extraWait}ms`,
       );

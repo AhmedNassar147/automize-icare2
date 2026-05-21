@@ -8,7 +8,6 @@ import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs
 import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
-import { readLogsAsArray } from "./summarizeLogsAfterAcceptance.mjs";
 import summarizeLogsAfterAcceptance from "./summarizeLogsAfterAcceptance.mjs";
 import {
   generatedPdfsPathForAcceptance,
