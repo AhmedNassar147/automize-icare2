@@ -522,7 +522,7 @@ const currentProfile = "Profile 1";
               blocked: +6,
               "near-to-block": +3,
               "need-more-wait": +2,
-              "good-waiting": -1,
+              "good-waiting": 0,
               "moderate-waiting": elapsedMs < 770 ? 0 : -1,
               "low-waiting": -2,
               "need-less-wait": -3,
