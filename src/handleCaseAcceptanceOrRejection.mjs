@@ -186,7 +186,7 @@ const handleCaseAcceptanceOrRejection =
       }
 
       if (diff >= 0) {
-        extraWait = 2;
+        extraWait = 3;
       }
 
       const { computedExtraBotMessages, computedExtraWait } =
