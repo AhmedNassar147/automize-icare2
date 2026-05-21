@@ -69,6 +69,7 @@ const handleCaseAcceptanceOrRejection =
         waitingTimeMSForAccept = undefined;
       }
 
+      const IS_UNIZA_BRANCH = process.env.BRANCH_NAME === "Unizah";
       const logsData = await readLogsAsArray(referralEndTimestamp);
 
       let lastReferralLog = logsData?.[logsData.length - 1] || {};
@@ -171,7 +172,22 @@ const handleCaseAcceptanceOrRejection =
 
       const { diff: lastDiff } = lastReferralLog || {};
 
-      let extraWait = diff < 0 && lastDiff >= 0 ? 10 : 1;
+      let extraWait = 0;
+
+      if (diff < 0) {
+        const diffToWaitValue = (Math.abs(diff) / 1000) * 2;
+        const maxNewWait = (IS_UNIZA_BRANCH ? 6 : 4) + diffToWaitValue;
+
+        if (typeof lastDiff === "number" && lastDiff < 0) {
+          extraWait = Math.ceil(maxNewWait / 2);
+        } else {
+          extraWait = 9;
+        }
+      }
+
+      if (diff >= 0) {
+        extraWait = 2;
+      }
 
       const { computedExtraBotMessages, computedExtraWait } =
         await getWaitBasedRefferalDatesAndLogs({
