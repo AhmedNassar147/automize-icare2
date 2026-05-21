@@ -97,6 +97,7 @@ const waitForWaitingCountWithInterval = async ({
         isLoggedIn,
         isErrorAboutLockedOut,
         shouldCloseApp,
+        isErrorAboutCannotBringToFront,
       } = await makeUserLoggedInOrOpenHomePage({
         browser,
         cursor,
@@ -141,6 +142,21 @@ const waitForWaitingCountWithInterval = async ({
 
         page = null;
         cursor = null;
+        continue;
+      }
+
+      if (!isLoggedIn && isErrorAboutCannotBringToFront) {
+        const message =
+          "Cannot bring app to front — please check if another window is blocking it";
+
+        await sendTelegramMessage(message);
+        speakText({
+          text: message,
+          useMaleVoice: true,
+          volume: 100,
+          times: 8,
+        });
+        await pausableSleep(Math.floor(NOT_LOGGED_SLEEP_TIME / 2));
         continue;
       }
 

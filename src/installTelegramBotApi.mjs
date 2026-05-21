@@ -84,6 +84,11 @@ const COMMANDS = {
       "Long press → get letter, Example: /letter a 12345 OR /letter r 12345 OR /letter r 12345 reason",
     command: "letter",
   },
+  who: {
+    value: /\/who/,
+    description: "check who is on duty",
+    command: "who",
+  },
   updateCmds: {
     value: /\/update_commands/,
     description: "update bot commands",
@@ -489,6 +494,30 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         true,
       )(allPatients);
     }
+  });
+
+  bot.onText(COMMANDS.who.value, async (msg) => {
+    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      return sendBotMessage(chatId, unAuthorizedMessage);
+    }
+
+    const activeChatId = process.env.TG_CHAT_ID;
+
+    if (!activeChatId) {
+      return sendBotMessage(chatId, `⚠️ No one is currently on duty.`);
+    }
+
+    const chat = await bot.getChat(activeChatId);
+    const userName = chat.first_name || chat.last_name || chat.username;
+
+    await sendBotMessage(
+      chatId,
+      `👮 *Duty Status*\n` +
+        `────────────────────────\n` +
+        `🟢 *Active:* \`${userName || "Unknown"}\` — \`${activeChatId}\``,
+    );
   });
 
   bot.on("contact", async (msg) => {

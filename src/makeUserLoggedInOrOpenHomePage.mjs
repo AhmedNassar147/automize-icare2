@@ -57,6 +57,20 @@ const makeUserLoggedInOrOpenHomePage = async ({
           );
   }
 
+  try {
+    await page.bringToFront();
+  } catch (err) {
+    createConsoleMessage(err.message, "warn", "⚠️ bringToFront failed:");
+
+    return {
+      newPage: page,
+      newCursor: cursor,
+      isLoggedIn: false,
+      isErrorAboutLockedOut: false,
+      isErrorAboutCannotBringToFront: true,
+    };
+  }
+
   let retries = 0;
 
   while (retries <= MAX_RETRIES) {
