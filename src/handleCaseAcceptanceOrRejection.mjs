@@ -8,6 +8,7 @@ import waitUntilCanTakeActionByWindow from "./waitUntilCanTakeActionByWindow.mjs
 import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
+import { readLogsAsArray } from "./summarizeLogsAfterAcceptance.mjs";
 import summarizeLogsAfterAcceptance from "./summarizeLogsAfterAcceptance.mjs";
 import {
   generatedPdfsPathForAcceptance,
@@ -67,6 +68,10 @@ const handleCaseAcceptanceOrRejection =
       if (checkingReferralId && checkingReferralId !== referralId) {
         waitingTimeMSForAccept = undefined;
       }
+
+      const logsData = await readLogsAsArray(referralEndTimestamp);
+
+      let lastReferralLog = logsData?.[logsData.length - 1] || {};
 
       const routerKey = Math.random().toString(36).slice(2, 8);
 
@@ -164,7 +169,9 @@ const handleCaseAcceptanceOrRejection =
 
       const diff = referralEndTimestamp - readySeenAt;
 
-      let extraWait = 0;
+      const { diff: lastDiff } = lastReferralLog || {};
+
+      let extraWait = diff < 0 && lastDiff >= 0 ? 10 : 2;
 
       const { computedExtraBotMessages, computedExtraWait } =
         await getWaitBasedRefferalDatesAndLogs({
