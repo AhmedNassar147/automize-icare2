@@ -43,11 +43,17 @@ const getExtraTimeBasedLogs = async ({
 
   const todayDate = new Date().getDate();
 
-  const isFirstDangerousAfternoon =
-    isDangerousAfternoon &&
-    lastCaseHour !== null &&
-    lastCaseHour < 13 &&
-    lastCaseDate === todayDate; // ← must be same calendar day
+  const afternoonAlreadyStarted = logsData.some(
+    ({ referralEndTimestamp: e, diff }) => {
+      const h = new Date(e).getHours();
+      const d = new Date(e).getDate();
+      return d === todayDate && diff < 0 && h >= 13 && h < 16;
+    },
+  );
+
+  const isDangerousAfternoonTransition =
+    isDangerousAfternoon && // in 13-16h
+    !afternoonAlreadyStarted;
 
   let extraWait = 0;
 
@@ -61,8 +67,8 @@ const getExtraTimeBasedLogs = async ({
           ? `↔️ Far + consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`
           : `🔁 Consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`,
       );
-    } else if (isFirstDangerousAfternoon) {
-      extraWait = 11;
+    } else if (isDangerousAfternoonTransition) {
+      extraWait = 10;
       extraBotMessages.push(
         `⚠️ First dangerous afternoon (prev ${lastCaseHour}:xx → now 13-16h) + diff ${diff} → +${extraWait}ms`,
       );
