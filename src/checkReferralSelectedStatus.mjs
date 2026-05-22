@@ -13,30 +13,30 @@ const tabsToCheck = [
     includeConfirmed: true,
     noDischarged: true,
     noAdmitted: true,
-    claimStatus: "CF",
+    status: "CF",
   },
   {
     // Admitted only
     noDischarged: true,
-    claimStatus: "AD",
+    status: "AD",
   },
   // {
   //   // Discharged only
   //   noDischarged: false,
   //   noAdmitted: true,
-  //   claimStatus: "DS",
+  //   status: "DS",
   // },
   {
     // Still accepted
     includeAccepted: true,
     noDischarged: true,
     noAdmitted: true,
-    claimStatus: "AC",
+    status: "AC",
   },
 ];
 
 const fetchCase = async (page, referralId, referralEndTimestamp) => {
-  for (const { claimStatus, ...tabParams } of tabsToCheck) {
+  for (const { status, ...tabParams } of tabsToCheck) {
     const { patients, errors } = await getSummaryFromTabs({
       page,
       noDates: true,
@@ -45,11 +45,11 @@ const fetchCase = async (page, referralId, referralEndTimestamp) => {
     });
 
     if (patients?.length) {
-      const isClaimed = ["AD", "CF", "DS"].includes(claimStatus);
+      const isClaimed = ["AD", "CF", "DS"].includes(status);
       return {
         referralEndTimestamp,
         referralId,
-        claimStatus: isClaimed ? "Yes" : "No",
+        status: isClaimed ? "Yes" : "No",
         errors,
         shouldUpdateAndNotify: isClaimed,
       };
@@ -60,7 +60,7 @@ const fetchCase = async (page, referralId, referralEndTimestamp) => {
   return {
     referralEndTimestamp,
     referralId,
-    claimStatus: "No",
+    status: "No",
     shouldUpdateAndNotify: true,
     errors: null,
   };
@@ -70,11 +70,11 @@ const updateAndNotifyUser = async ({
   sendTelegramMessage,
   referralId,
   referralEndTimestamp,
-  claimStatus,
+  status,
 }) => {
-  const statusEmoji = claimStatus === "Yes" ? "✅" : "❌";
+  const statusEmoji = status === "Yes" ? "✅" : "❌";
   const statusText =
-    claimStatus === "Yes" ? "has been selected" : "has NOT been selected";
+    status === "Yes" ? "has been selected" : "has NOT been selected";
 
   const telegramMessage =
     `${statusEmoji} *Referral Status Update*\n` +
@@ -84,7 +84,7 @@ const updateAndNotifyUser = async ({
 
   await Promise.all([
     updateCaseInLog(referralId, referralEndTimestamp, {
-      claimed: claimStatus,
+      claimed: status,
     }),
     sendTelegramMessage(telegramMessage),
   ]);
@@ -95,35 +95,39 @@ const checkReferralSelectedStatus = async (
   patientsStore,
   sendTelegramMessage,
 ) => {
-  const cases = patientsStore.getAllNonClaimableCases();
+  try {
+    const cases = patientsStore.getAllNonClaimableCases();
 
-  if (!cases?.length) return false;
+    if (!cases?.length) return false;
 
-  const settledResults = [];
-  for (const { referralId, referralEndTimestamp } of cases) {
-    const result = await fetchCase(
-      page,
-      referralId,
-      referralEndTimestamp,
-    ).catch((err) => {
-      createConsoleMessage(
-        err,
-        "error",
-        `❌ fetchCase failed for ${referralId}:`,
-      );
-      return null;
-    });
-    if (result) settledResults.push(result);
+    const settledResults = [];
+    for (const { referralId, referralEndTimestamp } of cases) {
+      const result = await fetchCase(
+        page,
+        referralId,
+        referralEndTimestamp,
+      ).catch((err) => {
+        createConsoleMessage(
+          err,
+          "error",
+          `❌ fetchCase failed for ${referralId}:`,
+        );
+        return null;
+      });
+      if (result) settledResults.push(result);
+    }
+
+    const results = settledResults.filter((item) => item.shouldUpdateAndNotify);
+
+    for (const item of results) {
+      await updateAndNotifyUser({ sendTelegramMessage, ...item });
+      patientsStore.removeNonClaimableCase(item.referralId);
+    }
+
+    return results.length > 0;
+  } catch (error) {
+    return false;
   }
-
-  const results = settledResults.filter((item) => item.shouldUpdateAndNotify);
-
-  for (const item of results) {
-    await updateAndNotifyUser({ sendTelegramMessage, ...item });
-    patientsStore.removeNonClaimableCase(item.referralId);
-  }
-
-  return results.length > 0;
 };
 
 export default checkReferralSelectedStatus;
