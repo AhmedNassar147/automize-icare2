@@ -924,15 +924,11 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     await sendBotMessage(
       chatId,
       `🧪 *Next Case Extra Time Test Results*\n` +
-        `───────────────────────\n\n` +
-        `⚙️ Current Waiting Time → \`${current}ms\`\n\n` +
-        `📊 when \`diff=0\`\n` +
-        `• extraWait → \`${zeroResult.computedExtraWait}ms\`\n` +
-        `• newWaitingTime → \`${current + zeroResult.computedExtraWait}ms\`\n` +
+        `───────────────────────────\n\n` +
+        `⚙️ current waitingTime → \`${current}ms\`\n\n` +
+        `📊 when \`diff=0\` → extra \`${zeroResult.computedExtraWait}ms\` → new \`${current + zeroResult.computedExtraWait}ms\`\n` +
         `${zeroResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `📉 when \`diff&lt;0\`\n` +
-        `• extraWait → \`${negativeResult.computedExtraWait}ms\`\n` +
-        `• newWaitingTime → \`${current + negativeResult.computedExtraWait}ms\`\n` +
+        `📉 when \`diff&lt;0\` → extra \`${negativeResult.computedExtraWait}ms\` → new \`${current + negativeResult.computedExtraWait}ms\`\n` +
         `${negativeResult.computedExtraBotMessages.join("\n") || "No messages"}`,
     );
   });
