@@ -922,10 +922,10 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     await sendBotMessage(
       chatId,
       `🧪 *Next Case Extra Time Test Results*\n` +
-        `────────────────────────────\n\n` +
+        `──────────────────\n\n` +
         `📊 when \`diff = 0\` → \`Wait: ${zeroResult.computedExtraWait}ms\`\n` +
         `${zeroResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `📉 when \`diff < 0\` → \`Wait: ${negativeResult.computedExtraWait}ms\`\n` +
+        `📉 when \`diff &lt; 0\` → \`Wait: ${negativeResult.computedExtraWait}ms\`\n` +
         `${negativeResult.computedExtraBotMessages.join("\n") || "No messages"}`,
     );
   });
