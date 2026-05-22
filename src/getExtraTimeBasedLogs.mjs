@@ -8,6 +8,8 @@ import { readLogsAsArray } from "./summarizeLogsAfterAcceptance.mjs";
 const FAR_CASE_MIN = 90; // 1.5 hours
 const FAR_CASE_MS = FAR_CASE_MIN * 60000;
 
+const isDangrouseHours = (h) => h >= 10 && h <= 21;
+
 const getExtraTimeBasedLogs = async ({
   referralId,
   referralEndTimestamp,
@@ -16,7 +18,7 @@ const getExtraTimeBasedLogs = async ({
 }) => {
   const extraBotMessages = [];
 
-  const logsData = await readLogsAsArray(referralEndTimestamp);
+  const logsData = await readLogsAsArray();
 
   let lastReferralLog = logsData?.[logsData.length - 1] || {};
 
@@ -42,19 +44,17 @@ const getExtraTimeBasedLogs = async ({
     ? new Date(lastReferralEndTimestamp).getHours()
     : null;
 
-  const isDangerousAfternoon = hours >= 13 && hours < 16;
-
   const afternoonAlreadyStarted = logsData.some(
     ({ referralEndTimestamp: e, diff }) => {
       if (!e || diff >= 0) return false;
       const h = new Date(e).getHours();
       const d = new Date(e).getDate();
-      return d === todayDate && h >= 13 && h < 16;
+      return d === todayDate && isDangrouseHours(h);
     },
   );
 
-  const isDangerousAfternoonTransition =
-    isDangerousAfternoon && // in 13-16h
+  const isDangerousTransition =
+    isDangrouseHours(hours) && // in 10-21h
     !afternoonAlreadyStarted;
 
   let extraWait = 0;
@@ -69,8 +69,8 @@ const getExtraTimeBasedLogs = async ({
           ? `↔️ Far + consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`
           : `🔁 Consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`,
       );
-    } else if (isDangerousAfternoonTransition) {
-      extraWait = 11;
+    } else if (isDangerousTransition) {
+      extraWait = 10;
       extraBotMessages.push(
         `⚠️ First dangerous afternoon (prev ${lastCaseHour}:xx → now 13-16h) + diff ${diff} → +${extraWait}ms`,
       );

@@ -19,7 +19,7 @@ const getWaitBasedRefferalDatesAndLogs = async ({
 }) => {
   const IS_UNIZA_BRANCH = process.env.BRANCH_NAME === "Unizah";
 
-  const logsData = await readLogsAsArray(referralEndTimestamp);
+  const logsData = await readLogsAsArray();
 
   let lastReferralLog = logsData?.[logsData.length - 1] || {};
 

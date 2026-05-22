@@ -4,33 +4,9 @@
  *
  */
 import { writeFile, appendFile, readFile } from "fs/promises";
-import checkPathExists from "./checkPathExists.mjs";
-import getCurrentActiveLogsSummaryFile from "./getCurrentActiveLogsSummaryFile.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
-import { LOGS_SUMMARY_SEPARATOR, LOGS_SUMMARY_HEADERS } from "./constants.mjs";
-
-const sanitize = (value) => {
-  if (value === undefined || value === null) return "";
-  return String(value).replaceAll("\n", " ").replaceAll("|", "/");
-};
-
-const centerText = (text, width) => {
-  text = sanitize(text);
-
-  if (text.length >= width) return text;
-
-  const totalPadding = width - text.length;
-  const leftPadding = Math.floor(totalPadding / 2);
-  const rightPadding = totalPadding - leftPadding;
-
-  return " ".repeat(leftPadding) + text + " ".repeat(rightPadding);
-};
-
-const createPrettyRow = (row, widths) => {
-  return LOGS_SUMMARY_HEADERS.map((key) =>
-    centerText(row[key], widths[key]),
-  ).join(LOGS_SUMMARY_SEPARATOR);
-};
+import { createPrettyRow, isHeaderLine } from "./timingLogsHelpers.mjs";
+import { LOGS_SUMMARY_HEADERS, casesTimingLogsFilePath } from "./constants.mjs";
 
 // Column renames: old name → new name
 const COLUMN_RENAMES = {
@@ -47,39 +23,6 @@ const ALL_KNOWN_HEADERS = [
 
 const COLUMNS_TO_REMOVE = ["readyVsServer"];
 
-const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const isHeaderLine = (line) =>
-  LOGS_SUMMARY_HEADERS.some((keyword) => {
-    const regex = new RegExp(`^\\s*${escapeRegex(keyword)}\\s*[|]`);
-    return regex.test(line);
-  });
-
-const widths = {
-  endDate: 22,
-  ID: 6,
-  waitTime: 9,
-  end: 13,
-  serverEnd: 13,
-  endVsServer: 11,
-  readyAt: 13,
-  diff: 11,
-  zeroAt: 13,
-  delay: 5,
-  clickedAt: 13,
-  tookMS: 6,
-  status: 22,
-  claimed: 7,
-  rtt: 5,
-};
-
-const getOutputFileBasedOnCaseEndTime = (referralEndTimestamp) => {
-  const caseMonth = new Date(referralEndTimestamp).getMonth() + 1;
-  const outputFile = getCurrentActiveLogsSummaryFile(caseMonth);
-
-  return outputFile;
-};
-
 const summarizeLogsAfterAcceptance = async (data) => {
   const {
     referralId,
@@ -95,8 +38,6 @@ const summarizeLogsAfterAcceptance = async (data) => {
     claimed,
     rtt,
   } = data;
-
-  const outputFile = getOutputFileBasedOnCaseEndTime(referralEndTimestamp);
 
   let endToReady = "";
   if (referralEndTimestamp > readySeenAt) endToReady = ">";
@@ -123,22 +64,11 @@ const summarizeLogsAfterAcceptance = async (data) => {
     rtt: rtt || "",
   };
 
-  const exists = await checkPathExists(outputFile);
-
-  if (!exists) {
-    const headerLine = createPrettyRow(
-      Object.fromEntries(LOGS_SUMMARY_HEADERS.map((h) => [h, h])),
-      widths,
-    );
-
-    await writeFile(outputFile, `${headerLine}\n`, "utf8");
-  }
-
-  const line = createPrettyRow(row, widths);
-  await appendFile(outputFile, `${line}\n`, "utf8");
+  const line = createPrettyRow(row);
+  await appendFile(casesTimingLogsFilePath, `${line}\n`, "utf8");
 
   createConsoleMessage(
-    `✅ Acceptance summary appended → ${outputFile}`,
+    `✅ Acceptance summary appended → ${casesTimingLogsFilePath}`,
     "info",
   );
 };
@@ -149,17 +79,10 @@ export default summarizeLogsAfterAcceptance;
  * Updates fields of a specific case row in the log file.
  *
  * @param {number|string} referralId  - case to find
- * @param {number} referralEndTimestamp  - case end timestamp to
  * @param {object}        updates     - fields to change e.g. { status: "good" }
  */
-export async function updateCaseInLog(
-  referralId,
-  referralEndTimestamp,
-  updates,
-) {
-  const currentMonthOutputFile =
-    getOutputFileBasedOnCaseEndTime(referralEndTimestamp);
-  const raw = await readFile(currentMonthOutputFile, "utf8");
+export async function updateCaseInLog(referralId, updates) {
+  const raw = await readFile(casesTimingLogsFilePath, "utf8");
 
   const target = String(referralId).trim();
   let found = false;
@@ -193,35 +116,21 @@ export async function updateCaseInLog(
       if (key in current) current[key] = String(value);
     }
 
-    return createPrettyRow(current, widths);
+    return createPrettyRow(current);
   });
 
   if (!found) {
     throw new Error(`updateCaseInLog: referralId ${referralId} not found`);
   }
 
-  await writeFile(currentMonthOutputFile, updatedLines.join("\n"), "utf8");
+  await writeFile(casesTimingLogsFilePath, updatedLines.join("\n"), "utf8");
 }
 
-export async function readLogsAsArray(referralEndTimestamp) {
-  const ts = referralEndTimestamp ?? Date.now();
-  const file = getOutputFileBasedOnCaseEndTime(ts);
+export async function readLogsAsArray() {
+  const raw = await readFile(casesTimingLogsFilePath, "utf8");
 
-  let raw;
-
-  if (await checkPathExists(file)) {
-    raw = await readFile(file, "utf8");
-  } else {
-    // fall back to previous month
-    const prevMonthTs = new Date(ts);
-    prevMonthTs.setMonth(prevMonthTs.getMonth() - 1);
-    const prevFile = getOutputFileBasedOnCaseEndTime(prevMonthTs.getTime());
-
-    if (await checkPathExists(prevFile)) {
-      raw = await readFile(prevFile, "utf8");
-    } else {
-      return [];
-    }
+  if (!raw.trim()) {
+    return [];
   }
 
   return raw
@@ -255,15 +164,14 @@ export async function readLogsAsArray(referralEndTimestamp) {
         status: current.status || "",
         referralEndDate: current.endDate || "",
         claimed: current.claimed || "",
-        rtt: parseInt(current.rtt, 10),
+        rtt: parseInt(current.rtt, 10) || null,
       };
     })
     .filter((r) => !isNaN(r.referralId) && r.referralId > 0);
 }
 
-export async function migrateLogWidths(referralEndTimestamp) {
-  const file = getOutputFileBasedOnCaseEndTime(referralEndTimestamp);
-  const raw = await readFile(file, "utf8");
+export async function migrateCaseLogTimings() {
+  const raw = await readFile(casesTimingLogsFilePath, "utf8");
   const lines = raw.split("\n");
 
   // Read old column order from existing header line
@@ -279,7 +187,6 @@ export async function migrateLogWidths(referralEndTimestamp) {
     if (isHeaderLine(line)) {
       return createPrettyRow(
         Object.fromEntries(LOGS_SUMMARY_HEADERS.map((h) => [h, h])),
-        widths,
       );
     }
 
@@ -306,17 +213,15 @@ export async function migrateLogWidths(referralEndTimestamp) {
       if (!(key in current)) current[key] = "";
     });
 
-    return createPrettyRow(current, widths);
+    return createPrettyRow(current);
   });
 
-  await writeFile(file, updatedLines.join("\n"), "utf8");
-  createConsoleMessage(`✅ Log migrated → ${file}`, "info");
+  await writeFile(casesTimingLogsFilePath, updatedLines.join("\n"), "utf8");
+  createConsoleMessage(`✅ Log migrated → ${casesTimingLogsFilePath}`, "info");
 }
 
-export async function getCasesWithEmptyClaimStatus(
-  referralEndTimestamp = Date.now(),
-) {
-  const logs = await readLogsAsArray(referralEndTimestamp);
+export async function getCasesWithEmptyClaimStatus() {
+  const logs = await readLogsAsArray();
 
   return logs
     .filter(
@@ -332,4 +237,4 @@ export async function getCasesWithEmptyClaimStatus(
     }));
 }
 
-// await migrateLogWidths(Date.now());
+// await migrateCaseLogTimings();

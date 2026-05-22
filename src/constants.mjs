@@ -7,7 +7,7 @@ export const cwd = process.cwd();
 
 export const siteCodeConfigFile = `${cwd}/sitecode_config.json`;
 export const screenshotsFolderDirectory = `${cwd}/screenshots`;
-export const casesTimingLogsFolderPath = `${cwd}/results/cases-timing-logs`;
+export const casesTimingLogsFilePath = `${cwd}/results/cases-timing-logs.txt`;
 export const waitingPatientsFolderDirectory = `${cwd}/results/waiting-patients`;
 export const generatedPdfsPathForAcceptance = `${cwd}/results/generated-acceptance-pdf`;
 export const generatedPdfsPathForRejection = `${cwd}/results/generated-rejection-pdf`;
@@ -213,3 +213,21 @@ export const LOGS_SUMMARY_HEADERS = [
   "rtt",
   "status",
 ];
+
+export const TIMING_LOGS_WIDTHS = {
+  endDate: 22,
+  ID: 6,
+  waitTime: 9,
+  end: 13,
+  serverEnd: 13,
+  endVsServer: 11,
+  readyAt: 13,
+  diff: 11,
+  zeroAt: 13,
+  delay: 5,
+  clickedAt: 13,
+  tookMS: 6,
+  status: 22,
+  claimed: 7,
+  rtt: 5,
+};

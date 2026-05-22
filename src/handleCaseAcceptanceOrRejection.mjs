@@ -46,9 +46,6 @@ const handleCaseAcceptanceOrRejection =
         CLIENT_NAME,
         WAIT_FOR_ACCEPT_MS,
         CLIENT_WHATSAPP_NUMBER,
-        NTFY_TOPIC,
-        NEW_WAITING_TIME_FOR_PATIENT,
-        NEW_EXTRA_WAITING_TIME_FOR_PATIENT,
         ENABLE_AUTO_WAITING,
       } = process.env;
 
@@ -57,18 +54,6 @@ const handleCaseAcceptanceOrRejection =
 
       const { fileName, fileData: filebase64 } =
         await getCurrentActionLetterFile(referralId, actionType);
-
-      const [timeMsString, checkingReferralId] = (
-        NEW_WAITING_TIME_FOR_PATIENT || ""
-      ).split(",");
-
-      let waitingTimeMSForAccept = timeMsString
-        ? Math.max(Number(timeMsString), 1000)
-        : undefined;
-
-      if (checkingReferralId && checkingReferralId !== referralId) {
-        waitingTimeMSForAccept = undefined;
-      }
 
       const routerKey = Math.random().toString(36).slice(2, 8);
 
@@ -85,10 +70,6 @@ const handleCaseAcceptanceOrRejection =
             actionType,
             routerKey,
             blockTimeMs: Number(process.env.BLOCK_TIME_MS || 1201),
-            // waitingTime: waitingTimeMSForAccept,
-            // waitExtraTime: waitingTimeMSForAccept
-            //   ? NEW_EXTRA_WAITING_TIME_FOR_PATIENT
-            //   : undefined,
           },
         });
       };
@@ -237,9 +218,7 @@ const handleCaseAcceptanceOrRejection =
       if (extraBotMessages.length) {
         await Promise.all(
           extraBotMessages.map((message, index) =>
-            sleep(Math.floor(waitTime / 2 + index * 20)).then(() =>
-              sendTelegramMessage(message),
-            ),
+            sleep(index * 100).then(() => sendTelegramMessage(message)),
           ),
         );
       }

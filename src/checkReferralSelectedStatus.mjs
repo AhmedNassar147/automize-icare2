@@ -35,7 +35,7 @@ const tabsToCheck = [
   },
 ];
 
-const fetchCase = async (page, referralId, referralEndTimestamp) => {
+const fetchCase = async (page, referralId) => {
   for (const { status, ...tabParams } of tabsToCheck) {
     const { patients, errors } = await getSummaryFromTabs({
       page,
@@ -47,7 +47,6 @@ const fetchCase = async (page, referralId, referralEndTimestamp) => {
     if (patients?.length) {
       const isClaimed = ["AD", "CF", "DS"].includes(status);
       return {
-        referralEndTimestamp,
         referralId,
         status: isClaimed ? "Yes" : "No",
         errors,
@@ -58,7 +57,6 @@ const fetchCase = async (page, referralId, referralEndTimestamp) => {
 
   // Not found in any tab
   return {
-    referralEndTimestamp,
     referralId,
     status: "No",
     shouldUpdateAndNotify: true,
@@ -69,7 +67,6 @@ const fetchCase = async (page, referralId, referralEndTimestamp) => {
 const updateAndNotifyUser = async ({
   sendTelegramMessage,
   referralId,
-  referralEndTimestamp,
   status,
 }) => {
   const statusEmoji = status === "Yes" ? "✅" : "❌";
@@ -83,9 +80,9 @@ const updateAndNotifyUser = async ({
     `📋 *Status:* ${statusText}`;
 
   await Promise.all([
-    updateCaseInLog(referralId, referralEndTimestamp, {
-      claimed: status,
-    }),
+    updateCaseInLog(referralId, { claimed: status }).catch((err) =>
+      createConsoleMessage(err, "error"),
+    ),
     sendTelegramMessage(telegramMessage),
   ]);
 };
@@ -101,12 +98,8 @@ const checkReferralSelectedStatus = async (
     if (!cases?.length) return false;
 
     const settledResults = [];
-    for (const { referralId, referralEndTimestamp } of cases) {
-      const result = await fetchCase(
-        page,
-        referralId,
-        referralEndTimestamp,
-      ).catch((err) => {
+    for (const { referralId } of cases) {
+      const result = await fetchCase(page, referralId).catch((err) => {
         createConsoleMessage(
           "Error when fetching case status",
           "error",

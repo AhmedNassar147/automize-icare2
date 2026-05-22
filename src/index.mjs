@@ -47,7 +47,6 @@ import {
   generatedPdfsPathForRejection,
   screenshotsFolderDirectory,
   generatedSummaryFolderPath,
-  casesTimingLogsFolderPath,
   TABS_COLLECTION_TYPES,
   APP_URL,
 } from "./constants.mjs";
@@ -59,9 +58,10 @@ import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs
 import installTelegramBotApi from "./installTelegramBotApi.mjs";
 import {
   getCasesWithEmptyClaimStatus,
-  migrateLogWidths,
+  migrateCaseLogTimings,
   updateCaseInLog,
 } from "./summarizeLogsAfterAcceptance.mjs";
+import ensureCaseTimingLogsFile from "./ensureCaseTimingLogsFile.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -168,7 +168,7 @@ const currentProfile = "Profile 1";
       generateFolderIfNotExisting(generatedPdfsPathForRejection),
       generateFolderIfNotExisting(htmlFilesPath),
       generateFolderIfNotExisting(generatedSummaryFolderPath),
-      generateFolderIfNotExisting(casesTimingLogsFolderPath),
+      ensureCaseTimingLogsFile(),
       checkSiteCodeConfig(),
     ]);
 
@@ -257,8 +257,8 @@ const currentProfile = "Profile 1";
       );
     }
 
-    if (RUN_LOGS_FILE_MIRGATION && !Number.isNaN(RUN_LOGS_FILE_MIRGATION)) {
-      await migrateLogWidths(Number(RUN_LOGS_FILE_MIRGATION));
+    if (RUN_LOGS_FILE_MIRGATION === "Y") {
+      await migrateCaseLogTimings();
     }
 
     // Summary cron
@@ -510,7 +510,7 @@ const currentProfile = "Profile 1";
         );
 
         if (firstGoindToAccept) {
-          await updateCaseInLog(referralId, referralEndTimestamp, {
+          await updateCaseInLog(referralId, {
             status: `${outcome}_${elapsedMs}`,
             clickedAt,
             tookMS: clickedAt - readySeenAtLocalMs - (waitTime || 0),
