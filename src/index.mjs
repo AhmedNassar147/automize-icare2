@@ -534,7 +534,7 @@ const currentProfile = "Profile 1";
             const arrow = delta > 0 ? "⬆️" : "⬇️";
             const sign = delta > 0 ? "+" : "";
 
-            sendTelegramMessage(
+            await sendTelegramMessage(
               `${arrow} waitTime \`${current}\`→\`${nextWaitTime}\`ms (${sign}${delta}ms)\n` +
                 `📋 outcome: \`${outcome}\` elapsed: \`${elapsedMs}\`ms\n` +
                 `🆔 case: \`${referralId}\``,
