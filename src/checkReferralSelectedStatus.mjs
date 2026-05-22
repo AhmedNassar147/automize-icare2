@@ -108,7 +108,7 @@ const checkReferralSelectedStatus = async (
         referralEndTimestamp,
       ).catch((err) => {
         createConsoleMessage(
-          err,
+          "Error when fetching case status",
           "error",
           `❌ fetchCase failed for ${referralId}:`,
         );
