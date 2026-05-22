@@ -645,9 +645,11 @@ const currentProfile = "Profile 1";
       void shutdown("SIGINT");
     });
   } catch (error) {
-    sendTelegramMessage?.(
-      "❌ *App crashed*\nPlease check the app immediately.",
-    );
+    if (sendTelegramMessage) {
+      await sendTelegramMessage(
+        "❌ *App crashed*\n\nPlease check the app immediately.\nClose Unreal browser if running.\nRestart the app/server.",
+      );
+    }
     createConsoleMessage(error, "error", "❌ index.mjs crashed:");
     await shutdown("SIGINT");
   }
