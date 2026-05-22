@@ -9,12 +9,7 @@ import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
 import summarizeLogsAfterAcceptance from "./summarizeLogsAfterAcceptance.mjs";
-import {
-  generatedPdfsPathForAcceptance,
-  generatedPdfsPathForRejection,
-  HOME_PAGE_URL,
-  USER_ACTION_TYPES,
-} from "./constants.mjs";
+import { HOME_PAGE_URL, USER_ACTION_TYPES } from "./constants.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
@@ -128,10 +123,6 @@ const handleCaseAcceptanceOrRejection =
       }
 
       const {
-        reason,
-        elapsedMs,
-        message,
-        attempts,
         zeroSeenAt,
         readySeenAt,
         extraBackendDelayMs,
@@ -183,7 +174,7 @@ const handleCaseAcceptanceOrRejection =
           }),
         ),
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
-        sleep(waitTime - 34).then(() => sendNtfyMessage(approvalMessage)),
+        sleep(waitTime - 36).then(() => sendNtfyMessage(approvalMessage)),
       ];
 
       await Promise.all(promises);
