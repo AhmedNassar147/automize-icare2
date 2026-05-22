@@ -27,6 +27,7 @@ import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
 import closePageSafely from "./closePageSafely.mjs";
+import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
 
 const execAsync = promisify(exec);
 
@@ -88,6 +89,11 @@ const COMMANDS = {
     value: /\/who/,
     description: "check who is on duty",
     command: "who",
+  },
+  testNextCaseExtraTime: {
+    value: /\/test_next_case_extra_time/,
+    description: "get extra time for next case",
+    command: "test_next_case_extra_time",
   },
   updateCmds: {
     value: /\/update_commands/,
@@ -890,6 +896,37 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       fileBuffer,
       { reply_to_message_id: msgId, caption: `📎 ${fileName}` },
       { filename: `${fileName}.pdf`, contentType: "application/pdf" },
+    );
+  });
+
+  bot.onText(COMMANDS.testNextCaseExtraTime.value, async (msg) => {
+    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    const zeroResult = await getExtraTimeBasedLogs({
+      referralId: "test",
+      referralEndTimestamp: Date.now(),
+      diff: 0,
+    });
+
+    const negativeResult = await getExtraTimeBasedLogs({
+      referralId: "test",
+      referralEndTimestamp: Date.now(),
+      diff: -1000,
+    });
+
+    await sendBotMessage(
+      chatId,
+      `🧪 *Next Case Extra Time Test Results*\n` +
+        `────────────────────────────\n\n` +
+        `📊 when \`diff = 0\` → \`Wait: ${zeroResult.computedExtraWait}ms\`\n` +
+        `${zeroResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
+        `📉 when \`diff < 0\` → \`Wait: ${negativeResult.computedExtraWait}ms\`\n` +
+        `${negativeResult.computedExtraBotMessages.join("\n") || "No messages"}`,
     );
   });
 

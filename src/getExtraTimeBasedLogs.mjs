@@ -27,21 +27,22 @@ const getExtraTimeBasedLogs = async ({
     ? referralEndTimestamp - lastReferralEndTimestamp
     : 0;
 
-  const isFarFromLastCase = diffBetweenLastAndCurrent >= FAR_CASE_MS;
-
-  const hours = new Date().getHours(); // Saudi server local time
-
-  const isDangerousAfternoon = hours >= 13 && hours < 16;
-
-  const lastCaseHour = lastReferralEndTimestamp
-    ? new Date(lastReferralEndTimestamp).getHours()
-    : null;
-
   const lastCaseDate = lastReferralEndTimestamp
     ? new Date(lastReferralEndTimestamp).getDate()
     : null;
 
   const todayDate = new Date().getDate();
+
+  const isFarFromLastCase =
+    diffBetweenLastAndCurrent >= FAR_CASE_MS && lastCaseDate === todayDate;
+
+  const hours = new Date().getHours(); // Saudi server local time
+
+  const lastCaseHour = lastReferralEndTimestamp
+    ? new Date(lastReferralEndTimestamp).getHours()
+    : null;
+
+  const isDangerousAfternoon = hours >= 13 && hours < 16;
 
   const afternoonAlreadyStarted = logsData.some(
     ({ referralEndTimestamp: e, diff }) => {
@@ -98,3 +99,19 @@ const getExtraTimeBasedLogs = async ({
 };
 
 export default getExtraTimeBasedLogs;
+
+// console.log(
+//   await getExtraTimeBasedLogs({
+//     diff: 0,
+//     referralEndTimestamp: Date.now(),
+//     referralId: "123",
+//   }),
+// );
+
+// console.log(
+//   await getExtraTimeBasedLogs({
+//     diff: -1000,
+//     referralEndTimestamp: Date.now(),
+//     referralId: "456",
+//   }),
+// );
