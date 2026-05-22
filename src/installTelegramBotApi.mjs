@@ -924,7 +924,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     await sendBotMessage(
       chatId,
       `🧪 *Next Case Extra Time Test Results*\n` +
-        `─────────────────────\n\n` +
+        `───────────────────────\n\n` +
         `⚙️ Current Waiting Time → \`${current}ms\`\n\n` +
         `📊 when \`diff=0\`\n` +
         `• extraWait → \`${zeroResult.computedExtraWait}ms\`\n` +
