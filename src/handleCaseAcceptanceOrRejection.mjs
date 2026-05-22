@@ -24,7 +24,6 @@ const handleCaseAcceptanceOrRejection =
     continueFetchingPatientsIfPaused,
     browser,
     patientStore,
-    trackingStatusJob,
   }) =>
   async (patient) => {
     const {
