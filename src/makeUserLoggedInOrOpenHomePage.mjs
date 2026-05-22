@@ -57,20 +57,6 @@ const makeUserLoggedInOrOpenHomePage = async ({
           );
   }
 
-  try {
-    await page.bringToFront();
-  } catch (err) {
-    createConsoleMessage(err.message, "warn", "⚠️ bringToFront failed:");
-
-    return {
-      newPage: page,
-      newCursor: cursor,
-      isLoggedIn: false,
-      isErrorAboutLockedOut: false,
-      isErrorAboutCannotBringToFront: true,
-    };
-  }
-
   let retries = 0;
 
   while (retries <= MAX_RETRIES) {
@@ -102,6 +88,24 @@ const makeUserLoggedInOrOpenHomePage = async ({
         const isLoginPage = await checkIfLoginPage(page);
 
         if (isLoginPage) {
+          try {
+            await page.bringToFront();
+          } catch (err) {
+            createConsoleMessage(
+              err.message,
+              "warn",
+              "⚠️ bringToFront failed:",
+            );
+
+            return {
+              newPage: page,
+              newCursor: cursor,
+              isLoggedIn: false,
+              isErrorAboutLockedOut: false,
+              isErrorAboutCannotBringToFront: true,
+            };
+          }
+
           await page.focus("#Input_Username");
           await page.keyboard.type(userName, {
             delay: 100 + Math.random() * 20,
