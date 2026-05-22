@@ -157,6 +157,8 @@ const currentProfile = "Profile 1";
     process.exit(0);
   }
 
+  let sendTelegramMessage = null;
+
   try {
     // Ensure folders exist
     await Promise.all([
@@ -216,7 +218,7 @@ const currentProfile = "Profile 1";
 
     await patientsStore.scheduleAllInitialPatients();
 
-    const sendTelegramMessage = await installTelegramBotApi(
+    sendTelegramMessage = await installTelegramBotApi(
       TG_TOKEN,
       patientsStore,
       browser,
@@ -643,6 +645,9 @@ const currentProfile = "Profile 1";
       void shutdown("SIGINT");
     });
   } catch (error) {
+    sendTelegramMessage?.(
+      "❌ *App crashed*\nPlease check the app immediately.",
+    );
     createConsoleMessage(error, "error", "❌ index.mjs crashed:");
     await shutdown("SIGINT");
   }
