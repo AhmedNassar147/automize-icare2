@@ -26,7 +26,6 @@ import {
   insertWeeklyHistoryPatients,
   updateWeeklyHistoryPatients,
 } from "./db.mjs";
-import closePageSafely from "./closePageSafely.mjs";
 
 async function safeWritePatientData(data, retries = 3, delay = 200) {
   for (let attempt = 0; attempt <= retries; attempt++) {

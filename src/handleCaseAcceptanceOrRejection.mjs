@@ -48,7 +48,6 @@ const handleCaseAcceptanceOrRejection =
         ENABLE_AUTO_WAITING,
       } = process.env;
 
-      const IS_UNIZA_BRANCH = process.env.BRANCH_NAME === "Unizah";
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
 
       const { fileName, fileData: filebase64 } =
@@ -213,7 +212,7 @@ const handleCaseAcceptanceOrRejection =
       if (extraBotMessages.length) {
         await Promise.all(
           extraBotMessages.map((message, index) =>
-            sleep(index * 100).then(() => sendTelegramMessage(message)),
+            sleep(index * 120).then(() => sendTelegramMessage(message)),
           ),
         );
       }
