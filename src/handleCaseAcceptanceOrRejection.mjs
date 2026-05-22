@@ -257,10 +257,13 @@ const handleCaseAcceptanceOrRejection =
         extraBackendDelayMs,
         referralEndDate,
         rtt,
+        status: isAcceptanceAction ? "" : "not-clicked",
+        claimed: isAcceptanceAction ? "" : "No",
       };
 
+      await summarizeLogsAfterAcceptance(logs);
+
       if (isAcceptanceAction) {
-        await summarizeLogsAfterAcceptance(logs);
         patientStore.addNonClaimableCase(referralId, referralEndTimestamp);
       }
 
