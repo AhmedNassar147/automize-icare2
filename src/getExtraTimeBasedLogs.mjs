@@ -77,7 +77,7 @@ const getExtraTimeBasedLogs = async ({
         `⚠️ First dangerous hours (prev ${lastCaseHour}:xx → now 13-16h) + diff ${diff} → +${extraWait}ms`,
       );
     } else {
-      extraWait = isFarFromLastCase ? maxNewWait * 2 : maxNewWait;
+      extraWait = isFarFromLastCase ? Math.ceil(maxNewWait * 1.5) : maxNewWait;
       extraBotMessages.push(
         `📉 diff transition (${lastDiff ?? "none"}→${diff}) → +${extraWait}ms`,
       );
@@ -86,7 +86,7 @@ const getExtraTimeBasedLogs = async ({
 
   if (diff >= 0) {
     const value = (lastDiff < 0 ? 2 : 3) + (IS_UNIZA_BRANCH ? 2 : 0);
-    extraWait = isFarFromLastCase ? value * 2 : value;
+    extraWait = isFarFromLastCase ? Math.ceil(value * 2) : value;
     extraBotMessages.push(
       isFarFromLastCase
         ? `↔️ Far case (${Math.round(diffBetweenLastAndCurrent / 60000)}min gap) + diff ${diff} → +${extraWait}ms`
