@@ -62,7 +62,7 @@ const getExtraTimeBasedLogs = async ({
   let extraWait = 0;
 
   if (diff < 0) {
-    const maxNewWait = (Math.abs(diff) / 1000) * 2 + IS_UNIZA_BRANCH ? 2 : 1;
+    const maxNewWait = (Math.abs(diff) / 1000) * 2 + (IS_UNIZA_BRANCH ? 2 : 1);
 
     if (typeof lastDiff === "number" && lastDiff < 0) {
       extraWait = isFarFromLastCase ? maxNewWait : Math.ceil(maxNewWait / 2);
@@ -85,7 +85,7 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (diff >= 0) {
-    const value = (lastDiff < 0 ? 2 : 3) + IS_UNIZA_BRANCH ? 1 : 0;
+    const value = (lastDiff < 0 ? 2 : 3) + (IS_UNIZA_BRANCH ? 2 : 0);
     extraWait = isFarFromLastCase ? value * 2 : value;
     extraBotMessages.push(
       isFarFromLastCase
