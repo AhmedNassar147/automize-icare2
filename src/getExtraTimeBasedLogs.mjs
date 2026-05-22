@@ -16,6 +16,8 @@ const getExtraTimeBasedLogs = async ({
   diff,
   extraBackendDelayMs,
 }) => {
+  const IS_UNIZA_BRANCH = process.env.BRANCH_NAME === "Unizah";
+
   const extraBotMessages = [];
 
   const logsData = await readLogsAsArray();
@@ -44,7 +46,7 @@ const getExtraTimeBasedLogs = async ({
     ? new Date(lastReferralEndTimestamp).getHours()
     : null;
 
-  const afternoonAlreadyStarted = logsData.some(
+  const isDangrousTransitionAlreadyDone = logsData.some(
     ({ referralEndTimestamp: e, diff }) => {
       if (!e || diff >= 0) return false;
       const h = new Date(e).getHours();
@@ -55,12 +57,12 @@ const getExtraTimeBasedLogs = async ({
 
   const isDangerousTransition =
     isDangrouseHours(hours) && // in 10-21h
-    !afternoonAlreadyStarted;
+    !isDangrousTransitionAlreadyDone;
 
   let extraWait = 0;
 
   if (diff < 0) {
-    const maxNewWait = (Math.abs(diff) / 1000) * 2 + 1;
+    const maxNewWait = (Math.abs(diff) / 1000) * 2 + IS_UNIZA_BRANCH ? 2 : 1;
 
     if (typeof lastDiff === "number" && lastDiff < 0) {
       extraWait = isFarFromLastCase ? maxNewWait : Math.ceil(maxNewWait / 2);
@@ -72,7 +74,7 @@ const getExtraTimeBasedLogs = async ({
     } else if (isDangerousTransition) {
       extraWait = 10;
       extraBotMessages.push(
-        `⚠️ First dangerous afternoon (prev ${lastCaseHour}:xx → now 13-16h) + diff ${diff} → +${extraWait}ms`,
+        `⚠️ First dangerous hours (prev ${lastCaseHour}:xx → now 13-16h) + diff ${diff} → +${extraWait}ms`,
       );
     } else {
       extraWait = isFarFromLastCase ? maxNewWait * 2 : maxNewWait;
@@ -83,12 +85,25 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (diff >= 0) {
-    const value = lastDiff < 0 ? 2 : 3;
+    const value = (lastDiff < 0 ? 2 : 3) + IS_UNIZA_BRANCH ? 1 : 0;
     extraWait = isFarFromLastCase ? value * 2 : value;
     extraBotMessages.push(
       isFarFromLastCase
         ? `↔️ Far case (${Math.round(diffBetweenLastAndCurrent / 60000)}min gap) + diff ${diff} → +${extraWait}ms`
         : `✅ diff ${diff} (last ${lastDiff ?? "none"}) → +${extraWait}ms`,
+    );
+  }
+
+  if (extraBackendDelayMs === 0) {
+    extraBotMessages.push(
+      `✅ Found no backend delay  → +${extraBackendDelayMs}ms when diff=${diff} and referralId=${referralId}`,
+    );
+  }
+
+  if (extraBackendDelayMs > 1000) {
+    extraWait += 4;
+    extraBotMessages.push(
+      `✅ Found backend delay  → +${extraBackendDelayMs}ms > 1000ms when diff=${diff} and referralId=${referralId}`,
     );
   }
 
@@ -99,19 +114,3 @@ const getExtraTimeBasedLogs = async ({
 };
 
 export default getExtraTimeBasedLogs;
-
-// console.log(
-//   await getExtraTimeBasedLogs({
-//     diff: 0,
-//     referralEndTimestamp: Date.now(),
-//     referralId: "123",
-//   }),
-// );
-
-// console.log(
-//   await getExtraTimeBasedLogs({
-//     diff: -1000,
-//     referralEndTimestamp: Date.now(),
-//     referralId: "456",
-//   }),
-// );

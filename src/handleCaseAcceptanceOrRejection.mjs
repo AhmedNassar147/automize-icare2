@@ -17,7 +17,6 @@ import {
 } from "./constants.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
-import getWaitBasedRefferalDatesAndLogs from "./getWaitBasedRefferalDatesAndLogs.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
 import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
 
@@ -149,12 +148,8 @@ const handleCaseAcceptanceOrRejection =
 
       let extraWait = 0;
 
-      const extraTimeFuntion = IS_UNIZA_BRANCH
-        ? getWaitBasedRefferalDatesAndLogs
-        : getExtraTimeBasedLogs;
-
       const { computedExtraBotMessages, computedExtraWait } =
-        await extraTimeFuntion({
+        await getExtraTimeBasedLogs({
           referralId,
           referralEndTimestamp,
           diff,
