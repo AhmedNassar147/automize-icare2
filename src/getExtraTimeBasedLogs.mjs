@@ -140,6 +140,10 @@ const analyzeReferralTimingPatterns = (
     isSecondLastTodayNegative;
 
   const isRecoveryThenDrop = isFirstDayRecovery || isSuperSinglePattern;
+  conosl.log({
+    isFirstDayRecovery,
+    isSuperSinglePattern,
+  });
 
   return {
     isDoubleZeroDangerZone,
@@ -214,13 +218,9 @@ const getExtraTimeBasedLogs = async ({
   const gapMin = (diffFromLastToday / 60000).toFixed(1);
 
   if (isCurrentDiffNegative) {
-    let maxNewWait =
+    const maxNewWait =
       (Math.abs(diff) / 1000) * 2 +
-      (IS_UNIZA_BRANCH ? 3 : isFarFromLastToday ? 2 : 1);
-
-    if (isFirstCaseToday && !IS_UNIZA_BRANCH) {
-      maxNewWait += 1;
-    }
+      (IS_UNIZA_BRANCH ? 3 : isFirstCaseToday ? 3 : isFarFromLastToday ? 2 : 1);
 
     if (isLastTodayDiffNegative) {
       const waitValue = isFarFromLastToday
@@ -241,7 +241,6 @@ const getExtraTimeBasedLogs = async ({
       const negativeText = isFirstCaseToday
         ? "🌅 first-day-negative"
         : "✅ first-negative";
-
       extraBotMessages.push(`${negativeText} ${logCtx} wait=+${maxNewWait}ms`);
     }
 
