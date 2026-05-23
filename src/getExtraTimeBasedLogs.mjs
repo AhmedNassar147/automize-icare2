@@ -21,7 +21,7 @@ const hasNegativeZeroNegativePattern = (todayCases) => {
   return false;
 };
 
-const getLastTwoCasesAreDangrous = (logsData, diff, todayDate) => {
+const getLastTwoCasesAreDangerous = (logsData, referralEndTimestamp, diff) => {
   const length = logsData?.length ?? 0;
   const isCurrentDiffNegative = diff < 0;
 
@@ -33,8 +33,11 @@ const getLastTwoCasesAreDangrous = (logsData, diff, todayDate) => {
       lastDiff: undefined,
       lastReferralEndTimestamp: null,
       isCurrentDiffNegative,
+      diffBetweenLastAndCurrent: 0,
     };
   }
+
+  const todayDate = new Date().getDate();
 
   const last = logsData[length - 1];
   const secondLast = length >= 2 ? logsData[length - 2] : null;
@@ -62,14 +65,31 @@ const getLastTwoCasesAreDangrous = (logsData, diff, todayDate) => {
     ({ referralEndTimestamp: e }) => e && new Date(e).getDate() === todayDate,
   );
 
-  const superSingleAlreadyFired = hasNegativeZeroNegativePattern(todayCases);
-
   const lastToday = todayCases[todayCases.length - 1];
   const secondLastToday = todayCases[todayCases.length - 2];
 
-  // scenario 1: first day recovery → first case of day is 0, then -1000
+  const diffFromLastToday = lastToday?.referralEndTimestamp
+    ? referralEndTimestamp - lastToday.referralEndTimestamp
+    : 0;
+
+  const isFarFromLastToday =
+    diffFromLastToday >= FAR_CASE_MS && lastCaseDate === todayDate;
+
+  const isDangerZoneFiredToday = todayCases.some(({ diff: d }, i, arr) => {
+    if (d >= 0) return false;
+    const prev = arr[i - 1];
+    return !!prev && prev.diff >= 0; // any 0→-1000 today
+  });
+
+  // scenario 1: 0 → -1000 same day
   const isFirstDayRecovery =
     isLastPositive && !isSecondLastPositive && isCurrentDiffNegative;
+
+  const recentCases = todayCases.filter(
+    ({ referralEndTimestamp: e }) => referralEndTimestamp - e <= FAR_CASE_MS,
+  );
+
+  const superSingleAlreadyFired = hasNegativeZeroNegativePattern(recentCases);
 
   // scenario 2: -1000 → 0 → -1000 same day
   const isSuperSinglePattern =
@@ -80,8 +100,7 @@ const getLastTwoCasesAreDangrous = (logsData, diff, todayDate) => {
     !!secondLastToday &&
     secondLastToday.diff < 0;
 
-  const isRecoveryThenDrop =
-    (isFirstDayRecovery || isSuperSinglePattern) && !superSingleAlreadyFired;
+  const isRecoveryThenDrop = isFirstDayRecovery || isSuperSinglePattern;
 
   return {
     isDoubleZeroDangerZone,
@@ -90,6 +109,9 @@ const getLastTwoCasesAreDangrous = (logsData, diff, todayDate) => {
     lastDiff: lastCaseDiff,
     lastReferralEndTimestamp,
     isCurrentDiffNegative,
+    isDangerZoneFiredToday,
+    superSingleAlreadyFired,
+    isFarFromLastToday,
   };
 };
 
@@ -102,7 +124,6 @@ const getExtraTimeBasedLogs = async ({
   const IS_UNIZA_BRANCH = process.env.BRANCH_NAME === "Unizah";
   const extraBotMessages = [];
   const logsData = await readLogsAsArray();
-  const todayDate = new Date().getDate();
 
   const {
     isDoubleZeroDangerZone,
@@ -111,7 +132,15 @@ const getExtraTimeBasedLogs = async ({
     lastDiff,
     lastReferralEndTimestamp,
     isCurrentDiffNegative,
-  } = getLastTwoCasesAreDangrous(logsData, diff, todayDate);
+    isDangerZoneFiredToday,
+    isFarFromLastToday,
+  } = getLastTwoCasesAreDangerous(logsData, referralEndTimestamp, diff);
+
+  const diffBetweenLastAndCurrent = lastReferralEndTimestamp
+    ? referralEndTimestamp - lastReferralEndTimestamp
+    : 0;
+
+  const isFarFromLast = diffBetweenLastAndCurrent >= FAR_CASE_MS;
 
   let extraWait = 0;
 
@@ -129,11 +158,13 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
-    extraWait += 10;
+    const dangerWait = !isDangerZoneFiredToday || isFarFromLastToday ? 10 : 7;
+
+    extraWait += dangerWait;
     extraBotMessages.push(
       isDoubleZeroDangerZone
         ? `❗️ Double zero danger zone (${diff}ms) → +${extraWait}ms referralId=${referralId}`
-        : `⚠️ Recovery then drop (${diff}ms) → +${extraWait}ms referralId=${referralId}`,
+        : `⚠️ Recovery then drop (danger zone) (${diff}ms) → +${extraWait}ms referralId=${referralId}`,
     );
     return {
       computedExtraBotMessages: extraBotMessages,
@@ -141,11 +172,6 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
-  const diffBetweenLastAndCurrent = lastReferralEndTimestamp
-    ? referralEndTimestamp - lastReferralEndTimestamp
-    : 0;
-
-  const isFarFromLast = diffBetweenLastAndCurrent >= FAR_CASE_MS;
   const isLastDiffNegative = typeof lastDiff === "number" && lastDiff < 0;
 
   if (isCurrentDiffNegative) {

@@ -520,8 +520,8 @@ const currentProfile = "Profile 1";
         if (process.env.ENABLE_AUTO_WAITING === "1" && firstGoindToAccept) {
           const delta =
             {
-              blocked: +6,
-              "near-to-block": +3,
+              blocked: +5,
+              "near-to-block": +4,
               "need-more-wait": +2,
               "good-waiting": 0,
               "moderate-waiting": elapsedMs < 770 ? 0 : -1,
