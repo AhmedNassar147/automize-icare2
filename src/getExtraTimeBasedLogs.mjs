@@ -172,7 +172,7 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
-  const isHotCluster = diffBetweenLastAndCurrent <= 4 * 60 * 1000;
+  const isHotCluster = diffBetweenLastAndCurrent <= 3 * 60 * 1000;
 
   const isLastDiffNegative = typeof lastDiff === "number" && lastDiff < 0;
 
@@ -188,7 +188,7 @@ const getExtraTimeBasedLogs = async ({
       extraBotMessages.push(
         isFarFromLast
           ? `↔️ Far + consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`
-          : `🔁 Consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`,
+          : `🔁 isHotCluster=${isHotCluster}, Consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`,
       );
     } else {
       extraWait += maxNewWait;
@@ -210,7 +210,7 @@ const getExtraTimeBasedLogs = async ({
     extraBotMessages.push(
       isFarFromLast
         ? `↔️ Far case (${Math.round(diffBetweenLastAndCurrent / 60000)}min gap) + diff ${diff} → +${extraWait}ms`
-        : `✅ diff ${diff} (last ${lastDiff ?? "none"}) → +${extraWait}ms`,
+        : `✅ isHotCluster=${isHotCluster}, diff ${diff} (last ${lastDiff ?? "none"}) → +${extraWait}ms`,
     );
   }
 
