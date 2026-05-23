@@ -645,7 +645,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
 
     await sendBotMessage(
       chatId,
-      `✅ Hi \`${fromName}\`, wait time set to \`${value}\`ms successfully.`,
+      `✅ waitTime updated from \`${process.env.WAIT_FOR_ACCEPT_MS}\`ms  to \`${value}\`ms successfully.`,
     );
 
     const activeChatId = process.env.TG_CHAT_ID;
