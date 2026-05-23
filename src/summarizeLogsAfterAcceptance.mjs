@@ -66,7 +66,6 @@ const summarizeLogsAfterAcceptance = async (data) => {
 
   const line = createPrettyRow(row);
   await appendFile(casesTimingLogsFilePath, `${line}\n`, "utf8");
-  createConsoleMessage(line, "warn");
   createConsoleMessage(
     `✅ Acceptance summary appended → ${casesTimingLogsFilePath}`,
     "info",
