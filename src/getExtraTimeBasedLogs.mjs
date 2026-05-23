@@ -214,9 +214,13 @@ const getExtraTimeBasedLogs = async ({
   const gapMin = (diffFromLastToday / 60000).toFixed(1);
 
   if (isCurrentDiffNegative) {
-    const maxNewWait =
+    let maxNewWait =
       (Math.abs(diff) / 1000) * 2 +
-      (IS_UNIZA_BRANCH ? 3 : isFirstCaseToday ? 3 : isFarFromLastToday ? 2 : 1);
+      (IS_UNIZA_BRANCH ? 3 : isFarFromLastToday ? 2 : 1);
+
+    if (isFirstCaseToday && !IS_UNIZA_BRANCH) {
+      maxNewWait += 1;
+    }
 
     if (isLastTodayDiffNegative) {
       const waitValue = isFarFromLastToday
