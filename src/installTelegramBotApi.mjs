@@ -921,9 +921,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       `🧪 *Next Case Extra Time Test Results*\n` +
         `────────────────────────\n\n` +
         `⚙️ current waitingTime → \`${current}ms\`\n\n` +
-        `Extra \`${zeroResult.computedExtraWait}ms\` → *\`${current + zeroResult.computedExtraWait}ms\`*\n` +
         `${zeroResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `Extra \`${negativeResult.computedExtraWait}ms\` → *\`${current + negativeResult.computedExtraWait}ms\`*\n` +
         `${negativeResult.computedExtraBotMessages.join("\n") || "No messages"}`,
     );
   });
