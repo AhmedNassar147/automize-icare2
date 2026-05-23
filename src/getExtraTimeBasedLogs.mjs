@@ -172,13 +172,19 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
+  const isHotCluster = diffBetweenLastAndCurrent <= 4 * 60 * 1000;
+
   const isLastDiffNegative = typeof lastDiff === "number" && lastDiff < 0;
 
   if (isCurrentDiffNegative) {
     const maxNewWait = (Math.abs(diff) / 1000) * 2 + (IS_UNIZA_BRANCH ? 3 : 2);
 
     if (isLastDiffNegative) {
-      extraWait += isFarFromLast ? maxNewWait : Math.ceil(maxNewWait / 2);
+      extraWait += isFarFromLast
+        ? maxNewWait
+        : isHotCluster
+          ? Math.ceil(maxNewWait / 3)
+          : Math.ceil(maxNewWait / 2);
       extraBotMessages.push(
         isFarFromLast
           ? `↔️ Far + consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`
@@ -193,7 +199,7 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (diff >= 0) {
-    const value = isLastDiffNegative ? 3 : 2;
+    const value = isHotCluster ? 1 : isLastDiffNegative ? 3 : 2;
 
     extraWait += isFarFromLast
       ? IS_UNIZA_BRANCH
