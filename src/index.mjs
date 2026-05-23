@@ -525,8 +525,8 @@ const currentProfile = "Profile 1";
               "need-more-wait": +2,
               "good-waiting": 0,
               "moderate-waiting": elapsedMs < 770 ? 0 : -1,
-              "low-waiting": -2,
-              "need-less-wait": -3,
+              "low-waiting": -1,
+              "need-less-wait": -2,
             }[outcome] ?? 0;
 
           if (delta !== 0) {

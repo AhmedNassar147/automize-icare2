@@ -204,7 +204,7 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (diff >= 0) {
-    const value = isHotCluster ? 1 : isLastDiffNegative ? 3 : 2;
+    const value = isHotCluster ? 1 : 2;
 
     const addedWait = isFarFromLast
       ? IS_UNIZA_BRANCH
