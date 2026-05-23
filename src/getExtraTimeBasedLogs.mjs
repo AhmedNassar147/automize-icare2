@@ -8,6 +8,8 @@ import { readLogsAsArray } from "./summarizeLogsAfterAcceptance.mjs";
 const FAR_CASE_MIN = 90; // 1.5 hours
 const FAR_CASE_MS = FAR_CASE_MIN * 60000;
 
+const HOT_CLUSTER_MS = 4 * 60 * 1000;
+
 const hasNegativeZeroNegativePattern = (todayCases) => {
   for (let i = 2; i < todayCases.length; i++) {
     if (
@@ -144,27 +146,26 @@ const getExtraTimeBasedLogs = async ({
 
   let extraWait = 0;
 
+  const logCtx = `referralId=${referralId} diffPath=${lastDiff ?? "none"}→${diff}`;
+
   if (extraBackendDelayMs === 0) {
-    extraBotMessages.push(
-      `✅ Found no backend delay → +0ms when diff=${diff} referralId=${referralId}`,
-    );
+    extraBotMessages.push(`✅ backend-delay ${logCtx} delay=0ms wait=+0ms`);
   }
 
   if (extraBackendDelayMs > 1000) {
     extraWait += 3;
     extraBotMessages.push(
-      `✅ Found backend delay → +${extraBackendDelayMs}ms > 1000ms when diff=${diff} referralId=${referralId}`,
+      `✅ backend-delay ${logCtx} delay=${extraBackendDelayMs}ms threshold=1000ms wait=+3ms`,
     );
   }
 
   if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
-    const dangerWait = !isDangerZoneFiredToday || isFarFromLastToday ? 10 : 7;
+    const isUsingFullWait = !isDangerZoneFiredToday || isFarFromLastToday;
+    const dangerWait = isUsingFullWait ? 10 : 7;
 
     extraWait += dangerWait;
     extraBotMessages.push(
-      isDoubleZeroDangerZone
-        ? `❗️ Double zero danger zone (${diff}ms) → +${extraWait}ms referralId=${referralId}`
-        : `⚠️ Recovery then drop (danger zone) (${diff}ms) → +${extraWait}ms referralId=${referralId}`,
+      `⚠️ danger-zone ${logCtx} type=${isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"} fullWait=${isUsingFullWait} wait=+${dangerWait}ms`,
     );
     return {
       computedExtraBotMessages: extraBotMessages,
@@ -172,28 +173,32 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
-  const isHotCluster = diffBetweenLastAndCurrent <= 3 * 60 * 1000;
+  const isHotCluster = diffBetweenLastAndCurrent <= HOT_CLUSTER_MS;
 
   const isLastDiffNegative = typeof lastDiff === "number" && lastDiff < 0;
+
+  const gapMin = (diffBetweenLastAndCurrent / 60000).toFixed(1);
 
   if (isCurrentDiffNegative) {
     const maxNewWait = (Math.abs(diff) / 1000) * 2 + (IS_UNIZA_BRANCH ? 3 : 2);
 
     if (isLastDiffNegative) {
-      extraWait += isFarFromLast
+      const waitValue = isFarFromLast
         ? maxNewWait
         : isHotCluster
           ? Math.ceil(maxNewWait / 3)
           : Math.ceil(maxNewWait / 2);
+
+      extraWait += waitValue;
       extraBotMessages.push(
         isFarFromLast
-          ? `↔️ Far + consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`
-          : `🔁 isHotCluster=${isHotCluster}, Consecutive diff (${lastDiff}→${diff}) → +${extraWait}ms`,
+          ? `↔️ far-negative ${logCtx} gap=${gapMin}min wait=+${waitValue}ms`
+          : `🔁 consecutive-negative ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${waitValue}ms`,
       );
     } else {
       extraWait += maxNewWait;
       extraBotMessages.push(
-        `✅ First case / no danger zone, diff=${diff} (last ${lastDiff ?? "none"}) → +${extraWait}ms`,
+        `✅ first-negative ${logCtx} wait=+${maxNewWait}ms`,
       );
     }
   }
@@ -201,16 +206,17 @@ const getExtraTimeBasedLogs = async ({
   if (diff >= 0) {
     const value = isHotCluster ? 1 : isLastDiffNegative ? 3 : 2;
 
-    extraWait += isFarFromLast
+    const addedWait = isFarFromLast
       ? IS_UNIZA_BRANCH
         ? Math.ceil(value * 1.5)
         : Math.floor(value * 1.5)
       : value;
 
+    extraWait += addedWait;
     extraBotMessages.push(
       isFarFromLast
-        ? `↔️ Far case (${Math.round(diffBetweenLastAndCurrent / 60000)}min gap) + diff ${diff} → +${extraWait}ms`
-        : `✅ isHotCluster=${isHotCluster}, diff ${diff} (last ${lastDiff ?? "none"}) → +${extraWait}ms`,
+        ? `↔️ far-stable ${logCtx} gap=${gapMin}min wait=+${addedWait}ms`
+        : `✅ stable ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${addedWait}ms`,
     );
   }
 
