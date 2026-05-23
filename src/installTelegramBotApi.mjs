@@ -59,11 +59,6 @@ const COMMANDS = {
     description: "get current wait time before hitting the accept button",
     command: "wait",
   },
-  // notfiyCaseStatus: {
-  //   value: /\/notifty_case_status/,
-  //   description: "Check if we selected for accepted case.",
-  //   command: "notifty_case_status",
-  // },
   f_accept: {
     value: /\/f_accept$/,
     description: "get first patient to be accepted with time left details",
@@ -926,9 +921,9 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       `🧪 *Next Case Extra Time Test Results*\n` +
         `────────────────────────\n\n` +
         `⚙️ current waitingTime → \`${current}ms\`\n\n` +
-        `📊 when \`diff=0\` → extra \`${zeroResult.computedExtraWait}ms\` → *\`${current + zeroResult.computedExtraWait}ms\`*\n` +
+        `Extra \`${zeroResult.computedExtraWait}ms\` → *\`${current + zeroResult.computedExtraWait}ms\`*\n` +
         `${zeroResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `📉 when \`diff&lt;0\` → extra \`${negativeResult.computedExtraWait}ms\` → *\`${current + negativeResult.computedExtraWait}ms\`*\n` +
+        `Extra \`${negativeResult.computedExtraWait}ms\` → *\`${current + negativeResult.computedExtraWait}ms\`*\n` +
         `${negativeResult.computedExtraBotMessages.join("\n") || "No messages"}`,
     );
   });
