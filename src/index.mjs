@@ -467,18 +467,43 @@ const currentProfile = "Profile 1";
       }
     });
 
+    //     function getReferralIdFromPage() {
+    //   const spans = document.querySelectorAll(".statusContainer span");
+
+    //   for (const span of spans) {
+    //     const text = (span.textContent || "").trim();
+
+    //     const match = text.match(/GMS Referral ID\s*:\s*(\d+)/i);
+
+    //     if (match) {
+    //       return Number(match[1]);
+    //     }
+    //   }
+
+    //   return null;
+    // }
     app.post("/setCaseOutcome", async (req, res) => {
       try {
-        const { elapsedMs, clickedAt, blocked } = req.body;
+        const { elapsedMs, clickedAt, blocked, referralId: caseId } = req.body;
 
-        const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
+        let foundPatient = null;
+
+        if (caseId) {
+          const { patient } = patientsStore.findPatientByReferralId(caseId);
+          if (patient) {
+            foundPatient = patient;
+          }
+        }
+
+        const patientData =
+          foundPatient || patientsStore.getFirstGoingToAccept();
 
         const {
           referralId,
           referralEndTimestamp,
           readySeenAtLocalMs,
           waitTime,
-        } = firstGoindToAccept || {};
+        } = patientData || {};
 
         if (typeof elapsedMs !== "number") {
           createConsoleMessage(
@@ -509,7 +534,7 @@ const currentProfile = "Profile 1";
           outcome === "blocked" ? "error" : "warn",
         );
 
-        if (firstGoindToAccept) {
+        if (patientData) {
           await updateCaseInLog(referralId, {
             status: `${outcome}_${elapsedMs}`,
             clickedAt,
@@ -517,7 +542,7 @@ const currentProfile = "Profile 1";
           });
         }
 
-        if (process.env.ENABLE_AUTO_WAITING === "1" && firstGoindToAccept) {
+        if (process.env.ENABLE_AUTO_WAITING === "1" && patientData) {
           const delta =
             {
               blocked: +5,
