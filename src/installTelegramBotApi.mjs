@@ -32,6 +32,7 @@ import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
 const execAsync = promisify(exec);
 
 const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+const ONLINE_CONFIRM_TIMEOUT_MS = 3 * 60 * 1000;
 
 const COMMANDS = {
   add: {
@@ -74,7 +75,7 @@ const COMMANDS = {
     description: "pull latest code from master and restart the server",
     command: "update_code",
   },
-  getRefferalLetter: {
+  getReferralLetter: {
     value: /\/letter (.+)/,
     description:
       "Long press → get letter, Example: /letter a 12345 OR /letter r 12345 OR /letter r 12345 reason",
@@ -112,6 +113,7 @@ const buildButtons = (referralId) => ({
     [
       { text: "🔕 No Reply", callback_data: `noreply_${referralId}` },
       { text: "⏳ Left Time", callback_data: `lefttime_${referralId}` },
+      { text: "🟢 Online", callback_data: `online_${referralId}` },
     ],
   ],
 });
@@ -147,19 +149,28 @@ const prepareMessage = (message) => {
 const getAllowedList = () =>
   process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || [];
 
-const getIfNotAuthorizedMessage = (msg) => {
+const getMessageData = (msg) => {
   const chatId = String(msg.chat.id);
   const fromName =
     msg.from.first_name || msg.chat.first_name || msg.from.last_name;
 
+  return {
+    chatId,
+    fromName,
+    msgId: msg.message_id,
+  };
+};
+
+const getIfNotAuthorizedMessage = (msg) => {
+  const { chatId, fromName, msgId } = getMessageData(msg);
   const allowedList = getAllowedList();
   const isAuthorized = allowedList.includes(chatId);
 
   return {
     chatId,
+    msgId,
     fromName,
     allowedList,
-    msgId: msg.message_id,
     unAuthorizedMessage: isAuthorized
       ? undefined
       : `⛔ \`${fromName}\` you are not Authorized.`,
@@ -215,19 +226,31 @@ const makeLetterGenerationAndReturnFile = async ({
   }
 };
 
+const getActiveChatID = () => process.env.TG_CHAT_ID;
+
 const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
   const bot = new TelegramBot(TG_TOKEN, { polling: true, filepath: false });
 
   createConsoleMessage("🤖 Telegram Case Bot is running...", "info");
 
-  if (!process.env.TG_CHAT_ID) {
+  if (!getActiveChatID()) {
     createConsoleMessage(
       "⚠️ TG_CHAT_ID not set — send /me to the bot first",
       "warn",
     );
   }
 
+  const getChatName = async (chatId) => {
+    try {
+      const chat = await bot.getChat(chatId);
+      return chat.first_name || chat.last_name || chat.username || chatId;
+    } catch {
+      return chatId;
+    }
+  };
+
   const pendingContactRequests = new Map();
+  const pendingOnlineChecks = new Map();
 
   const sendBotMessage = async (chatId, message, options = {}) => {
     const { parse_mode, text } = prepareMessage(message);
@@ -238,12 +261,53 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     });
   };
 
+  const processNextOnlineCheck = async (referralId) => {
+    const pending = pendingOnlineChecks.get(referralId);
+
+    if (!pending || pending.confirmed) return;
+
+    const allowedList = getAllowedList();
+    const nextIndex = pending.currentIndex + 1;
+    const nextChatId = allowedList[nextIndex];
+
+    if (!nextChatId) {
+      await Promise.all(
+        pending.sentChatIds.map((chatId) =>
+          sendBotMessage(
+            chatId,
+            `⚠️ No one confirmed online for Referral ID: \`${referralId}\`.`,
+          ).catch(() => null),
+        ),
+      );
+
+      pendingOnlineChecks.delete(referralId);
+      return;
+    }
+
+    pending.currentIndex = nextIndex;
+    pending.sentChatIds.push(nextChatId);
+
+    await sendTelegramMessage(
+      pending.message,
+      pending.files,
+      referralId,
+      nextChatId,
+      true,
+    );
+
+    setTimeout(() => {
+      processNextOnlineCheck(referralId);
+    }, ONLINE_CONFIRM_TIMEOUT_MS);
+  };
+
   const sendTelegramMessage = async (
     message,
     _files = [],
     targetReferralIdForButtons,
+    overrideChatId = null,
+    skipOnlineCheckCreation = false,
   ) => {
-    const TG_CHAT_ID = process.env.TG_CHAT_ID;
+    const TG_CHAT_ID = overrideChatId || getActiveChatID();
 
     // ✅ Add this
     if (!TG_CHAT_ID) {
@@ -268,6 +332,26 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         });
 
         messageId = res.message_id;
+
+        if (targetReferralIdForButtons && !skipOnlineCheckCreation) {
+          const allowedList = getAllowedList();
+
+          const startIndex = Math.max(allowedList.indexOf(TG_CHAT_ID), 0);
+
+          pendingOnlineChecks.set(targetReferralIdForButtons, {
+            referralId: targetReferralIdForButtons,
+            message,
+            files: _files,
+            confirmed: false,
+            confirmedBy: null,
+            sentChatIds: [TG_CHAT_ID],
+            currentIndex: startIndex,
+          });
+
+          setTimeout(() => {
+            processNextOnlineCheck(targetReferralIdForButtons);
+          }, ONLINE_CONFIRM_TIMEOUT_MS);
+        }
       }
 
       const files = await formatFilesToTelegram(_files);
@@ -404,7 +488,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         description: item.description,
       }));
 
-    const TG_CHAT_ID = process.env.TG_CHAT_ID;
+    const TG_CHAT_ID = getActiveChatID();
 
     await bot.setMyCommands(commands, { scope: { type: "default" } });
 
@@ -419,12 +503,19 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
   }
 
   bot.onText(COMMANDS.clearCmds.value, async (msg) => {
-    const chatId = String(msg.chat.id);
+    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
 
     await bot.deleteMyCommands({ scope: { type: "default" } });
     await bot.deleteMyCommands({ scope: { type: "all_private_chats" } });
     await bot.deleteMyCommands({ scope: { type: "all_group_chats" } });
-    await bot.deleteMyCommands({ scope: { type: "all_chat_administrators" } });
+    await bot.deleteMyCommands({
+      scope: { type: "all_chat_administrators" },
+    });
 
     await bot.deleteMyCommands({
       scope: {
@@ -448,7 +539,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       return;
     }
 
-    const activeChatId = process.env.TG_CHAT_ID;
+    const activeChatId = getActiveChatID();
 
     if (activeChatId === chatId) {
       await sendBotMessage(
@@ -458,24 +549,18 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       return;
     }
 
+    updateEnvFile({
+      TG_CHAT_ID: chatId,
+      TG_CHAT_USER_NAME: fromName,
+      CLIENT_WHATSAPP_NUMBER: process.env[`TG_PHONE_NUMBER_${chatId}`],
+    });
+
     if (activeChatId) {
       await sendBotMessage(
         activeChatId,
         `🔔 \`${fromName}\` is now active and will receive cases. You are off duty.`,
       );
     }
-
-    const { [`TG_PHONE_NUMBER_${chatId}`]: activePhoneNumber, CLIENT_ID } =
-      process.env;
-
-    updateEnvFile({
-      TG_CHAT_ID: chatId,
-      TG_CHAT_USER_NAME: fromName,
-      CLIENT_WHATSAPP_NUMBER: activePhoneNumber,
-      // ...(CLIENT_ID !== "TADAWI" && !!activePhoneNumber
-      //   ? { CLIENT_WHATSAPP_NUMBER: activePhoneNumber }
-      //   : null),
-    });
     await sendBotMessage(
       chatId,
       `✅ Hi, \`${fromName}\` you are active now, cases will be sent for you here, Chat ID \`${chatId}\` has been saved automatically.`,
@@ -504,20 +589,19 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       return sendBotMessage(chatId, unAuthorizedMessage);
     }
 
-    const activeChatId = process.env.TG_CHAT_ID;
+    const activeChatId = getActiveChatID();
 
     if (!activeChatId) {
       return sendBotMessage(chatId, `⚠️ No one is currently on duty.`);
     }
 
-    const chat = await bot.getChat(activeChatId);
-    const userName = chat.first_name || chat.last_name || chat.username;
+    const chatName = await getChatName(activeChatId);
 
     await sendBotMessage(
       chatId,
       `👮 *Duty Status*\n` +
         `────────────────────────\n` +
-        `🟢 *Active:* \`${userName || "Unknown"}\` — \`${activeChatId}\``,
+        `🟢 *Active:* \`${chatName || "Unknown"}\` — \`${activeChatId}\``,
     );
   });
 
@@ -641,14 +725,16 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       return;
     }
 
+    const currentWait = process.env.WAIT_FOR_ACCEPT_MS;
+
     updateEnvFile({ WAIT_FOR_ACCEPT_MS: value });
 
     await sendBotMessage(
       chatId,
-      `✅ waitTime updated from \`${process.env.WAIT_FOR_ACCEPT_MS}\`ms  to \`${value}\`ms successfully.`,
+      `✅ waitTime updated from \`${currentWait}\`ms  to \`${value}\`ms successfully.`,
     );
 
-    const activeChatId = process.env.TG_CHAT_ID;
+    const activeChatId = getActiveChatID();
 
     if (activeChatId !== chatId) {
       await sendBotMessage(
@@ -667,9 +753,9 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       return;
     }
 
-    const firstGoindToAccept = patientsStore.getFirstGoingToAccept();
+    const firstGoingToAccept = patientsStore.getFirstGoingToAccept();
 
-    if (!firstGoindToAccept) {
+    if (!firstGoingToAccept) {
       return await sendBotMessage(
         chatId,
         `⛔ Currently there is no patient going to be accepted.`,
@@ -679,7 +765,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       );
     }
 
-    const { referralId, patientName } = firstGoindToAccept;
+    const { referralId, patientName } = firstGoingToAccept;
     const { message, timeMs } = patientsStore.getReferralLeftTime(referralId);
 
     await sendBotMessage(
@@ -746,7 +832,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       `✅ Auto waiting just updated to \`${status}\`.`,
     );
 
-    const activeChatId = process.env.TG_CHAT_ID;
+    const activeChatId = getActiveChatID();
 
     if (activeChatId !== chatId) {
       await sendBotMessage(
@@ -756,7 +842,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.getRefferalLetter.value, async (msg, match) => {
+  bot.onText(COMMANDS.getReferralLetter.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName, msgId } =
       getIfNotAuthorizedMessage(msg);
 
@@ -1036,8 +1122,14 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     try {
       const { data, message, id } = query;
 
-      const chatId = message?.chat?.id;
-      const msgId = message?.message_id;
+      const chatId = String(query.from.id);
+      const msgId = message.message_id;
+      let fromName =
+        query.from?.first_name ||
+        query.from?.last_name ||
+        query.from?.username ||
+        getMessageData(message).fromName ||
+        chatId;
 
       const reply = createReply(id, chatId, msgId);
 
@@ -1051,7 +1143,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       const allowedList = getAllowedList();
 
       // ✅ Add this inside callback_query to restrict access
-      if (!allowedList.includes(String(chatId))) {
+      if (!allowedList.includes(chatId)) {
         const _message = `❌ chatId=${chatId} not allowed`;
         createConsoleMessage(_message, "error");
         return reply(_message);
@@ -1068,6 +1160,53 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         );
 
         return reply(_message);
+      }
+
+      if (action === "online") {
+        const pending = pendingOnlineChecks.get(referralId);
+
+        if (!pending) {
+          const chatName = await getChatName(getActiveChatID());
+
+          return reply(
+            `⚠️ This online confirmation is expired and <b>${chatName}</b> is active now.`,
+          );
+        }
+
+        if (pending.confirmed) {
+          const chatName = pending.confirmedBy
+            ? await getChatName(pending.confirmedBy)
+            : "Another user";
+
+          return reply(`⚠️ <b>${chatName}</b> confirmed and active now.`);
+        }
+
+        pending.confirmed = true;
+        pending.confirmedBy = chatId;
+        pendingOnlineChecks.delete(referralId);
+
+        updateEnvFile({
+          TG_CHAT_ID: chatId,
+          TG_CHAT_USER_NAME: fromName,
+          CLIENT_WHATSAPP_NUMBER: process.env[`TG_PHONE_NUMBER_${chatId}`],
+        });
+
+        const previousChatIds = pending.sentChatIds.filter(
+          (sentChatId) => sentChatId !== chatId,
+        );
+
+        await Promise.all(
+          previousChatIds.map(async (sentChatId) => {
+            await sendBotMessage(
+              sentChatId,
+              `🔔 \`${fromName}\` confirmed online for Referral ID: \`${referralId}\`.\nYou are marked as not active for this case.`,
+            ).catch(() => null);
+          }),
+        );
+
+        return reply(
+          `✅ Confirmed. You are now active for Referral ID: ${referralId}`,
+        );
       }
 
       const { patient } = patientsStore.findPatientByReferralId(referralId);
