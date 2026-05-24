@@ -18,7 +18,7 @@ const waitMinutesThenRun = (
 
   const delayMain = caseWillBeSubmitMSAt - Date.now();
 
-  const OPEN_BROWSER_OFFSET = 5 * 60 * 1000;
+  const OPEN_BROWSER_OFFSET = 2 * 60 * 1000;
   const delayOpeningBrowser = delayMain - OPEN_BROWSER_OFFSET;
 
   const notifyTelegram = async (messages = []) => {
