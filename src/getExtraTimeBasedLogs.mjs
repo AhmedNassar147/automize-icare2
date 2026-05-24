@@ -140,10 +140,6 @@ const analyzeReferralTimingPatterns = (
     isSecondLastTodayNegative;
 
   const isRecoveryThenDrop = isFirstDayRecovery || isSuperSinglePattern;
-  conosl.log({
-    isFirstDayRecovery,
-    isSuperSinglePattern,
-  });
 
   return {
     isDoubleZeroDangerZone,
