@@ -350,6 +350,25 @@ const currentProfile = "Profile 1";
       }),
     );
 
+    app.get("/settings", async (req, res) => {
+      try {
+        return res.status(200).json({
+          whatsAppWait: process.env.WAIT_FOR_ACCEPT_MS,
+          waitBeforeReady: undefined,
+        });
+      } catch (err) {
+        createConsoleMessage(err, "error", "GET /settings error");
+        return res.status(500).json({
+          success: false,
+          message: "Internal error when getting settings.",
+        });
+      }
+    });
+
+    app.post("/settings", async (req, res) => {
+      return res.status(200).json({ success: true });
+    });
+
     app.post("/setCaseOutcome", async (req, res) => {
       try {
         const { success, outcome, reason } = await handleSetCaseOutcome({
