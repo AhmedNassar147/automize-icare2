@@ -8,6 +8,8 @@ dotenv.config();
 
 import fs from "node:fs";
 import https from "node:https";
+import path from "path";
+import os from "os";
 import express from "express";
 import cors from "cors";
 import { WebSocketServer } from "ws";
@@ -71,12 +73,10 @@ import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
 // in power shell as admin => ipconfig /flushdns
 // to verify ping referralprogram.globemedsaudi.com // we see 127.0.0.1
 
-const currentProfile = "Profile 1";
+const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
 
 (async () => {
   const {
-    CHROME_EXECUTABLE_PATH,
-    USER_PROFILE_PATH,
     CERT_PATH,
     KEY_PATH,
     HOST,
@@ -160,13 +160,11 @@ const currentProfile = "Profile 1";
       checkSiteCodeConfig(),
     ]);
 
-    // const profilePath = `${USER_PROFILE_PATH}/${currentProfile}`;
-
     browser = await puppeteer.launch({
       headless: false,
       defaultViewport: null,
       // executablePath: CHROME_EXECUTABLE_PATH,
-      // userDataDir: profilePath,
+      userDataDir: profilePath,
       protocolTimeout: 190_000,
       ignoreDefaultArgs: ["--enable-automation"],
       args: [

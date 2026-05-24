@@ -3,7 +3,6 @@
  * Helpers: `realChromeHelpers`.
  *
  */
-import os from "os";
 import { exec } from "child_process";
 import { promisify } from "util";
 import createConsoleMessage from "./createConsoleMessage.mjs";
@@ -11,41 +10,57 @@ import { APP_URL } from "./constants.mjs";
 
 const execAsync = promisify(exec);
 
-const isChromeOpen = async () => {
-  const platform = process.platform;
-  const isWindows = platform === "win32";
-
-  const cmd = isWindows
-    ? 'tasklist /FI "IMAGENAME eq chrome.exe"'
-    : platform === "darwin"
-      ? `pgrep -x "Google Chrome"`
-      : `pgrep -x chrome || pgrep -x chromium || pgrep -x chromium-browser`;
+const isRealChromeOpen = async () => {
+  const cmd =
+    process.platform === "win32"
+      ? `powershell -Command "Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'chrome.exe' } | Select-Object -ExpandProperty CommandLine"`
+      : `ps -ax -o command | grep -i "[c]hrome"`;
 
   try {
     const { stdout } = await execAsync(cmd);
 
-    const isOpen = isWindows
-      ? stdout.toLowerCase().includes("chrome.exe")
-      : stdout.trim().length > 0;
+    const lines = stdout
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const realChromeProcesses = lines.filter((line) => {
+      const lower = line.toLowerCase();
+
+      // Puppeteer / automation indicators
+      const isAutomation =
+        lower.includes("puppeteer_dev_chrome_profile") ||
+        lower.includes("--remote-debugging-port") ||
+        lower.includes("--enable-automation") ||
+        lower.includes("--user-data-dir");
+
+      return lower.includes("chrome") && !isAutomation;
+    });
+
+    const isOpen = realChromeProcesses.length > 0;
 
     return {
       success: true,
       isOpen,
       message: isOpen
-        ? "🟡 Chrome already running, Open the app Your slef."
-        : "🟢 Chrome was not running.",
+        ? "🔴 Real Chrome already running. open the app your self"
+        : "Real Chrome was not running.",
     };
-  } catch (e) {
+  } catch (err) {
     return {
       success: false,
       isOpen: false,
-      message: `🔴 Failed checking Chrome state: ${e.message}`,
+      message: `🔴 open the app your self, Failed checking real Chrome state: ${err.message}`,
     };
   }
 };
 
 const openChromeIfNeeded = async () => {
-  const { success, isOpen, message: chromeStateMessage } = await isChromeOpen();
+  const {
+    success,
+    isOpen,
+    message: chromeStateMessage,
+  } = await isRealChromeOpen();
 
   if (!success) {
     createConsoleMessage(chromeStateMessage, "error");
@@ -90,7 +105,7 @@ const openChromeIfNeeded = async () => {
       messages: [chromeStateMessage, openedMessage],
     };
   } catch (err) {
-    const errorMessage = `🔴 Failed opening Chrome: ${err.message}`;
+    const errorMessage = `🔴 open the app your self, Failed opening Chrome: ${err.message}`;
 
     createConsoleMessage(errorMessage, "error");
 
@@ -102,4 +117,4 @@ const openChromeIfNeeded = async () => {
   }
 };
 
-export { isChromeOpen, openChromeIfNeeded };
+export { isRealChromeOpen, openChromeIfNeeded };

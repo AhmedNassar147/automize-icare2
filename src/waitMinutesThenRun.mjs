@@ -30,12 +30,9 @@ const waitMinutesThenRun = (
     await sendTelegramMessage(
       [
         `📋 *Referral Monitor*`,
-        ``,
         `🆔 *Case ID:* \`${referralId}\``,
-        `⏰ *Time:* \`${new Date().toLocaleTimeString()}\``,
-        ``,
         ...cleanMessages,
-      ].join("\n"),
+      ].join("\n\n"),
     );
   };
 
