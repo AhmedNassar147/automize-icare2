@@ -216,7 +216,7 @@ const getExtraTimeBasedLogs = async ({
   if (isCurrentDiffNegative) {
     const maxNewWait =
       (Math.abs(diff) / 1000) * 2 +
-      (IS_UNIZA_BRANCH ? 3 : isFirstCaseToday ? 3 : isFarFromLastToday ? 2 : 1);
+      (IS_UNIZA_BRANCH ? 3 : isFirstCaseToday || isFarFromLastToday ? 2 : 1);
 
     if (isLastTodayDiffNegative) {
       const waitValue = isFarFromLastToday
@@ -263,7 +263,7 @@ const getExtraTimeBasedLogs = async ({
     let value;
 
     if (isFirstCaseToday) {
-      value = 3;
+      value = 2.5;
     } else {
       value = isHotCluster
         ? 1
