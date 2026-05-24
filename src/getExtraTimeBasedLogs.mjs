@@ -201,7 +201,7 @@ const getExtraTimeBasedLogs = async ({
   if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
     const isUsingFullWait =
       isDoubleZeroDangerZone || !isDangerZoneFiredToday || isFarFromLastToday;
-    const dangerWait = isUsingFullWait ? 10 : 8;
+    const dangerWait = isUsingFullWait ? 10 : 7;
 
     extraWait += dangerWait;
     extraBotMessages.push(
