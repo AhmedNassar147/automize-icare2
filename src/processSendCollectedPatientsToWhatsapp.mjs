@@ -3,10 +3,8 @@
  * Helper: `processSendCollectedPatientsToWhatsapp`.
  *
  */
-import speakText from "./speakText.mjs";
 import createConfirmationMessage from "./createConfirmationMessage.mjs";
-import createConsoleMessage from "./createConsoleMessage.mjs";
-import sendNtfyMessage from "./sendNtfyMessage.mjs";
+import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
 
 const processSendCollectedPatientsToWhatsapp =
   (sendTelegramMessage, sendWhatsappMessage, skipNotify = false) =>
@@ -124,42 +122,27 @@ const processSendCollectedPatientsToWhatsapp =
       };
 
     const formatted_WA_Messages = sendWhatsappMessage
-      ? addedPatients.map(formatPatient(false)).filter(Boolean)
+      ? addedPatients.filter(Boolean).map(formatPatient(false))
       : [];
 
-    const telgramAPis = addedPatients
-      .map(formatPatient(true))
+    const telegramApis = addedPatients
       .filter(Boolean)
+      .map(formatPatient(true))
+
       .map(({ message, files, referralId }) =>
         sendTelegramMessage(message, files, referralId),
       );
 
     await Promise.all([
-      ...telgramAPis,
+      ...telegramApis,
       ...(sendWhatsappMessage
         ? [sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, formatted_WA_Messages)]
         : []),
     ]);
 
-    if (!skipNotify) {
-      const clientOrBranchName = BRANCH_NAME || CLIENT_ID;
-
-      try {
-        speakText({
-          text: `Check ${clientOrBranchName} bot, there is a new patient`,
-        });
-        const [{ referralId, referralEndDate }] = addedPatients;
-        const message =
-          "At " +
-          clientOrBranchName +
-          " NEW PAtient " +
-          referralId +
-          " Ends At " +
-          referralEndDate;
-        await sendNtfyMessage(message);
-      } catch (error) {
-        createConsoleMessage(error, "error", "SOUND error");
-      }
+    if (!skipNotify && addedPatients.length) {
+      const [{ referralId }] = addedPatients;
+      await notifyUserWithNewCase(referralId);
     }
   };
 

@@ -5,7 +5,6 @@
  */
 import TelegramBot from "node-telegram-bot-api";
 import { unlink } from "fs/promises";
-import { PDFParse } from "pdf-parse";
 import { exec } from "child_process";
 import { promisify } from "util";
 import createConsoleMessage from "./createConsoleMessage.mjs";
@@ -28,6 +27,7 @@ import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
+import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
 
 const execAsync = promisify(exec);
 
@@ -280,6 +280,10 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         ),
       );
 
+      if (pending.timeoutId) {
+        clearTimeout(pending.timeoutId);
+      }
+
       pendingOnlineChecks.delete(referralId);
       return;
     }
@@ -295,7 +299,13 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       true,
     );
 
-    setTimeout(() => {
+    await notifyUserWithNewCase(referralId);
+
+    if (pending.timeoutId) {
+      clearTimeout(pending.timeoutId);
+    }
+
+    pending.timeoutId = setTimeout(() => {
       processNextOnlineCheck(referralId);
     }, ONLINE_CONFIRM_TIMEOUT_MS);
   };
@@ -338,6 +348,10 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
 
           const startIndex = Math.max(allowedList.indexOf(TG_CHAT_ID), 0);
 
+          const timeoutId = setTimeout(() => {
+            processNextOnlineCheck(targetReferralIdForButtons);
+          }, ONLINE_CONFIRM_TIMEOUT_MS);
+
           pendingOnlineChecks.set(targetReferralIdForButtons, {
             referralId: targetReferralIdForButtons,
             message,
@@ -346,11 +360,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
             confirmedBy: null,
             sentChatIds: [TG_CHAT_ID],
             currentIndex: startIndex,
+            timeoutId,
           });
-
-          setTimeout(() => {
-            processNextOnlineCheck(targetReferralIdForButtons);
-          }, ONLINE_CONFIRM_TIMEOUT_MS);
         }
       }
 
@@ -1123,15 +1134,17 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       const { data, message, id } = query;
 
       const chatId = String(query.from.id);
+      const messageChatId = String(message.chat.id);
+
       const msgId = message.message_id;
-      let fromName =
+      const fromName =
         query.from?.first_name ||
         query.from?.last_name ||
         query.from?.username ||
         getMessageData(message).fromName ||
         chatId;
 
-      const reply = createReply(id, chatId, msgId);
+      const reply = createReply(id, messageChatId, msgId);
 
       if (!chatId) {
         const _message = `❌ chatId=${chatId} not found`;
@@ -1149,7 +1162,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         return reply(_message);
       }
 
-      const [action, referralId] = data?.split("_");
+      const [action, referralId] = data?.split("_") || [];
 
       if (!action || !referralId) {
         const _message = `❌ action=${action} or referralId=${referralId} not found`;
@@ -1169,7 +1182,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
           const chatName = await getChatName(getActiveChatID());
 
           return reply(
-            `⚠️ This online confirmation is expired and <b>${chatName}</b> is active now.`,
+            `⚠️ This online confirmation is expired, ${chatName} is active now.`,
           );
         }
 
@@ -1178,7 +1191,11 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
             ? await getChatName(pending.confirmedBy)
             : "Another user";
 
-          return reply(`⚠️ <b>${chatName}</b> confirmed and active now.`);
+          return reply(`⚠️ ${chatName} confirmed and active now.`);
+        }
+
+        if (pending.timeoutId) {
+          clearTimeout(pending.timeoutId);
         }
 
         pending.confirmed = true;
