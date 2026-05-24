@@ -177,6 +177,12 @@ const getExtraTimeBasedLogs = async ({
     diffFromLastToday,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
+  const isFirstCaseToday = !todayCases?.length;
+
+  const isHotCluster = !isFirstCaseToday && diffFromLastToday <= HOT_CLUSTER_MS;
+
+  const gapMin = (diffFromLastToday / 60000).toFixed(1);
+
   let extraWait = 0;
 
   const logCtx = `referralId=${referralId} diffPath=${lastDiff ?? "none"}→${diff}`;
@@ -199,19 +205,13 @@ const getExtraTimeBasedLogs = async ({
 
     extraWait += dangerWait;
     extraBotMessages.push(
-      `⚠️ danger-zone ${logCtx} type=${isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"} fullWait=${isUsingFullWait} wait=+${dangerWait}ms`,
+      `⚠️ danger-zone ${logCtx} type=${isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"} gap=${gapMin}min fullWait=${isUsingFullWait} wait=+${dangerWait}ms`,
     );
     return {
       computedExtraBotMessages: extraBotMessages,
       computedExtraWait: extraWait,
     };
   }
-
-  const isFirstCaseToday = !todayCases?.length;
-
-  const isHotCluster = !isFirstCaseToday && diffFromLastToday <= HOT_CLUSTER_MS;
-
-  const gapMin = (diffFromLastToday / 60000).toFixed(1);
 
   if (isCurrentDiffNegative) {
     const maxNewWait =
