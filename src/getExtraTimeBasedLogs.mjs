@@ -267,10 +267,8 @@ const getExtraTimeBasedLogs = async ({
     } else {
       value = isHotCluster
         ? 1
-        : isLastTodayDiffNegative
-          ? isFarFromLastToday
-            ? 3
-            : 2
+        : isLastTodayDiffNegative && isFarFromLastToday
+          ? 3
           : 2;
     }
 
