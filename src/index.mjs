@@ -7,8 +7,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import fs from "node:fs";
-import { unlink } from "node:fs/promises";
-import path from "node:path";
 import https from "node:https";
 import express from "express";
 import cors from "cors";
@@ -19,7 +17,6 @@ import cron from "node-cron";
 
 import PatientStore from "./PatientStore.mjs";
 import readJsonFile from "./readJsonFile.mjs";
-import checkPathExists from "./checkPathExists.mjs";
 
 import waitForWaitingCountWithInterval, {
   continueFetchingPatientsIfPaused,
@@ -28,10 +25,7 @@ import waitForWaitingCountWithInterval, {
 
 import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
 
-import sendMessageUsingWhatsapp, {
-  shutdownAllClients,
-  initializeClient,
-} from "./sendMessageUsingWhatsapp.mjs";
+import sendMessageUsingWhatsapp from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
 import processCollectReferralWeeklySummary from "./processCollectReferralWeeklySummary.mjs";
@@ -53,15 +47,11 @@ import {
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
 import sleep from "./sleep.mjs";
-import updateEnvFile from "./updateEnvFile.mjs";
 import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs";
 import installTelegramBotApi from "./installTelegramBotApi.mjs";
-import {
-  getCasesWithEmptyClaimStatus,
-  migrateCaseLogTimings,
-  updateCaseInLog,
-} from "./summarizeLogsAfterAcceptance.mjs";
+import { getCasesWithEmptyClaimStatus } from "./summarizeLogsAfterAcceptance.mjs";
 import ensureCaseTimingLogsFile from "./ensureCaseTimingLogsFile.mjs";
+import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -87,19 +77,17 @@ const currentProfile = "Profile 1";
   const {
     CHROME_EXECUTABLE_PATH,
     USER_PROFILE_PATH,
-    SUMMARY_REPORT_GENERATED_AT,
-    EXECLUDE_WHATSAPP_MSG_FOOTER,
-    FIRST_SUMMARY_REPORT_STARTS_AT,
-    SUMMARY_REPORT_ENDS_AT,
     CERT_PATH,
     KEY_PATH,
     HOST,
     PORT,
+    FIRST_SUMMARY_REPORT_STARTS_AT,
+    SUMMARY_REPORT_ENDS_AT,
+    SUMMARY_REPORT_GENERATED_AT,
     WEEKLY_REPORT_GENERATED_AT,
     MONTHLY_REPORT_GENERATED_AT,
     DETAILED_REPORT_GENERATED_AT,
     RESEND_PATIENT_SUMMARY_FILE_PATH,
-    RUN_LOGS_FILE_MIRGATION,
     TG_TOKEN,
   } = process.env;
 
@@ -115,11 +103,11 @@ const currentProfile = "Profile 1";
       clearInterval(pingInterval);
     } catch {}
 
-    try {
-      await shutdownAllClients();
-    } catch (e) {
-      createConsoleMessage(e, "error", "shutdownAllClients failed:");
-    }
+    // try {
+    //   await shutdownAllClients();
+    // } catch (e) {
+    //   createConsoleMessage(e, "error", "shutdownAllClients failed:");
+    // }
 
     try {
       if (wss) {
@@ -172,15 +160,14 @@ const currentProfile = "Profile 1";
       checkSiteCodeConfig(),
     ]);
 
-    // Launch browser with a fixed profile
-    const profilePath = `${USER_PROFILE_PATH}/${currentProfile}`;
+    // const profilePath = `${USER_PROFILE_PATH}/${currentProfile}`;
 
     browser = await puppeteer.launch({
       headless: false,
       defaultViewport: null,
-      executablePath: CHROME_EXECUTABLE_PATH,
-      userDataDir: profilePath,
-      protocolTimeout: 180000,
+      // executablePath: CHROME_EXECUTABLE_PATH,
+      // userDataDir: profilePath,
+      protocolTimeout: 190_000,
       ignoreDefaultArgs: ["--enable-automation"],
       args: [
         "--start-maximized",
@@ -196,27 +183,11 @@ const currentProfile = "Profile 1";
       true,
     );
 
-    // const _collectedPatients = collectedPatients.map((item, index) => {
-    //   if (!index) {
-    //     const _referralEndTimestamp = Date.now() + 1 * 60_000;
-
-    //     return {
-    //       ...item,
-    //       referralEndTimestamp: _referralEndTimestamp,
-    //       referralEndDateActionableAtMS: _referralEndTimestamp - 10_000,
-    //     };
-    //   }
-
-    //   return item;
-    // });
-
     const nonClaimableCases = await getCasesWithEmptyClaimStatus();
     const patientsStore = new PatientStore(
       collectedPatients || [],
       nonClaimableCases,
     );
-
-    await patientsStore.scheduleAllInitialPatients();
 
     sendTelegramMessage = await installTelegramBotApi(
       TG_TOKEN,
@@ -224,8 +195,14 @@ const currentProfile = "Profile 1";
       browser,
     );
 
+    if (typeof sendTelegramMessage === "function") {
+      patientsStore.setTelegramMessageSender(sendTelegramMessage);
+    }
+
+    await patientsStore.scheduleAllInitialPatients();
+
     // WhatsApp client + outbound integration
-    await initializeClient(patientsStore);
+    // await initializeClient(patientsStore);
 
     const sendWhatsappMessage = sendMessageUsingWhatsapp(patientsStore);
 
@@ -255,10 +232,6 @@ const currentProfile = "Profile 1";
         sendTelegramMessage,
         RESEND_PATIENT_SUMMARY_FILE_PATH,
       );
-    }
-
-    if (RUN_LOGS_FILE_MIRGATION === "Y") {
-      await migrateCaseLogTimings();
     }
 
     // Summary cron
@@ -377,199 +350,15 @@ const currentProfile = "Profile 1";
       }),
     );
 
-    app.delete("/patients/:referralId", async (req, res) => {
-      try {
-        const { referralId } = req.params || {};
-        if (!referralId) {
-          return res
-            .status(400)
-            .json({ success: false, message: "Missing referralId." });
-        }
-
-        // Delete generated PDFs if present
-        const acceptanceFilePath = path.join(
-          generatedPdfsPathForAcceptance,
-          `${USER_ACTION_TYPES.ACCEPT}-${referralId}.pdf`,
-        );
-        const rejectionFilePath = path.join(
-          generatedPdfsPathForRejection,
-          `${USER_ACTION_TYPES.REJECT}-${referralId}.pdf`,
-        );
-
-        await Promise.allSettled([
-          checkPathExists(acceptanceFilePath).then(
-            (exists) => exists && unlink(acceptanceFilePath),
-          ),
-          checkPathExists(rejectionFilePath).then(
-            (exists) => exists && unlink(rejectionFilePath),
-          ),
-        ]);
-
-        const result =
-          await patientsStore.removePatientByReferralId(referralId);
-
-        continueFetchingPatientsIfPaused();
-        return res.status(result.success ? 200 : 404).json(result);
-      } catch (err) {
-        createConsoleMessage(
-          err,
-          "error",
-          "DELETE /patients/:referralId error",
-        );
-        return res
-          .status(500)
-          .json({ success: false, message: "Internal error." });
-      }
-    });
-
-    app.get("/settings", async (req, res) => {
-      try {
-        const [timeMsString] = (
-          process.env.NEW_WAITING_TIME_FOR_PATIENT || ""
-        ).split(",");
-
-        const waitBeforeReady = timeMsString || 0;
-
-        const result = {
-          whatsAppWait: process.env.WAIT_FOR_ACCEPT_MS,
-          waitBeforeReady: waitBeforeReady ? waitBeforeReady : undefined,
-        };
-
-        return res.status(200).json(result);
-      } catch (err) {
-        createConsoleMessage(err, "error", "GET /settings error");
-        return res.status(500).json({
-          success: false,
-          message: "Internal error when getting settings.",
-        });
-      }
-    });
-
-    app.post("/settings", async (req, res) => {
-      try {
-        const { whatsAppWait, waitBeforeReady } = req.body;
-
-        const updates = {};
-
-        if (whatsAppWait) {
-          updates.WAIT_FOR_ACCEPT_MS = whatsAppWait ? +whatsAppWait : 2000;
-        }
-
-        if (waitBeforeReady) {
-          updates.NEW_WAITING_TIME_FOR_PATIENT = String(waitBeforeReady);
-        }
-
-        updateEnvFile(updates);
-
-        return res.status(200).json({ success: true });
-      } catch (err) {
-        return res.status(500).json({ success: false });
-      }
-    });
-
-    //     function getReferralIdFromPage() {
-    //   const spans = document.querySelectorAll(".statusContainer span");
-
-    //   for (const span of spans) {
-    //     const text = (span.textContent || "").trim();
-
-    //     const match = text.match(/GMS Referral ID\s*:\s*(\d+)/i);
-
-    //     if (match) {
-    //       return Number(match[1]);
-    //     }
-    //   }
-
-    //   return null;
-    // }
     app.post("/setCaseOutcome", async (req, res) => {
       try {
-        const { elapsedMs, clickedAt, blocked, referralId: caseId } = req.body;
+        const { success, outcome, reason } = await handleSetCaseOutcome({
+          ...req.body,
+          sendTelegramMessage,
+          patientsStore,
+        });
 
-        let foundPatient = null;
-
-        if (caseId) {
-          const { patient } = patientsStore.findPatientByReferralId(caseId);
-          if (patient) {
-            foundPatient = patient;
-          }
-        }
-
-        const patientData =
-          foundPatient || patientsStore.getFirstGoingToAccept();
-
-        const {
-          referralId,
-          referralEndTimestamp,
-          readySeenAtLocalMs,
-          waitTime,
-        } = patientData || {};
-
-        if (typeof elapsedMs !== "number") {
-          createConsoleMessage(
-            `Missed elapsedMs=${elapsedMs}ms where caseId=${referralId}`,
-            "error",
-          );
-          return res
-            .status(200)
-            .json({ success: false, reason: "missing elapsedMs" });
-        }
-
-        const outcome = blocked
-          ? "blocked"
-          : elapsedMs < 600
-            ? "need-less-wait" // 0% — definitely too late
-            : elapsedMs < 650
-              ? "low-waiting" // 25% — borderline, slight nudge
-              : elapsedMs < 800
-                ? "moderate-waiting" // 33-50% — ok but not optimal
-                : elapsedMs < 890
-                  ? "good-waiting" // 75% — TARGET
-                  : elapsedMs < 1100
-                    ? "need-more-wait" // 0% above range
-                    : "near-to-block";
-
-        createConsoleMessage(
-          `caseId=${referralId} case-outcome=${outcome} clickedAt=${clickedAt} elapsed=${elapsedMs}ms readySeenAtLocalMs=${readySeenAtLocalMs} waitTime=${waitTime}ms`,
-          outcome === "blocked" ? "error" : "warn",
-        );
-
-        if (patientData) {
-          await updateCaseInLog(referralId, {
-            status: `${outcome}_${elapsedMs}`,
-            clickedAt,
-            tookMS: clickedAt - readySeenAtLocalMs - (waitTime || 0),
-          });
-        }
-
-        if (process.env.ENABLE_AUTO_WAITING === "1" && patientData) {
-          const delta =
-            {
-              blocked: +5,
-              "near-to-block": +4,
-              "need-more-wait": +2,
-              "good-waiting": 0,
-              "moderate-waiting": elapsedMs < 770 ? 0 : -1,
-              "low-waiting": -1,
-              "need-less-wait": -2,
-            }[outcome] ?? 0;
-
-          if (delta !== 0) {
-            const current = Number(process.env.WAIT_FOR_ACCEPT_MS);
-            const nextWaitTime = current + delta;
-            updateEnvFile({ WAIT_FOR_ACCEPT_MS: nextWaitTime });
-            const arrow = delta > 0 ? "⬆️" : "⬇️";
-            const sign = delta > 0 ? "+" : "";
-
-            await sendTelegramMessage(
-              `${arrow} waitTime \`${current}\`→\`${nextWaitTime}\`ms (${sign}${delta}ms)\n` +
-                `📋 outcome: \`${outcome}\` elapsed: \`${elapsedMs}\`ms\n` +
-                `🆔 case: \`${referralId}\``,
-            );
-          }
-        }
-
-        return res.status(200).json({ success: true });
+        return res.status(200).json({ success: success, reason });
       } catch (err) {
         return res.status(500).json({ success: false });
       }
@@ -733,20 +522,6 @@ const currentProfile = "Profile 1";
 //   return item;
 // });
 
-// import searchForItemCountAndClickItIfFound from "./searchForItemCountAndClickItIfFound.mjs";
-// await searchForItemCountAndClickItIfFound(
-//   page,
-//   "Confirmed Referrals",
-//   true
-// );
-
-// const minReferralEndTimestamp = referralEndTimestamp - 120;
-// const delay = Math.max(0, minReferralEndTimestamp - Date.now());
-
-// if (delay > 0) {
-//   await sleep(delay);
-// }
-
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // const patientsArray = [
@@ -767,25 +542,3 @@ const currentProfile = "Profile 1";
 
 // await generateAcceptancePdfLetters(browser, patientsArray, true);
 // await generateAcceptancePdfLetters(browser, patientsArray, false);
-
-// return;
-
-// https://referralprogram.globemedsaudi.com/referrals/attachment-types?languageCode=1
-//     {
-//     "data": [
-//         {
-//             "id": 14,
-//             "code": "14",
-//             "languageCode": "1",
-//             "description": "Acceptance"
-//         },
-//         {
-//             "id": 21,
-//             "code": "21",
-//             "languageCode": "1",
-//             "description": "Rejection"
-//         }
-//     ],
-//     "statusCode": "Success",
-//     "errorMessage": null
-// }

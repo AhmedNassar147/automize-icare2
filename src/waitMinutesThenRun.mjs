@@ -1,75 +1,91 @@
+/*
+ *
+ * Helper: `waitMinutesThenRun`.
+ *
+ */
 import createConsoleMessage from "./createConsoleMessage.mjs";
+import { openChromeIfNeeded } from "./realChromeHelpers.mjs";
 
 const waitMinutesThenRun = (
+  referralId,
   caseWillBeSubmitMSAt,
   asyncAction,
-  referralId,
-  useVisitVoice
+  sendTelegramMessage,
 ) => {
   let timeoutIdMain;
   let timeoutIdWarn;
   let cancelled = false;
 
-  const now = Date.now();
+  const delayMain = caseWillBeSubmitMSAt - Date.now();
 
-  // Time until main callback
-  const delayMain = caseWillBeSubmitMSAt - now;
+  const OPEN_BROWSER_OFFSET = 4 * 60 * 1000;
+  const delayOpeningBrowser = delayMain - OPEN_BROWSER_OFFSET;
 
-  // const WARNING_OFFSET = 10200;
-  // const delayWarning = delayMain - WARNING_OFFSET;
+  const notifyTelegram = async (messages = []) => {
+    if (typeof sendTelegramMessage !== "function") return;
 
-  const cancel = () => {
-    cancelled = true;
-    clearTimeout(timeoutIdMain);
-    // if (timeoutIdWarn) {
-    //   clearTimeout(timeoutIdWarn);
-    // }
+    const cleanMessages = messages.filter(Boolean);
+    if (!cleanMessages.length) return;
+
+    await sendTelegramMessage(
+      [
+        `📋 *Referral Monitor*`,
+        ``,
+        `🆔 *Case ID:* \`${referralId}\``,
+        `⏰ *Time:* \`${new Date().toLocaleTimeString()}\``,
+        ``,
+        ...cleanMessages,
+      ].join("\n"),
+    );
   };
 
-  // ---- Early 9-second warning ----
-  // if (useVisitVoice) {
-  //   if (delayWarning <= 0) {
-  //     // Already inside 9 seconds → fire immediately
-  //     speekText({
-  //       text: `Visit ${referralId}`,
-  //       times: 1,
-  //       useMaleVoice: true,
-  //       volume: 100,
-  //     });
-  //   } else {
-  //     timeoutIdWarn = setTimeout(() => {
-  //       if (cancelled) return;
-  //       speekText({
-  //         text: `Visit ${referralId}`,
-  //         times: 1,
-  //         useMaleVoice: true,
-  //         volume: 100,
-  //       });
-  //     }, delayWarning);
-  //   }
-  // }
-
-  // ---- Main execution at end time ----
-  if (delayMain <= 0) {
-    (async () => {
-      if (cancelled) return;
-      try {
-        await asyncAction();
-      } catch (err) {
-        createConsoleMessage(err, "error", "Error in asyncAction:");
-      }
-    })();
-    return { cancel };
-  }
-
-  timeoutIdMain = setTimeout(async () => {
+  const runOpenChrome = async () => {
     if (cancelled) return;
+
+    try {
+      const result = await openChromeIfNeeded();
+
+      if (result?.messages?.length) {
+        await notifyTelegram(result.messages);
+      }
+    } catch (err) {
+      const message = `🔴 Error opening Chrome: ${err.message}`;
+      createConsoleMessage(message, "error");
+      await notifyTelegram([message]);
+    }
+  };
+
+  const runAction = async () => {
+    if (cancelled) return;
+
     try {
       await asyncAction();
     } catch (err) {
       createConsoleMessage(err, "error", "Error in asyncAction:");
+      await notifyTelegram([`🔴 Error in asyncAction: ${err.message}`]);
     }
-  }, delayMain);
+  };
+
+  const cancel = () => {
+    cancelled = true;
+    clearTimeout(timeoutIdMain);
+    clearTimeout(timeoutIdWarn);
+  };
+
+  // ---- Open Chrome 4 minutes before submission ----
+  if (delayOpeningBrowser <= 0) {
+    runOpenChrome();
+  } else {
+    timeoutIdWarn = setTimeout(runOpenChrome, delayOpeningBrowser);
+  }
+
+  // ---- Main execution at submission time ----
+  if (delayMain <= 0) {
+    runAction();
+    return { cancel };
+  }
+
+  timeoutIdMain = setTimeout(runAction, delayMain);
 
   return { cancel };
 };

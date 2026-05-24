@@ -57,6 +57,7 @@ class PatientStore extends EventEmitter {
     this.patientTimers = new Map();
     this.cachedPatientsArray = null;
     this.lastActionablePatient = null;
+    this.sendTelegramMessage = null;
     this.nonClaimableCases = new Map(
       nonClaimableCases.map(({ referralId, referralEndTimestamp }) => [
         String(referralId),
@@ -83,6 +84,10 @@ class PatientStore extends EventEmitter {
 
       this.patientsById.set(key, patient);
     }
+  }
+
+  setTelegramMessageSender(sender) {
+    this.sendTelegramMessage = sender;
   }
 
   keyExtractor(patient = {}) {
@@ -281,6 +286,7 @@ class PatientStore extends EventEmitter {
     }
 
     const timer = waitMinutesThenRun(
+      referralId,
       referralEndDateActionableAtMS,
       () => {
         const currentPatient = isAccepting
@@ -292,8 +298,9 @@ class PatientStore extends EventEmitter {
         this.patientTimers.delete(referralId);
         this.emit(eventName, currentPatient);
       },
-      referralId,
-      isAccepting,
+      typeof this.sendTelegramMessage === "function"
+        ? this.sendTelegramMessage
+        : null,
     );
 
     actionSet.add(referralId);

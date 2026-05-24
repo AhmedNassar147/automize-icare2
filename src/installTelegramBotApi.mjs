@@ -28,6 +28,7 @@ import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
 import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
+import { migrateCaseLogTimings } from "./summarizeLogsAfterAcceptance.mjs";
 
 const execAsync = promisify(exec);
 
@@ -90,6 +91,11 @@ const COMMANDS = {
     value: /\/test_next_case_extra_time/,
     description: "get extra time for next case",
     command: "test_next_case_extra_time",
+  },
+  migrateLogs: {
+    value: /\/migrate_logs/,
+    description: "migrate logs",
+    command: "migrate_logs",
   },
   updateCmds: {
     value: /\/update_commands/,
@@ -566,6 +572,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       CLIENT_WHATSAPP_NUMBER: process.env[`TG_PHONE_NUMBER_${chatId}`],
     });
 
+    await sleep(1000);
+
     if (activeChatId) {
       await sendBotMessage(
         activeChatId,
@@ -645,8 +653,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       ),
       [`TG_PHONE_NUMBER_${chatId}`]: phoneNumber,
     });
-
     await setupCommands();
+    await sleep(1000);
 
     await sendBotMessage(
       chatId,
@@ -739,6 +747,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     const currentWait = process.env.WAIT_FOR_ACCEPT_MS;
 
     updateEnvFile({ WAIT_FOR_ACCEPT_MS: value });
+    await sleep(1000);
 
     await sendBotMessage(
       chatId,
@@ -837,6 +846,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
 
     updateEnvFile({ ENABLE_AUTO_WAITING: value });
+    await sleep(1000);
 
     await sendBotMessage(
       chatId,
@@ -1023,6 +1033,27 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     );
   });
 
+  bot.onText(COMMANDS.migrateLogs.value, async (msg) => {
+    const { unAuthorizedMessage, chatId, msgId } =
+      getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    try {
+      await migrateCaseLogTimings();
+      await sendBotMessage(chatId, `✅ Timings Logs migrated Successfully.`, {
+        reply_to_message_id: msgId,
+      });
+    } catch (error) {
+      await sendBotMessage(chatId, `⛔ Error: ${error?.message || error}`, {
+        reply_to_message_id: msgId,
+      });
+    }
+  });
+
   bot.onText(COMMANDS.updateCode.value, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
 
@@ -1207,6 +1238,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
           TG_CHAT_USER_NAME: fromName,
           CLIENT_WHATSAPP_NUMBER: process.env[`TG_PHONE_NUMBER_${chatId}`],
         });
+        await sleep(1000);
 
         const previousChatIds = pending.sentChatIds.filter(
           (sentChatId) => sentChatId !== chatId,

@@ -61,7 +61,6 @@ const handleCaseAcceptanceOrRejection =
             fileName,
             actionType,
             routerKey,
-            blockTimeMs: Number(process.env.BLOCK_TIME_MS || 1201),
           },
         });
       };
@@ -199,14 +198,6 @@ const handleCaseAcceptanceOrRejection =
         });
       }
 
-      if (extraBotMessages.length) {
-        await Promise.all(
-          extraBotMessages.map((message, index) =>
-            sleep(index * 120).then(() => sendTelegramMessage(message)),
-          ),
-        );
-      }
-
       await closePageSafely(page);
 
       const logs = {
@@ -228,6 +219,11 @@ const handleCaseAcceptanceOrRejection =
 
       if (isAcceptanceAction) {
         patientStore.addNonClaimableCase(referralId, referralEndTimestamp);
+      }
+
+      if (extraBotMessages.length) {
+        await sleep(waitTime + 200);
+        await sendTelegramMessage(extraBotMessages.join("\n\n"));
       }
 
       createConsoleMessage(
