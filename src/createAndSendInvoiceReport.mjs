@@ -80,7 +80,7 @@ const createAndSendInvoiceReport = async (
       reportEndsAt: summaryReportEndsAt,
     });
 
-    if (errors.length) {
+    if (errors?.length) {
       const message = formatSheetError({
         step: "fetch tabs summary",
         sheetType: SHEET_TYPES.INVOICE,
@@ -116,7 +116,7 @@ const createAndSendInvoiceReport = async (
         calledFrom: "createAndSendInvoiceReport",
       });
 
-    if (historyErrors.length) {
+    if (historyErrors?.length) {
       const message = formatSheetError({
         step: "Collecting history referral summary",
         sheetType: SHEET_TYPES.INVOICE,
