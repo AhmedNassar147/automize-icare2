@@ -100,7 +100,7 @@ const COMMANDS = {
   },
   getInvoiceFile: {
     value: /\/invoice(?:\s+(\w+))?$/,
-    description: "get invoice excel file",
+    description: "get invoice excel file, Example: /invoice or /invoice p",
     command: "invoice",
   },
   updateCmds: {
@@ -1051,16 +1051,15 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     const arg = match?.[1] || null;
     const onlyForPresentation = !!arg;
 
-    console.log({
-      arg,
-      onlyForPresentation,
-    });
-
     try {
       await sendBotMessage(chatId, `✅ Preparing Invoice Report.`, {
         reply_to_message_id: msgId,
       });
-      await createAndSendInvoiceReport(browser, sendTelegramMessage, true);
+      await createAndSendInvoiceReport(
+        browser,
+        sendTelegramMessage,
+        onlyForPresentation,
+      );
     } catch (error) {
       await sendBotMessage(chatId, `⛔ Error: ${error?.message || error}`, {
         reply_to_message_id: msgId,
