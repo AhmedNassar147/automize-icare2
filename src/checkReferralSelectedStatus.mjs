@@ -6,26 +6,9 @@
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
 import { updateCaseInLog } from "./summarizeLogsAfterAcceptance.mjs";
+import sleep from "./sleep.mjs";
 
 const tabsToCheck = [
-  {
-    // Confirmed only
-    includeConfirmed: true,
-    noDischarged: true,
-    noAdmitted: true,
-    status: "CF",
-  },
-  {
-    // Admitted only
-    noDischarged: true,
-    status: "AD",
-  },
-  // {
-  //   // Discharged only
-  //   noDischarged: false,
-  //   noAdmitted: true,
-  //   status: "DS",
-  // },
   {
     // Still accepted
     includeAccepted: true,
@@ -33,10 +16,29 @@ const tabsToCheck = [
     noAdmitted: true,
     status: "AC",
   },
+  {
+    // Confirmed only
+    includeConfirmed: true,
+    noDischarged: true,
+    noAdmitted: true,
+    status: "C",
+  },
+  {
+    // Admitted only
+    noDischarged: true,
+    status: "A",
+  },
+  // {
+  //   // Discharged only
+  //   noDischarged: false,
+  //   noAdmitted: true,
+  //   status: "D",
+  // },
 ];
 
 const fetchCase = async (page, referralId) => {
   for (const { status, ...tabParams } of tabsToCheck) {
+    await sleep(1000 + Math.random() * 1000);
     const { patients, errors } = await getSummaryFromTabs({
       page,
       noDates: true,
@@ -45,7 +47,7 @@ const fetchCase = async (page, referralId) => {
     });
 
     if (patients?.length) {
-      const isClaimed = ["AD", "CF", "DS"].includes(status);
+      const isClaimed = ["C", "A", "D"].includes(status);
       return {
         referralId,
         status: isClaimed ? "Yes" : "No",
@@ -71,7 +73,7 @@ const updateAndNotifyUser = async ({
 }) => {
   const statusEmoji = status === "Yes" ? "✅" : "❌";
   const statusText =
-    status === "Yes" ? "has been selected" : "has NOT been selected";
+    status === "Yes" ? "We have been selected" : "We have NOT been selected";
 
   const telegramMessage =
     `${statusEmoji} *Referral Status Update*\n` +
@@ -99,6 +101,8 @@ const checkReferralSelectedStatus = async (
 
     const settledResults = [];
     for (const { referralId } of cases) {
+      await sleep(1500 + Math.random() * 1500);
+
       const result = await fetchCase(page, referralId).catch((err) => {
         createConsoleMessage(
           "Error when fetching case status",
