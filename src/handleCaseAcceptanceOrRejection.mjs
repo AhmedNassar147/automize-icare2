@@ -223,6 +223,7 @@ const handleCaseAcceptanceOrRejection =
         rtt,
         status: isAcceptanceAction ? "" : "not-clicked",
         claimed: isAcceptanceAction ? "" : "No",
+        extraWaitMessage: computedExtraBotMessages.join("_AND_"),
       };
 
       await summarizeLogsAfterAcceptance(logs);

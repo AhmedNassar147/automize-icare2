@@ -10,9 +10,9 @@ import { LOGS_SUMMARY_HEADERS, casesTimingLogsFilePath } from "./constants.mjs";
 
 // Column renames: old name → new name
 const COLUMN_RENAMES = {
-  backendDelay: "delay",
-  "endVsReady(diff)": "diff",
-  endDateString: "endDate",
+  // backendDelay: "delay",
+  // "endVsReady(diff)": "diff",
+  // endDateString: "endDate",
 };
 
 const ALL_KNOWN_HEADERS = [
@@ -37,6 +37,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     status,
     claimed,
     rtt,
+    extraWaitMessage,
   } = data;
 
   let endToReady = "";
@@ -62,6 +63,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     status: status || "",
     claimed: claimed || "",
     rtt: rtt || "",
+    extraWaitMessage,
   };
 
   const line = createPrettyRow(row);
@@ -164,6 +166,7 @@ export async function readLogsAsArray() {
         referralEndDate: current.endDate || "",
         claimed: current.claimed || "",
         rtt: parseInt(current.rtt, 10) || null,
+        extraWaitMessage: current.extraWaitMessage || "",
       };
     })
     .filter((r) => !isNaN(r.referralId) && r.referralId > 0);
