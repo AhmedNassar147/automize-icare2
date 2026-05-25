@@ -81,6 +81,8 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
     PORT,
     WEEKLY_REPORT_GENERATED_AT,
     TG_TOKEN,
+    CHROME_EXECUTABLE_PATH,
+    USER_PROFILE_PATH,
   } = process.env;
 
   let server;
@@ -152,10 +154,12 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
       checkSiteCodeConfig(),
     ]);
 
+    const profilePath = `${USER_PROFILE_PATH}/Profile 1`;
+
     browser = await puppeteer.launch({
       headless: false,
       defaultViewport: null,
-      // executablePath: CHROME_EXECUTABLE_PATH,
+      executablePath: CHROME_EXECUTABLE_PATH,
       userDataDir: profilePath,
       protocolTimeout: 190_000,
       ignoreDefaultArgs: ["--enable-automation"],
