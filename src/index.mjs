@@ -28,7 +28,7 @@ import waitForWaitingCountWithInterval, {
 import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
 
 import sendMessageUsingWhatsapp from "./sendMessageUsingWhatsapp.mjs";
-import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
+import processSendPatientsToClient from "./processSendPatientsToClient.mjs";
 import createAndSendWeeklyReport from "./createAndSendWeeklyReport.mjs";
 import handleCaseAcceptanceOrRejection from "./handleCaseAcceptanceOrRejection.mjs";
 
@@ -202,7 +202,7 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
 
     patientsStore.on(
       "patientsAdded",
-      processSendCollectedPatientsToWhatsapp(
+      processSendPatientsToClient(
         sendTelegramMessage,
         sendWhatsappMessage,
         false,

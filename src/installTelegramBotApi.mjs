@@ -8,7 +8,6 @@ import { unlink } from "fs/promises";
 import { exec } from "child_process";
 import { promisify } from "util";
 import createConsoleMessage from "./createConsoleMessage.mjs";
-import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
 import {
   createPatientRowKey,
   getWeeklyHistoryPatient,
@@ -30,6 +29,7 @@ import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
 import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
 import { migrateCaseLogTimings } from "./summarizeLogsAfterAcceptance.mjs";
 import createAndSendInvoiceReport from "./createAndSendInvoiceReport.mjs";
+import formatPatientToTelegramOrWA from "./formatPatientToTelegramOrWA.mjs";
 
 const execAsync = promisify(exec);
 
@@ -350,7 +350,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
   ) => {
     const TG_CHAT_ID = overrideChatId || getActiveChatID();
 
-    // ✅ Add this
     if (!TG_CHAT_ID) {
       createConsoleMessage(
         "⚠️ sendTelegramMessage skipped — send /start to the bot first",
@@ -618,11 +617,15 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         `*Current patients:*\n\`\`\`\nHere are the current (${allPatients.length}) patients to process\n\`\`\``,
       );
 
-      await processSendCollectedPatientsToWhatsapp(
-        sendTelegramMessage,
-        undefined,
-        true,
-      )(allPatients);
+      const formatedPatients = allPatients.map((patient) =>
+        formatPatientToTelegramOrWA(patient, true),
+      );
+
+      await Promise.all(
+        formatedPatients.map(({ message, files, referralId }) =>
+          sendTelegramMessage(message, files, referralId, chatId, true),
+        ),
+      );
     }
   });
 
