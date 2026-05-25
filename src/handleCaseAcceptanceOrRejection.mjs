@@ -9,7 +9,11 @@ import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
 import summarizeLogsAfterAcceptance from "./summarizeLogsAfterAcceptance.mjs";
-import { HOME_PAGE_URL, USER_ACTION_TYPES } from "./constants.mjs";
+import {
+  FAKE_REJECT_PROBE,
+  HOME_PAGE_URL,
+  USER_ACTION_TYPES,
+} from "./constants.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
@@ -43,6 +47,7 @@ const handleCaseAcceptanceOrRejection =
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
+      const isFakeReject = actionType === FAKE_REJECT_PROBE;
 
       const { fileName, fileData: filebase64 } =
         await getCurrentActionLetterFile(referralId, actionType);
@@ -100,6 +105,12 @@ const handleCaseAcceptanceOrRejection =
       );
 
       let extraBotMessages = [];
+
+      if (isFakeReject) {
+        extraBotMessages.push(
+          `This is a fake reject probe, Please ignore the message, referralId=${referralId}`,
+        );
+      }
 
       const rawWaitTime = WAIT_FOR_ACCEPT_MS || "";
 
@@ -162,7 +173,6 @@ const handleCaseAcceptanceOrRejection =
         extraWait += 100;
       }
       const waitTime = baseWaitingTime + extraWait;
-
       const approvalMessage = `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\``;
 
       const promises = [

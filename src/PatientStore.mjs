@@ -19,6 +19,7 @@ import {
   cutoffTimeMs,
   generatedPdfsPathForAcceptance,
   generatedPdfsPathForRejection,
+  FAKE_REJECT_PROBE,
 } from "./constants.mjs";
 import {
   createPatientRowKey,
@@ -31,7 +32,7 @@ async function safeWritePatientData(data, retries = 3, delay = 200) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       await writePatientData(
-        (data || []).reverse(),
+        [...(data || [])].reverse(),
         COLLECTD_PATIENTS_FILE_NAME,
       );
       return;
@@ -58,6 +59,8 @@ class PatientStore extends EventEmitter {
     this.cachedPatientsArray = null;
     this.lastActionablePatient = null;
     this.sendTelegramMessage = null;
+    this.patientProbeTimers = new Map();
+
     this.nonClaimableCases = new Map(
       nonClaimableCases.map(({ referralId, referralEndTimestamp }) => [
         String(referralId),
@@ -138,28 +141,44 @@ class PatientStore extends EventEmitter {
       const key = this.keyExtractor(patient);
       if (!key) continue;
 
-      const { userActionName } = patient;
+      const { userActionName, probePending } = patient;
 
-      if (!userActionName) {
-        continue;
-      }
-
-      const isRejection = userActionName === USER_ACTION_TYPES.REJECT;
       const canProcess = this.calculateCanStillProcessPatient(patient);
 
       if (!canProcess) continue;
 
-      const { message } = await this.schedulePatientAction({
-        actionSet: isRejection
-          ? this.goingPatientsToBeRejected
-          : this.goingPatientsToBeAccepted,
-        eventName: isRejection ? "patientRejected" : "patientAccepted",
-        patient,
-        skipResetingPatient: true,
-        isSuperAcceptance: patient.isSuperAcceptance,
-      });
+      const isAccept = userActionName === USER_ACTION_TYPES.ACCEPT;
+      const isReject = userActionName === USER_ACTION_TYPES.REJECT;
 
-      createConsoleMessage(`Called From Initial Schedule: ${message}`, "info");
+      if (isAccept || isReject) {
+        const { message } = await this.schedulePatientAction({
+          actionSet: isReject
+            ? this.goingPatientsToBeRejected
+            : this.goingPatientsToBeAccepted,
+          eventName: isReject ? "patientRejected" : "patientAccepted",
+          patient,
+          skipResetingPatient: true,
+          isSuperAcceptance: patient.isSuperAcceptance,
+        });
+        createConsoleMessage(
+          `Called From Initial Schedule: ${message}`,
+          "info",
+        );
+
+        continue;
+      }
+
+      if (probePending) {
+        const { message } = await this.scheduleFakeRejectProbe(
+          patient.referralId,
+          true,
+        );
+        createConsoleMessage(
+          `Called From Initial Probe Schedule: ${message}`,
+          "info",
+        );
+        continue;
+      }
     }
   }
 
@@ -184,6 +203,12 @@ class PatientStore extends EventEmitter {
 
     this.goingPatientsToBeAccepted.delete(referralId);
     this.goingPatientsToBeRejected.delete(referralId);
+
+    const probeTimer = this.patientProbeTimers.get(referralId);
+    if (probeTimer) {
+      probeTimer.cancel();
+      this.patientProbeTimers.delete(referralId);
+    }
 
     await safeWritePatientData(this.getAllPatients());
 
@@ -264,7 +289,8 @@ class PatientStore extends EventEmitter {
     skipResetingPatient,
     isSuperAcceptance,
   }) {
-    const { referralId, referralEndDateActionableAtMS } = patient;
+    let currentPatient = patient;
+    const { referralId, referralEndDateActionableAtMS } = currentPatient;
     const isAccepting = eventName === "patientAccepted";
 
     if (typeof referralEndDateActionableAtMS !== "number") {
@@ -274,29 +300,66 @@ class PatientStore extends EventEmitter {
       };
     }
 
+    const isAlreadyAccepting = this.goingPatientsToBeAccepted.has(referralId);
+    const isAlreadyRejecting = this.goingPatientsToBeRejected.has(referralId);
+
+    const isChangingAction =
+      (isAccepting && isAlreadyRejecting) ||
+      (!isAccepting && isAlreadyAccepting);
+
+    if (isChangingAction) {
+      const oldTimer = this.patientTimers.get(referralId);
+
+      if (oldTimer) {
+        oldTimer.cancel();
+        this.patientTimers.delete(referralId);
+      }
+
+      this.goingPatientsToBeAccepted.delete(referralId);
+      this.goingPatientsToBeRejected.delete(referralId);
+    }
+
     if (actionSet.has(referralId) || this.patientTimers.has(referralId)) {
       return {
         success: false,
         message: isAccepting
           ? USER_MESSAGES.alreadyScheduledAccept
-          : this.goingPatientsToBeRejected.has(referralId)
-            ? USER_MESSAGES.alreadyScheduledReject
-            : USER_MESSAGES.scheduleRejectSuccess,
+          : USER_MESSAGES.alreadyScheduledReject,
       };
+    }
+
+    const probeTimer = this.patientProbeTimers.get(referralId);
+
+    if (probeTimer) {
+      probeTimer.cancel();
+      this.patientProbeTimers.delete(referralId);
+    }
+
+    let didClearProbePending = false;
+
+    if (currentPatient.probePending) {
+      const updatedPatient = {
+        ...currentPatient,
+        probePending: false,
+      };
+
+      this.patientsById.set(referralId, updatedPatient);
+      currentPatient = updatedPatient;
+      didClearProbePending = true;
     }
 
     const timer = waitMinutesThenRun(
       referralId,
       referralEndDateActionableAtMS,
       () => {
-        const currentPatient = isAccepting
-          ? { ...patient, isSuperAcceptance }
-          : patient;
+        const patientForEvent = isAccepting
+          ? { ...currentPatient, isSuperAcceptance }
+          : currentPatient;
 
-        this.lastActionablePatient = currentPatient;
+        this.lastActionablePatient = patientForEvent;
         actionSet.delete(referralId);
         this.patientTimers.delete(referralId);
-        this.emit(eventName, currentPatient);
+        this.emit(eventName, patientForEvent);
       },
       typeof this.sendTelegramMessage === "function"
         ? this.sendTelegramMessage
@@ -306,8 +369,11 @@ class PatientStore extends EventEmitter {
     actionSet.add(referralId);
     this.patientTimers.set(referralId, timer);
 
-    if (!skipResetingPatient) {
-      const rowKey = createPatientRowKey(patient);
+    if (skipResetingPatient && didClearProbePending) {
+      this.invalidateCache();
+      await safeWritePatientData(this.getAllPatients());
+    } else if (!skipResetingPatient) {
+      const rowKey = createPatientRowKey(currentPatient);
       const storedPatient = getWeeklyHistoryPatient(rowKey);
 
       const providerAction = [
@@ -320,7 +386,7 @@ class PatientStore extends EventEmitter {
       ].join(" then ");
 
       const updatedPatient = {
-        ...patient,
+        ...currentPatient,
         scheduledAt,
         isSuperAcceptance,
         providerAction,
@@ -403,6 +469,7 @@ class PatientStore extends EventEmitter {
       const updatedPatient = {
         ...patient,
         userActionName: "",
+        probePending: true,
       };
 
       const actionNames = [
@@ -420,12 +487,89 @@ class PatientStore extends EventEmitter {
       });
       this.patientsById.set(referralId, updatedPatient);
       this.invalidateCache();
+      await safeWritePatientData(this.getAllPatients());
 
-      const data = this.getAllPatients();
-      await safeWritePatientData(data);
+      const canProcess = this.calculateCanStillProcessPatient(updatedPatient);
+
+      if (canProcess && !this.patientProbeTimers.has(referralId)) {
+        await this.scheduleFakeRejectProbe(referralId, true);
+      }
     }
 
     return { success: true, message: USER_MESSAGES.cancelSuccess };
+  }
+
+  async scheduleFakeRejectProbe(referralId, skipPersisting = false) {
+    const { patient, message } = this.findPatientByReferralId(referralId);
+
+    if (message) {
+      return { success: false, message };
+    }
+
+    if (patient.userActionName) {
+      return {
+        success: false,
+        message: `Fake reject probe skipped because userActionName=${patient.userActionName}`,
+      };
+    }
+
+    const { referralEndDateActionableAtMS } = patient;
+
+    if (typeof referralEndDateActionableAtMS !== "number") {
+      return {
+        success: false,
+        message: `Invalid referralEndDateActionableAtMS: ${referralEndDateActionableAtMS}`,
+      };
+    }
+
+    if (patient.probePending && this.patientProbeTimers.has(referralId)) {
+      return {
+        success: false,
+        message: `Fake reject probe already scheduled for referralId=${referralId}`,
+      };
+    }
+
+    const timer = waitMinutesThenRun(
+      referralId,
+      referralEndDateActionableAtMS,
+      async () => {
+        const latestPatient =
+          this.getPatientByReferralId(referralId) || patient;
+
+        const updatedPatient = {
+          ...latestPatient,
+          probePending: false,
+        };
+
+        this.patientProbeTimers.delete(referralId);
+        this.patientsById.set(referralId, updatedPatient);
+        this.invalidateCache();
+        await safeWritePatientData(this.getAllPatients());
+
+        this.emit(FAKE_REJECT_PROBE, updatedPatient);
+      },
+      typeof this.sendTelegramMessage === "function"
+        ? this.sendTelegramMessage
+        : null,
+    );
+
+    this.patientProbeTimers.set(referralId, timer);
+
+    if (!skipPersisting) {
+      const updatedPatient = {
+        ...patient,
+        probePending: true,
+      };
+
+      this.patientsById.set(referralId, updatedPatient);
+      this.invalidateCache();
+      await safeWritePatientData(this.getAllPatients());
+    }
+
+    return {
+      success: true,
+      message: `✅ Fake reject probe scheduled for referralId=${referralId}`,
+    };
   }
 
   async updatePatient(referralId, updates) {
@@ -535,6 +679,8 @@ class PatientStore extends EventEmitter {
     this.goingPatientsToBeRejected.clear();
     this.patientTimers.forEach((timer) => timer.cancel());
     this.patientTimers.clear();
+    this.patientProbeTimers.forEach((timer) => timer.cancel());
+    this.patientProbeTimers.clear();
     this.invalidateCache();
     await Promise.allSettled([
       safeWritePatientData([]),

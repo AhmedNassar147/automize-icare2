@@ -45,6 +45,7 @@ import {
   generatedSummaryFolderPath,
   TABS_COLLECTION_TYPES,
   APP_URL,
+  FAKE_REJECT_PROBE,
 } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
@@ -446,6 +447,19 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
       handleCaseAcceptanceOrRejection({
         browser,
         actionType: USER_ACTION_TYPES.REJECT,
+        broadcast,
+        sendWhatsappMessage,
+        sendTelegramMessage,
+        continueFetchingPatientsIfPaused,
+        patientStore: patientsStore,
+      }),
+    );
+
+    patientsStore.on(
+      FAKE_REJECT_PROBE,
+      handleCaseAcceptanceOrRejection({
+        browser,
+        actionType: FAKE_REJECT_PROBE,
         broadcast,
         sendWhatsappMessage,
         sendTelegramMessage,

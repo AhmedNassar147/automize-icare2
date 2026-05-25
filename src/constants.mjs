@@ -81,6 +81,8 @@ export const USER_MESSAGES = {
   noAction: "No-need, No scheduled action for this patient.",
 };
 
+export const FAKE_REJECT_PROBE = "patientFakeRejectProbe";
+
 export const USER_ACTION_TYPES = {
   SUPPER_ACCEPT: "super_accept",
   ACCEPT: "accept",

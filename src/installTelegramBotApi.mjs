@@ -1232,6 +1232,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         pending.confirmed = true;
         pending.confirmedBy = chatId;
         pendingOnlineChecks.delete(referralId);
+        await patientsStore.scheduleFakeRejectProbe(referralId, false);
 
         updateEnvFile({
           TG_CHAT_ID: chatId,
