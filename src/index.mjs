@@ -29,9 +29,7 @@ import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
 
 import sendMessageUsingWhatsapp from "./sendMessageUsingWhatsapp.mjs";
 import processSendCollectedPatientsToWhatsapp from "./processSendCollectedPatientsToWhatsapp.mjs";
-import processCollectReferralSummary from "./processCollectReferralSummary.mjs";
-import processCollectReferralWeeklySummary from "./processCollectReferralWeeklySummary.mjs";
-import processCollectRefferalMonthlySummary from "./processCollectRefferalMonthlySummary.mjs";
+import createAndSendWeeklyReport from "./createAndSendWeeklyReport.mjs";
 import handleCaseAcceptanceOrRejection from "./handleCaseAcceptanceOrRejection.mjs";
 
 import {
@@ -50,7 +48,6 @@ import {
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
 import sleep from "./sleep.mjs";
-import sendRefferalsToWhatsAppAsExcel from "./sendRefferalsToWhatsAppAsExcel.mjs";
 import installTelegramBotApi from "./installTelegramBotApi.mjs";
 import { getCasesWithEmptyClaimStatus } from "./summarizeLogsAfterAcceptance.mjs";
 import ensureCaseTimingLogsFile from "./ensureCaseTimingLogsFile.mjs";
@@ -82,13 +79,7 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
     KEY_PATH,
     HOST,
     PORT,
-    FIRST_SUMMARY_REPORT_STARTS_AT,
-    SUMMARY_REPORT_ENDS_AT,
-    SUMMARY_REPORT_GENERATED_AT,
     WEEKLY_REPORT_GENERATED_AT,
-    MONTHLY_REPORT_GENERATED_AT,
-    DETAILED_REPORT_GENERATED_AT,
-    RESEND_PATIENT_SUMMARY_FILE_PATH,
     TG_TOKEN,
   } = process.env;
 
@@ -188,17 +179,17 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
       nonClaimableCases,
     );
 
+    await patientsStore.scheduleAllInitialPatients();
+
     sendTelegramMessage = await installTelegramBotApi(
       TG_TOKEN,
       patientsStore,
       browser,
     );
 
-    if (typeof sendTelegramMessage === "function") {
-      patientsStore.setTelegramMessageSender(sendTelegramMessage);
-    }
-
-    await patientsStore.scheduleAllInitialPatients();
+    // if (typeof sendTelegramMessage === "function") {
+    //   patientsStore.setTelegramMessageSender(sendTelegramMessage);
+    // }
 
     // WhatsApp client + outbound integration
     // await initializeClient(patientsStore);
@@ -224,51 +215,13 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
         sendTelegramMessage,
       }))();
 
-    if (RESEND_PATIENT_SUMMARY_FILE_PATH) {
-      await sleep(8_000); // delay to ensure everything is up before sending
-      await sendRefferalsToWhatsAppAsExcel(
-        sendWhatsappMessage,
-        sendTelegramMessage,
-        RESEND_PATIENT_SUMMARY_FILE_PATH,
-      );
-    }
-
-    // Summary cron
-    cron.schedule(
-      SUMMARY_REPORT_GENERATED_AT,
-      async () => {
-        createConsoleMessage("✅ Starting [CRON] Summary job", "info");
-        try {
-          await processCollectReferralSummary(
-            browser,
-            sendWhatsappMessage,
-            sendTelegramMessage,
-            FIRST_SUMMARY_REPORT_STARTS_AT,
-            SUMMARY_REPORT_ENDS_AT,
-          );
-          createConsoleMessage("✅ [CRON] Summary job done.", "info");
-        } catch (err) {
-          createConsoleMessage(
-            err.message || err,
-            "error",
-            "[CRON] Summary job Failure",
-          );
-        }
-      },
-      { timezone: "Asia/Riyadh" },
-    );
-
     // Summary cron
     cron.schedule(
       WEEKLY_REPORT_GENERATED_AT,
       async () => {
         createConsoleMessage("✅ Starting weekly report job", "info");
         try {
-          await processCollectReferralWeeklySummary(
-            browser,
-            sendWhatsappMessage,
-            sendTelegramMessage,
-          );
+          await createAndSendWeeklyReport(browser, sendTelegramMessage);
           createConsoleMessage("✅ weekly report job done.", "info");
         } catch (err) {
           createConsoleMessage(
@@ -280,62 +233,6 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
       },
       { timezone: "Asia/Riyadh" },
     );
-
-    if (DETAILED_REPORT_GENERATED_AT) {
-      cron.schedule(
-        DETAILED_REPORT_GENERATED_AT,
-        async () => {
-          createConsoleMessage(
-            "✅ Starting monthly detailed report job",
-            "info",
-          );
-          try {
-            await processCollectReferralWeeklySummary(
-              browser,
-              sendWhatsappMessage,
-              sendTelegramMessage,
-              true,
-            );
-            createConsoleMessage(
-              "✅ monthly detailed report job done.",
-              "info",
-            );
-          } catch (err) {
-            createConsoleMessage(
-              err.message || err,
-              "error",
-              "monthly detailed report job Failure",
-            );
-          }
-        },
-        { timezone: "Asia/Riyadh" },
-      );
-    }
-
-    // Summary cron
-    if (MONTHLY_REPORT_GENERATED_AT) {
-      cron.schedule(
-        MONTHLY_REPORT_GENERATED_AT,
-        async () => {
-          createConsoleMessage("✅ Starting monthly report job", "info");
-          try {
-            await processCollectRefferalMonthlySummary(
-              browser,
-              sendWhatsappMessage,
-              sendTelegramMessage,
-            );
-            createConsoleMessage("✅ monthly report job done.", "info");
-          } catch (err) {
-            createConsoleMessage(
-              err.message || err,
-              "error",
-              "monthly report job Failure",
-            );
-          }
-        },
-        { timezone: "Asia/Riyadh" },
-      );
-    }
 
     const app = express();
     app.use(express.json());
@@ -370,7 +267,7 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
 
     app.post("/setCaseOutcome", async (req, res) => {
       try {
-        const { success, outcome, reason } = await handleSetCaseOutcome({
+        const { success, reason } = await handleSetCaseOutcome({
           ...req.body,
           sendTelegramMessage,
           patientsStore,

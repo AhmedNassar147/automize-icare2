@@ -29,6 +29,7 @@ import closePageSafely from "./closePageSafely.mjs";
 import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
 import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
 import { migrateCaseLogTimings } from "./summarizeLogsAfterAcceptance.mjs";
+import createAndSendInvoiceReport from "./createAndSendInvoiceReport.mjs";
 
 const execAsync = promisify(exec);
 
@@ -96,6 +97,11 @@ const COMMANDS = {
     value: /\/migrate_logs/,
     description: "migrate logs",
     command: "migrate_logs",
+  },
+  getInvoiceFile: {
+    value: /\/invoice(?:\s+(\w+))?$/,
+    description: "get invoice excel file",
+    command: "invoice",
   },
   updateCmds: {
     value: /\/update_commands/,
@@ -1031,6 +1037,35 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         `${zeroResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
         `${negativeResult.computedExtraBotMessages.join("\n") || "No messages"}`,
     );
+  });
+
+  bot.onText(COMMANDS.getInvoiceFile.value, async (msg, match) => {
+    const { unAuthorizedMessage, chatId, msgId } =
+      getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    const arg = match?.[1] || null;
+    const onlyForPresentation = !!arg;
+
+    console.log({
+      arg,
+      onlyForPresentation,
+    });
+
+    try {
+      await sendBotMessage(chatId, `✅ Preparing Invoice Report.`, {
+        reply_to_message_id: msgId,
+      });
+      await createAndSendInvoiceReport(browser, sendTelegramMessage, true);
+    } catch (error) {
+      await sendBotMessage(chatId, `⛔ Error: ${error?.message || error}`, {
+        reply_to_message_id: msgId,
+      });
+    }
   });
 
   bot.onText(COMMANDS.migrateLogs.value, async (msg) => {
