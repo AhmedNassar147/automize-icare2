@@ -53,7 +53,7 @@ const createAndSendWeeklyReport = async (browser, sendTelegramMessage) => {
         calledFrom: "createAndSendWeeklyReport",
       });
 
-    if (errors.length) {
+    if (errors?.length) {
       const message = formatSheetError({
         step: "fetch tabs summary",
         sheetType: SHEET_TYPES.WEEKLY_FULL_DETAILS,
