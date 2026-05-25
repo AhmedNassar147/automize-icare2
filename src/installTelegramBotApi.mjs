@@ -100,7 +100,7 @@ const COMMANDS = {
   },
   getInvoiceFile: {
     value: /\/invoice(?:\s+(\w+))?$/,
-    description: "get invoice excel file, Example: /invoice or /invoice p",
+    description: "get invoice report, Example: /invoice or /invoice f",
     command: "invoice",
   },
   updateCmds: {
@@ -159,7 +159,9 @@ const prepareMessage = (message) => {
 };
 
 const getAllowedList = () =>
-  process.env.TG_CHAT_IDS?.split(",").filter(Boolean) || [];
+  process.env.TG_CHAT_IDS?.split(",")
+    .map((id) => id.trim())
+    .filter(Boolean) || [];
 
 const getMessageData = (msg) => {
   const chatId = String(msg.chat.id);
@@ -279,10 +281,27 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     if (!pending || pending.confirmed) return;
 
     const allowedList = getAllowedList();
-    const nextIndex = pending.currentIndex + 1;
+
+    if (!allowedList.length) {
+      pendingOnlineChecks.delete(referralId);
+      return;
+    }
+
+    createConsoleMessage(
+      {
+        referralId,
+        allowedList,
+        currentIndex: pending.currentIndex,
+        sentChatIds: pending.sentChatIds,
+      },
+      "info",
+      "online cascade state",
+    );
+
+    const nextIndex = (pending.currentIndex + 1) % allowedList.length;
     const nextChatId = allowedList[nextIndex];
 
-    if (!nextChatId) {
+    if (!nextChatId || pending.sentChatIds.includes(nextChatId)) {
       await Promise.all(
         pending.sentChatIds.map((chatId) =>
           sendBotMessage(
@@ -1049,17 +1068,13 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
 
     const arg = match?.[1] || null;
-    const onlyForPresentation = !!arg;
+    const isFinal = !!arg;
 
     try {
-      await sendBotMessage(chatId, `✅ Preparing Invoice Report.`, {
+      await sendBotMessage(chatId, `✅ Preparing Invoice Report....`, {
         reply_to_message_id: msgId,
       });
-      await createAndSendInvoiceReport(
-        browser,
-        sendTelegramMessage,
-        onlyForPresentation,
-      );
+      await createAndSendInvoiceReport(browser, sendTelegramMessage, !isFinal);
     } catch (error) {
       await sendBotMessage(chatId, `⛔ Error: ${error?.message || error}`, {
         reply_to_message_id: msgId,
