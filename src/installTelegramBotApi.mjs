@@ -20,7 +20,6 @@ import compressPdfGentlly from "./compressPdfGentlly.mjs";
 import formatFilesToTelegram from "./formatFilesToTelgram.mjs";
 import sleep from "./sleep.mjs";
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
-import { HOME_PAGE_URL, USER_ACTION_TYPES } from "./constants.mjs";
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
@@ -30,6 +29,7 @@ import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
 import { migrateCaseLogTimings } from "./summarizeLogsAfterAcceptance.mjs";
 import createAndSendInvoiceReport from "./createAndSendInvoiceReport.mjs";
 import formatPatientToTelegramOrWA from "./formatPatientToTelegramOrWA.mjs";
+import { HOME_PAGE_URL, USER_ACTION_TYPES } from "./constants.mjs";
 
 const execAsync = promisify(exec);
 
@@ -139,13 +139,28 @@ const escapeTelegramHtml = (value = "") =>
 const restoreTelegramHtmlTags = (value = "") =>
   value.replace(
     /&lt;(\/?(?:b|strong|i|em|u|s|strike|del|code|pre))&gt;/g,
-    "<$1>",
+    (_, tag) => {
+      return `<${tag}>`;
+    },
   );
 
-const markdownToHtml = (value = "") =>
-  value
-    .replace(/`([^`]+?)`/g, "<code>$1</code>")
-    .replace(/\*(.*?)\*/g, "<b>$1</b>");
+const markdownToHtml = (value = "") => {
+  const codes = [];
+
+  value = value.replace(/`([^`]+?)`/g, (_, content) => {
+    const token = `__CODE_BLOCK_${codes.length}__`;
+    codes.push(`<code>${content}</code>`);
+    return token;
+  });
+
+  value = value.replace(/\*(.*?)\*/g, "<b>$1</b>");
+
+  codes.forEach((code, i) => {
+    value = value.replace(`__CODE_BLOCK_${i}__`, code);
+  });
+
+  return value;
+};
 
 const prepareMessage = (message = "") => {
   let text = escapeTelegramHtml(message);
@@ -1093,14 +1108,14 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       referralId: "test",
       referralEndTimestamp,
       diff: 0,
-      extraBackendDelayMs: 700,
+      extraBackendDelayMs: 1000,
     });
 
     const highBackendDelayResult = await getExtraTimeBasedLogs({
       referralId: "test",
       referralEndTimestamp,
       diff: 0,
-      extraBackendDelayMs: 1200,
+      extraBackendDelayMs: 2000,
     });
 
     await sendBotMessage(
@@ -1115,8 +1130,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         `${formatResult("📶 RTT 130ms", rtt130Result)}\n\n` +
         `${formatResult("📶 RTT normal with diff<0", normalRttWithNegativeResult)}\n\n` +
         `${formatResult("📶 RTT 130ms with diff<0", rtt130WithNegativeResult)}\n\n` +
-        `${formatResult("🖥️ Backend delay normal 700ms", normalBackendDelayResult)}\n\n` +
-        `${formatResult("🖥️ Backend delay high 1200ms", highBackendDelayResult)}`,
+        `${formatResult("🖥️ Backend delay normal 1000ms", normalBackendDelayResult)}\n\n` +
+        `${formatResult("🖥️ Backend delay high 2000ms", highBackendDelayResult)}`,
     );
   });
 
