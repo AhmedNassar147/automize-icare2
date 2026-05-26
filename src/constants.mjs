@@ -231,9 +231,9 @@ export const TIMING_LOGS_WIDTHS = {
   delay: 5,
   clickedAt: 13,
   tookMS: 6,
-  status: 21,
+  status: 20,
   claimed: 7,
-  rtt: 5,
+  rtt: 4,
   delta: 5,
   extraWaitMessage: 30,
 };
