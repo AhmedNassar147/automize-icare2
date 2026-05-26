@@ -11,6 +11,13 @@ const FAR_CASE_MS = FAR_CASE_MIN * 60000;
 
 const HOT_CLUSTER_MS = 4 * 60 * 1000;
 
+const WAITS_MAP = {
+  suspicious: 4,
+  far: 3,
+  hotCluster: 1,
+  default: 2,
+};
+
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
 
@@ -205,7 +212,6 @@ const getExtraTimeBasedLogs = async ({
   extraBackendDelayMs,
   rtt,
 }) => {
-  const IS_UNIZA_BRANCH = process.env.BRANCH_NAME === "Unizah";
   const extraBotMessages = [];
   const logsData = await readLogsAsArray();
 
@@ -270,8 +276,12 @@ const getExtraTimeBasedLogs = async ({
 
   if (isCurrentDiffNegative) {
     const maxNewWait =
-      (Math.abs(diff) / 1000) * 2 +
-      (IS_UNIZA_BRANCH ? 3 : isFirstCaseToday || isFarFromLastToday ? 2 : 1);
+      Math.abs(diff) / 1000 +
+      (isFirstCaseToday
+        ? WAITS_MAP.suspicious - 1
+        : isFarFromLastToday
+          ? WAITS_MAP.far
+          : WAITS_MAP.default);
 
     if (isLastTodayDiffNegative) {
       const waitValue = isFarFromLastToday
@@ -292,7 +302,9 @@ const getExtraTimeBasedLogs = async ({
       const negativeText = isFirstCaseToday
         ? "🌅 first-day-negative"
         : "✅ first-negative";
-      extraBotMessages.push(`${negativeText} ${logCtx} wait=+${maxNewWait}ms`);
+      extraBotMessages.push(
+        `${negativeText} ${logCtx} gap=${gapMin}min wait=+${maxNewWait}ms`,
+      );
     }
 
     const consecutiveNegativeCountToday = getConsecutiveNegativeCountToday(
@@ -314,28 +326,19 @@ const getExtraTimeBasedLogs = async ({
     }
   }
 
-  const STABLE_WAITS = {
-    suspicious: 4,
-    far: 3,
-    hotCluster: 1,
-    default: 2,
-  };
-
   const isFarAndLastNegative = isFarFromLastToday && isLastTodayDiffNegative;
 
   const isSuspiciousStableCase = isFirstCaseToday || isFarAndLastNegative;
 
   if (diff >= 0) {
-    let value = 0;
+    let value = WAITS_MAP.default;
 
     if (isSuspiciousStableCase) {
-      value = STABLE_WAITS.suspicious;
+      value = WAITS_MAP.suspicious;
     } else if (isFarFromLastToday) {
-      value = STABLE_WAITS.far;
+      value = WAITS_MAP.far;
     } else if (isHotCluster) {
-      value = STABLE_WAITS.hotCluster;
-    } else {
-      value = STABLE_WAITS.default;
+      value = WAITS_MAP.hotCluster;
     }
 
     extraWait += value;

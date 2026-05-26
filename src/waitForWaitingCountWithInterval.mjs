@@ -30,7 +30,6 @@ const waitForWaitingCountWithInterval = async ({
   collectionTabType,
   browser,
   patientsStore,
-  sendWhatsappMessage,
   sendTelegramMessage,
 }) => {
   let page, cursor;
@@ -111,12 +110,6 @@ const waitForWaitingCountWithInterval = async ({
         const message =
           "App is Closed, Please check the app, try to open it manually";
 
-        await sendWhatsappMessage(process.env.CLIENT_WHATSAPP_NUMBER, [
-          {
-            message: message,
-          },
-        ]);
-
         await sendTelegramMessage(message);
 
         speakText({
@@ -136,7 +129,6 @@ const waitForWaitingCountWithInterval = async ({
           lockSleepTime: LOCKED_OUT_SLEEP_TIME,
           page,
           pausableSleep,
-          sendWhatsappMessage,
           sendTelegramMessage,
         });
 

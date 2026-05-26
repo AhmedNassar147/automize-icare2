@@ -25,7 +25,6 @@ import waitForWaitingCountWithInterval, {
 
 import generateFolderIfNotExisting from "./generateFolderIfNotExisting.mjs";
 
-import sendMessageUsingWhatsapp from "./sendMessageUsingWhatsapp.mjs";
 import processSendPatientsToClient from "./processSendPatientsToClient.mjs";
 import createAndSendWeeklyReport from "./createAndSendWeeklyReport.mjs";
 import handleCaseAcceptanceOrRejection from "./handleCaseAcceptanceOrRejection.mjs";
@@ -198,6 +197,7 @@ import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
     );
 
     const nonClaimableCases = await getCasesWithEmptyClaimStatus();
+
     const patientsStore = new PatientStore(
       collectedPatients || [],
       nonClaimableCases,
@@ -215,18 +215,9 @@ import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
     //   patientsStore.setTelegramMessageSender(sendTelegramMessage);
     // }
 
-    // WhatsApp client + outbound integration
-    // await initializeClient(patientsStore);
-
-    const sendWhatsappMessage = sendMessageUsingWhatsapp(patientsStore);
-
     patientsStore.on(
       "patientsAdded",
-      processSendPatientsToClient(
-        sendTelegramMessage,
-        sendWhatsappMessage,
-        false,
-      ),
+      processSendPatientsToClient(sendTelegramMessage, false),
     );
 
     // Background collector
@@ -235,7 +226,6 @@ import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
         collectionTabType: TABS_COLLECTION_TYPES.WAITING,
         browser,
         patientsStore,
-        sendWhatsappMessage,
         sendTelegramMessage,
       }))();
 
@@ -356,7 +346,6 @@ import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
         browser,
         actionType: USER_ACTION_TYPES.ACCEPT,
         broadcast,
-        sendWhatsappMessage,
         sendTelegramMessage,
         continueFetchingPatientsIfPaused,
         patientStore: patientsStore,
@@ -369,7 +358,6 @@ import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
         browser,
         actionType: USER_ACTION_TYPES.REJECT,
         broadcast,
-        sendWhatsappMessage,
         sendTelegramMessage,
         continueFetchingPatientsIfPaused,
         patientStore: patientsStore,
@@ -382,7 +370,6 @@ import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
         browser,
         actionType: FAKE_REJECT_PROBE,
         broadcast,
-        sendWhatsappMessage,
         sendTelegramMessage,
         continueFetchingPatientsIfPaused,
         patientStore: patientsStore,

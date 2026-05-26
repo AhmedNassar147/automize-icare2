@@ -3,8 +3,6 @@
  * Helper: `formatPatientToTelegramOrWA`.
  *
  */
-import createConfirmationMessage from "./createConfirmationMessage.mjs";
-
 const formatPatientToTelegramOrWA = (patient, forTelegram) => {
   const {
     referralId,
@@ -29,9 +27,6 @@ const formatPatientToTelegramOrWA = (patient, forTelegram) => {
     referralEndDate,
     // requestDate,
   } = patient;
-
-  const execludeWhatsAppMsgFooter =
-    process.env.EXECLUDE_WHATSAPP_MSG_FOOTER === "Y";
 
   let label = `0 s`;
 
@@ -91,16 +86,6 @@ const formatPatientToTelegramOrWA = (patient, forTelegram) => {
       // `🗓️ *Requested At:* \`${requestDate}\`\n` +
       `📝 *Reason:* \`${referralCause}\`\n` +
       `🧾 *CauseNote:* \`${note || ""}\`\n`;
-
-    if (!execludeWhatsAppMsgFooter) {
-      message +=
-        `\n` +
-        `⚠️ *‼️ ATTENTION ‼️*\n\n` +
-        `────────────────────────\n` +
-        `🧾 ${caseAlertMessage || ""}\n\n` +
-        `📩 *Please review and reply to this message with:*\n\n` +
-        `${createConfirmationMessage()}\n`;
-    }
   }
 
   return {

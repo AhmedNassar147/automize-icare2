@@ -23,7 +23,6 @@ const handleCaseAcceptanceOrRejection =
   ({
     actionType,
     broadcast,
-    sendWhatsappMessage,
     sendTelegramMessage,
     continueFetchingPatientsIfPaused,
     browser,
@@ -39,12 +38,8 @@ const handleCaseAcceptanceOrRejection =
     } = patient;
 
     try {
-      const {
-        CLIENT_NAME,
-        WAIT_FOR_ACCEPT_MS,
-        CLIENT_WHATSAPP_NUMBER,
-        ENABLE_AUTO_WAITING,
-      } = process.env;
+      const { CLIENT_NAME, WAIT_FOR_ACCEPT_MS, ENABLE_AUTO_WAITING } =
+        process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
       const isFakeReject = actionType === FAKE_REJECT_PROBE;
@@ -180,11 +175,6 @@ const handleCaseAcceptanceOrRejection =
       const approvalMessage = `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\``;
 
       const promises = [
-        sleep(waitTime).then(() =>
-          sendWhatsappMessage(CLIENT_WHATSAPP_NUMBER, {
-            message: approvalMessage,
-          }),
-        ),
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
         sleep(waitTime - 36).then(() => sendNtfyMessage(approvalMessage)),
       ];

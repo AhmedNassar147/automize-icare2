@@ -8,13 +8,7 @@ import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const createSendLockedMessage =
-  (
-    sendWhatsappMessage,
-    sendTelegramMessage,
-    patientsStore,
-    clientPhoneNumber,
-    patient,
-  ) =>
+  (sendTelegramMessage, patientsStore, clientPhoneNumber, patient) =>
   async (message) => {
     if (patient) {
       patientsStore.setLastActionablePatient({
@@ -22,12 +16,6 @@ const createSendLockedMessage =
         hasLockMessageSent: true,
       });
     }
-
-    await sendWhatsappMessage(clientPhoneNumber, [
-      {
-        message: message,
-      },
-    ]);
 
     await sendTelegramMessage(message);
   };
@@ -37,7 +25,6 @@ async function handleLockedOutRetry({
   lockSleepTime,
   page,
   pausableSleep,
-  sendWhatsappMessage,
   sendTelegramMessage,
 }) {
   const { CLIENT_WHATSAPP_NUMBER, APP_LOCK_HOURS } = process.env;
@@ -48,7 +35,6 @@ async function handleLockedOutRetry({
   const lastPatient = patientsStore?.getLastActionablePatient?.();
 
   const sendMessage = createSendLockedMessage(
-    sendWhatsappMessage,
     sendTelegramMessage,
     patientsStore,
     CLIENT_WHATSAPP_NUMBER,
