@@ -144,19 +144,15 @@ const restoreTelegramHtmlTags = (value = "") =>
 
 const markdownToHtml = (value = "") =>
   value
-    .replace(/\*(.*?)\*/g, "<b>$1</b>")
-    .replace(/`(.*?)`/g, "<code>$1</code>");
+    .replace(/`([^`]+?)`/g, "<code>$1</code>")
+    .replace(/\*(.*?)\*/g, "<b>$1</b>");
 
 const prepareMessage = (message = "") => {
   let text = escapeTelegramHtml(message);
 
+  text = markdownToHtml(text);
+
   text = restoreTelegramHtmlTags(text);
-
-  const hasCodeBlock = /<(?:code|pre)>[\s\S]*?<\/(?:code|pre)>/.test(text);
-
-  if (!hasCodeBlock) {
-    text = markdownToHtml(text);
-  }
 
   return {
     text,
@@ -1111,6 +1107,20 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       rtt: 130,
     });
 
+    const normalRttWithNegativeResult = await getExtraTimeBasedLogs({
+      referralId: "test",
+      referralEndTimestamp,
+      diff: -1000,
+      rtt: 70,
+    });
+
+    const rtt130WithNegativeResult = await getExtraTimeBasedLogs({
+      referralId: "test",
+      referralEndTimestamp,
+      diff: -1000,
+      rtt: 130,
+    });
+
     const normalBackendDelayResult = await getExtraTimeBasedLogs({
       referralId: "test",
       referralEndTimestamp,
@@ -1131,10 +1141,12 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         `────────────────────────\n\n` +
         `⚙️ current waitingTime → \`${current}ms\`\n\n` +
         `${formatResult("📊 Stable diff=0", zeroResult)}\n\n` +
-        `${formatResult("📉 Negative diff less than 0", negativeResult)}\n\n` +
+        `${formatResult("📉 Negative diff<0", negativeResult)}\n\n` +
         `${formatResult("📶 RTT normal 70ms", normalRttResult)}\n\n` +
         `${formatResult("📶 RTT 95ms", rtt95Result)}\n\n` +
         `${formatResult("📶 RTT 130ms", rtt130Result)}\n\n` +
+        `${formatResult("📶 RTT normal with diff<0", normalRttWithNegativeResult)}\n\n` +
+        `${formatResult("📶 RTT 130ms with diff<0", rtt130WithNegativeResult)}\n\n` +
         `${formatResult("🖥️ Backend delay normal 700ms", normalBackendDelayResult)}\n\n` +
         `${formatResult("🖥️ Backend delay high 1200ms", highBackendDelayResult)}`,
     );
