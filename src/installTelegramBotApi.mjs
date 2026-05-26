@@ -149,9 +149,7 @@ const markdownToHtml = (value = "") =>
 
 const prepareMessage = (message = "") => {
   let text = escapeTelegramHtml(message);
-
   text = markdownToHtml(text);
-
   text = restoreTelegramHtmlTags(text);
 
   return {
@@ -159,34 +157,6 @@ const prepareMessage = (message = "") => {
     parse_mode: "HTML",
   };
 };
-
-// const prepareMessage = (message) => {
-//   const hasHtmlTags = /<[^>]+>/.test(message);
-
-//   if (hasHtmlTags) {
-//     // Already HTML — use as is
-//     return { text: message, parse_mode: "HTML" };
-//   }
-
-//   const hasMarkdown = /[*_`\[\]]/.test(message);
-
-//   if (hasMarkdown) {
-//     // Has Markdown — convert to HTML
-//     const html = message
-//       .replace(/\*(.*?)\*/g, "<b>$1</b>") // *bold*
-//       .replace(/_(.*?)_/g, "<i>$1</i>") // _italic_
-//       .replace(/`(.*?)`/g, "<code>$1</code>"); // `code`
-//     return { text: html, parse_mode: "HTML" };
-//   }
-
-//   // Plain text — escape HTML special chars just in case
-//   const escaped = message
-//     .replace(/&/g, "&amp;")
-//     .replace(/</g, "&lt;")
-//     .replace(/>/g, "&gt;");
-
-//   return { text: escaped, parse_mode: "HTML" };
-// };
 
 const getAllowedList = () =>
   process.env.TG_CHAT_IDS?.split(",")
