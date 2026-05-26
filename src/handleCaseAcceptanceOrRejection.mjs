@@ -50,7 +50,10 @@ const handleCaseAcceptanceOrRejection =
       const isFakeReject = actionType === FAKE_REJECT_PROBE;
 
       const { fileName, fileData: filebase64 } =
-        await getCurrentActionLetterFile(referralId, actionType);
+        await getCurrentActionLetterFile(
+          referralId,
+          isFakeReject ? USER_ACTION_TYPES.REJECT : actionType,
+        );
 
       const routerKey = Math.random().toString(36).slice(2, 8);
 
