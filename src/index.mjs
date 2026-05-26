@@ -8,8 +8,6 @@ dotenv.config();
 
 import fs from "node:fs";
 import https from "node:https";
-import path from "path";
-import os from "os";
 import express from "express";
 import cors from "cors";
 import { WebSocketServer } from "ws";
@@ -71,8 +69,6 @@ import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
 // in power shell as admin => ipconfig /flushdns
 // to verify ping referralprogram.globemedsaudi.com // we see 127.0.0.1
 
-const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
-
 (async () => {
   const {
     CERT_PATH,
@@ -90,8 +86,29 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
   let browser;
   let pingInterval;
 
+  let isShuttingDown = false;
+
+  let sendTelegramMessage = null;
+
+  const notifyCrash = async (crashType) => {
+    try {
+      if (sendTelegramMessage) {
+        await sendTelegramMessage(
+          `❌ *App crashed* ❌\n` +
+            `*crashType:* \`${crashType}\`\n\n` +
+            `Please check the app immediately.\n` +
+            `Close Unreal browser if running.\n` +
+            `Restart the app/server.`,
+        );
+      }
+    } catch (error) {}
+  };
+
   async function shutdown(sig) {
-    createConsoleMessage(`\n${sig} received. Shutting down...`, "info");
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    createConsoleMessage(`\n${sig} received. Shutting down...`, "error");
 
     try {
       clearInterval(pingInterval);
@@ -136,10 +153,13 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
       }
     } catch {}
 
-    process.exit(0);
-  }
+    const isFatal =
+      sig === "unhandledRejection" ||
+      sig === "uncaughtException" ||
+      sig === "startupCrash";
 
-  let sendTelegramMessage = null;
+    process.exit(isFatal ? 1 : 0);
+  }
 
   try {
     // Ensure folders exist
@@ -382,22 +402,20 @@ const profilePath = path.join(os.homedir(), ".referral-chrome-profile");
     });
 
     // Optional: catch fatals and shut down cleanly
-    process.on("unhandledRejection", (e) => {
+    process.on("unhandledRejection", async (e) => {
       createConsoleMessage(e, "error", "unhandledRejection:");
-      void shutdown("SIGINT");
+      await notifyCrash("unhandledRejection");
+      await shutdown("unhandledRejection");
     });
-    process.on("uncaughtException", (e) => {
+    process.on("uncaughtException", async (e) => {
       createConsoleMessage(e, "error", "uncaughtException:");
-      void shutdown("SIGINT");
+      await notifyCrash("uncaughtException");
+      await shutdown("uncaughtException");
     });
   } catch (error) {
-    if (sendTelegramMessage) {
-      await sendTelegramMessage(
-        "❌ *App crashed*\n\nPlease check the app immediately.\nClose Unreal browser if running.\nRestart the app/server.",
-      );
-    }
     createConsoleMessage(error, "error", "❌ index.mjs crashed:");
-    await shutdown("SIGINT");
+    await notifyCrash("startupCrash");
+    await shutdown("startupCrash");
   }
 })();
 

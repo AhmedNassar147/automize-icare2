@@ -362,9 +362,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       let messageId = undefined;
 
       if (message) {
-        const { text, parse_mode } = prepareMessage(message);
-        const res = await sendBotMessage(TG_CHAT_ID, text, {
-          parse_mode: parse_mode,
+        const res = await sendBotMessage(TG_CHAT_ID, message, {
           disable_notification: false,
           ...(targetReferralIdForButtons && {
             reply_markup: buildButtons(targetReferralIdForButtons),
@@ -614,7 +612,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     if (allPatients?.length) {
       await sendBotMessage(
         chatId,
-        `*Current patients:*\n\`\`\`\nHere are the current (${allPatients.length}) patients to process\n\`\`\``,
+        `<b>Current patients:</b>\n<pre>Here are the current (${allPatients.length}) patients to process</pre>`,
       );
 
       const formatedPatients = allPatients.map((patient) =>
@@ -728,17 +726,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     });
   });
 
-  bot.onText(COMMANDS.updateCmds.value, async (msg) => {
-    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
-    if (unAuthorizedMessage) {
-      await sendBotMessage(chatId, unAuthorizedMessage);
-      return;
-    }
-    await setupCommands();
-
-    await sendBotMessage(chatId, `✅ Bot commands updated.`);
-  });
-
   bot.onText(COMMANDS.wait.value, async (msg) => {
     const { chatId, unAuthorizedMessage } = getIfNotAuthorizedMessage(msg);
 
@@ -779,7 +766,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
 
     await sendBotMessage(
       chatId,
-      `✅ waitTime updated from \`${currentWait}\`ms  to \`${value}\`ms successfully.`,
+      `✅ waitTime updated from \`${currentWait}\`ms to \`${value}\`ms successfully.`,
     );
 
     const activeChatId = getActiveChatID();
@@ -787,7 +774,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     if (activeChatId !== chatId) {
       await sendBotMessage(
         activeChatId,
-        `🔔 \`${fromName}\` just changed waitTime to \`${value}\`ms.`,
+        `🔔 \`${fromName}\` just changed waitTime from \`${currentWait}\`ms to \`${value}\`ms.`,
       );
     }
   });
@@ -889,6 +876,17 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         `🔔 \`${fromName}\` just changed \`autoWait\` to \`${status}\`.`,
       );
     }
+  });
+
+  bot.onText(COMMANDS.updateCmds.value, async (msg) => {
+    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+    await setupCommands();
+
+    await sendBotMessage(chatId, `✅ Bot commands updated.`);
   });
 
   bot.onText(COMMANDS.getReferralLetter.value, async (msg, match) => {
@@ -1189,7 +1187,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       if (localChanges) {
         return sendBotMessage(
           chatId,
-          `⚠️ Local changes detected — cannot pull:\n\`\`\`\n${localChanges}\n\`\`\`\n\n` +
+          `⚠️ Local changes detected — cannot pull:\n<pre>${localChanges}</pre>\n\n` +
             `Please tell Ahmed Nassar to fix this.`,
         );
       }
@@ -1226,13 +1224,14 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       const logPreview = logPreviewRaw.trim();
 
       // 6. Notify user BEFORE pulling — message sends before nodemon restarts
+
       await sendBotMessage(
         chatId,
         `✅ Code updated successfully!\n\n` +
-          `📦 *Changes:*\n\`\`\`\n${logPreview || "No log available"}\n\`\`\`\n\n` +
-          `🔁 *Current commit:* \`${beforeHash}\`\n\n` +
+          `📦 <b>Changes:</b>\n<pre>${logPreview || "No log available"}</pre>\n\n` +
+          `🔁 <b>Current commit:</b> <code>${beforeHash}</code>\n\n` +
           `⏳ Pulling and restarting server...\n\n` +
-          `🔁 *Please check if the app is running after restart*`,
+          `🔁 <b>Please check if the app is running after restart</b>`,
       );
 
       await sleep(1000); // wait after second message before pulling
@@ -1241,7 +1240,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       createConsoleMessage(err, "error", "❌ updatecode failed:");
       await sendBotMessage(
         chatId,
-        `❌ Update failed:\n\`\`\`\n${err.message}\n\`\`\``,
+        `❌ Update failed:\n<pre>${err.message}</pre>`,
       );
     }
   });
