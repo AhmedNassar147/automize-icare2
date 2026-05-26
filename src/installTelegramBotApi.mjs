@@ -1072,6 +1072,11 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
 
     const referralEndTimestamp = Date.now();
+    const current = Number(process.env.WAIT_FOR_ACCEPT_MS);
+
+    const formatResult = (title, result) =>
+      `${title} → extra \`${result.computedExtraWait}ms\` → *\`${current + result.computedExtraWait}ms\`*\n` +
+      `${result.computedExtraBotMessages.join("\n") || "No messages"}`;
 
     const zeroResult = await getExtraTimeBasedLogs({
       referralId: "test",
@@ -1120,27 +1125,18 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       extraBackendDelayMs: 1200,
     });
 
-    const current = Number(process.env.WAIT_FOR_ACCEPT_MS);
-
     await sendBotMessage(
       chatId,
       `🧪 *Next Case Extra Time Test Results*\n` +
         `────────────────────────\n\n` +
         `⚙️ current waitingTime → \`${current}ms\`\n\n` +
-        `📊 Stable diff=0\n` +
-        `${zeroResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `📉 Negative diff&lt;0\n` +
-        `${negativeResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `📶 RTT normal 70ms\n` +
-        `${normalRttResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `📶 RTT 95ms\n` +
-        `${rtt95Result.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `📶 RTT 130ms\n` +
-        `${rtt130Result.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `🖥️ Backend delay normal 700ms\n` +
-        `${normalBackendDelayResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `🖥️ Backend delay high 1200ms\n` +
-        `${highBackendDelayResult.computedExtraBotMessages.join("\n") || "No messages"}`,
+        `${formatResult("📊 Stable diff=0", zeroResult)}\n\n` +
+        `${formatResult("📉 Negative diff less than 0", negativeResult)}\n\n` +
+        `${formatResult("📶 RTT normal 70ms", normalRttResult)}\n\n` +
+        `${formatResult("📶 RTT 95ms", rtt95Result)}\n\n` +
+        `${formatResult("📶 RTT 130ms", rtt130Result)}\n\n` +
+        `${formatResult("🖥️ Backend delay normal 700ms", normalBackendDelayResult)}\n\n` +
+        `${formatResult("🖥️ Backend delay high 1200ms", highBackendDelayResult)}`,
     );
   });
 

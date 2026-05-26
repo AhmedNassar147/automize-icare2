@@ -245,9 +245,9 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (extraBackendDelayMs > 1000) {
-    extraWait += 3;
+    extraWait += 2;
     extraBotMessages.push(
-      `✅ backend-delay ${logCtx} delay=${extraBackendDelayMs}ms threshold=1000ms wait=+3ms`,
+      `✅ backend-delay ${logCtx} delay=${extraBackendDelayMs}ms threshold=1000ms wait=+2ms`,
     );
   }
 
