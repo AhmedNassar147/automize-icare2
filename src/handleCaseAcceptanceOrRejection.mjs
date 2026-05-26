@@ -153,6 +153,7 @@ const handleCaseAcceptanceOrRejection =
           referralEndTimestamp,
           diff,
           extraBackendDelayMs,
+          rtt,
         });
 
       if (ENABLE_AUTO_WAITING === "1") {
