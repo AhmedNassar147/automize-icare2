@@ -8,18 +8,22 @@ import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
 
 const processSendPatientsToClient =
   (sendTelegramMessage, skipNotify = false) =>
-  async (addedPatients) => {
-    const telegramApis = addedPatients
-      .filter(Boolean)
-      .map((patient) => formatPatientToTelegramOrWA(patient, true))
-      .map(({ message, files, referralId }) =>
-        sendTelegramMessage(message, files, referralId),
+  async (addedPatients = []) => {
+    const validPatients = addedPatients.filter(Boolean);
+
+    const telegramApis = validPatients.map((patient) => {
+      const { message, files, referralId } = formatPatientToTelegramOrWA(
+        patient,
+        true,
       );
+
+      return sendTelegramMessage(message, files, referralId);
+    });
 
     await Promise.all(telegramApis);
 
-    if (!skipNotify && addedPatients.length) {
-      const [{ referralId }] = addedPatients;
+    if (!skipNotify && validPatients.length) {
+      const [{ referralId }] = validPatients;
       await notifyUserWithNewCase(referralId);
     }
   };
