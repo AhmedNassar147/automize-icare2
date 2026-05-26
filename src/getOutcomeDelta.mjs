@@ -1,0 +1,29 @@
+/*
+ *
+ * Helper: `getOutcomeDelta`.
+ *
+ */
+import { OUTCOME_MAP } from "./constants.mjs";
+
+const getOutcomeDelta = (outcome, elapsedMs) => {
+  if (!outcome || !Number.isFinite(elapsedMs)) {
+    return 0;
+  }
+
+  return (
+    {
+      // Low elapsedMs means app already moved too fast / dashboard returned,
+      // so we clicked too late. Reduce wait to click earlier next time.
+      [OUTCOME_MAP.needLessWait]: -2,
+      [OUTCOME_MAP.lowWaiting]: elapsedMs <= 610 ? -2 : -1,
+      [OUTCOME_MAP.moderateWaiting]:
+        elapsedMs <= 690 ? -1 : elapsedMs >= 780 ? +1 : 0,
+      [OUTCOME_MAP.goodWaiting]: 0,
+      [OUTCOME_MAP.needMoreWait]: elapsedMs < 910 ? +1 : +2,
+      [OUTCOME_MAP.nearToBlock]: elapsedMs > 2100 ? +6 : +3,
+      [OUTCOME_MAP.blocked]: 0,
+    }[outcome] ?? 0
+  );
+};
+
+export default getOutcomeDelta;

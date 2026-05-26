@@ -3,6 +3,7 @@
  * Helper: `getExtraTimeBasedLogs`.
  *
  */
+import getOutcomeDelta from "./getOutcomeDelta.mjs";
 import { readLogsAsArray } from "./summarizeLogsAfterAcceptance.mjs";
 
 const FAR_CASE_MIN = 90; // 1.5 hours
@@ -65,8 +66,32 @@ const hasNegativeZeroNegativePattern = (todayCases) => {
   return false;
 };
 
+const getLocalDayKey = (ts) => {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
+
 const isSameDay = (ts, currentDayKey) =>
-  ts && new Date(ts).toISOString().slice(0, 10) === currentDayKey;
+  ts && getLocalDayKey(ts) === currentDayKey;
+
+const getTodayCases = (logsData, currentDayKey) => {
+  // today's cases for pattern detection
+  return logsData.filter(({ referralEndTimestamp: e }) =>
+    isSameDay(e, currentDayKey),
+  );
+};
+
+const getDangerZoneExtraWait = (isUsingFullWait, previousDelta) => {
+  const safePreviousDelta = Number.isFinite(previousDelta) ? previousDelta : 0;
+
+  // If previous outcome reduced global wait, first danger-zone needs to compensate.
+  // Example: low-waiting_601 => delta -1, then 0→-1000 danger-zone should be > +10.
+  const dangerWait = isUsingFullWait
+    ? 10 + Math.max(0, Math.abs(Math.min(safePreviousDelta, 0)))
+    : 6;
+
+  return dangerWait;
+};
 
 const analyzeReferralTimingPatterns = (
   logsData,
@@ -89,17 +114,14 @@ const analyzeReferralTimingPatterns = (
       isLastTodayDiffNegative: false,
       isFarFromLastToday: true,
       diffFromLastToday: 0,
+      lastToday: null,
+      previousDelta: 0,
     };
   }
 
-  const currentDayKey = new Date(referralEndTimestamp)
-    .toISOString()
-    .slice(0, 10);
+  const currentDayKey = getLocalDayKey(referralEndTimestamp);
 
-  // today's cases for pattern detection
-  const todayCases = logsData.filter(({ referralEndTimestamp: e }) =>
-    isSameDay(e, currentDayKey),
-  );
+  const todayCases = getTodayCases(logsData, currentDayKey);
 
   const lastToday = todayCases[todayCases.length - 1];
   const secondLastToday = todayCases[todayCases.length - 2];
@@ -155,6 +177,11 @@ const analyzeReferralTimingPatterns = (
 
   const isRecoveryThenDrop = isFirstDayRecovery || isSuperSinglePattern;
 
+  const previousDelta = getOutcomeDelta(
+    lastToday?.outcome,
+    lastToday?.outcomeElapsedMs,
+  );
+
   return {
     isDoubleZeroDangerZone,
     isRecoveryThenDrop,
@@ -166,6 +193,8 @@ const analyzeReferralTimingPatterns = (
     todayCases,
     isLastTodayDiffNegative,
     diffFromLastToday,
+    lastToday,
+    previousDelta,
   };
 };
 
@@ -190,6 +219,7 @@ const getExtraTimeBasedLogs = async ({
     todayCases,
     isLastTodayDiffNegative,
     diffFromLastToday,
+    previousDelta,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
@@ -217,18 +247,20 @@ const getExtraTimeBasedLogs = async ({
   if (extraBackendDelayMs > 1000) {
     extraWait += 3;
     extraBotMessages.push(
-      `✅ backend-delay ${logCtx} delay=${extraBackendDelayMs}ms threshold=1000ms wait=+2ms`,
+      `✅ backend-delay ${logCtx} delay=${extraBackendDelayMs}ms threshold=1000ms wait=+3ms`,
     );
   }
 
   if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
     const isUsingFullWait =
       isDoubleZeroDangerZone || !isDangerZoneFiredToday || isFarFromLastToday;
-    const dangerWait = isUsingFullWait ? 10 : 6;
+    const dangerWait = getDangerZoneExtraWait(isUsingFullWait, previousDelta);
 
     extraWait += dangerWait;
     extraBotMessages.push(
-      `⚠️ danger-zone ${logCtx} type=${isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"} gap=${gapMin}min fullWait=${isUsingFullWait} wait=+${dangerWait}ms`,
+      `⚠️ danger-zone ${logCtx} type=${
+        isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"
+      } gap=${gapMin}min fullWait=${isUsingFullWait} previousDelta=${previousDelta} wait=+${dangerWait}ms`,
     );
     return {
       computedExtraBotMessages: extraBotMessages,
@@ -282,32 +314,35 @@ const getExtraTimeBasedLogs = async ({
     }
   }
 
-  const isLastNegativeButFarToday =
-    isLastTodayDiffNegative && isFarFromLastToday;
-
   const STABLE_WAITS = {
-    suspiciousCase: 4,
-    hotCluster: 1,
+    suspicious: 4,
     far: 3,
+    hotCluster: 1,
     default: 2,
   };
 
-  const isSuspiciousCase = isFirstCaseToday || isLastNegativeButFarToday;
+  const isFarAndLastNegative = isFarFromLastToday && isLastTodayDiffNegative;
+
+  const isSuspiciousStableCase = isFirstCaseToday || isFarAndLastNegative;
 
   if (diff >= 0) {
-    const value = isSuspiciousCase
-      ? STABLE_WAITS.suspiciousCase
-      : isHotCluster
-        ? STABLE_WAITS.hotCluster
-        : isFarFromLastToday
-          ? STABLE_WAITS.far
-          : STABLE_WAITS.default;
+    let value = 0;
+
+    if (isSuspiciousStableCase) {
+      value = STABLE_WAITS.suspicious;
+    } else if (isFarFromLastToday) {
+      value = STABLE_WAITS.far;
+    } else if (isHotCluster) {
+      value = STABLE_WAITS.hotCluster;
+    } else {
+      value = STABLE_WAITS.default;
+    }
 
     extraWait += value;
 
     const farText = isFirstCaseToday
       ? "🌅 first-day-stable"
-      : isLastNegativeButFarToday
+      : isFarAndLastNegative
         ? "↔️ far-stable-last-negative"
         : "↔️ far-stable";
 

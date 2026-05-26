@@ -6,6 +6,8 @@
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import { updateCaseInLog } from "./summarizeLogsAfterAcceptance.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
+import getOutcomeDelta from "./getOutcomeDelta.mjs";
+import { OUTCOME_MAP } from "./constants.mjs";
 
 const handleSetCaseOutcome = async ({
   elapsedMs,
@@ -48,18 +50,18 @@ const handleSetCaseOutcome = async ({
   const { referralId, readySeenAtLocalMs, waitTime } = patientData || {};
 
   const outcome = blocked
-    ? "blocked"
+    ? OUTCOME_MAP.blocked
     : elapsedMs < 600
-      ? "need-less-wait"
+      ? OUTCOME_MAP.needLessWait
       : elapsedMs < 650
-        ? "low-waiting"
+        ? OUTCOME_MAP.lowWaiting
         : elapsedMs < 800
-          ? "moderate-waiting"
+          ? OUTCOME_MAP.moderateWaiting
           : elapsedMs < 890
-            ? "good-waiting"
+            ? OUTCOME_MAP.goodWaiting
             : elapsedMs < 1100
-              ? "need-more-wait"
-              : "near-to-block";
+              ? OUTCOME_MAP.needMoreWait
+              : OUTCOME_MAP.nearToBlock;
 
   createConsoleMessage(
     `caseId=${referralId} case-outcome=${outcome} clickedAt=${clickedAt} elapsed=${elapsedMs}ms readySeenAtLocalMs=${readySeenAtLocalMs} waitTime=${waitTime}ms`,
@@ -80,16 +82,7 @@ const handleSetCaseOutcome = async ({
   }
 
   if (process.env.ENABLE_AUTO_WAITING === "1" && patientData) {
-    const delta =
-      {
-        "need-less-wait": -2,
-        "low-waiting": -1,
-        "moderate-waiting": elapsedMs <= 700 ? -1 : 0,
-        "need-more-wait": elapsedMs < 910 ? +1 : +2,
-        "good-waiting": 0,
-        "near-to-block": elapsedMs > 2100 ? +6 : +3,
-        blocked: 0,
-      }[outcome] ?? 0;
+    const delta = getOutcomeDelta(outcome, elapsedMs);
 
     if (delta !== 0) {
       const currentRaw = Number(process.env.WAIT_FOR_ACCEPT_MS);

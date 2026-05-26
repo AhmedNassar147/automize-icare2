@@ -1071,16 +1071,53 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       return;
     }
 
+    const referralEndTimestamp = Date.now();
+
     const zeroResult = await getExtraTimeBasedLogs({
       referralId: "test",
-      referralEndTimestamp: Date.now(),
+      referralEndTimestamp,
       diff: 0,
     });
 
     const negativeResult = await getExtraTimeBasedLogs({
       referralId: "test",
-      referralEndTimestamp: Date.now(),
+      referralEndTimestamp,
       diff: -1000,
+    });
+
+    const normalRttResult = await getExtraTimeBasedLogs({
+      referralId: "test",
+      referralEndTimestamp,
+      diff: 0,
+      rtt: 70,
+    });
+
+    const rtt95Result = await getExtraTimeBasedLogs({
+      referralId: "test",
+      referralEndTimestamp,
+      diff: 0,
+      rtt: 95,
+    });
+
+    const rtt130Result = await getExtraTimeBasedLogs({
+      referralId: "test",
+      referralEndTimestamp,
+      diff: 0,
+      rtt: 130,
+    });
+
+    const normalBackendDelayResult = await getExtraTimeBasedLogs({
+      referralId: "test",
+      referralEndTimestamp,
+      diff: 0,
+      extraBackendDelayMs: 700,
+    });
+
+    const highBackendDelayResult = await getExtraTimeBasedLogs({
+      referralId: "test",
+      referralEndTimestamp,
+      diff: 0,
+      extraBackendDelayMs: 1200,
     });
 
     const current = Number(process.env.WAIT_FOR_ACCEPT_MS);
@@ -1090,8 +1127,20 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       `🧪 *Next Case Extra Time Test Results*\n` +
         `────────────────────────\n\n` +
         `⚙️ current waitingTime → \`${current}ms\`\n\n` +
+        `📊 Stable diff=0\n` +
         `${zeroResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
-        `${negativeResult.computedExtraBotMessages.join("\n") || "No messages"}`,
+        `📉 Negative diff&lt;0\n` +
+        `${negativeResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
+        `📶 RTT normal 70ms\n` +
+        `${normalRttResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
+        `📶 RTT 95ms\n` +
+        `${rtt95Result.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
+        `📶 RTT 130ms\n` +
+        `${rtt130Result.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
+        `🖥️ Backend delay normal 700ms\n` +
+        `${normalBackendDelayResult.computedExtraBotMessages.join("\n") || "No messages"}\n\n` +
+        `🖥️ Backend delay high 1200ms\n` +
+        `${highBackendDelayResult.computedExtraBotMessages.join("\n") || "No messages"}`,
     );
   });
 

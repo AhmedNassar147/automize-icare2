@@ -130,6 +130,24 @@ export async function updateCaseInLog(referralId, updates) {
   await writeFile(casesTimingLogsFilePath, updatedLines.join("\n"), "utf8");
 }
 
+const parseOutcomeStatus = (status) => {
+  const value = String(status || "").trim();
+
+  const match = value.match(/^(.*)_(\d+)$/);
+
+  if (!match) {
+    return {
+      outcome: value || null,
+      outcomeElapsedMs: null,
+    };
+  }
+
+  return {
+    outcome: match[1],
+    outcomeElapsedMs: Number(match[2]),
+  };
+};
+
 export async function readLogsAsArray() {
   const raw = await readFile(casesTimingLogsFilePath, "utf8");
 
@@ -171,9 +189,10 @@ export async function readLogsAsArray() {
         rtt: parseInt(current.rtt, 10) || null,
         extraWaitMessage: current.extraWaitMessage || "",
         delta: parseInt(current.delta, 10) || null,
+        ...parseOutcomeStatus(current.status),
       };
     })
-    .filter((r) => !isNaN(r.referralId) && r.referralId > 0);
+    .filter((r) => !!r.referralId);
 }
 
 export async function migrateCaseLogTimings() {
@@ -233,7 +252,6 @@ export async function getCasesWithEmptyClaimStatus() {
     .filter(
       (row) =>
         !!row.referralId &&
-        Number(row.referralId) > 0 &&
         !!row.referralEndTimestamp &&
         (!row.claimed || row.claimed.trim() === ""),
     )
@@ -242,5 +260,3 @@ export async function getCasesWithEmptyClaimStatus() {
       referralEndTimestamp: caseEndTimestamp,
     }));
 }
-
-// await migrateCaseLogTimings();

@@ -190,6 +190,16 @@ export const monthlySummaryexcelColumns = [
   ...monthlySummaryBookexcelColumns,
 ];
 
+export const OUTCOME_MAP = {
+  needLessWait: "need-less-wait",
+  lowWaiting: "low-waiting",
+  moderateWaiting: "moderate-waiting",
+  goodWaiting: "good-waiting",
+  needMoreWait: "need-more-wait",
+  nearToBlock: "near-to-block",
+  blocked: "blocked",
+};
+
 export const SUMMARY_TYPES = {
   NORMAL: "NORMAL",
   WEEKLY: "WEEKLY",
