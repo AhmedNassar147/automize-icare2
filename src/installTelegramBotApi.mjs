@@ -34,7 +34,7 @@ import formatPatientToTelegramOrWA from "./formatPatientToTelegramOrWA.mjs";
 const execAsync = promisify(exec);
 
 const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
-const ONLINE_CONFIRM_TIMEOUT_MS = 3 * 60 * 1000;
+const ONLINE_CONFIRM_TIMEOUT_MS = 2 * 60 * 1000;
 
 const COMMANDS = {
   add: {
@@ -130,33 +130,67 @@ const buildButtons = (referralId) => ({
   ],
 });
 
-const prepareMessage = (message) => {
-  const hasHtmlTags = /<[^>]+>/.test(message);
-
-  if (hasHtmlTags) {
-    // Already HTML — use as is
-    return { text: message, parse_mode: "HTML" };
-  }
-
-  const hasMarkdown = /[*_`\[\]]/.test(message);
-
-  if (hasMarkdown) {
-    // Has Markdown — convert to HTML
-    const html = message
-      .replace(/\*(.*?)\*/g, "<b>$1</b>") // *bold*
-      .replace(/_(.*?)_/g, "<i>$1</i>") // _italic_
-      .replace(/`(.*?)`/g, "<code>$1</code>"); // `code`
-    return { text: html, parse_mode: "HTML" };
-  }
-
-  // Plain text — escape HTML special chars just in case
-  const escaped = message
+const escapeTelegramHtml = (value = "") =>
+  String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-  return { text: escaped, parse_mode: "HTML" };
+const restoreTelegramHtmlTags = (value = "") =>
+  value.replace(
+    /&lt;(\/?(?:b|strong|i|em|u|s|strike|del|code|pre))&gt;/g,
+    "<$1>",
+  );
+
+const markdownToHtml = (value = "") =>
+  value
+    .replace(/\*(.*?)\*/g, "<b>$1</b>")
+    .replace(/`(.*?)`/g, "<code>$1</code>");
+
+const prepareMessage = (message = "") => {
+  let text = escapeTelegramHtml(message);
+
+  text = restoreTelegramHtmlTags(text);
+
+  const hasCodeBlock = /<(?:code|pre)>[\s\S]*?<\/(?:code|pre)>/.test(text);
+
+  if (!hasCodeBlock) {
+    text = markdownToHtml(text);
+  }
+
+  return {
+    text,
+    parse_mode: "HTML",
+  };
 };
+
+// const prepareMessage = (message) => {
+//   const hasHtmlTags = /<[^>]+>/.test(message);
+
+//   if (hasHtmlTags) {
+//     // Already HTML — use as is
+//     return { text: message, parse_mode: "HTML" };
+//   }
+
+//   const hasMarkdown = /[*_`\[\]]/.test(message);
+
+//   if (hasMarkdown) {
+//     // Has Markdown — convert to HTML
+//     const html = message
+//       .replace(/\*(.*?)\*/g, "<b>$1</b>") // *bold*
+//       .replace(/_(.*?)_/g, "<i>$1</i>") // _italic_
+//       .replace(/`(.*?)`/g, "<code>$1</code>"); // `code`
+//     return { text: html, parse_mode: "HTML" };
+//   }
+
+//   // Plain text — escape HTML special chars just in case
+//   const escaped = message
+//     .replace(/&/g, "&amp;")
+//     .replace(/</g, "&lt;")
+//     .replace(/>/g, "&gt;");
+
+//   return { text: escaped, parse_mode: "HTML" };
+// };
 
 const getAllowedList = () =>
   process.env.TG_CHAT_IDS?.split(",")

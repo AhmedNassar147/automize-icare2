@@ -10,6 +10,20 @@ const FAR_CASE_MS = FAR_CASE_MIN * 60000;
 
 const HOT_CLUSTER_MS = 4 * 60 * 1000;
 
+const getRttExtraWait = (rtt) => {
+  if (!Number.isFinite(rtt)) return 0;
+
+  if (rtt >= 1000) return +6;
+  if (rtt >= 500) return +4;
+  if (rtt >= 150) return +2;
+  if (rtt >= 98) return +1;
+
+  // extremely responsive session
+  if (rtt <= 60) return -1;
+
+  return 0;
+};
+
 const getConsecutiveNegativeCountToday = (
   todayCases,
   isCurrentDiffNegative,
@@ -160,6 +174,7 @@ const getExtraTimeBasedLogs = async ({
   referralEndTimestamp,
   diff,
   extraBackendDelayMs,
+  rtt,
 }) => {
   const IS_UNIZA_BRANCH = process.env.BRANCH_NAME === "Unizah";
   const extraBotMessages = [];
@@ -187,14 +202,22 @@ const getExtraTimeBasedLogs = async ({
 
   const logCtx = `referralId=${referralId} diffPath=${lastDiff ?? "none"}→${diff}`;
 
+  const extraBasedRtt = getRttExtraWait(rtt);
+  if (extraBasedRtt) {
+    extraWait += extraBasedRtt;
+    const sign = extraBasedRtt > 0 ? "+" : "";
+
+    extraBotMessages.push(`✅ rtt ${logCtx} wait=${sign}${extraBasedRtt}ms`);
+  }
+
   if (extraBackendDelayMs === 0) {
     extraBotMessages.push(`✅ backend-delay ${logCtx} delay=0ms wait=+0ms`);
   }
 
   if (extraBackendDelayMs > 1000) {
-    extraWait += 1;
+    extraWait += 3;
     extraBotMessages.push(
-      `✅ backend-delay ${logCtx} delay=${extraBackendDelayMs}ms threshold=1000ms wait=+3ms`,
+      `✅ backend-delay ${logCtx} delay=${extraBackendDelayMs}ms threshold=1000ms wait=+2ms`,
     );
   }
 
@@ -259,27 +282,39 @@ const getExtraTimeBasedLogs = async ({
     }
   }
 
+  const isLastNegativeButFarToday =
+    isLastTodayDiffNegative && isFarFromLastToday;
+
+  const STABLE_WAITS = {
+    suspiciousCase: 4,
+    hotCluster: 1,
+    far: 3,
+    default: 2,
+  };
+
+  const isSuspiciousCase = isFirstCaseToday || isLastNegativeButFarToday;
+
   if (diff >= 0) {
-    let value;
+    const value = isSuspiciousCase
+      ? STABLE_WAITS.suspiciousCase
+      : isHotCluster
+        ? STABLE_WAITS.hotCluster
+        : isFarFromLastToday
+          ? STABLE_WAITS.far
+          : STABLE_WAITS.default;
 
-    if (isFirstCaseToday) {
-      value = 2.5;
-    } else {
-      value = isHotCluster
-        ? 1
-        : isLastTodayDiffNegative && isFarFromLastToday
-          ? 3
-          : 2;
-    }
+    extraWait += value;
 
-    const addedWait = isFarFromLastToday ? Math.ceil(value * 1.5) : value;
+    const farText = isFirstCaseToday
+      ? "🌅 first-day-stable"
+      : isLastNegativeButFarToday
+        ? "↔️ far-stable-last-negative"
+        : "↔️ far-stable";
 
-    extraWait += addedWait;
-    const farText = isFirstCaseToday ? "🌅 first-day-stable" : "↔️ far-stable";
     extraBotMessages.push(
       isFarFromLastToday
-        ? `${farText} ${logCtx} gap=${gapMin}min wait=+${addedWait}ms`
-        : `✅ stable ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${addedWait}ms`,
+        ? `${farText} ${logCtx} gap=${gapMin}min wait=+${value}ms`
+        : `✅ stable ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${value}ms`,
     );
   }
 

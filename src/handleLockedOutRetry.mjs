@@ -71,7 +71,7 @@ async function handleLockedOutRetry({
     // If the next candidate attempt would be after the deadline -> skip retrying
     if (candidateNextAttempt > deadline) {
       const deadlineDate = new Date(deadline);
-      const message = `🔐 Locked out — next retry would be AFTER referral deadline (${deadlineDate.toLocaleString()}). Skipping further retries (deadlineReached_noRetry)`;
+      const message = `🔐 Locked out — next retry would be AFTER referral deadline (${deadlineDate.toLocaleString()}). Skipping further retries (deadlineReached-noRetry)`;
 
       createConsoleMessage(message, "warn");
       await closePageSafely(page);
@@ -87,7 +87,7 @@ async function handleLockedOutRetry({
       }
 
       // clear references (caller can rely on returned page/cursor)
-      return { page: null, cursor: null, reason: "deadlineReached_noRetry" };
+      return { page: null, cursor: null, reason: "deadlineReached-noRetry" };
     }
 
     const nextAttemptAt = Math.min(candidateNextAttempt, deadline);
@@ -109,7 +109,7 @@ async function handleLockedOutRetry({
     const sleepMs = Math.max(0, nextAttemptAt - Date.now());
     await pausableSleep(sleepMs);
 
-    return { page: null, cursor: null, reason: "slept_until_nextAttempt" };
+    return { page: null, cursor: null, reason: "slept-until-nextAttempt" };
   }
 
   // No valid deadline -> keep retrying every lockSleepTime
@@ -128,7 +128,7 @@ async function handleLockedOutRetry({
   }
   await pausableSleep(lockSleepTime);
 
-  return { page: null, cursor: null, reason: "slept_normal_interval" };
+  return { page: null, cursor: null, reason: "slept-normal-interval" };
 }
 
 export default handleLockedOutRetry;

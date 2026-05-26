@@ -21,7 +21,7 @@ const ALL_KNOWN_HEADERS = [
   ...Object.keys(COLUMN_RENAMES),
 ];
 
-const COLUMNS_TO_REMOVE = ["readyVsServer"];
+const COLUMNS_TO_REMOVE = [];
 
 const summarizeLogsAfterAcceptance = async (data) => {
   const {
@@ -38,6 +38,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     claimed,
     rtt,
     extraWaitMessage,
+    delta,
   } = data;
 
   let endToReady = "";
@@ -64,6 +65,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     claimed: claimed || "",
     rtt: rtt || "",
     extraWaitMessage,
+    delta: delta || "",
   };
 
   const line = createPrettyRow(row);
@@ -110,6 +112,7 @@ export async function updateCaseInLog(referralId, updates) {
       clickedAt: "clickedAt",
       tookMS: "tookMS",
       claimed: "claimed",
+      delta: "delta",
     };
 
     for (const [field, value] of Object.entries(updates)) {
@@ -167,6 +170,7 @@ export async function readLogsAsArray() {
         claimed: current.claimed || "",
         rtt: parseInt(current.rtt, 10) || null,
         extraWaitMessage: current.extraWaitMessage || "",
+        delta: parseInt(current.delta, 10) || null,
       };
     })
     .filter((r) => !isNaN(r.referralId) && r.referralId > 0);

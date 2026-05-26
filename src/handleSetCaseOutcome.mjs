@@ -45,21 +45,20 @@ const handleSetCaseOutcome = async ({
 
   const patientData = foundPatient || patientsStore.getFirstGoingToAccept();
 
-  const { referralId, referralEndTimestamp, readySeenAtLocalMs, waitTime } =
-    patientData || {};
+  const { referralId, readySeenAtLocalMs, waitTime } = patientData || {};
 
   const outcome = blocked
     ? "blocked"
     : elapsedMs < 600
-      ? "need-less-wait" // 0% — definitely too late
+      ? "need-less-wait"
       : elapsedMs < 650
-        ? "low-waiting" // 25% — borderline, slight nudge
+        ? "low-waiting"
         : elapsedMs < 800
-          ? "moderate-waiting" // 33-50% — ok but not optimal
+          ? "moderate-waiting"
           : elapsedMs < 890
-            ? "good-waiting" // 75% — TARGET
+            ? "good-waiting"
             : elapsedMs < 1100
-              ? "need-more-wait" // 0% above range
+              ? "need-more-wait"
               : "near-to-block";
 
   createConsoleMessage(
@@ -67,28 +66,34 @@ const handleSetCaseOutcome = async ({
     outcome === "blocked" ? "error" : "warn",
   );
 
+  const tookMs =
+    Number.isFinite(clickedAt) && Number.isFinite(readySeenAtLocalMs)
+      ? clickedAt - readySeenAtLocalMs - (waitTime || 0)
+      : undefined;
+
   if (patientData) {
     await updateCaseInLog(referralId, {
       status: `${outcome}_${elapsedMs}`,
       clickedAt,
-      tookMS: clickedAt - readySeenAtLocalMs - (waitTime || 0),
+      tookMS: typeof tookMs === "number" ? tookMs : "",
     });
   }
 
   if (process.env.ENABLE_AUTO_WAITING === "1" && patientData) {
     const delta =
       {
-        blocked: +5,
-        "near-to-block": +4,
-        "need-more-wait": +2,
-        "good-waiting": 0,
-        "moderate-waiting": elapsedMs < 770 ? 0 : -1,
-        "low-waiting": -1,
         "need-less-wait": -2,
+        "low-waiting": -1,
+        "moderate-waiting": elapsedMs <= 700 ? -1 : 0,
+        "need-more-wait": elapsedMs < 910 ? +1 : +2,
+        "good-waiting": 0,
+        "near-to-block": elapsedMs > 2100 ? +6 : +3,
+        blocked: 0,
       }[outcome] ?? 0;
 
     if (delta !== 0) {
-      const current = Number(process.env.WAIT_FOR_ACCEPT_MS);
+      const currentRaw = Number(process.env.WAIT_FOR_ACCEPT_MS);
+      const current = Number.isFinite(currentRaw) ? currentRaw : 0;
       const nextWaitTime = current + delta;
       updateEnvFile({ WAIT_FOR_ACCEPT_MS: nextWaitTime });
 
@@ -100,6 +105,10 @@ const handleSetCaseOutcome = async ({
           `📋 outcome: \`${outcome}\` elapsed: \`${elapsedMs}\`ms\n` +
           `🆔 case: \`${referralId}\``,
       );
+
+      await updateCaseInLog(referralId, {
+        delta: delta,
+      });
     }
   }
 

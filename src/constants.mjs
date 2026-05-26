@@ -214,6 +214,7 @@ export const LOGS_SUMMARY_HEADERS = [
   "claimed",
   "rtt",
   "status",
+  "delta",
   "extraWaitMessage",
 ];
 
@@ -233,5 +234,6 @@ export const TIMING_LOGS_WIDTHS = {
   status: 22,
   claimed: 7,
   rtt: 5,
+  delta: 5,
   extraWaitMessage: 30,
 };

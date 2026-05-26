@@ -74,7 +74,6 @@ const formatPatientToTelegramOrWA = (patient, forTelegram) => {
       `🕐 *Actionable At*: ${referralEndDateActionablAt}\n` +
       `🕐 *cutoffTime*: ${label}\n` +
       `🕐 *Ends At*: ${referralEndDate}\n` +
-      // `🔔 *billCount*: ${notificationCount}\n` +
       `────────────────────────\n\n` +
       `🔢 *Referral ID:* \`${referralId}\`\n` +
       `👤 *Name:* \`${patientName}\`\n` +
@@ -98,7 +97,7 @@ const formatPatientToTelegramOrWA = (patient, forTelegram) => {
         `\n` +
         `⚠️ *‼️ ATTENTION ‼️*\n\n` +
         `────────────────────────\n` +
-        `🧾 _${caseAlertMessage || ""}_\n\n` +
+        `🧾 ${caseAlertMessage || ""}\n\n` +
         `📩 *Please review and reply to this message with:*\n\n` +
         `${createConfirmationMessage()}\n`;
     }
