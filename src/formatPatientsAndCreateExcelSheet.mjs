@@ -113,13 +113,14 @@ const createSheetTitle = (minDate, maxDate, headerTitle) => {
   return fullFileTitle;
 };
 
-export const buildSuccessfullReportMessage = (
+export const buildSuccessfullReportMessage = ({
   reportType,
   start,
   end,
   newPatientsLength,
   title,
-) => {
+  notes,
+}) => {
   const tlgMessage = [
     `📊 *${reportType} Report Generated Successfully*`,
     ``,
@@ -128,6 +129,7 @@ export const buildSuccessfullReportMessage = (
     `📄 *Report Type:* \`${reportType}\``,
     `📅 *Period:* \`${start} → ${end}\``,
     `👥 *New Patients:* \`${newPatientsLength}\``,
+    notes ? [``, `🔍 *Notes:*`, notes].join("\n") : "",
     ``,
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
     ``,

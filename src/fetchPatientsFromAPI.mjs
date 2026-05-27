@@ -33,7 +33,7 @@ const fetchPatientsFromAPI = async (page, requestBody) => {
           return { success: false, data: null, message: err.message };
         }
       },
-      { globMedHeaders, requestBody, apiUrl }
+      { globMedHeaders, requestBody, apiUrl },
     );
 
     const { success, data, message } = result;

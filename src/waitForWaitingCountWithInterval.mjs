@@ -1,3 +1,8 @@
+/*
+ *
+ * Helper: `waitForWaitingCountWithInterval`.
+ *
+ */
 import makeUserLoggedInOrOpenHomePage from "./makeUserLoggedInOrOpenHomePage.mjs";
 import processCollectingPatients from "./processCollectingPatients.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";

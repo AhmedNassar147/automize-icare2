@@ -99,8 +99,9 @@ const COMMANDS = {
     command: "migrate_logs",
   },
   getInvoiceFile: {
-    value: /\/invoice(?:\s+(\w+))?$/,
-    description: "get invoice report, Example: /invoice or /invoice f",
+    value: /\/invoice(?:\s+(.*))?$/,
+    description:
+      "Get invoice report. Examples: /invoice or /invoice -f or /invoice -f -s",
     command: "invoice",
   },
   updateCmds: {
@@ -190,19 +191,26 @@ const getMessageData = (msg) => {
   };
 };
 
-const getIfNotAuthorizedMessage = (msg) => {
+const getIfNotAuthorizedMessage = (msg, checkAdminChatId) => {
   const { chatId, fromName, msgId } = getMessageData(msg);
   const allowedList = getAllowedList();
   const isAuthorized = allowedList.includes(chatId);
+  const adminChatId = process.env.ADMIN_CHAT_ID;
+
+  let unAuthorizedMessage = isAuthorized
+    ? undefined
+    : `⛔ \`${fromName}\` you are not Authorized.`;
+
+  if (!unAuthorizedMessage && checkAdminChatId && chatId !== adminChatId) {
+    unAuthorizedMessage = `⛔ This command is restricted, it only responds to Ahmed.`;
+  }
 
   return {
     chatId,
     msgId,
     fromName,
     allowedList,
-    unAuthorizedMessage: isAuthorized
-      ? undefined
-      : `⛔ \`${fromName}\` you are not Authorized.`,
+    unAuthorizedMessage,
   };
 };
 
@@ -556,34 +564,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     createConsoleMessage(`commandsSet`, "info");
   }
 
-  bot.onText(COMMANDS.clearCmds.value, async (msg) => {
-    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
-
-    if (unAuthorizedMessage) {
-      await sendBotMessage(chatId, unAuthorizedMessage);
-      return;
-    }
-
-    await bot.deleteMyCommands({ scope: { type: "default" } });
-    await bot.deleteMyCommands({ scope: { type: "all_private_chats" } });
-    await bot.deleteMyCommands({ scope: { type: "all_group_chats" } });
-    await bot.deleteMyCommands({
-      scope: { type: "all_chat_administrators" },
-    });
-
-    await bot.deleteMyCommands({
-      scope: {
-        type: "chat",
-        chat_id: chatId,
-      },
-    });
-
-    await sendBotMessage(
-      chatId,
-      "Commands cleared for this chat. Reopen the bot chat.",
-    );
-  });
-
   bot.onText(COMMANDS.me.value, async (msg) => {
     const { chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
@@ -893,17 +873,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.updateCmds.value, async (msg) => {
-    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
-    if (unAuthorizedMessage) {
-      await sendBotMessage(chatId, unAuthorizedMessage);
-      return;
-    }
-    await setupCommands();
-
-    await sendBotMessage(chatId, `✅ Bot commands updated.`);
-  });
-
   bot.onText(COMMANDS.getReferralLetter.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName, msgId } =
       getIfNotAuthorizedMessage(msg);
@@ -1136,22 +1105,61 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
   });
 
   bot.onText(COMMANDS.getInvoiceFile.value, async (msg, match) => {
-    const { unAuthorizedMessage, chatId, msgId } =
-      getIfNotAuthorizedMessage(msg);
+    const { unAuthorizedMessage, chatId, msgId } = getIfNotAuthorizedMessage(
+      msg,
+      true,
+    );
 
     if (unAuthorizedMessage) {
-      await sendBotMessage(chatId, unAuthorizedMessage);
+      await sendBotMessage(chatId, unAuthorizedMessage, {
+        reply_to_message_id: msgId,
+      });
       return;
     }
 
-    const arg = match?.[1] || null;
-    const isFinal = !!arg;
+    const args = (match?.[1] || "").split(/\s+/).filter(Boolean);
+
+    const allowedArgs = ["-f", "-s"];
+    const invalidArgs = args.filter((arg) => !allowedArgs.includes(arg));
+
+    if (invalidArgs.length) {
+      await sendBotMessage(
+        chatId,
+        `⛔ Invalid arguments: ${invalidArgs.join(", ")}\n\nAllowed:\n/invoice\n/invoice -f\n/invoice -f -s`,
+        {
+          reply_to_message_id: msgId,
+        },
+      );
+
+      return;
+    }
+
+    const isFinal = args.includes("-f");
+    const skipValidation = args.includes("-s");
+
+    if (skipValidation && !isFinal) {
+      await sendBotMessage(
+        chatId,
+        `⛔ "-s" can only be used with "-f"\n\nExamples:\n/invoice -f\n/invoice -f -s`,
+        {
+          reply_to_message_id: msgId,
+        },
+      );
+
+      return;
+    }
 
     try {
       await sendBotMessage(chatId, `✅ Preparing Invoice Report....`, {
         reply_to_message_id: msgId,
       });
-      await createAndSendInvoiceReport(browser, sendTelegramMessage, !isFinal);
+
+      await createAndSendInvoiceReport(
+        browser,
+        sendTelegramMessage,
+        !isFinal,
+        skipValidation,
+      );
     } catch (error) {
       await sendBotMessage(chatId, `⛔ Error: ${error?.message || error}`, {
         reply_to_message_id: msgId,
@@ -1258,6 +1266,45 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         `❌ Update failed:\n<pre>${err.message}</pre>`,
       );
     }
+  });
+
+  bot.onText(COMMANDS.clearCmds.value, async (msg) => {
+    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    await bot.deleteMyCommands({ scope: { type: "default" } });
+    await bot.deleteMyCommands({ scope: { type: "all_private_chats" } });
+    await bot.deleteMyCommands({ scope: { type: "all_group_chats" } });
+    await bot.deleteMyCommands({
+      scope: { type: "all_chat_administrators" },
+    });
+
+    await bot.deleteMyCommands({
+      scope: {
+        type: "chat",
+        chat_id: chatId,
+      },
+    });
+
+    await sendBotMessage(
+      chatId,
+      "Commands cleared for this chat. Reopen the bot chat.",
+    );
+  });
+
+  bot.onText(COMMANDS.updateCmds.value, async (msg) => {
+    const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+    await setupCommands();
+
+    await sendBotMessage(chatId, `✅ Bot commands updated.`);
   });
 
   const createReply = (queryId, chatId, replyMesgId) => async (message) => {

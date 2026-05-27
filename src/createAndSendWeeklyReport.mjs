@@ -90,13 +90,13 @@ const createAndSendWeeklyReport = async (browser, sendTelegramMessage) => {
       },
     ];
 
-    const tlgMessage = buildSuccessfullReportMessage(
-      SHEET_TYPES.WEEKLY_FULL_DETAILS,
-      minDate,
-      maxDate,
-      newPatients.length,
+    const tlgMessage = buildSuccessfullReportMessage({
+      reportType: SHEET_TYPES.WEEKLY_FULL_DETAILS,
+      start: minDate,
+      end: maxDate,
+      newPatientsLength: newPatients.length,
       title,
-    );
+    });
 
     await sendTelegramMessage(tlgMessage, files);
     createConsoleMessage(tlgMessage, "info");

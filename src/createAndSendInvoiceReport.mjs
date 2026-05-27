@@ -21,12 +21,15 @@ import formatPatientsAndCreateExcelSheet, {
   SHEET_TYPES,
 } from "./formatPatientsAndCreateExcelSheet.mjs";
 import getFormattedDateForSummary from "./getFormattedDateForSummary.mjs";
+import fetchDashboardCounter from "./fetchDashboardCounter.mjs";
+import updateEnvFile from "./updateEnvFile.mjs";
 import { HOME_PAGE_URL } from "./constants.mjs";
 
 const createAndSendInvoiceReport = async (
   browser,
   sendTelegramMessage,
   onlyForPresentation,
+  skipIfDiffIsEqualNewPatients = false,
 ) => {
   let _page = null;
   try {
@@ -155,19 +158,70 @@ const createAndSendInvoiceReport = async (
       return;
     }
 
-    const buffer = await workbook.xlsx.writeBuffer();
+    const {
+      success: hasCounterApiSuccess,
+      message: counterApiMessage,
+      data: counterData,
+      counter,
+    } = await fetchDashboardCounter();
 
-    if (!onlyForPresentation) {
-      insertPatients(invoiceNewPatients);
+    if (!hasCounterApiSuccess || !!counterApiMessage) {
+      const counterMessage = formatSheetError({
+        step: "fetching dashboard counter",
+        sheetType: SHEET_TYPES.INVOICE,
+        error: counterApiMessage || "Unknown error fetching dashboard counter",
+      });
+      createConsoleMessage(`Counter Data: ${counterData}`, "error");
+      await sendTelegramMessage(counterMessage);
+      return;
     }
 
-    const tlgMessage = buildSuccessfullReportMessage(
-      SHEET_TYPES.INVOICE,
-      minDate,
-      maxDate,
-      invoiceNewPatients.length,
+    const { admitted, discharged } = counter;
+
+    const lastDataTotal = (process.env.LAST_DATA || "0,0")
+      .split(",")
+      .reduce((acc, value) => acc + Number(value), 0);
+
+    const newTotalValues = (admitted || 0) + (discharged || 0);
+
+    const diff = newTotalValues - lastDataTotal;
+    const invoiceNewPatientsLength = invoiceNewPatients.length ?? 0;
+
+    const isDiffEqualNewPatients = diff === invoiceNewPatientsLength;
+
+    const shouldSaveNewPatients =
+      !onlyForPresentation &&
+      (skipIfDiffIsEqualNewPatients || isDiffEqualNewPatients);
+
+    if (shouldSaveNewPatients) {
+      insertPatients(invoiceNewPatients);
+      updateEnvFile({
+        LAST_DATA: `${admitted || 0},${discharged || 0}`,
+      });
+    }
+
+    const notes = [
+      `• Dashboard Counter: Admitted=${admitted || 0}, Discharged=${discharged || 0} total=${newTotalValues}`,
+      `• Previous saved total: ${lastDataTotal}`,
+      `• Detected difference: ${diff}`,
+      isDiffEqualNewPatients
+        ? `• Validation: Difference matches new patients count`
+        : `• Validation: Difference does NOT match new patients count`,
+      !shouldSaveNewPatients
+        ? `• Skipped saving new patients, To skip validation check, run the same command with -s`
+        : `• Patients saved to the database for future comparisons`,
+    ].join("\n");
+
+    const tlgMessage = buildSuccessfullReportMessage({
+      reportType: SHEET_TYPES.INVOICE,
+      start: minDate,
+      end: maxDate,
+      newPatientsLength: invoiceNewPatientsLength,
       title,
-    );
+      notes,
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
 
     const files = [
       {
