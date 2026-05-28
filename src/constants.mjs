@@ -243,7 +243,7 @@ export const TIMING_LOGS_WIDTHS = {
   tookMS: 6,
   status: 22,
   claimed: 7,
-  rtt: 7,
+  rtt: 6,
   delta: 5,
   extraWaitMessage: 30,
 };
