@@ -667,7 +667,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
 
     await sendBotMessage(
       targetChatId,
-      `🟢 You are now active and will receive cases.`,
+      `🟢 Ahmed Just put you on duty, You are now active and will receive cases.`,
     ).catch(() => null);
 
     if (previousChatId && previousChatId !== targetChatId) {
@@ -807,7 +807,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       chatId,
       `👥 *Authorized Users*\n` +
         `────────────────────────\n\n` +
-        users.join("\n"),
+        users.join("\n\n"),
     );
   });
 
