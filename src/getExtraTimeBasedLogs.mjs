@@ -21,8 +21,8 @@ const WAITS_MAP = {
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
 
-  if (rtt >= 1000) return +6;
-  if (rtt >= 500) return +4;
+  if (rtt >= 1000) return +4;
+  if (rtt >= 500) return +3;
   if (rtt >= 150) return +2;
   if (rtt >= 95) return +1;
 

@@ -47,30 +47,31 @@ const COMMANDS = {
     description: "make yourself active to receive and control cases",
     command: "me",
   },
-  setWait: {
-    value: /\/set_wait (\d+)/,
-    description: "Long press → set wait time. Example: /set_wait 2050",
-    command: "set_wait",
-  },
-  setAutoWait: {
-    value: /\/set_auto_wait (\d+)/,
-    description: "Long press → control auto wait. Example: /set_auto_wait 1",
-    command: "set_auto_wait",
-  },
   wait: {
-    value: /\/wait$/,
-    description: "get current wait time before hitting the accept button",
+    value: /\/wait(?:\s+(\d+))?$/,
+    description: "Get or set wait time. Examples: /wait OR /wait 2050",
     command: "wait",
+  },
+  auto_wait: {
+    value: /\/auto_wait(?:\s+(\S+))?$/,
+    description:
+      "Get or set auto wait. Examples: /auto_wait OR /auto_wait 1 OR /auto_wait 0",
+    command: "auto_wait",
+  },
+  activate: {
+    value: /\/activate\s+(\d+)$/,
+    description: "Activate another authorized user by chat ID",
+    command: "activate",
+  },
+  getUsers: {
+    value: /\/get_users$/,
+    description: "List all authorized users and show active one",
+    command: "get_users",
   },
   f_accept: {
     value: /\/f_accept$/,
     description: "get first patient to be accepted with time left details",
     command: "f_accept",
-  },
-  auto_wait: {
-    value: /\/auto_wait$/,
-    description: "get if auto update wait time is enabled or not",
-    command: "auto_wait",
   },
   updateCode: {
     value: /\/update_code$/,
@@ -622,6 +623,62 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
+  bot.onText(COMMANDS.activate.value, async (msg, match) => {
+    const { unAuthorizedMessage, chatId, fromName, allowedList } =
+      getIfNotAuthorizedMessage(msg, true);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    const targetChatId = match?.[1];
+
+    if (!allowedList.includes(targetChatId)) {
+      return await sendBotMessage(
+        chatId,
+        `⛔ Chat ID \`${targetChatId}\` is not authorized.`,
+      );
+    }
+
+    const previousChatId = getActiveChatID();
+
+    if (previousChatId === targetChatId) {
+      return await sendBotMessage(
+        chatId,
+        `⛔ Chat ID \`${targetChatId}\` is already active.`,
+      );
+    }
+
+    const targetName = await getChatName(targetChatId);
+
+    updateEnvFile({
+      TG_CHAT_ID: targetChatId,
+      TG_CHAT_USER_NAME: targetName,
+      CLIENT_WHATSAPP_NUMBER: process.env[`TG_PHONE_NUMBER_${targetChatId}`],
+    });
+
+    await sleep(1000);
+
+    await sendBotMessage(
+      chatId,
+      `✅ Activated \`${targetName}\` (\`${targetChatId}\`).`,
+    );
+
+    await sendBotMessage(
+      targetChatId,
+      `🟢 You are now active and will receive cases.`,
+    ).catch(() => null);
+
+    if (previousChatId && previousChatId !== targetChatId) {
+      await sendBotMessage(
+        previousChatId,
+        `⚪ You are no longer active.\n` +
+          `🔔 \`${fromName}\` switched active duty to \`${targetName}\`.`,
+      ).catch(() => null);
+    }
+  });
+
   bot.onText(COMMANDS.who.value, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
 
@@ -721,21 +778,97 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     });
   });
 
-  bot.onText(COMMANDS.wait.value, async (msg) => {
-    const { chatId, unAuthorizedMessage } = getIfNotAuthorizedMessage(msg);
+  bot.onText(COMMANDS.getUsers.value, async (msg) => {
+    const { unAuthorizedMessage, chatId, allowedList } =
+      getIfNotAuthorizedMessage(msg, true);
 
     if (unAuthorizedMessage) {
       await sendBotMessage(chatId, unAuthorizedMessage);
       return;
     }
 
+    if (!allowedList.length) {
+      return await sendBotMessage(chatId, `⚠️ No authorized users found.`);
+    }
+
+    const activeChatId = getActiveChatID();
+
+    const users = await Promise.all(
+      allowedList.map(async (id) => {
+        const name = await getChatName(id);
+
+        const isActive = id === activeChatId;
+
+        return `${isActive ? "🟢" : "⚪"} ` + `\`${name}\` → \`${id}\``;
+      }),
+    );
+
     await sendBotMessage(
       chatId,
-      `✅ Current wait time is set to \`${process.env.WAIT_FOR_ACCEPT_MS}\`ms.`,
+      `👥 *Authorized Users*\n` +
+        `────────────────────────\n\n` +
+        users.join("\n"),
     );
   });
 
-  bot.onText(COMMANDS.setWait.value, async (msg, match) => {
+  bot.onText(COMMANDS.wait.value, async (msg, match) => {
+    const { chatId, unAuthorizedMessage, fromName } =
+      getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    const raw = match?.[1];
+
+    const currentWait = process.env.WAIT_FOR_ACCEPT_MS;
+
+    // GET CURRENT
+    if (!raw) {
+      return await sendBotMessage(
+        chatId,
+        `✅ Current wait time is \`${currentWait}\`ms.`,
+      );
+    }
+
+    // SET NEW
+    const value = parseInt(raw, 10);
+
+    const minValue = 1800;
+
+    if (!Number.isFinite(value) || value < minValue) {
+      return await sendBotMessage(
+        chatId,
+        `⛔ Invalid value \`${raw}\`.\nIt should be a number greater than or equal to ${minValue}.\nUsage:\n/wait\n/wait 2050`,
+      );
+    }
+
+    if (currentWait === String(value)) {
+      return await sendBotMessage(
+        chatId,
+        `⛔ waitTime is already \`${value}\`ms.`,
+      );
+    }
+
+    updateEnvFile({ WAIT_FOR_ACCEPT_MS: value });
+
+    await sendBotMessage(
+      chatId,
+      `✅ waitTime updated from \`${currentWait}\`ms to \`${value}\`ms.`,
+    );
+
+    const activeChatId = getActiveChatID();
+
+    if (activeChatId !== chatId) {
+      await sendBotMessage(
+        activeChatId,
+        `🔔 \`${fromName}\` changed waitTime from \`${currentWait}\`ms to \`${value}\`ms.`,
+      );
+    }
+  });
+
+  bot.onText(COMMANDS.auto_wait.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName } =
       getIfNotAuthorizedMessage(msg);
 
@@ -744,32 +877,47 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       return;
     }
 
-    const value = parseInt(match[1], 10);
+    const value = match?.[1];
 
-    if (isNaN(value) || value < 1600) {
-      await sendBotMessage(
+    if (value && !["1", "0"].includes(value)) {
+      return await sendBotMessage(
         chatId,
-        `⛔ Invalid number. Usage: /set_wait 2005 and value must be greater than 1600`,
+        `⛔ Invalid value \`${value}\`.\nUsage:\n/auto_wait\n/auto_wait 1\n/auto_wait 0`,
       );
-      return;
     }
 
-    const currentWait = process.env.WAIT_FOR_ACCEPT_MS;
+    const currentAutoWaitState = process.env.ENABLE_AUTO_WAITING;
 
-    updateEnvFile({ WAIT_FOR_ACCEPT_MS: value });
-    await sleep(1000);
+    const isAutoWaitingActive = currentAutoWaitState === "1";
 
-    await sendBotMessage(
-      chatId,
-      `✅ waitTime updated from \`${currentWait}\`ms to \`${value}\`ms successfully.`,
-    );
+    if (!value) {
+      return await sendBotMessage(
+        chatId,
+        `✅ Auto waiting is \`${isAutoWaitingActive ? "enabled" : "disabled"}\`.`,
+      );
+    }
+
+    const isActive = value === "1";
+    const isSame = currentAutoWaitState === value;
+    const status = isActive ? "enabled" : "disabled";
+
+    if (isSame) {
+      return await sendBotMessage(
+        chatId,
+        `⛔ Auto waiting is already \`${status}\`.`,
+      );
+    }
+
+    updateEnvFile({ ENABLE_AUTO_WAITING: value });
+
+    await sendBotMessage(chatId, `✅ Auto waiting updated to \`${status}\`.`);
 
     const activeChatId = getActiveChatID();
 
     if (activeChatId !== chatId) {
       await sendBotMessage(
         activeChatId,
-        `🔔 \`${fromName}\` just changed waitTime from \`${currentWait}\`ms to \`${value}\`ms.`,
+        `🔔 \`${fromName}\` changed \`autoWait\` to \`${status}\`.`,
       );
     }
   });
@@ -806,71 +954,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         reply_to_message_id: msgId,
       },
     );
-  });
-
-  bot.onText(COMMANDS.auto_wait.value, async (msg, match) => {
-    const { unAuthorizedMessage, chatId, fromName } =
-      getIfNotAuthorizedMessage(msg);
-
-    if (unAuthorizedMessage) {
-      await sendBotMessage(chatId, unAuthorizedMessage);
-      return;
-    }
-
-    const isAutoWaitingActive = process.env.ENABLE_AUTO_WAITING === "1";
-
-    await sendBotMessage(
-      chatId,
-      `✅ Auto waiting is ${isAutoWaitingActive ? "enabled" : "disabled"} `,
-    );
-  });
-
-  bot.onText(COMMANDS.setAutoWait.value, async (msg, match) => {
-    const { unAuthorizedMessage, chatId, fromName } =
-      getIfNotAuthorizedMessage(msg);
-
-    if (unAuthorizedMessage) {
-      await sendBotMessage(chatId, unAuthorizedMessage);
-      return;
-    }
-
-    const value = match[1] || "";
-
-    if (!["1", "0"].includes(value)) {
-      return await sendBotMessage(
-        chatId,
-        `⛔ Invalid value. Usage: /set_auto_wait \`1 or 0\` LIKE: /set_auto_wait 1`,
-      );
-    }
-
-    const isActive = value === "1";
-    const isSame = process.env.ENABLE_AUTO_WAITING === value;
-
-    const status = isActive ? "enabled" : "disabled";
-
-    if (isSame) {
-      return await sendBotMessage(
-        chatId,
-        `⛔ Auto waiting is already \`${status}\`.`,
-      );
-    }
-
-    updateEnvFile({ ENABLE_AUTO_WAITING: value });
-    await sleep(1000);
-
-    await sendBotMessage(
-      chatId,
-      `✅ Auto waiting just updated to \`${status}\`.`,
-    );
-
-    const activeChatId = getActiveChatID();
-
-    if (activeChatId !== chatId) {
-      await sendBotMessage(
-        activeChatId,
-        `🔔 \`${fromName}\` just changed \`autoWait\` to \`${status}\`.`,
-      );
-    }
   });
 
   bot.onText(COMMANDS.getReferralLetter.value, async (msg, match) => {
@@ -1406,7 +1489,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         pending.confirmed = true;
         pending.confirmedBy = chatId;
         pendingOnlineChecks.delete(referralId);
-        await patientsStore.scheduleFakeRejectProbe(referralId, false);
 
         updateEnvFile({
           TG_CHAT_ID: chatId,

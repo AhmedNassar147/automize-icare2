@@ -217,7 +217,7 @@ import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
 
     patientsStore.on(
       "patientsAdded",
-      processSendPatientsToClient(sendTelegramMessage, false),
+      processSendPatientsToClient(patientsStore, sendTelegramMessage, false),
     );
 
     // Background collector
