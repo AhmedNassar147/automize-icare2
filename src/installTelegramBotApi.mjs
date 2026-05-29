@@ -1005,13 +1005,16 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         recordReferralId === referralId
       ) {
         try {
+          const fileMessage = `✅ Cached letter served for Referral ID: \`${referralId}\` and action: \`${recordAction}\`.`;
+          await sendBotMessage(chatId, fileMessage, {
+            reply_to_message_id: msgId,
+          });
+
           await bot.sendDocument(chatId, tgFileId, {
             reply_to_message_id: msgId,
             caption: `📎 ${recordAction}_${referralId}`,
           });
 
-          const fileMessage = `✅ Cached letter served for Referral ID: \`${referralId}\` and action: \`${recordAction}\`.`;
-          await sendBotMessage(chatId, fileMessage);
           createConsoleMessage(fileMessage, "info");
 
           return;
