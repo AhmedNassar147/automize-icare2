@@ -45,7 +45,7 @@ function run(cmd, args) {
 export default async function compressPdfGentlly(pdfBytes, opts = {}) {
   const {
     gsPath = "gswin64c", // or full path to gswin64c.exe
-    pdfSettings = "/screen",
+    pdfSettings = "/ebook",
     compatibilityLevel = "1.4",
     quiet = true,
     unlinkFilesFinally = false,
@@ -57,28 +57,32 @@ export default async function compressPdfGentlly(pdfBytes, opts = {}) {
   const outFile = join(dir, `out-${id}.pdf`);
 
   try {
-    await writeFile(inFile, Buffer.from(pdfBytes));
+    const buff = Buffer.from(pdfBytes);
+
+    await writeFile(inFile, buff);
 
     const args = [
       "-sDEVICE=pdfwrite",
-      "-r110",
+      "-r150",
       `-dCompatibilityLevel=${compatibilityLevel}`,
       `-dPDFSETTINGS=${pdfSettings}`,
-      "-dEmbedAllFonts=false",
+      "-dEmbedAllFonts=true",
       "-dSubsetFonts=true",
       "-dCompressFonts=true",
       "-dDetectDuplicateImages=true",
-      "-dDownsampleColorImages=true",
       "-dCompressPages=true",
       "-dPreserveAnnots=false",
       "-dPreserveMarkedContent=false",
       "-dPreserveOverprintSettings=false",
       "-dAutoFilterColorImages=false",
-      "-dColorImageResolution=80",
-      "-dGrayImageResolution=75",
-      "-dMonoImageResolution=75",
+      "-dDownsampleColorImages=true",
+      "-dDownsampleGrayImages=true",
+      "-dDownsampleMonoImages=true",
+      "-dColorImageResolution=140",
+      "-dGrayImageResolution=140",
+      "-dMonoImageResolution=140",
+      "-dJPEGQ=70",
       "-dColorImageFilter=/DCTEncode",
-      "-dJPEGQ=40",
       "-dPreserveOPIComments=false",
       "-dPreserveEPSInfo=false",
       "-dNOPAUSE",
@@ -90,7 +94,8 @@ export default async function compressPdfGentlly(pdfBytes, opts = {}) {
 
     await run(gsPath, args);
     const out = await readFile(outFile);
-    return out;
+
+    return out.length < buff.length ? out : buff;
   } finally {
     if (unlinkFilesFinally) {
       await Promise.allSettled([unlink(inFile), unlink(outFile)]);
