@@ -9,6 +9,7 @@
 /fingerprint.json
 /patients.db
 /patientsWeeklyHistory.db
+/casesLetters.db
 /abc.js
 /tries.mjs
 /details-page-min.js
