@@ -27,7 +27,7 @@ const getRttExtraWait = (rtt) => {
   if (rtt >= 95) return +1;
 
   // extremely responsive session
-  if (rtt < 80) return -1;
+  if (rtt < 75) return -1;
 
   return 0;
 };

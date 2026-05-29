@@ -21,24 +21,23 @@ const tabsToCheck = [
     includeConfirmed: true,
     noDischarged: true,
     noAdmitted: true,
-    status: "C",
+    status: "CF",
   },
   {
     // Admitted only
     noDischarged: true,
-    status: "A",
+    status: "AD",
   },
   // {
   //   // Discharged only
   //   noDischarged: false,
   //   noAdmitted: true,
-  //   status: "D",
+  //   status: "DS",
   // },
 ];
 
 const fetchCase = async (page, referralId) => {
   for (const { status, ...tabParams } of tabsToCheck) {
-    await sleep(1000 + Math.random() * 1000);
     const { patients, errors } = await getSummaryFromTabs({
       page,
       noDates: true,
@@ -47,7 +46,7 @@ const fetchCase = async (page, referralId) => {
     });
 
     if (patients?.length) {
-      const isClaimed = ["C", "A", "D"].includes(status);
+      const isClaimed = ["CF", "AD", "DS"].includes(status);
       return {
         referralId,
         status: isClaimed ? "Yes" : "No",
@@ -62,7 +61,7 @@ const fetchCase = async (page, referralId) => {
     referralId,
     status: "No",
     shouldUpdateAndNotify: true,
-    errors: null,
+    errors: ["Referral not found in any status tab."],
   };
 };
 
@@ -70,6 +69,7 @@ const updateAndNotifyUser = async ({
   sendTelegramMessage,
   referralId,
   status,
+  errors,
 }) => {
   const statusEmoji = status === "Yes" ? "✅" : "❌";
   const statusText =
@@ -79,7 +79,8 @@ const updateAndNotifyUser = async ({
     `${statusEmoji} *Referral Status Update*\n` +
     `────────────────────────\n` +
     `🔢 *Referral ID:* \`${referralId}\`\n` +
-    `📋 *Status:* ${statusText}`;
+    `📋 *Status:* ${statusText}` +
+    `${!!errors?.length ? `\n⚠️ *Errors:* ${errors.join("\n\n")}` : ""}`;
 
   await Promise.all([
     updateCaseInLog(referralId, { claimed: status }).catch((err) =>
