@@ -5,15 +5,29 @@ import Database from "better-sqlite3";
 
 const patientsDbFilePath = `${process.cwd()}/patients.db`;
 const weeklyHistoryFilePath = `${process.cwd()}/patientsWeeklyHistory.db`;
+const casesLettersFilePath = `${process.cwd()}/casesLetters.db`;
 
 const db = new Database(patientsDbFilePath);
 const weeklyHistoryDb = new Database(weeklyHistoryFilePath);
+const casesLettersDb = new Database(casesLettersFilePath);
 
 // Optional but generally sensible for SQLite apps
 // db.pragma("journal_mode = WAL");
 // weeklyHistoryDb.pragma("journal_mode = WAL");
 
 (() => {
+  casesLettersDb.exec(`
+    CREATE TABLE IF NOT EXISTS casesFilesDb (
+      referralId TEXT PRIMARY KEY,
+      date INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      tgFileId TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_casesFilesDb_date
+    ON casesFilesDb(date);
+  `);
+
   [db, weeklyHistoryDb].forEach((database) => {
     database
       .prepare(
@@ -370,6 +384,67 @@ const getWeeklyHistoryPatient = (rowKey) =>
 const getOldestPatient = () =>
   db.prepare(`SELECT * FROM patients ORDER BY id ASC LIMIT 1`).get() || null;
 
+const upsertCaseFile = (referralId, action, tgFileId) => {
+  const stmt = casesLettersDb.prepare(`
+    INSERT INTO casesFilesDb (
+      referralId,
+      date,
+      action,
+      tgFileId
+    )
+    VALUES (
+      @referralId,
+      @date,
+      @action,
+      @tgFileId
+    )
+    ON CONFLICT(referralId)
+    DO UPDATE SET
+      date = excluded.date,
+      action = excluded.action,
+      tgFileId = excluded.tgFileId
+  `);
+
+  return stmt.run({
+    referralId: String(referralId),
+    date: Date.now(),
+    action: String(action),
+    tgFileId: String(tgFileId),
+  });
+};
+
+const getCaseFile = (referralId) => {
+  const stmt = casesLettersDb.prepare(`
+    SELECT *
+    FROM casesFilesDb
+    WHERE referralId = ?
+  `);
+
+  return stmt.get(String(referralId));
+};
+
+const deleteOldCaseFiles = () => {
+  const now = new Date();
+
+  // Start of yesterday (local time)
+  const startOfYesterday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - 1,
+    0,
+    0,
+    0,
+    0,
+  ).getTime();
+
+  const stmt = casesLettersDb.prepare(`
+    DELETE FROM casesFilesDb
+    WHERE date < ?
+  `);
+
+  return stmt.run(startOfYesterday);
+};
+
 export {
   createPatientRowKey,
   db,
@@ -385,4 +460,7 @@ export {
   toDbRow,
   getWeeklyHistoryPatient,
   getOldestPatient,
+  upsertCaseFile,
+  getCaseFile,
+  deleteOldCaseFiles,
 };

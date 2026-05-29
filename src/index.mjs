@@ -49,6 +49,7 @@ import installTelegramBotApi from "./installTelegramBotApi.mjs";
 import { getCasesWithEmptyClaimStatus } from "./summarizeLogsAfterAcceptance.mjs";
 import ensureCaseTimingLogsFile from "./ensureCaseTimingLogsFile.mjs";
 import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
+import { deleteOldCaseFiles } from "./db.mjs";
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -229,7 +230,31 @@ import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
         sendTelegramMessage,
       }))();
 
-    // Summary cron
+    // cleanup old case letter files from db
+    cron.schedule(
+      "0 3 * * *",
+      async () => {
+        createConsoleMessage("✅ cases letters files cleanup", "info");
+
+        try {
+          const result = deleteOldCaseFiles();
+
+          createConsoleMessage(
+            `✅ cases letters files cleanup done, ${result.changes} files deleted.`,
+            "info",
+          );
+        } catch (err) {
+          createConsoleMessage(
+            err.message || err,
+            "error",
+            "cases letters files cleanup",
+          );
+        }
+      },
+      { timezone: "Asia/Riyadh" },
+    );
+
+    // weekly Summary cron
     cron.schedule(
       WEEKLY_REPORT_GENERATED_AT,
       async () => {

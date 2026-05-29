@@ -10,8 +10,10 @@ import { promisify } from "util";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import {
   createPatientRowKey,
+  getCaseFile,
   getWeeklyHistoryPatient,
   updateWeeklyHistoryPatients,
+  upsertCaseFile,
 } from "./db.mjs";
 import getMimeType from "./getMimeType.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
@@ -989,6 +991,40 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     const actionType =
       action === "a" ? USER_ACTION_TYPES.ACCEPT : USER_ACTION_TYPES.REJECT;
 
+    if (!reason) {
+      const record = getCaseFile(referralId);
+      const {
+        action: recordAction,
+        referralId: recordReferralId,
+        tgFileId,
+      } = record || {};
+
+      if (
+        tgFileId &&
+        recordAction === actionType &&
+        recordReferralId === referralId
+      ) {
+        try {
+          await bot.sendDocument(chatId, tgFileId, {
+            reply_to_message_id: msgId,
+            caption: `📎 ${recordAction}_${referralId}`,
+          });
+
+          const fileMessage = `✅ Cached letter served for Referral ID: \`${referralId}\` and action: \`${recordAction}\`.`;
+          await sendBotMessage(chatId, fileMessage);
+          createConsoleMessage(fileMessage, "info");
+
+          return;
+        } catch (err) {
+          createConsoleMessage(
+            err?.message || err,
+            "warn",
+            `cached file resend failed referralId=${referralId}`,
+          );
+        }
+      }
+    }
+
     const patientData = patientsStore.getPatientByReferralId(referralId);
 
     if (!patientData) {
@@ -1557,6 +1593,46 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
 
       const timeValidation = patientsStore.canStillProcessPatient(referralId);
 
+      const isAccepted = action === "accept";
+      const isRejected = action === "reject";
+      const isCancelled = action === "cancel";
+
+      // Intentionally before timeValidation:
+      // even if bot processing is late, the doctor/user may have manually accepted/rejected,
+      // so we still archive and refresh the latest action letter file.
+      if (isAccepted || isRejected) {
+        const { fileData } = await getCurrentActionLetterFile(
+          referralId,
+          action,
+          true,
+        );
+
+        const fileName = `${action}_${referralId}`;
+
+        const actionDocumentResponse = await bot
+          .sendDocument(
+            messageChatId,
+            fileData,
+            { reply_to_message_id: msgId, caption: `📎 ${fileName}` },
+            { filename: `${fileName}.pdf`, contentType: "application/pdf" },
+          )
+          .catch((err) => {
+            createConsoleMessage(
+              err?.message || err,
+              "error",
+              `sendDocument ${fileName}`,
+            );
+
+            return null;
+          });
+
+        const fileId = actionDocumentResponse?.document?.file_id;
+
+        if (fileId) {
+          upsertCaseFile(referralId, action, fileId);
+        }
+      }
+
       if (!timeValidation.success) {
         const replyMessage = `${timeValidation.message} For (Referral ID: ${referralId})`;
 
@@ -1575,10 +1651,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         createConsoleMessage(replyMessage, "info");
         return reply(replyMessage);
       }
-
-      const isAccepted = action === "accept";
-      const isRejected = action === "reject";
-      const isCancelled = action === "cancel";
 
       const scheduledAt = Date.now();
 
