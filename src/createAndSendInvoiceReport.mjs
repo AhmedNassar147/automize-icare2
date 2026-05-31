@@ -218,7 +218,7 @@ const createAndSendInvoiceReport = async (
       end: maxDate,
       newPatientsLength: invoiceNewPatientsLength,
       title,
-      notes,
+      notes: isDiffEqualNewPatients ? undefined : notes,
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
