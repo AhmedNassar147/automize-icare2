@@ -163,7 +163,7 @@ const createAndSendInvoiceReport = async (
       message: counterApiMessage,
       data: counterData,
       counter,
-    } = await fetchDashboardCounter();
+    } = await fetchDashboardCounter(page);
 
     if (!hasCounterApiSuccess || !!counterApiMessage) {
       const counterMessage = formatSheetError({

@@ -3,7 +3,7 @@
  * Helper: `fetchDashboardCounter`.
  */
 import { baseGlobMedAPiUrl, globMedHeaders } from "./constants.mjs";
-const apiUrl = `${baseGlobMedAPiUrl}/dashboard/counter`;
+const apiUrl = `${baseGlobMedAPiUrl}/dashboard-counter`;
 
 const fetchDashboardCounter = async (page) => {
   try {
