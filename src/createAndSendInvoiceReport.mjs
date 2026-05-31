@@ -27,9 +27,8 @@ import { HOME_PAGE_URL } from "./constants.mjs";
 
 const createAndSendInvoiceReport = async (
   browser,
-  sendTelegramMessage,
   onlyForPresentation,
-  skipIfDiffIsEqualNewPatients = false,
+  skipValidation = false,
 ) => {
   let _page = null;
   try {
@@ -49,8 +48,7 @@ const createAndSendInvoiceReport = async (
         error: "Unable to login user",
       });
       createConsoleMessage(message, "error");
-      await sendTelegramMessage(message);
-      return;
+      return { message };
     }
 
     const firstSummaryReportStartsAt =
@@ -58,7 +56,7 @@ const createAndSendInvoiceReport = async (
 
     const currentDate = new Date();
     const currentDay = currentDate.getDate();
-    const isInEntryNewMonth = currentDay <= 2;
+    const isInEntryNewMonth = currentDay <= 3;
     const useCurrentMonthForHistory = isInEntryNewMonth ? false : true;
 
     const firstDayOfMonth = new Date(
@@ -92,8 +90,7 @@ const createAndSendInvoiceReport = async (
       });
 
       createConsoleMessage(message, "error");
-      await sendTelegramMessage(message);
-      return;
+      return { message };
     }
 
     const allPatients = allPatientsStatement.all();
@@ -128,8 +125,7 @@ const createAndSendInvoiceReport = async (
       });
 
       createConsoleMessage(message, "error");
-      await sendTelegramMessage(message);
-      return;
+      return { message };
     }
 
     const workbook = new ExcelJS.Workbook();
@@ -142,8 +138,7 @@ const createAndSendInvoiceReport = async (
       );
 
     if (!success) {
-      await sendTelegramMessage(message);
-      return;
+      return { message };
     }
 
     const { success: hasDetailsCreated, message: detailsMessage } =
@@ -154,8 +149,7 @@ const createAndSendInvoiceReport = async (
       );
 
     if (!hasDetailsCreated) {
-      await sendTelegramMessage(detailsMessage);
-      return;
+      return { message: detailsMessage };
     }
 
     const {
@@ -171,9 +165,11 @@ const createAndSendInvoiceReport = async (
         sheetType: SHEET_TYPES.INVOICE,
         error: counterApiMessage || "Unknown error fetching dashboard counter",
       });
-      createConsoleMessage(`Counter Data: ${counterData}`, "error");
-      await sendTelegramMessage(counterMessage);
-      return;
+      createConsoleMessage(
+        `Counter Data: ${JSON.stringify(counterData || {}, null, 2)}`,
+        "error",
+      );
+      return { message: counterMessage };
     }
 
     const { admitted, discharged } = counter;
@@ -190,8 +186,7 @@ const createAndSendInvoiceReport = async (
     const isDiffEqualNewPatients = diff === invoiceNewPatientsLength;
 
     const shouldSaveNewPatients =
-      !onlyForPresentation &&
-      (skipIfDiffIsEqualNewPatients || isDiffEqualNewPatients);
+      !onlyForPresentation && (skipValidation || isDiffEqualNewPatients);
 
     if (shouldSaveNewPatients) {
       insertPatients(invoiceNewPatients);
@@ -231,9 +226,8 @@ const createAndSendInvoiceReport = async (
       },
     ];
 
-    await sendTelegramMessage(tlgMessage, files);
     createConsoleMessage(tlgMessage, "info");
-    return;
+    return { message: tlgMessage, files };
   } catch (error) {
     const message = formatSheetError({
       step: "catch createAndSendInvoiceReport",
@@ -242,7 +236,7 @@ const createAndSendInvoiceReport = async (
       error: error.message || error,
     });
     createConsoleMessage(message, "error");
-    await sendTelegramMessage(message);
+    return { message };
   } finally {
     if (_page) {
       await closePageSafely(_page);

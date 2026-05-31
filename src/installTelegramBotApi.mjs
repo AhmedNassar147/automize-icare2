@@ -1142,7 +1142,9 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
 
     const referralEndTimestamp = Date.now();
-    const current = Number(process.env.WAIT_FOR_ACCEPT_MS);
+    const { ENABLE_AUTO_WAITING, WAIT_FOR_ACCEPT_MS } = process.env;
+    const current = Number(WAIT_FOR_ACCEPT_MS);
+    const isAutoWaitingActive = ENABLE_AUTO_WAITING === "1";
 
     const formatResult = (title, result) =>
       `${title} → extra \`${result.computedExtraWait}ms\` → *\`${current + result.computedExtraWait}ms\`*\n` +
@@ -1213,7 +1215,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       chatId,
       `🧪 *Next Case Extra Time Test Results*\n` +
         `────────────────────────\n\n` +
-        `⚙️ current waitingTime → \`${current}ms\`\n\n` +
+        `*⚙️ current waitingTime* → \`${current}ms\`\n\n` +
+        `*📍 Auto waiting* → \`${isAutoWaitingActive ? "Enabled" : "Disabled"}\`\n\n` +
         `${formatResult("📊 Stable diff=0", zeroResult)}\n\n` +
         `${formatResult("📉 Negative diff<0", negativeResult)}\n\n` +
         `${formatResult("📶 RTT normal 70ms", normalRttResult)}\n\n` +
@@ -1276,12 +1279,13 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         reply_to_message_id: msgId,
       });
 
-      await createAndSendInvoiceReport(
+      const { message, files } = await createAndSendInvoiceReport(
         browser,
-        sendTelegramMessage,
         !isFinal,
         skipValidation,
       );
+
+      await sendTelegramMessage(message, files, null, chatId, true);
     } catch (error) {
       await sendBotMessage(chatId, `⛔ Error: ${error?.message || error}`, {
         reply_to_message_id: msgId,
