@@ -53,6 +53,9 @@ const handleCaseAcceptanceOrRejection =
       const routerKey = Math.random().toString(36).slice(2, 8);
 
       const onZeroSecond = () => {
+        if (isFakeReject) {
+          return;
+        }
         broadcast({
           type: "case-acceptance-or-rejection",
           data: {
