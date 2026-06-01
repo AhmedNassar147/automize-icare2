@@ -437,7 +437,12 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         const filename = `${file.fileName}.${extension}`;
         const mimeType = getMimeType(extension);
 
-        const item = { buffer, filename, mimeType: mimeType };
+        const item = {
+          buffer,
+          filename,
+          mimeType: mimeType,
+          caption: `📎 ${file.fileName}`,
+        };
 
         if (extension === "xlsx") {
           excelFiles.push(item);
@@ -454,7 +459,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
           await bot.sendDocument(
             TG_CHAT_ID,
             doc.buffer,
-            { reply_to_message_id: messageId, caption: `📎 ${doc.filename}` },
+            { reply_to_message_id: messageId, caption: doc.caption },
             { filename: doc.filename, contentType: doc.mimeType },
           );
         }
@@ -465,11 +470,11 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       }
 
       if (photos.length === 0 && docs.length === 1) {
-        const [{ buffer, filename, mimeType }] = docs;
+        const [{ buffer, filename, mimeType, caption }] = docs;
         await bot.sendDocument(
           TG_CHAT_ID,
           buffer,
-          { reply_to_message_id: messageId, caption: `📎 ${filename}` },
+          { reply_to_message_id: messageId, caption: caption },
           { filename: filename, contentType: mimeType },
         );
 
@@ -477,11 +482,11 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       }
 
       if (photos.length === 1 && docs.length === 0) {
-        const [{ buffer, filename, mimeType }] = photos;
+        const [{ buffer, filename, mimeType, caption }] = photos;
         await bot.sendPhoto(
           TG_CHAT_ID,
           buffer,
-          { reply_to_message_id: messageId, caption: `📎 ${filename}` },
+          { reply_to_message_id: messageId, caption: caption },
           { filename: filename, contentType: mimeType },
         );
         return;
@@ -507,7 +512,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         compressedMerged,
         {
           reply_to_message_id: messageId,
-          caption: `📎 ${finalMergedFileName}`,
+          caption: `${finalMergedFileName}`,
         },
         {
           filename: `${finalMergedFileName}.pdf`,
@@ -536,7 +541,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         await bot.sendDocument(
           TG_CHAT_ID,
           doc.buffer,
-          { reply_to_message_id: messageId, caption: `📎 ${doc.filename}` },
+          { reply_to_message_id: messageId, caption: doc.caption },
           { filename: doc.filename, contentType: doc.mimeType },
         );
       }
