@@ -37,38 +37,22 @@ const tabsToCheck = [
   // },
 ];
 
-const fetchCase = async (page, referralId) => {
-  const now = new Date();
-
-  const twoDaysAgo = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() - 2,
-    0,
-    0,
-    0,
-    0,
-  );
-
-  const today = getFormattedDateForSummary(now);
-  const twoDaysAgoDate = getFormattedDateForSummary(twoDaysAgo);
-
+const fetchCase = async (
+  page,
+  referralId,
+  todayPlusOneDate,
+  twoDaysAgoDate,
+) => {
   for (const { status, ...tabParams } of tabsToCheck) {
     const { patients, errors } = await getSummaryFromTabs({
       page,
       noDates: true,
       extraParams: {
-        pageSize: 100,
+        pageSize: 50,
         startDate: twoDaysAgoDate,
-        endDate: today,
+        endDate: todayPlusOneDate,
       },
       ...tabParams,
-    });
-
-    console.log({
-      today,
-      twoDaysAgoDate,
-      patients,
     });
 
     if (
@@ -133,11 +117,39 @@ const checkReferralSelectedStatus = async (
 
     if (!cases?.length) return false;
 
+    const now = new Date();
+
+    const currentDay = now.getDate();
+
+    const todayPlusOne = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      currentDay + 1,
+    );
+
+    const twoDaysAgo = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - 2,
+      0,
+      0,
+      0,
+      0,
+    );
+
+    const todayPlusOneDate = getFormattedDateForSummary(todayPlusOne);
+    const twoDaysAgoDate = getFormattedDateForSummary(twoDaysAgo);
+
     const settledResults = [];
     for (const { referralId } of cases) {
       await sleep(1500 + Math.random() * 1500);
 
-      const result = await fetchCase(page, referralId).catch((err) => {
+      const result = await fetchCase(
+        page,
+        referralId,
+        todayPlusOneDate,
+        twoDaysAgoDate,
+      ).catch((err) => {
         createConsoleMessage(
           "Error when fetching case status",
           "error",
