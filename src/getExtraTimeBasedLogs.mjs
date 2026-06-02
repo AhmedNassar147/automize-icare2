@@ -91,17 +91,22 @@ const getTodayCases = (logsData, currentDayKey) => {
 const getDangerZoneExtraWait = (
   isUsingFullWait,
   previousDelta,
-  extraBasedRtt,
+  isFarFromLastToday,
 ) => {
   const safePreviousDelta = Number.isFinite(previousDelta) ? previousDelta : 0;
+  const previousReduction = Math.max(
+    0,
+    Math.abs(Math.min(safePreviousDelta, 0)),
+  );
 
   // If previous outcome reduced global wait, first danger-zone needs to compensate.
   // Example: low-waiting_601 => delta -1, then 0→-1000 danger-zone should be > +9.
-  const dangerWait = isUsingFullWait
-    ? 10 + Math.max(0, Math.abs(Math.min(safePreviousDelta, 0)))
-    : 8;
 
-  return dangerWait;
+  if (isFarFromLastToday) {
+    return 10 + previousReduction;
+  }
+
+  return isUsingFullWait ? 8 + previousReduction : 6;
 };
 
 const analyzeReferralTimingPatterns = (
@@ -263,18 +268,18 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
-    const isUsingFullWait = !isDangerZoneFiredToday || isFarFromLastToday;
+    const isUsingFullWait = !isDangerZoneFiredToday;
     const dangerWait = getDangerZoneExtraWait(
       isUsingFullWait,
       previousDelta,
-      extraBasedRtt,
+      isFarFromLastToday,
     );
 
     extraWait += dangerWait;
     extraBotMessages.push(
       `⚠️ danger-zone ${logCtx} type=${
         isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"
-      } gap=${gapMin}min fullWait=${isUsingFullWait} previousDelta=${previousDelta} wait=+${dangerWait}ms`,
+      } gap=${gapMin}min fullWait=${isUsingFullWait} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+${dangerWait}ms`,
     );
     return {
       computedExtraBotMessages: extraBotMessages,
