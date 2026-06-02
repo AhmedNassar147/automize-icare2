@@ -51,6 +51,7 @@ const fetchCase = async (page, referralId) => {
         referralId,
         status: isClaimed ? "Yes" : "No",
         errors,
+        statusID: status,
         shouldUpdateAndNotify: isClaimed,
       };
     }
@@ -70,10 +71,13 @@ const updateAndNotifyUser = async ({
   referralId,
   status,
   errors,
+  statusID,
 }) => {
   const statusEmoji = status === "Yes" ? "✅" : "❌";
   const statusText =
-    status === "Yes" ? "We have been selected" : "We have NOT been selected";
+    status === "Yes"
+      ? `We have been selected (${statusID})`
+      : "We have NOT been selected";
 
   const telegramMessage =
     `${statusEmoji} *Referral Status Update*\n` +
