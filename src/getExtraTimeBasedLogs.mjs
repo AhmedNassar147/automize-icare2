@@ -12,10 +12,9 @@ const FAR_CASE_MS = FAR_CASE_MIN * 60000;
 const HOT_CLUSTER_MS = 4 * 60 * 1000;
 
 const WAITS_MAP = {
-  suspicious: 4,
   far: 3,
-  hotCluster: 1,
   default: 2,
+  hotCluster: 1,
 };
 
 const getRttExtraWait = (rtt) => {
@@ -101,7 +100,6 @@ const getDangerZoneExtraWait = (
 
   // If previous outcome reduced global wait, first danger-zone needs to compensate.
   // Example: low-waiting_601 => delta -1, then 0→-1000 danger-zone should be > +9.
-
   if (isFarFromLastToday) {
     return 10 + previousReduction;
   }
@@ -221,6 +219,9 @@ const getExtraTimeBasedLogs = async ({
   extraBackendDelayMs,
   rtt,
 }) => {
+  const isUnizahBranch = process.env.BRANCH_NAME === "unizah";
+  const isLargeRTT = typeof rtt === "number" && rtt >= 80 && rtt < 95;
+
   const extraBotMessages = [];
   const logsData = await readLogsAsArray();
 
@@ -281,13 +282,12 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (isCurrentDiffNegative) {
-    const maxNewWait =
-      Math.abs(diff) / 1000 +
-      (isFirstCaseToday
-        ? WAITS_MAP.suspicious - 1
-        : isFarFromLastToday
-          ? WAITS_MAP.far
-          : WAITS_MAP.default);
+    const waiValue =
+      isFirstCaseToday || isFarFromLastToday
+        ? WAITS_MAP.far
+        : WAITS_MAP.default;
+
+    const maxNewWait = Math.abs(diff) / 1000 + waiValue;
 
     if (isLastTodayDiffNegative) {
       const consecutiveNegativeCountToday = getConsecutiveNegativeCountToday(
@@ -337,8 +337,8 @@ const getExtraTimeBasedLogs = async ({
   if (diff >= 0) {
     let value = WAITS_MAP.default;
 
-    if (isSuspiciousStableCase) {
-      value = WAITS_MAP.suspicious;
+    if (isFirstCaseToday) {
+      value = WAITS_MAP.far + (isLargeRTT && isUnizahBranch ? 2 : 0);
     } else if (isFarFromLastToday) {
       value = WAITS_MAP.far;
     } else if (isHotCluster) {
