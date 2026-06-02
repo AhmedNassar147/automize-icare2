@@ -99,7 +99,7 @@ const getDangerZoneExtraWait = (
   // Example: low-waiting_601 => delta -1, then 0→-1000 danger-zone should be > +9.
   const dangerWait = isUsingFullWait
     ? 10 + Math.max(0, Math.abs(Math.min(safePreviousDelta, 0)))
-    : 7;
+    : 8;
 
   return dangerWait;
 };
