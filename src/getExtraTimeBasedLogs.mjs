@@ -291,19 +291,33 @@ const getExtraTimeBasedLogs = async ({
           : WAITS_MAP.default);
 
     if (isLastTodayDiffNegative) {
-      const waitValue = isFarFromLastToday
-        ? maxNewWait
-        : isHotCluster
-          ? Math.ceil(maxNewWait / 3)
-          : Math.ceil(maxNewWait / 2);
-
-      extraWait += waitValue;
-
-      extraBotMessages.push(
-        isFarFromLastToday
-          ? `↔️ far-negative ${logCtx} gap=${gapMin}min wait=+${waitValue}ms`
-          : `🔁 consecutive-negative ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${waitValue}ms`,
+      const consecutiveNegativeCountToday = getConsecutiveNegativeCountToday(
+        todayCases,
+        isCurrentDiffNegative,
       );
+
+      if (consecutiveNegativeCountToday >= 3 && !isHotCluster) {
+        const value = isFarFromLastToday ? 3 : 2;
+        extraWait += value;
+
+        extraBotMessages.push(
+          `🔥 negative-chain ${logCtx} count=${consecutiveNegativeCountToday} hotCluster=${isHotCluster} far=${isFarFromLastToday} boost=+${value}ms`,
+        );
+      } else {
+        const waitValue = isFarFromLastToday
+          ? maxNewWait
+          : isHotCluster
+            ? Math.ceil(maxNewWait / 3)
+            : Math.ceil(maxNewWait / 2);
+
+        extraWait += waitValue;
+
+        extraBotMessages.push(
+          isFarFromLastToday
+            ? `↔️ far-negative ${logCtx} gap=${gapMin}min wait=+${waitValue}ms`
+            : `🔁 consecutive-negative ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${waitValue}ms`,
+        );
+      }
     } else {
       extraWait += maxNewWait;
       const negativeText = isFirstCaseToday
@@ -311,24 +325,6 @@ const getExtraTimeBasedLogs = async ({
         : "✅ first-negative";
       extraBotMessages.push(
         `${negativeText} ${logCtx} gap=${gapMin}min wait=+${maxNewWait}ms`,
-      );
-    }
-
-    const consecutiveNegativeCountToday = getConsecutiveNegativeCountToday(
-      todayCases,
-      isCurrentDiffNegative,
-    );
-
-    if (
-      isLastTodayDiffNegative &&
-      consecutiveNegativeCountToday >= 3 &&
-      !isHotCluster
-    ) {
-      const value = isFarFromLastToday ? 3 : 2;
-      extraWait += value;
-
-      extraBotMessages.push(
-        `🔥 negative-chain ${logCtx} count=${consecutiveNegativeCountToday} hotCluster=${isHotCluster} far=${isFarFromLastToday} boost=+${value}ms`,
       );
     }
   }
