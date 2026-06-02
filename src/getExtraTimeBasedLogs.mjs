@@ -104,7 +104,7 @@ const getDangerZoneExtraWait = (
     return 10 + previousReduction;
   }
 
-  return isUsingFullWait ? 8 + previousReduction : 6;
+  return isUsingFullWait ? 8 + previousReduction : 8;
 };
 
 const analyzeReferralTimingPatterns = (
