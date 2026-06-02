@@ -260,13 +260,6 @@ const getExtraTimeBasedLogs = async ({
     extraBotMessages.push(`✅ backend-delay ${logCtx} delay=0ms wait=-1ms`);
   }
 
-  if (extraBackendDelayMs > 1000) {
-    extraWait += 2;
-    extraBotMessages.push(
-      `✅ backend-delay ${logCtx} delay=${extraBackendDelayMs}ms threshold=1000ms wait=+2ms`,
-    );
-  }
-
   if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
     const isUsingFullWait = !isDangerZoneFiredToday;
     const dangerWait = getDangerZoneExtraWait(
@@ -303,7 +296,7 @@ const getExtraTimeBasedLogs = async ({
       );
 
       if (consecutiveNegativeCountToday >= 3 && !isHotCluster) {
-        const value = isFarFromLastToday ? 3 : 2;
+        const value = isFarFromLastToday ? maxNewWait : 2;
         extraWait += value;
 
         extraBotMessages.push(
@@ -337,7 +330,9 @@ const getExtraTimeBasedLogs = async ({
 
   const isFarAndLastNegative = isFarFromLastToday && isLastTodayDiffNegative;
 
-  const isSuspiciousStableCase = isFirstCaseToday || isFarAndLastNegative;
+  const isSuspiciousStableCase = isFirstCaseToday;
+
+  // we made isFarAndLastNegative not suspicious based 378358 where we need to decrease 1 and use 3 not 4
 
   if (diff >= 0) {
     let value = WAITS_MAP.default;
