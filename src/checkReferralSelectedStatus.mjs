@@ -7,6 +7,7 @@ import createConsoleMessage from "./createConsoleMessage.mjs";
 import getSummaryFromTabs from "./getSummaryFromTabs.mjs";
 import { updateCaseInLog } from "./summarizeLogsAfterAcceptance.mjs";
 import sleep from "./sleep.mjs";
+import getFormattedDateForSummary from "./getFormattedDateForSummary.mjs";
 
 const tabsToCheck = [
   {
@@ -37,12 +38,37 @@ const tabsToCheck = [
 ];
 
 const fetchCase = async (page, referralId) => {
+  const now = new Date();
+
+  const twoDaysAgo = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - 2,
+    0,
+    0,
+    0,
+    0,
+  );
+
+  const today = getFormattedDateForSummary(now);
+  const twoDaysAgoDate = getFormattedDateForSummary(twoDaysAgo);
+
   for (const { status, ...tabParams } of tabsToCheck) {
     const { patients, errors } = await getSummaryFromTabs({
       page,
       noDates: true,
-      extraParams: { pageSize: 50 },
+      extraParams: {
+        pageSize: 100,
+        startDate: twoDaysAgoDate,
+        endDate: today,
+      },
       ...tabParams,
+    });
+
+    console.log({
+      today,
+      twoDaysAgoDate,
+      patients,
     });
 
     if (
