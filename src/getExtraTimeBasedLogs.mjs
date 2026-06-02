@@ -98,7 +98,7 @@ const getDangerZoneExtraWait = (
   // If previous outcome reduced global wait, first danger-zone needs to compensate.
   // Example: low-waiting_601 => delta -1, then 0→-1000 danger-zone should be > +9.
   const dangerWait = isUsingFullWait
-    ? 10 + Math.max(0, Math.abs(Math.min(safePreviousDelta, 0)))
+    ? 11 + Math.max(0, Math.abs(Math.min(safePreviousDelta, 0)))
     : 5;
 
   return dangerWait;
