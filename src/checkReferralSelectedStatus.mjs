@@ -41,11 +41,14 @@ const fetchCase = async (page, referralId) => {
     const { patients, errors } = await getSummaryFromTabs({
       page,
       noDates: true,
-      extraParams: { genericSearch: referralId },
+      extraParams: { pageSize: 50 },
       ...tabParams,
     });
 
-    if (patients?.length) {
+    if (
+      patients?.length &&
+      patients.some((patient) => `${patient.idReferral}` === String(referralId))
+    ) {
       const isClaimed = ["CF", "AD", "DS"].includes(status);
       return {
         referralId,
