@@ -290,12 +290,12 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (isCurrentDiffNegative) {
-    const waiValue =
+    const initialWait =
       isFirstCaseToday || isFarFromLastToday
         ? WAITS_MAP.far
         : WAITS_MAP.default;
 
-    const maxNewWait = Math.abs(diff) / 1000 + waiValue;
+    const maxNewWait = Math.abs(diff) / 1000 + initialWait;
 
     if (isLastTodayDiffNegative) {
       const consecutiveNegativeCountToday = getConsecutiveNegativeCountToday(
@@ -322,7 +322,7 @@ const getExtraTimeBasedLogs = async ({
         extraBotMessages.push(
           isFarFromLastToday
             ? `↔️ far-negative ${logCtx} gap=${gapMin}min wait=+${waitValue}ms`
-            : `🔁 consecutive-negative ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${waitValue}ms`,
+            : `🔁 consecutive-negative ${logCtx} hotCluster=${isHotCluster} far=${isFarFromLastToday} gap=${gapMin}min wait=+${waitValue}ms`,
         );
       }
     } else {
