@@ -16,10 +16,9 @@ const getOutcomeDelta = (outcome, elapsedMs) => {
       // so we clicked too late. Reduce wait to click earlier next time.
       [OUTCOME_MAP.needLessWait]: -2,
       [OUTCOME_MAP.lowWaiting]: elapsedMs <= 630 ? -2 : -1,
-      // [OUTCOME_MAP.moderateWaiting]:
-      //   elapsedMs <= 700 ? -2 : elapsedMs <= 760 ? -1 : 0,
-      [OUTCOME_MAP.moderateWaiting]: elapsedMs <= 730 ? -1 : 0,
-      [OUTCOME_MAP.goodWaiting]: 0,
+      [OUTCOME_MAP.moderateWaiting]:
+        elapsedMs <= 700 ? -2 : elapsedMs <= 730 ? -1 : 0,
+      [OUTCOME_MAP.goodWaiting]: elapsedMs > 880 ? +1 : 0,
       [OUTCOME_MAP.needMoreWait]: elapsedMs < 910 ? +1 : +2,
       [OUTCOME_MAP.nearToBlock]: elapsedMs > 2100 ? +5 : +2,
       [OUTCOME_MAP.blocked]: 0,
