@@ -281,7 +281,7 @@ const getExtraTimeBasedLogs = async ({
     //   extraBotMessages.push(
     //     `⚠️ danger-zone-with-high-rtt ${logCtx} rtt=${rtt} gap=${gapMin}min fullWait=${isUsingFullWait} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+1ms`,
     //   );
-    }
+    // }
 
     return {
       computedExtraBotMessages: extraBotMessages,
