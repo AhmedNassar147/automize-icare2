@@ -341,12 +341,13 @@ const getExtraTimeBasedLogs = async ({
     }
   }
 
-  const isFarAndLastNegative = isFarFromLastToday && isLastTodayDiffNegative;
-
-  const isSuspiciousStableCase = isFirstCaseToday;
-  const isStableAfterNegative = diff >= 0 && isLastTodayDiffNegative;
-
-  // we made isFarAndLastNegative not suspicious based 378358 where we need to decrease 1 and use 3 not 4
+  const isStableAfterNegative =
+    diff >= 0 &&
+    !isFarFromLastToday &&
+    !isHotCluster &&
+    isLastTodayDiffNegative &&
+    isLargeRTT &&
+    rtt > lastTodayRTT;
 
   if (diff >= 0) {
     let value = WAITS_MAP.default;
@@ -359,23 +360,25 @@ const getExtraTimeBasedLogs = async ({
       value = WAITS_MAP.hotCluster;
     }
 
-    if (isStableAfterNegative && isLargeRTT && rtt > lastTodayRTT) {
+    if (isStableAfterNegative) {
       value += 1;
     }
 
     extraWait += value;
 
-    const farText = isFirstCaseToday
-      ? "🌅 first-day-stable"
-      : isFarAndLastNegative
-        ? "↔️ far-stable-last-negative"
-        : "↔️ far-stable";
+    const farText = isFirstCaseToday ? "🌅 first-day-stable" : "↔️ far-stable";
 
     extraBotMessages.push(
       isFarFromLastToday
         ? `${farText} ${logCtx} gap=${gapMin}min wait=+${value}ms`
         : `✅ stable ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${value}ms`,
     );
+
+    if (isStableAfterNegative) {
+      extraBotMessages.push(
+        `✅ stable-after-negative-rtt-boost ${logCtx} rtt=${rtt} lastTodayRTT=${lastTodayRTT} gap=${gapMin}min wait=+1ms`,
+      );
+    }
   }
 
   return {
