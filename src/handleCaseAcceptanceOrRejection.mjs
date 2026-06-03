@@ -177,12 +177,20 @@ const handleCaseAcceptanceOrRejection =
       const waitTime = baseWaitingTime + extraWait;
       const approvalMessage = `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\``;
 
-      const promises = [
+      const notificationResults = await Promise.allSettled([
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
-        sleep(waitTime - 36).then(() => sendNtfyMessage(approvalMessage)),
-      ];
+        sleep(Math.max(0, waitTime - 36)).then(() =>
+          sendNtfyMessage(approvalMessage),
+        ),
+      ]);
 
-      await Promise.all(promises);
+      for (const result of notificationResults) {
+        if (result.status === "rejected") {
+          extraBotMessages.push(
+            `⚠️ Notification failed: ${result.reason?.message || result.reason}`,
+          );
+        }
+      }
 
       const updateResult = await patientStore.updatePatient(referralId, {
         readySeenAtLocalMs,
@@ -246,7 +254,6 @@ const handleCaseAcceptanceOrRejection =
         "error",
         `failed when ${actionType} patient=${referralId}`,
       );
-      // continueFetchingPatientsIfPaused();
     }
   };
 

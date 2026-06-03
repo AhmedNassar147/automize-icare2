@@ -3,6 +3,7 @@
  * Helper: `processSendPatientsToClient`.
  *
  */
+import createConsoleMessage from "./createConsoleMessage.mjs";
 import formatPatientToTelegramOrWA from "./formatPatientToTelegramOrWA.mjs";
 import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
 
@@ -30,7 +31,29 @@ const processSendPatientsToClient =
       return patientTasks;
     });
 
-    await Promise.allSettled(tasks);
+    const results = await Promise.allSettled(tasks);
+
+    for (const result of results) {
+      if (result.status === "rejected") {
+        const reason = result.reason?.message || result.reason;
+
+        createConsoleMessage(
+          reason,
+          "error",
+          "processSendPatientsToClient task failed",
+        );
+
+        await sendTelegramMessage(
+          `⚠️ Failed to send patient info to NTFY:\n${reason}\n\nat processSendPatientsToClient task`,
+        ).catch((err) => {
+          createConsoleMessage(
+            err?.message || err,
+            "error",
+            "failed to send processSendPatientsToClient error report (telegram message)",
+          );
+        });
+      }
+    }
 
     if (!skipNotify && validPatients.length) {
       const [{ referralId }] = validPatients;
