@@ -91,20 +91,28 @@ const getDangerZoneExtraWait = (
   isUsingFullWait,
   previousDelta,
   isFarFromLastToday,
+  diffFromLastToday,
 ) => {
   const safePreviousDelta = Number.isFinite(previousDelta) ? previousDelta : 0;
-  const previousReduction = Math.max(
-    0,
-    Math.abs(Math.min(safePreviousDelta, 0)),
-  );
+  const previousReduction = Math.max(0, -safePreviousDelta);
 
   // If previous outcome reduced global wait, first danger-zone needs to compensate.
   // Example: low-waiting_601 => delta -1, then 0→-1000 danger-zone should be > +9.
+  const extra = isUsingFullWait ? previousReduction : 0;
+
   if (isFarFromLastToday) {
-    return 10 + previousReduction;
+    // const hours = diffFromLastToday / (60 * 60 * 1000);
+
+    // const extraFarBoost = hours >= 3 ? 1 : 0;
+    let extraFarBoost = 0;
+
+    //     if (hours >= 6) extraFarBoost = 2;
+    // else if (hours >= 3) extraFarBoost = 1;
+
+    return 10 + extra + extraFarBoost;
   }
 
-  return isUsingFullWait ? 8 + previousReduction : 8;
+  return 8 + extra;
 };
 
 const analyzeReferralTimingPatterns = (
@@ -199,6 +207,15 @@ const analyzeReferralTimingPatterns = (
 
   const lastTodayRTT = lastToday?.rtt || 0;
 
+  const messageFromLastToday = lastToday?.extraWaitMessage || "";
+
+  const wasLastTodayDangerous = messageFromLastToday.includes("danger-zone");
+  const wasUsingFullWait = messageFromLastToday.includes("fullWait=true");
+  const wasFar = messageFromLastToday.includes("far=true");
+
+  const wasLastTodayFarDangerZone =
+    wasLastTodayDangerous && wasFar && wasUsingFullWait;
+
   return {
     isDoubleZeroDangerZone,
     isRecoveryThenDrop,
@@ -213,6 +230,7 @@ const analyzeReferralTimingPatterns = (
     lastToday,
     previousDelta,
     lastTodayRTT,
+    wasLastTodayFarDangerZone,
   };
 };
 
@@ -241,6 +259,7 @@ const getExtraTimeBasedLogs = async ({
     diffFromLastToday,
     previousDelta,
     lastTodayRTT,
+    wasLastTodayFarDangerZone,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
@@ -253,12 +272,24 @@ const getExtraTimeBasedLogs = async ({
 
   const logCtx = `referralId=${referralId} diffPath=${lastDiff ?? "none"}→${diff}`;
 
-  const extraBasedRtt = getRttExtraWait(rtt);
+  const rawExtraBasedRtt = getRttExtraWait(rtt);
+
+  const shouldIgnorePositiveRtt =
+    wasLastTodayFarDangerZone && !isFarFromLastToday && rawExtraBasedRtt > 0;
+
+  const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
+
   if (extraBasedRtt) {
     extraWait += extraBasedRtt;
     const sign = extraBasedRtt > 0 ? "+" : "";
 
     extraBotMessages.push(`✅ rtt ${logCtx} wait=${sign}${extraBasedRtt}ms`);
+  }
+
+  if (shouldIgnorePositiveRtt) {
+    extraBotMessages.push(
+      `🚫 rtt-ignored-after-far-danger ${logCtx} rtt=${rtt} rawWait=+${rawExtraBasedRtt}ms`,
+    );
   }
 
   if (extraBackendDelayMs === 0) {
@@ -272,6 +303,7 @@ const getExtraTimeBasedLogs = async ({
       true,
       previousDelta,
       isFarFromLastToday,
+      diffFromLastToday,
     );
 
     extraWait += dangerWait;
@@ -280,13 +312,6 @@ const getExtraTimeBasedLogs = async ({
         isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"
       } gap=${gapMin}min fullWait=${true} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+${dangerWait}ms`,
     );
-
-    // if (rtt >= 80 && !extraBasedRtt) {
-    //   extraWait += 1;
-    //   extraBotMessages.push(
-    //     `⚠️ danger-zone-with-high-rtt ${logCtx} rtt=${rtt} gap=${gapMin}min fullWait=${isUsingFullWait} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+1ms`,
-    //   );
-    // }
 
     return {
       computedExtraBotMessages: extraBotMessages,
@@ -341,14 +366,14 @@ const getExtraTimeBasedLogs = async ({
     }
   }
 
-  const isStableAfterNegative =
-    diff >= 0 &&
-    !isHotCluster &&
-    isLastTodayDiffNegative &&
-    isLargeRTT &&
-    rtt > lastTodayRTT;
-
   if (diff >= 0) {
+    const isStableAfterNegative =
+      !isFarFromLastToday &&
+      !isHotCluster &&
+      isLastTodayDiffNegative &&
+      isLargeRTT &&
+      rtt > lastTodayRTT;
+
     let value = WAITS_MAP.default;
 
     if (isFirstCaseToday) {
