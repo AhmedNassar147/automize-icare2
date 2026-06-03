@@ -601,13 +601,19 @@ class PatientStore extends EventEmitter {
     }
   }
 
-  getFirstGoingToAccept() {
+  getFirstGoingToAccept(skipExpired = false) {
     return this.getAllPatients()
-      ?.filter(
-        (patient) =>
+      ?.filter((patient) => {
+        const isApplicable =
           patient?.userActionName === "accept" &&
-          Number.isFinite(patient?.referralEndTimestamp),
-      )
+          Number.isFinite(patient?.referralEndTimestamp);
+
+        if (isApplicable && skipExpired) {
+          return patient.referralEndTimestamp > Date.now();
+        }
+
+        return isApplicable;
+      })
       .reduce(
         (earliest, current) =>
           !earliest ||

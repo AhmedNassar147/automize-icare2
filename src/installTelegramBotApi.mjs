@@ -618,7 +618,11 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         `<b>Current patients:</b>\n<pre>Here are the current (${allPatients.length}) patients to process</pre>`,
       );
 
-      const formatedPatients = allPatients.map((patient) =>
+      const applicablePatients = allPatients.filter(
+        (patient) => patient?.referralEndTimestamp >= Date.now(),
+      );
+
+      const formatedPatients = applicablePatients.map((patient) =>
         formatPatientToTelegramOrWA(patient, true),
       );
 
@@ -938,7 +942,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       return;
     }
 
-    const firstGoingToAccept = patientsStore.getFirstGoingToAccept();
+    const firstGoingToAccept = patientsStore.getFirstGoingToAccept(true);
 
     if (!firstGoingToAccept) {
       return await sendBotMessage(
@@ -1461,6 +1465,71 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   };
 
+  const confirmOnlineIfPending = async ({
+    referralId,
+    chatId,
+    fromName,
+    reply,
+  }) => {
+    const currentActiveChatId = getActiveChatID();
+    const pending = pendingOnlineChecks.get(referralId);
+
+    if (!pending) {
+      const chatName = currentActiveChatId
+        ? await getChatName(currentActiveChatId)
+        : "another user";
+
+      await reply(
+        `⚠️ This online confirmation is expired, ${chatName} is active now.`,
+      );
+      return false;
+    }
+
+    if (pending.confirmed) {
+      const chatName = pending.confirmedBy
+        ? await getChatName(pending.confirmedBy)
+        : "Another user";
+
+      await reply(`⚠️ ${chatName} confirmed online and active now.`);
+      return false;
+    }
+
+    if (pending.timeoutId) {
+      clearTimeout(pending.timeoutId);
+    }
+
+    pending.confirmed = true;
+    pending.confirmedBy = chatId;
+    pendingOnlineChecks.delete(referralId);
+
+    if (currentActiveChatId !== chatId) {
+      updateEnvFile({
+        TG_CHAT_ID: chatId,
+        TG_CHAT_USER_NAME: fromName,
+        CLIENT_WHATSAPP_NUMBER: process.env[`TG_PHONE_NUMBER_${chatId}`],
+      });
+    }
+
+    const previousChatIds = pending.sentChatIds.filter(
+      (sentChatId) => sentChatId !== chatId,
+    );
+
+    await Promise.all(
+      previousChatIds.map((sentChatId) =>
+        sendBotMessage(
+          sentChatId,
+          `🔔 \`${fromName}\` confirmed online for Referral ID: \`${referralId}\`.\nYou are marked as not active for this case.`,
+        ).catch(() => null),
+      ),
+    );
+
+    await reply(
+      `✅ Online Confirmed. You are now active for Referral ID: ${referralId}`,
+    );
+
+    return true;
+  };
+
   bot.on("polling_error", (err) => {
     createConsoleMessage(err.message, "warn", "⚠️ Telegram polling error:");
   });
@@ -1512,55 +1581,14 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       }
 
       if (action === "online") {
-        const pending = pendingOnlineChecks.get(referralId);
-
-        if (!pending) {
-          const chatName = await getChatName(getActiveChatID());
-
-          return reply(
-            `⚠️ This online confirmation is expired, ${chatName} is active now.`,
-          );
-        }
-
-        if (pending.confirmed) {
-          const chatName = pending.confirmedBy
-            ? await getChatName(pending.confirmedBy)
-            : "Another user";
-
-          return reply(`⚠️ ${chatName} confirmed and active now.`);
-        }
-
-        if (pending.timeoutId) {
-          clearTimeout(pending.timeoutId);
-        }
-
-        pending.confirmed = true;
-        pending.confirmedBy = chatId;
-        pendingOnlineChecks.delete(referralId);
-
-        updateEnvFile({
-          TG_CHAT_ID: chatId,
-          TG_CHAT_USER_NAME: fromName,
-          CLIENT_WHATSAPP_NUMBER: process.env[`TG_PHONE_NUMBER_${chatId}`],
+        await confirmOnlineIfPending({
+          referralId,
+          chatId,
+          fromName,
+          reply,
         });
-        await sleep(1000);
 
-        const previousChatIds = pending.sentChatIds.filter(
-          (sentChatId) => sentChatId !== chatId,
-        );
-
-        await Promise.all(
-          previousChatIds.map(async (sentChatId) => {
-            await sendBotMessage(
-              sentChatId,
-              `🔔 \`${fromName}\` confirmed online for Referral ID: \`${referralId}\`.\nYou are marked as not active for this case.`,
-            ).catch(() => null);
-          }),
-        );
-
-        return reply(
-          `✅ Confirmed. You are now active for Referral ID: ${referralId}`,
-        );
+        return;
       }
 
       const { patient } = patientsStore.findPatientByReferralId(referralId);
@@ -1574,7 +1602,25 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       const rowKey = createPatientRowKey(patient);
       const storedPatient = getWeeklyHistoryPatient(rowKey);
 
-      if (action === "noreply") {
+      const isAccepted = action === "accept";
+      const isRejected = action === "reject";
+      const isCancelled = action === "cancel";
+      const isNoReply = action === "noreply";
+
+      if (isAccepted || isRejected || isCancelled || isNoReply) {
+        const canContinue = await confirmOnlineIfPending({
+          referralId,
+          chatId,
+          fromName,
+          reply,
+        });
+
+        if (!canContinue) {
+          return;
+        }
+      }
+
+      if (isNoReply) {
         const actionNames = [
           ...new Set(
             [storedPatient?.providerAction, "no reply"].filter(Boolean),
@@ -1606,10 +1652,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       }
 
       const timeValidation = patientsStore.canStillProcessPatient(referralId);
-
-      const isAccepted = action === "accept";
-      const isRejected = action === "reject";
-      const isCancelled = action === "cancel";
 
       // Intentionally before timeValidation:
       // even if bot processing is late, the doctor/user may have manually accepted/rejected,
