@@ -262,9 +262,9 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
-    const isUsingFullWait = !isDangerZoneFiredToday;
+    // const isUsingFullWait = !isDangerZoneFiredToday;
     const dangerWait = getDangerZoneExtraWait(
-      isUsingFullWait,
+      true,
       previousDelta,
       isFarFromLastToday,
     );
@@ -273,7 +273,7 @@ const getExtraTimeBasedLogs = async ({
     extraBotMessages.push(
       `⚠️ danger-zone ${logCtx} type=${
         isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"
-      } gap=${gapMin}min fullWait=${isUsingFullWait} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+${dangerWait}ms`,
+      } gap=${gapMin}min fullWait=${true} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+${dangerWait}ms`,
     );
 
     // if (rtt >= 80 && !extraBasedRtt) {
