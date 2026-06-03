@@ -1470,6 +1470,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     chatId,
     fromName,
     reply,
+    silent,
   }) => {
     const currentActiveChatId = getActiveChatID();
     const pending = pendingOnlineChecks.get(referralId);
@@ -1479,18 +1480,25 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         ? await getChatName(currentActiveChatId)
         : "another user";
 
-      await reply(
-        `⚠️ This online confirmation is expired, ${chatName} is active now.`,
-      );
+      if (currentActiveChatId !== chatId) {
+        await reply(
+          `⚠️ This online confirmation is expired, ${chatName} is active now.`,
+        );
+      }
+
       return false;
     }
 
     if (pending.confirmed) {
-      const chatName = pending.confirmedBy
-        ? await getChatName(pending.confirmedBy)
+      const confirmedBy = pending.confirmedBy;
+      const chatName = confirmedBy
+        ? await getChatName(confirmedBy)
         : "Another user";
 
-      await reply(`⚠️ ${chatName} confirmed online and active now.`);
+      if (confirmedBy !== chatId) {
+        await reply(`⚠️ ${chatName} confirmed online and active now.`);
+      }
+
       return false;
     }
 
@@ -1523,9 +1531,11 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       ),
     );
 
-    await reply(
-      `✅ Online Confirmed. You are now active for Referral ID: ${referralId}`,
-    );
+    if (!silent) {
+      await reply(
+        `✅ Online Confirmed. You are now active for Referral ID: ${referralId}`,
+      );
+    }
 
     return true;
   };
@@ -1586,6 +1596,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
           chatId,
           fromName,
           reply,
+          silent: false,
         });
 
         return;
@@ -1613,6 +1624,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
           chatId,
           fromName,
           reply,
+          // silent: true,
+          silent: false,
         });
 
         if (!canContinue) {
