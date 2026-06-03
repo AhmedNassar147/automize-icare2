@@ -28,7 +28,10 @@ import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
 import closePageSafely from "./closePageSafely.mjs";
 import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
 import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
-import { migrateCaseLogTimings } from "./summarizeLogsAfterAcceptance.mjs";
+import {
+  migrateCaseLogTimings,
+  readLogsAsArray,
+} from "./summarizeLogsAfterAcceptance.mjs";
 import createAndSendInvoiceReport from "./createAndSendInvoiceReport.mjs";
 import formatPatientToTelegramOrWA from "./formatPatientToTelegramOrWA.mjs";
 import { HOME_PAGE_URL, USER_ACTION_TYPES } from "./constants.mjs";
@@ -84,6 +87,12 @@ const COMMANDS = {
     value: /\/update_code$/,
     description: "pull latest code from master and restart the server",
     command: "update_code",
+  },
+  getCasesStatus: {
+    value: /\/get_cases_status\s+([1-9]\d*)$/,
+    description:
+      "Long press → get last amount of accepted cases status, Example: /get_cases_status 1 OR /get_cases_status 2",
+    command: "get_cases_status",
   },
   getReferralLetter: {
     value: /\/letter (.+)/,
@@ -1302,6 +1311,95 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
+  bot.onText(COMMANDS.getCasesStatus.value, async (msg, match) => {
+    const { unAuthorizedMessage, chatId, msgId } =
+      getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage, {
+        reply_to_message_id: msgId,
+      });
+      return;
+    }
+
+    const numberOfCases = Number(match?.[1]);
+
+    if (!Number.isInteger(numberOfCases) || numberOfCases < 1) {
+      await sendBotMessage(
+        chatId,
+        `⛔ Invalid number of cases. Please provide a valid number. Example: /get_cases_status 1`,
+        {
+          reply_to_message_id: msgId,
+        },
+      );
+      return;
+    }
+
+    try {
+      const allCasesLogsData = await readLogsAsArray();
+      const selectedCases = allCasesLogsData.slice(-numberOfCases);
+
+      if (!selectedCases.length) {
+        await sendBotMessage(chatId, `⛔ No cases found in logs.`, {
+          reply_to_message_id: msgId,
+        });
+        return;
+      }
+
+      const message = [
+        `📊 *Last ${selectedCases.length} Case Status${selectedCases.length > 1 ? "es" : ""}*`,
+        ``,
+        ...selectedCases.map((item, index) => {
+          const {
+            referralId,
+            claimed,
+            status,
+            extraWaitMessage,
+            extraBackendDelayMs,
+            delta,
+            tookMS,
+            rtt,
+            diff,
+            waitTime,
+            extraWait,
+          } = item;
+
+          return [
+            `#${index + 1}`,
+            `🆔 Case: \`${referralId}\``,
+            diff !== undefined ? `📊 Diff: \`${diff}\`` : null,
+            `📊 Delay: \`${extraBackendDelayMs || 0}\``,
+            rtt !== undefined ? `📶 RTT (ms): \`${rtt}\`` : null,
+            tookMS !== undefined ? `⏱️ Took (ms): \`${tookMS}\`` : null,
+            `⏱️ Wait Time: \`${waitTime}_${extraWait || 0}\``,
+            `📋 Status: \`${status || "unknown"}\``,
+            `🏁 Claimed: \`${claimed || "unknown"}\``,
+            delta !== undefined ? `🔁 delta after accept: \`${delta}\`` : null,
+            extraWaitMessage
+              ? [
+                  `⏱️ waitingStatus:`,
+                  ...extraWaitMessage
+                    .split("_AND_")
+                    .filter(Boolean)
+                    .map((item) => `  • ${item}`),
+                ].join("\n")
+              : null,
+          ]
+            .filter(Boolean)
+            .join("\n");
+        }),
+      ].join("\n\n");
+
+      await sendBotMessage(chatId, message, {
+        reply_to_message_id: msgId,
+      });
+    } catch (error) {
+      await sendBotMessage(chatId, `⛔ Error: ${error?.message || error}`, {
+        reply_to_message_id: msgId,
+      });
+    }
+  });
+
   bot.onText(COMMANDS.migrateLogs.value, async (msg) => {
     const { unAuthorizedMessage, chatId, msgId } =
       getIfNotAuthorizedMessage(msg);
@@ -1465,6 +1563,10 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   };
 
+  bot.on("polling_error", (err) => {
+    createConsoleMessage(err.message, "warn", "⚠️ Telegram polling error:");
+  });
+
   const confirmOnlineIfPending = async ({
     referralId,
     chatId,
@@ -1475,12 +1577,18 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     const currentActiveChatId = getActiveChatID();
     const pending = pendingOnlineChecks.get(referralId);
 
+    const isSameChat = currentActiveChatId === chatId;
+
     if (!pending) {
+      if (isSameChat) {
+        return true;
+      }
+
       const chatName = currentActiveChatId
         ? await getChatName(currentActiveChatId)
         : "another user";
 
-      if (currentActiveChatId !== chatId) {
+      if (!isSameChat) {
         await reply(
           `⚠️ This online confirmation is expired, ${chatName} is active now.`,
         );
@@ -1494,6 +1602,10 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       const chatName = confirmedBy
         ? await getChatName(confirmedBy)
         : "Another user";
+
+      if (confirmedBy === chatId) {
+        return true;
+      }
 
       if (confirmedBy !== chatId) {
         await reply(`⚠️ ${chatName} confirmed online and active now.`);
@@ -1539,10 +1651,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
 
     return true;
   };
-
-  bot.on("polling_error", (err) => {
-    createConsoleMessage(err.message, "warn", "⚠️ Telegram polling error:");
-  });
 
   bot.on("callback_query", async (query) => {
     try {
