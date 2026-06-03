@@ -275,7 +275,10 @@ const getExtraTimeBasedLogs = async ({
   const rawExtraBasedRtt = getRttExtraWait(rtt);
 
   const shouldIgnorePositiveRtt =
-    wasLastTodayFarDangerZone && !isFarFromLastToday && rawExtraBasedRtt > 0;
+    wasLastTodayFarDangerZone &&
+    !isFarFromLastToday &&
+    rawExtraBasedRtt > 0 &&
+    isCurrentDiffNegative;
 
   const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
 
