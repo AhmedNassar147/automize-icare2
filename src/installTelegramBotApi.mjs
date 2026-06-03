@@ -60,6 +60,16 @@ const COMMANDS = {
       "Get or set auto wait. Examples: /auto_wait OR /auto_wait 1 OR /auto_wait 0",
     command: "auto_wait",
   },
+  f_accept: {
+    value: /\/f_accept$/,
+    description: "get first patient to be accepted with time left details",
+    command: "f_accept",
+  },
+  who: {
+    value: /\/who/,
+    description: "check who is on duty",
+    command: "who",
+  },
   activate: {
     value: /\/activate\s+(\d+)$/,
     description: "Activate another authorized user by chat ID",
@@ -69,11 +79,6 @@ const COMMANDS = {
     value: /\/get_users$/,
     description: "List all authorized users and show active one",
     command: "get_users",
-  },
-  f_accept: {
-    value: /\/f_accept$/,
-    description: "get first patient to be accepted with time left details",
-    command: "f_accept",
   },
   updateCode: {
     value: /\/update_code$/,
@@ -85,11 +90,6 @@ const COMMANDS = {
     description:
       "Long press → get letter, Example: /letter a 12345 OR /letter r 12345 OR /letter r 12345 reason",
     command: "letter",
-  },
-  who: {
-    value: /\/who/,
-    description: "check who is on duty",
-    command: "who",
   },
   testNextCaseExtraTime: {
     value: /\/test_next_case_extra_time/,
@@ -1580,6 +1580,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
             [storedPatient?.providerAction, "no reply"].filter(Boolean),
           ),
         ].join(" then ");
+
+        await patientsStore.scheduleFakeRejectProbe(referralId, false);
 
         updateWeeklyHistoryPatients({
           ...patient,
