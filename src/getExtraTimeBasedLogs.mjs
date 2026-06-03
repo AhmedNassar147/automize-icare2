@@ -343,7 +343,6 @@ const getExtraTimeBasedLogs = async ({
 
   const isStableAfterNegative =
     diff >= 0 &&
-    !isFarFromLastToday &&
     !isHotCluster &&
     isLastTodayDiffNegative &&
     isLargeRTT &&
@@ -355,7 +354,7 @@ const getExtraTimeBasedLogs = async ({
     if (isFirstCaseToday) {
       value = WAITS_MAP.far + (isLargeRTT && isUnizahBranch ? 2 : 0);
     } else if (isFarFromLastToday) {
-      value = WAITS_MAP.far;
+      value = WAITS_MAP.far + (isLargeRTT && isUnizahBranch ? 1 : 0);
     } else if (isHotCluster) {
       value = WAITS_MAP.hotCluster;
     }
