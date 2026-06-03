@@ -130,6 +130,7 @@ const analyzeReferralTimingPatterns = (
       diffFromLastToday: 0,
       lastToday: null,
       previousDelta: 0,
+      lastTodayRTT: 0,
     };
   }
 
@@ -196,6 +197,8 @@ const analyzeReferralTimingPatterns = (
     lastToday?.outcomeElapsedMs,
   );
 
+  const lastTodayRTT = lastToday?.rtt || 0;
+
   return {
     isDoubleZeroDangerZone,
     isRecoveryThenDrop,
@@ -209,6 +212,7 @@ const analyzeReferralTimingPatterns = (
     diffFromLastToday,
     lastToday,
     previousDelta,
+    lastTodayRTT,
   };
 };
 
@@ -236,6 +240,7 @@ const getExtraTimeBasedLogs = async ({
     isLastTodayDiffNegative,
     diffFromLastToday,
     previousDelta,
+    lastTodayRTT,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
@@ -339,6 +344,7 @@ const getExtraTimeBasedLogs = async ({
   const isFarAndLastNegative = isFarFromLastToday && isLastTodayDiffNegative;
 
   const isSuspiciousStableCase = isFirstCaseToday;
+  const isStableAfterNegative = diff >= 0 && isLastTodayDiffNegative;
 
   // we made isFarAndLastNegative not suspicious based 378358 where we need to decrease 1 and use 3 not 4
 
@@ -351,6 +357,10 @@ const getExtraTimeBasedLogs = async ({
       value = WAITS_MAP.far;
     } else if (isHotCluster) {
       value = WAITS_MAP.hotCluster;
+    }
+
+    if (isStableAfterNegative && isLargeRTT && rtt > lastTodayRTT) {
+      value += 1;
     }
 
     extraWait += value;
