@@ -275,6 +275,14 @@ const getExtraTimeBasedLogs = async ({
         isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"
       } gap=${gapMin}min fullWait=${isUsingFullWait} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+${dangerWait}ms`,
     );
+
+    // if (rtt >= 80 && !extraBasedRtt) {
+    //   extraWait += 1;
+    //   extraBotMessages.push(
+    //     `⚠️ danger-zone-with-high-rtt ${logCtx} rtt=${rtt} gap=${gapMin}min fullWait=${isUsingFullWait} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+1ms`,
+    //   );
+    }
+
     return {
       computedExtraBotMessages: extraBotMessages,
       computedExtraWait: extraWait,
