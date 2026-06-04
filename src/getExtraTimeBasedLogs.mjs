@@ -370,13 +370,6 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (diff >= 0) {
-    const isStableAfterNegative =
-      !isFarFromLastToday &&
-      !isHotCluster &&
-      isLastTodayDiffNegative &&
-      isLargeRTT &&
-      rtt > lastTodayRTT;
-
     let value = WAITS_MAP.default;
 
     const extrTime = isUnizahBranch ? (isFirstCaseToday ? 2 : 1) : 0;
@@ -386,6 +379,13 @@ const getExtraTimeBasedLogs = async ({
     } else if (isHotCluster) {
       value = WAITS_MAP.hotCluster;
     }
+
+    const isStableAfterNegative =
+      !isFarFromLastToday &&
+      !isHotCluster &&
+      isLastTodayDiffNegative &&
+      isLargeRTT &&
+      rtt > lastTodayRTT;
 
     if (isStableAfterNegative) {
       value += 1;
@@ -401,7 +401,7 @@ const getExtraTimeBasedLogs = async ({
       value += 1;
 
       extraBotMessages.push(
-        `✅ long-gap-boost ${logCtx} hours=${timeGapHours.toFixed(
+        `✅ long-gap-boost ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
           1,
         )} previousDelta=${previousDelta} wait=+1ms`,
       );
