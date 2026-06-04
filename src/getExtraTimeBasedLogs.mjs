@@ -97,13 +97,24 @@ const getDangerZoneExtraWait = (
   const previousReduction = Math.max(0, -safePreviousDelta);
 
   const extraBoost = isTooFarCase ? (previousReduction ? 1 : 2) : 0;
-  const extra = (isUsingFullWait ? previousReduction : 0) + extraBoost;
+  const compensation = isUsingFullWait ? previousReduction : 0;
 
-  if (isFarFromLastToday) {
-    return 10 + extra;
+  const extraWait = (isFarFromLastToday ? 10 : 8) + compensation + extraBoost;
+
+  const messages = [];
+
+  if (isTooFarCase) {
+    messages.push(`too-far-boost=+${extraBoost}ms`);
   }
 
-  return 8 + extra;
+  if (compensation > 0) {
+    messages.push(`previous-reduction-compensation=+${compensation}ms`);
+  }
+
+  return {
+    dangerWait: extraWait,
+    dangerMessage: messages.join("_AND_"),
+  };
 };
 
 const analyzeReferralTimingPatterns = (
@@ -130,6 +141,7 @@ const analyzeReferralTimingPatterns = (
       lastToday: null,
       previousDelta: 0,
       lastTodayRTT: 0,
+      wasLastTodayDangerous: false,
     };
   }
 
@@ -222,6 +234,7 @@ const analyzeReferralTimingPatterns = (
     previousDelta,
     lastTodayRTT,
     wasLastTodayFarDangerZone,
+    wasLastTodayDangerous,
   };
 };
 
@@ -251,6 +264,7 @@ const getExtraTimeBasedLogs = async ({
     previousDelta,
     lastTodayRTT,
     wasLastTodayFarDangerZone,
+    wasLastTodayDangerous,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
@@ -297,9 +311,10 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
+    const isUsingFullWait = true;
     // const isUsingFullWait = !isDangerZoneFiredToday;
-    const dangerWait = getDangerZoneExtraWait(
-      true,
+    const { dangerWait, dangerMessage } = getDangerZoneExtraWait(
+      isUsingFullWait,
       previousDelta,
       isFarFromLastToday,
       isTooFarCase,
@@ -309,7 +324,9 @@ const getExtraTimeBasedLogs = async ({
     extraBotMessages.push(
       `⚠️ danger-zone ${logCtx} type=${
         isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"
-      } gap=${gapMin}min fullWait=${true} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+${dangerWait}ms`,
+      } gap=${gapMin}min fullWait=${isUsingFullWait} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+${dangerWait}ms${
+        dangerMessage ? `_AND_${dangerMessage}` : ""
+      }`,
     );
 
     return {
@@ -328,12 +345,13 @@ const getExtraTimeBasedLogs = async ({
 
     if (isLastTodayDiffNegative) {
       if (isTooFarCase && previousDelta <= 0) {
-        maxNewWait += 3;
+        const boostValue = wasLastTodayDangerous ? 2 : 3;
+        maxNewWait += boostValue;
 
         extraBotMessages.push(
           `📊 far-negative-long-gap ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
             1,
-          )} previousDelta=${previousDelta} wait=+3ms`,
+          )} previousDelta=${previousDelta} wait=+${boostValue}ms`,
         );
       }
 
