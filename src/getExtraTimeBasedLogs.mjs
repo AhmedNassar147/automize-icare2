@@ -101,8 +101,6 @@ const getDangerZoneExtraWait = (
   const extra = isUsingFullWait ? previousReduction : 0;
 
   if (isFarFromLastToday) {
-    // const hours = diffFromLastToday / (60 * 60 * 1000);
-
     // const extraFarBoost = hours >= 3 ? 1 : 0;
     let extraFarBoost = 0;
 
@@ -200,10 +198,10 @@ const analyzeReferralTimingPatterns = (
 
   const isRecoveryThenDrop = isFirstDayRecovery || isSuperSinglePattern;
 
-  const previousDelta = getOutcomeDelta(
-    lastToday?.outcome,
-    lastToday?.outcomeElapsedMs,
-  );
+  const previousDelta =
+    typeof lastToday?.delta === "number"
+      ? lastToday.delta
+      : getOutcomeDelta(lastToday?.outcome, lastToday?.outcomeElapsedMs);
 
   const lastTodayRTT = lastToday?.rtt || 0;
 
@@ -265,6 +263,8 @@ const getExtraTimeBasedLogs = async ({
   const isFirstCaseToday = !todayCases?.length;
 
   const isHotCluster = !isFirstCaseToday && diffFromLastToday <= HOT_CLUSTER_MS;
+
+  const timeGapHours = diffFromLastToday / (60 * 60 * 1000);
 
   const gapMin = (diffFromLastToday / 60000).toFixed(1);
 
@@ -379,16 +379,32 @@ const getExtraTimeBasedLogs = async ({
 
     let value = WAITS_MAP.default;
 
-    if (isFirstCaseToday) {
-      value = WAITS_MAP.far + (isLargeRTT && isUnizahBranch ? 2 : 0);
-    } else if (isFarFromLastToday) {
-      value = WAITS_MAP.far + (isLargeRTT && isUnizahBranch ? 1 : 0);
+    const extrTime = isUnizahBranch ? (isFirstCaseToday ? 2 : 1) : 0;
+
+    if (isFirstCaseToday || isFarFromLastToday) {
+      value = WAITS_MAP.far + extrTime;
     } else if (isHotCluster) {
       value = WAITS_MAP.hotCluster;
     }
 
     if (isStableAfterNegative) {
       value += 1;
+    }
+
+    if (
+      !isStableAfterNegative &&
+      !isFirstCaseToday &&
+      timeGapHours >= 5 &&
+      previousDelta <= 0 &&
+      extraBasedRtt <= 0
+    ) {
+      value += 1;
+
+      extraBotMessages.push(
+        `✅ long-gap-boost ${logCtx} hours=${timeGapHours.toFixed(
+          1,
+        )} previousDelta=${previousDelta} wait=+1ms`,
+      );
     }
 
     extraWait += value;
