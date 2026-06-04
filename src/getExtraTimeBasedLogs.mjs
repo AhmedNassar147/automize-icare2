@@ -91,23 +91,16 @@ const getDangerZoneExtraWait = (
   isUsingFullWait,
   previousDelta,
   isFarFromLastToday,
-  diffFromLastToday,
+  isTooFarCase,
 ) => {
   const safePreviousDelta = Number.isFinite(previousDelta) ? previousDelta : 0;
   const previousReduction = Math.max(0, -safePreviousDelta);
 
-  // If previous outcome reduced global wait, first danger-zone needs to compensate.
-  // Example: low-waiting_601 => delta -1, then 0→-1000 danger-zone should be > +9.
-  const extra = isUsingFullWait ? previousReduction : 0;
+  const extraBoost = isTooFarCase ? (previousReduction ? 1 : 2) : 0;
+  const extra = (isUsingFullWait ? previousReduction : 0) + extraBoost;
 
   if (isFarFromLastToday) {
-    // const extraFarBoost = hours >= 3 ? 1 : 0;
-    let extraFarBoost = 0;
-
-    //     if (hours >= 6) extraFarBoost = 2;
-    // else if (hours >= 3) extraFarBoost = 1;
-
-    return 10 + extra + extraFarBoost;
+    return 10 + extra;
   }
 
   return 8 + extra;
@@ -282,6 +275,9 @@ const getExtraTimeBasedLogs = async ({
 
   const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
 
+  const isTooFarCase =
+    isFarFromLastToday && timeGapHours >= 5 && extraBasedRtt <= 0;
+
   if (extraBasedRtt) {
     extraWait += extraBasedRtt;
     const sign = extraBasedRtt > 0 ? "+" : "";
@@ -306,7 +302,7 @@ const getExtraTimeBasedLogs = async ({
       true,
       previousDelta,
       isFarFromLastToday,
-      diffFromLastToday,
+      isTooFarCase,
     );
 
     extraWait += dangerWait;
@@ -328,9 +324,19 @@ const getExtraTimeBasedLogs = async ({
         ? WAITS_MAP.far
         : WAITS_MAP.default;
 
-    const maxNewWait = Math.abs(diff) / 1000 + initialWait;
+    let maxNewWait = Math.abs(diff) / 1000 + initialWait;
 
     if (isLastTodayDiffNegative) {
+      if (isTooFarCase && previousDelta <= 0) {
+        maxNewWait += 3;
+
+        extraBotMessages.push(
+          `📊 far-negative-long-gap ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
+            1,
+          )} previousDelta=${previousDelta} wait=+3ms`,
+        );
+      }
+
       const consecutiveNegativeCountToday = getConsecutiveNegativeCountToday(
         todayCases,
         isCurrentDiffNegative,
@@ -391,13 +397,7 @@ const getExtraTimeBasedLogs = async ({
       value += 1;
     }
 
-    if (
-      !isStableAfterNegative &&
-      !isFirstCaseToday &&
-      timeGapHours >= 5 &&
-      previousDelta <= 0 &&
-      extraBasedRtt <= 0
-    ) {
+    if (!isStableAfterNegative && isTooFarCase && previousDelta <= 0) {
       value += 1;
 
       extraBotMessages.push(
