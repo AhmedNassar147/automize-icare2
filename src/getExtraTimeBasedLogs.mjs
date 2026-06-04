@@ -203,10 +203,12 @@ const analyzeReferralTimingPatterns = (
 
   const isRecoveryThenDrop = isFirstDayRecovery || isSuperSinglePattern;
 
+  const lastTodayOutcome = lastToday?.outcome;
+
   const previousDelta =
     typeof lastToday?.delta === "number"
       ? lastToday.delta
-      : getOutcomeDelta(lastToday?.outcome, lastToday?.outcomeElapsedMs);
+      : getOutcomeDelta(lastTodayOutcome, lastToday?.outcomeElapsedMs);
 
   const lastTodayRTT = lastToday?.rtt || 0;
 
@@ -308,6 +310,18 @@ const getExtraTimeBasedLogs = async ({
   if (extraBackendDelayMs === 0) {
     extraWait += -1;
     extraBotMessages.push(`✅ backend-delay ${logCtx} delay=0ms wait=-1ms`);
+  }
+
+  if (
+    isLastTodayDiffNegative &&
+    previousDelta >= 2 &&
+    !isFarFromLastToday &&
+    !isHotCluster
+  ) {
+    extraWait -= 1;
+    extraBotMessages.push(
+      `✅ high-positive-delta-correction ${logCtx} currentDiff=${diff} previousDelta=${previousDelta} wait=-1ms`,
+    );
   }
 
   if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
