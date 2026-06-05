@@ -209,16 +209,16 @@ export const SUMMARY_TYPES = {
 export const LOGS_SUMMARY_SEPARATOR = "|";
 
 export const LOGS_SUMMARY_HEADERS = [
-  "endDate",
-  "ID",
-  "waitTime",
   "end",
   "readyAt",
-  "diff",
   "zeroAt",
-  "delay",
   "serverEnd",
   "endVsServer",
+  "delay",
+  "endDate",
+  "diff",
+  "ID",
+  "waitTime",
   "clickedAt",
   "tookMS",
   "claimed",
