@@ -280,7 +280,7 @@ const htmlLayouts = {
   </html>
   `;
   },
-  HAYAA: ({
+  DEFAULT: ({
     nationalId,
     nationality,
     patientName,
@@ -580,7 +580,7 @@ const generateAcceptanceLetterHtml = ({
 
   const showLetterFinalFooter = !!(clientMangerName || clientManagerPhone);
 
-  const _clientId = clientId || "HAYAA";
+  const _clientId = clientId === "TADAWI" ? "TADAWI" : "DEFAULT";
   const htmlCreator = htmlLayouts[_clientId];
 
   return htmlCreator({

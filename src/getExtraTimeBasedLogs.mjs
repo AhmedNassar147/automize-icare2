@@ -277,8 +277,10 @@ const getFirstDayBridgeExtraWait = ({
   currentDiff,
   extraBasedRtt,
   isFirstCaseToday,
+  startZero,
 }) => {
   if (
+    startZero ||
     !isFirstCaseToday ||
     !Number.isFinite(hoursGap) ||
     !Number.isFinite(currentDiff) ||
@@ -399,6 +401,7 @@ const getExtraTimeBasedLogs = async ({
     referralIdGap: referralIdGap || 0,
     extraBasedRtt,
     isFirstCaseToday,
+    startZero: true,
   });
 
   let extraWait = bridgeWait;
