@@ -90,7 +90,10 @@ const handleSetCaseOutcome = async ({
       const current = Number.isFinite(currentRaw) ? currentRaw : 0;
       const baseWait = current - addedWait;
       const nextWaitTime = baseWait + delta;
-      updateEnvFile({ WAIT_FOR_ACCEPT_MS: nextWaitTime });
+      updateEnvFile({
+        WAIT_FOR_ACCEPT_MS: nextWaitTime,
+        COMPUTED_EXTRA_WAIT: 0,
+      });
 
       const arrow = delta > 0 ? "⬆️" : "⬇️";
       const sign = delta > 0 ? "+" : "";
