@@ -89,10 +89,11 @@ const handleSetCaseOutcome = async ({
       const addedWait = Number(process.env.COMPUTED_EXTRA_WAIT || 0) || 0;
       const current = Number.isFinite(currentRaw) ? currentRaw : 0;
       const baseWait = current - addedWait;
-      const nextWaitTime = baseWait + delta;
+      // const nextWaitTime = baseWait + delta;
+      const nextWaitTime = current + delta;
       updateEnvFile({
         WAIT_FOR_ACCEPT_MS: nextWaitTime,
-        COMPUTED_EXTRA_WAIT: 0,
+        // COMPUTED_EXTRA_WAIT: 0,
       });
 
       const arrow = delta > 0 ? "⬆️" : "⬇️";

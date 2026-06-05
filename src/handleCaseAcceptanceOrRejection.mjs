@@ -210,7 +210,7 @@ const handleCaseAcceptanceOrRejection =
 
         updateEnvFile({
           WAIT_FOR_ACCEPT_MS: waitTime,
-          COMPUTED_EXTRA_WAIT: computedExtraWait,
+          // COMPUTED_EXTRA_WAIT: computedExtraWait,
         });
       }
 
