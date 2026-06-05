@@ -20,7 +20,6 @@ const WAITS_MAP = {
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
 
-  if (rtt >= 1000) return +4;
   if (rtt >= 500) return +3;
   if (rtt >= 150) return +2;
   if (rtt >= 95) return +1;
@@ -117,6 +116,20 @@ const getDangerZoneExtraWait = (
   };
 };
 
+const getDiffMsBasedTimeStamp = (
+  currentReferralEndTimestamp,
+  lastReferralEndTimestamp,
+) => {
+  if (
+    !Number.isFinite(lastReferralEndTimestamp) ||
+    !Number.isFinite(currentReferralEndTimestamp)
+  ) {
+    return 0;
+  }
+
+  return currentReferralEndTimestamp - lastReferralEndTimestamp;
+};
+
 const analyzeReferralTimingPatterns = (
   logsData,
   referralEndTimestamp,
@@ -129,7 +142,7 @@ const analyzeReferralTimingPatterns = (
     return {
       isDoubleZeroDangerZone: false,
       isRecoveryThenDrop: false,
-      lastDiff: undefined,
+      lastTodayDiff: undefined,
       lastReferralEndTimestamp: null,
       isCurrentDiffNegative,
       isDangerZoneFiredToday: false,
@@ -142,6 +155,9 @@ const analyzeReferralTimingPatterns = (
       previousDelta: 0,
       lastTodayRTT: 0,
       wasLastTodayDangerous: false,
+      lastCaseOfYesterday: null,
+      timeDiffFromLastCase: 0,
+      lastCaseReferralId: 0,
     };
   }
 
@@ -149,14 +165,24 @@ const analyzeReferralTimingPatterns = (
 
   const todayCases = getTodayCases(logsData, currentDayKey);
 
+  const lastCaseOfYesterday = logsData[logsData.length - 1];
+
+  const timeDiffFromLastCase = getDiffMsBasedTimeStamp(
+    referralEndTimestamp,
+    lastCaseOfYesterday?.referralEndTimestamp,
+  );
+
   const lastToday = todayCases[todayCases.length - 1];
   const secondLastToday = todayCases[todayCases.length - 2];
 
-  const diffFromLastToday = lastToday?.referralEndTimestamp
-    ? referralEndTimestamp - lastToday.referralEndTimestamp
-    : 0;
+  const diffFromLastToday = getDiffMsBasedTimeStamp(
+    referralEndTimestamp,
+    lastToday?.referralEndTimestamp,
+  );
 
   const lastTodayDiff = lastToday?.diff;
+  const lastCaseDiff = lastCaseOfYesterday?.diff;
+  const lastCaseReferralId = Number(lastCaseOfYesterday?.referralId || 0);
 
   const isLastTodayPositive =
     typeof lastTodayDiff === "number" && lastTodayDiff >= 0;
@@ -224,7 +250,8 @@ const analyzeReferralTimingPatterns = (
   return {
     isDoubleZeroDangerZone,
     isRecoveryThenDrop,
-    lastDiff: lastTodayDiff,
+    lastTodayDiff,
+    lastCaseDiff,
     isCurrentDiffNegative,
     isDangerZoneFiredToday,
     superSingleAlreadyFired,
@@ -237,6 +264,72 @@ const analyzeReferralTimingPatterns = (
     lastTodayRTT,
     wasLastTodayFarDangerZone,
     wasLastTodayDangerous,
+    timeDiffFromLastCase,
+    lastCaseReferralId,
+  };
+};
+
+const getFirstDayBridgeExtraWait = ({
+  referralEndTimestamp,
+  hoursGap,
+  referralIdGap,
+  lastCaseDiff,
+  currentDiff,
+  extraBasedRtt,
+  isFirstCaseToday,
+}) => {
+  if (
+    !isFirstCaseToday ||
+    !Number.isFinite(hoursGap) ||
+    !Number.isFinite(currentDiff) ||
+    currentDiff >= 0
+  ) {
+    return {
+      bridgeWait: 0,
+      bridgeMessage: "",
+    };
+  }
+
+  const currentHour = new Date(referralEndTimestamp).getHours();
+
+  // Ignore very early first-day cases; allow bridge from 8:00 AM onward.
+  if (currentHour < 8) {
+    return {
+      bridgeWait: 0,
+      bridgeMessage: "",
+    };
+  }
+
+  const lastWasStable = typeof lastCaseDiff === "number" && lastCaseDiff >= 0;
+  const rttCompensation = extraBasedRtt > 0 ? extraBasedRtt : 0;
+
+  if (hoursGap >= 12 && referralIdGap >= 30) {
+    const value = Math.max(0, (lastWasStable ? 27 : 3) - rttCompensation);
+
+    return {
+      bridgeWait: value,
+      bridgeMessage:
+        `tier=large hour=${currentHour} hours=${hoursGap.toFixed(1)} ` +
+        `idGap=${referralIdGap} lastStable=${lastWasStable} ` +
+        `rttCompensation=${rttCompensation}`,
+    };
+  }
+
+  if (hoursGap >= 8 && referralIdGap >= 12) {
+    const value = Math.max(0, (lastWasStable ? 17 : 3) - rttCompensation);
+
+    return {
+      bridgeWait: value,
+      bridgeMessage:
+        `tier=medium hour=${currentHour} hours=${hoursGap.toFixed(1)} ` +
+        `idGap=${referralIdGap} lastStable=${lastWasStable} ` +
+        `rttCompensation=${rttCompensation}`,
+    };
+  }
+
+  return {
+    bridgeWait: 0,
+    bridgeMessage: "",
   };
 };
 
@@ -256,7 +349,7 @@ const getExtraTimeBasedLogs = async ({
   const {
     isDoubleZeroDangerZone,
     isRecoveryThenDrop,
-    lastDiff,
+    lastTodayDiff,
     isCurrentDiffNegative,
     isDangerZoneFiredToday,
     isFarFromLastToday,
@@ -267,6 +360,9 @@ const getExtraTimeBasedLogs = async ({
     lastTodayRTT,
     wasLastTodayFarDangerZone,
     wasLastTodayDangerous,
+    timeDiffFromLastCase,
+    lastCaseDiff,
+    lastCaseReferralId,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
@@ -274,12 +370,9 @@ const getExtraTimeBasedLogs = async ({
   const isHotCluster = !isFirstCaseToday && diffFromLastToday <= HOT_CLUSTER_MS;
 
   const timeGapHours = diffFromLastToday / (60 * 60 * 1000);
+  const timeDiffFromLastCaseHours = timeDiffFromLastCase / (60 * 60 * 1000);
 
   const gapMin = (diffFromLastToday / 60000).toFixed(1);
-
-  let extraWait = 0;
-
-  const logCtx = `referralId=${referralId} diffPath=${lastDiff ?? "none"}→${diff}`;
 
   const rawExtraBasedRtt = getRttExtraWait(rtt);
 
@@ -293,6 +386,30 @@ const getExtraTimeBasedLogs = async ({
 
   const isTooFarCase =
     isFarFromLastToday && timeGapHours >= 5 && extraBasedRtt <= 0;
+
+  const referralIdGap = lastCaseReferralId
+    ? Number(referralId) - lastCaseReferralId
+    : undefined;
+
+  const { bridgeMessage, bridgeWait } = getFirstDayBridgeExtraWait({
+    referralEndTimestamp,
+    currentDiff: diff,
+    lastCaseDiff,
+    hoursGap: timeDiffFromLastCaseHours,
+    referralIdGap: referralIdGap || 0,
+    extraBasedRtt,
+    isFirstCaseToday,
+  });
+
+  let extraWait = bridgeWait;
+
+  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff}`;
+
+  if (bridgeWait) {
+    extraBotMessages.push(
+      `🌉 first-day-bridge referralId=${referralId} diffPath=${lastCaseDiff ?? "none"}→${diff} wait=+${bridgeWait}ms_AND_${bridgeMessage}`,
+    );
+  }
 
   if (extraBasedRtt) {
     extraWait += extraBasedRtt;

@@ -86,15 +86,18 @@ const handleSetCaseOutcome = async ({
 
     if (delta !== 0) {
       const currentRaw = Number(process.env.WAIT_FOR_ACCEPT_MS);
+      const addedWait = Number(process.env.COMPUTED_EXTRA_WAIT || 0) || 0;
       const current = Number.isFinite(currentRaw) ? currentRaw : 0;
-      const nextWaitTime = current + delta;
+      const baseWait = current - addedWait;
+      const nextWaitTime = baseWait + delta;
       updateEnvFile({ WAIT_FOR_ACCEPT_MS: nextWaitTime });
 
       const arrow = delta > 0 ? "⬆️" : "⬇️";
       const sign = delta > 0 ? "+" : "";
 
       await sendTelegramMessage(
-        `${arrow} waitTime \`${current}\`→\`${nextWaitTime}\`ms (${sign}${delta}ms)\n` +
+        `${arrow} baseWait \`${baseWait}\`→\`${nextWaitTime}\`ms (${sign}${delta}ms)\n` +
+          `⏱️ finalWait: \`${current}\`ms | extraWait: \`${addedWait}\`ms\n` +
           `📋 outcome: \`${outcome}\` elapsed: \`${elapsedMs}\`ms\n` +
           `🆔 case: \`${referralId}\``,
       );

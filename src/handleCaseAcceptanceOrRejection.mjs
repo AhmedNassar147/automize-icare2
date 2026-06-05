@@ -210,6 +210,7 @@ const handleCaseAcceptanceOrRejection =
 
         updateEnvFile({
           WAIT_FOR_ACCEPT_MS: waitTime,
+          COMPUTED_EXTRA_WAIT: computedExtraWait,
         });
       }
 
@@ -238,7 +239,7 @@ const handleCaseAcceptanceOrRejection =
       }
 
       if (extraBotMessages.length) {
-        await sleep(waitTime + 200);
+        await sleep(400);
         await sendTelegramMessage(extraBotMessages.join("\n\n"));
       }
 
