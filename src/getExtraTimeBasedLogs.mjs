@@ -537,10 +537,16 @@ const getExtraTimeBasedLogs = async ({
 
   if (extraBackendDelayMs === 0) {
     // check case 378337 and 378589
-    const value = isFarFromLastToday ? 3 : 2;
+    let value = isFarFromLastToday ? 2 : 1;
+
+    if (isFarFromLastToday && isCurrentCaseNeedsDangerReduction) {
+      value = 4;
+    }
+
     extraWait -= value;
+
     extraBotMessages.push(
-      `✅ backend-delay ${logCtx} delay=0ms wait=-${value}ms`,
+      `✅ backend-delay ${logCtx} delay=0ms previousDelta=${previousDelta} far=${isFarFromLastToday} wait=-${value}ms`,
     );
   }
 
