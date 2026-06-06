@@ -188,34 +188,40 @@ const getAfterDangerReduction = (
 };
 
 const getDangerZoneExtraWait = (
-  isFarFromLastToday,
+  timeGapMinutes,
   isTooFarCase,
   previousDelta,
 ) => {
   const safePreviousDelta = Number.isFinite(previousDelta) ? previousDelta : 0;
-  let previousReduction = Math.max(0, -safePreviousDelta);
-  previousReduction = previousReduction ? Math.min(previousReduction, 2) : 0;
+  const previousReduction = Math.min(2, Math.max(0, -safePreviousDelta));
 
-  const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
-  const compensation = previousReduction;
+  const isFarCase = timeGapMinutes >= FAR_CASE_MIN;
+  const isMedCase = timeGapMinutes >= 15;
 
-  // we made it 6 according to this case id 378569
-  // in this case we are in increasing
-  const extraWait = (isFarFromLastToday ? 10 : 6) + compensation + extraBoost;
+  // cases like 378569 and 378337
+  let baseDangerWait = 5;
 
-  const messages = [];
-
-  if (isTooFarCase) {
-    messages.push(`too-far-boost=+${extraBoost}ms`);
+  if (isFarCase) {
+    baseDangerWait = 10;
+  } else if (isMedCase) {
+    baseDangerWait = 7;
   }
 
-  if (compensation > 0) {
-    messages.push(`previous-reduction-compensation=+${compensation}ms`);
+  const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
+  const dangerWait = baseDangerWait + previousReduction + extraBoost;
+
+  const messages = [
+    `base=${baseDangerWait} phase=${isFarCase ? "far" : isMedCase ? "medium" : "small"} previousDelta=${previousDelta}`,
+  ];
+
+  if (extraBoost) messages.push(`too-far-boost=+${extraBoost}ms`);
+  if (previousReduction) {
+    messages.push(`previous-reduction-compensation=+${previousReduction}ms`);
   }
 
   return {
-    dangerWait: extraWait,
-    dangerMessage: messages.join("_AND_"),
+    dangerWait,
+    dangerMessage: messages.join(" "),
   };
 };
 
@@ -358,6 +364,8 @@ const analyzeReferralTimingPatterns = (
   const wasLastTodayDangerous = _messageFromLastToday.includes("danger-zone");
   const wasUsingFullWait = _messageFromLastToday.includes("fullWait=true");
   const wasFar = _messageFromLastToday.includes("far=true");
+  const wasMediumDangerPhase = _messageFromLastToday.includes("phase=medium");
+  const wasFarDangerPhase = _messageFromLastToday.includes("phase=far");
 
   const wasLastTodayFarDangerZone =
     wasLastTodayDangerous && wasFar && wasUsingFullWait;
@@ -367,6 +375,11 @@ const analyzeReferralTimingPatterns = (
   const lastTodayRTT = _lastTodayRTT || 0;
 
   const safeLastExtraWait = Number.isFinite(lastExtraWait) ? lastExtraWait : 0;
+
+  const isCurrentCaseNeedsDangerReduction =
+    wasLastTodayDangerous &&
+    !isFarFromLastToday &&
+    (wasMediumDangerPhase || wasFarDangerPhase);
 
   return {
     isCurrentCaseDangerZone,
@@ -392,6 +405,8 @@ const analyzeReferralTimingPatterns = (
     lastTodayOutcomeElapsedMs,
     lastExtraWait: safeLastExtraWait,
     lastFinalWait,
+    isCurrentCaseJustAfterDanger,
+    isCurrentCaseNeedsDangerReduction,
   };
 };
 
@@ -435,6 +450,7 @@ const getExtraTimeBasedLogs = async ({
     isCurrentCaseDangerZone,
     lastExtraWait,
     lastFinalWait,
+    isCurrentCaseNeedsDangerReduction,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
@@ -445,7 +461,7 @@ const getExtraTimeBasedLogs = async ({
     !!lastFinalWait && timeDiffFromLastCase <= ULTRA_HOT_CLUSTER_MS;
 
   if (isUltraHotCluster) {
-    const computedExtraWait =
+    const reductionWait =
       lastExtraWait > 6
         ? Math.max(3, Math.floor(lastExtraWait / 2))
         : lastExtraWait || 1;
@@ -454,11 +470,11 @@ const getExtraTimeBasedLogs = async ({
       `🌉 ultra-hot-cluster referralId=${referralId} ` +
       `diffPath=${lastCaseDiff ?? "none"}→${diff} ` +
       `previousWait=${lastFinalWait} base=${baseWaitingTime} ` +
-      `lastExtra=${lastExtraWait} wait=-${computedExtraWait}`;
+      `lastExtra=${lastExtraWait} wait=-${reductionWait}`;
 
     return {
       computedExtraBotMessages: [message],
-      computedExtraWait: -computedExtraWait,
+      computedExtraWait: -reductionWait,
     };
   }
 
@@ -469,11 +485,8 @@ const getExtraTimeBasedLogs = async ({
 
   const rawExtraBasedRtt = getRttExtraWait(rtt);
 
-  const isCurrentCaseJustAfterDanger =
-    wasLastTodayDangerous && !isFarFromLastToday;
-
   const shouldIgnorePositiveRtt =
-    isCurrentCaseJustAfterDanger && rawExtraBasedRtt > 0;
+    isCurrentCaseNeedsDangerReduction && rawExtraBasedRtt > 0;
 
   const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
 
@@ -505,7 +518,7 @@ const getExtraTimeBasedLogs = async ({
     );
   }
 
-  if (isCurrentCaseJustAfterDanger) {
+  if (isCurrentCaseNeedsDangerReduction) {
     const afterDangerReduction = getAfterDangerReduction(
       previousDelta,
       lastTodayOutcome,
@@ -542,18 +555,22 @@ const getExtraTimeBasedLogs = async ({
 
   if (isCurrentCaseDangerZone) {
     const { dangerWait, dangerMessage } = getDangerZoneExtraWait(
-      isFarFromLastToday,
+      +gapMin,
       isTooFarCase,
       previousDelta,
     );
 
     extraWait += dangerWait;
+
+    const message = [
+      `⚠️ danger-zone ${logCtx}`,
+      `type=${isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"}`,
+      `gap=${gapMin}min`,
+      `wait=+${dangerWait}ms`,
+    ].join(" ");
+
     extraBotMessages.push(
-      `⚠️ danger-zone ${logCtx} type=${
-        isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"
-      } gap=${gapMin}min fullWait=${isFarFromLastToday} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+${dangerWait}ms${
-        dangerMessage ? `_AND_${dangerMessage}` : ""
-      }`,
+      `${message}${dangerMessage ? `_AND_${dangerMessage}` : ""}`,
     );
 
     return {
