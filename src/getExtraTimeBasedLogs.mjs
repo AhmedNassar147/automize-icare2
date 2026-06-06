@@ -199,7 +199,7 @@ const getDangerZoneExtraWait = (
 
   // we made it 6 according to this case id 378569
   // in this case we are in increasing
-  const extraWait = (isFarFromLastToday ? 10 : 5) + compensation + extraBoost;
+  const extraWait = (isFarFromLastToday ? 10 : 6) + compensation + extraBoost;
 
   const messages = [];
 
@@ -492,7 +492,7 @@ const getExtraTimeBasedLogs = async ({
 
   if (extraBackendDelayMs === 0) {
     // check case 378337
-    const value = 2;
+    const value = isFarFromLastToday ? 2 : 1;
     extraWait -= value;
     extraBotMessages.push(
       `✅ backend-delay ${logCtx} delay=0ms wait=-${value}ms`,
@@ -521,11 +521,15 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
+  const isNotFarAndNotHotCluster = !isFarFromLastToday && !isHotCluster;
+
   if (isCurrentDiffNegative) {
     const initialWait =
       isFirstCaseToday || isFarFromLastToday
         ? WAITS_MAP.far
-        : WAITS_MAP.default;
+        : isNotFarAndNotHotCluster
+          ? 1
+          : WAITS_MAP.default;
 
     let maxNewWait = Math.abs(diff) / 1000 + initialWait;
 
@@ -580,7 +584,7 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (diff >= 0) {
-    let value = WAITS_MAP.default;
+    let value = isNotFarAndNotHotCluster ? 1 : WAITS_MAP.default;
 
     const extrTime = isUnizahBranch ? (isFirstCaseToday ? 2 : 1) : 0;
 
@@ -591,8 +595,7 @@ const getExtraTimeBasedLogs = async ({
     }
 
     const isStableAfterNegative =
-      !isFarFromLastToday &&
-      !isHotCluster &&
+      isNotFarAndNotHotCluster &&
       isLastTodayDiffNegative &&
       isLargeRTT &&
       rtt > lastTodayRTT;
