@@ -1172,12 +1172,14 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       referralId: "test",
       referralEndTimestamp,
       diff: 0,
+      baseWaitingTime: current,
     });
 
     const negativeResult = await getExtraTimeBasedLogs({
       referralId: "test",
       referralEndTimestamp,
       diff: -1000,
+      baseWaitingTime: current,
     });
 
     const normalRttResult = await getExtraTimeBasedLogs({
@@ -1185,6 +1187,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       referralEndTimestamp,
       diff: 0,
       rtt: 70,
+      baseWaitingTime: current,
     });
 
     const rtt95Result = await getExtraTimeBasedLogs({
@@ -1192,6 +1195,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       referralEndTimestamp,
       diff: 0,
       rtt: 95,
+      baseWaitingTime: current,
     });
 
     const rtt130Result = await getExtraTimeBasedLogs({
@@ -1199,6 +1203,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       referralEndTimestamp,
       diff: 0,
       rtt: 130,
+      baseWaitingTime: current,
     });
 
     const normalRttWithNegativeResult = await getExtraTimeBasedLogs({
@@ -1206,6 +1211,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       referralEndTimestamp,
       diff: -1000,
       rtt: 70,
+      baseWaitingTime: current,
     });
 
     const rtt130WithNegativeResult = await getExtraTimeBasedLogs({
@@ -1213,6 +1219,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       referralEndTimestamp,
       diff: -1000,
       rtt: 130,
+      baseWaitingTime: current,
     });
 
     const normalBackendDelayResult = await getExtraTimeBasedLogs({
@@ -1220,6 +1227,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       referralEndTimestamp,
       diff: 0,
       extraBackendDelayMs: 1000,
+      baseWaitingTime: current,
     });
 
     const highBackendDelayResult = await getExtraTimeBasedLogs({
@@ -1227,6 +1235,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       referralEndTimestamp,
       diff: 0,
       extraBackendDelayMs: 2000,
+      baseWaitingTime: current,
     });
 
     await sendBotMessage(

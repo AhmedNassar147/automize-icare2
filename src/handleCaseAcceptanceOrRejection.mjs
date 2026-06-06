@@ -155,6 +155,7 @@ const handleCaseAcceptanceOrRejection =
           diff,
           extraBackendDelayMs,
           rtt,
+          baseWaitingTime,
         });
 
       if (ENABLE_AUTO_WAITING === "1") {
@@ -180,6 +181,22 @@ const handleCaseAcceptanceOrRejection =
         sleep(Math.max(0, waitTime - 36)).then(() =>
           sendNtfyMessage(approvalMessage),
         ),
+        summarizeLogsAfterAcceptance({
+          referralId,
+          waitTime,
+          extraWait,
+          referralEndTimestamp,
+          endDateBasedServerDateMs,
+          zeroSeenAt,
+          readySeenAt,
+          readySeenAtLocalMs,
+          extraBackendDelayMs,
+          referralEndDate,
+          rtt,
+          status: isAcceptanceAction ? "" : "not-clicked",
+          claimed: isAcceptanceAction ? "" : "No",
+          extraWaitMessage: computedExtraBotMessages.join("_AND_"),
+        }),
       ]);
 
       for (const result of notificationResults) {
@@ -189,15 +206,6 @@ const handleCaseAcceptanceOrRejection =
           );
         }
       }
-
-      // const updateResult = await patientStore.updatePatient(referralId, {
-      //   readySeenAtLocalMs,
-      //   waitTime: waitTime,
-      // });
-
-      // if (!updateResult.success) {
-      //   extraBotMessages.push(updateResult.message);
-      // }
 
       const isTimeChanged = waitTime !== baseWaitingTime;
 
@@ -211,25 +219,6 @@ const handleCaseAcceptanceOrRejection =
           // COMPUTED_EXTRA_WAIT: computedExtraWait,
         });
       }
-
-      const logs = {
-        referralId,
-        waitTime,
-        extraWait,
-        referralEndTimestamp,
-        endDateBasedServerDateMs,
-        zeroSeenAt,
-        readySeenAt,
-        readySeenAtLocalMs,
-        extraBackendDelayMs,
-        referralEndDate,
-        rtt,
-        status: isAcceptanceAction ? "" : "not-clicked",
-        claimed: isAcceptanceAction ? "" : "No",
-        extraWaitMessage: computedExtraBotMessages.join("_AND_"),
-      };
-
-      await summarizeLogsAfterAcceptance(logs);
 
       await closePageSafely(page);
 

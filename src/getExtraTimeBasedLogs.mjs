@@ -12,6 +12,8 @@ const FAR_CASE_MS = FAR_CASE_MIN * 60000;
 
 const HOT_CLUSTER_MS = 4 * 60 * 1000;
 
+const ULTRA_HOT_CLUSTER_MS = 25 * 1000;
+
 const WAITS_MAP = {
   far: 3,
   default: 2,
@@ -261,6 +263,8 @@ const analyzeReferralTimingPatterns = (
       lastCaseReferralId: 0,
       lastTodayOutcome: "",
       lastTodayOutcomeElapsedMs: 0,
+      lastExtraWait: 0,
+      lastFinalWait: Number(process.env.WAIT_FOR_ACCEPT_MS || 0),
     };
   }
 
@@ -278,12 +282,24 @@ const analyzeReferralTimingPatterns = (
   const lastToday = todayCases[todayCases.length - 1];
   const secondLastToday = todayCases[todayCases.length - 2];
 
+  const {
+    referralEndTimestamp: lastTodayTs,
+    diff: lastTodayDiff,
+    outcome: lastTodayOutcome,
+    outcomeElapsedMs: lastTodayOutcomeElapsedMs,
+    delta: lastTodayDelta,
+    extraWaitMessage: messageFromLastToday,
+    rtt: _lastTodayRTT,
+  } = lastToday || {};
+
+  const { waitTime: lastFinalWait, extraWait: lastExtraWait } =
+    lastCaseOfYesterday;
+
   const diffFromLastToday = getDiffMsBasedTimeStamp(
     referralEndTimestamp,
-    lastToday?.referralEndTimestamp,
+    lastTodayTs,
   );
 
-  const lastTodayDiff = lastToday?.diff;
   const lastCaseDiff = lastCaseOfYesterday?.diff;
   const lastCaseReferralId = Number(lastCaseOfYesterday?.referralId || 0);
 
@@ -332,26 +348,25 @@ const analyzeReferralTimingPatterns = (
 
   const isRecoveryThenDrop = isFirstDayRecovery || isSuperSinglePattern;
 
-  const lastTodayOutcome = lastToday?.outcome;
-  const lastTodayOutcomeElapsedMs = lastToday?.outcomeElapsedMs;
-
   const previousDelta =
-    typeof lastToday?.delta === "number"
-      ? lastToday.delta
+    typeof lastTodayDelta === "number"
+      ? lastTodayDelta
       : getOutcomeDelta(lastTodayOutcome, lastTodayOutcomeElapsedMs);
 
-  const lastTodayRTT = lastToday?.rtt || 0;
+  const _messageFromLastToday = messageFromLastToday || "";
 
-  const messageFromLastToday = lastToday?.extraWaitMessage || "";
-
-  const wasLastTodayDangerous = messageFromLastToday.includes("danger-zone");
-  const wasUsingFullWait = messageFromLastToday.includes("fullWait=true");
-  const wasFar = messageFromLastToday.includes("far=true");
+  const wasLastTodayDangerous = _messageFromLastToday.includes("danger-zone");
+  const wasUsingFullWait = _messageFromLastToday.includes("fullWait=true");
+  const wasFar = _messageFromLastToday.includes("far=true");
 
   const wasLastTodayFarDangerZone =
     wasLastTodayDangerous && wasFar && wasUsingFullWait;
 
   const isCurrentCaseDangerZone = isDoubleZeroDangerZone || isRecoveryThenDrop;
+
+  const lastTodayRTT = _lastTodayRTT || 0;
+
+  const safeLastExtraWait = Number.isFinite(lastExtraWait) ? lastExtraWait : 0;
 
   return {
     isCurrentCaseDangerZone,
@@ -375,6 +390,8 @@ const analyzeReferralTimingPatterns = (
     lastCaseReferralId,
     lastTodayOutcome,
     lastTodayOutcomeElapsedMs,
+    lastExtraWait: safeLastExtraWait,
+    lastFinalWait,
   };
 };
 
@@ -384,6 +401,7 @@ const getExtraTimeBasedLogs = async ({
   diff,
   extraBackendDelayMs,
   rtt,
+  baseWaitingTime,
 }) => {
   const { BRANCH_NAME /* DOES_SYSTEM_REDUCE_WAIT */ } = process.env;
 
@@ -415,11 +433,34 @@ const getExtraTimeBasedLogs = async ({
     lastTodayOutcome,
     lastTodayOutcomeElapsedMs,
     isCurrentCaseDangerZone,
+    lastExtraWait,
+    lastFinalWait,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
 
   const isHotCluster = !isFirstCaseToday && diffFromLastToday <= HOT_CLUSTER_MS;
+
+  const isUltraHotCluster =
+    !!lastFinalWait && timeDiffFromLastCase <= ULTRA_HOT_CLUSTER_MS;
+
+  if (isUltraHotCluster) {
+    const computedExtraWait =
+      lastExtraWait > 6
+        ? Math.max(3, Math.floor(lastExtraWait / 2))
+        : lastExtraWait || 1;
+
+    const message =
+      `🌉 ultra-hot-cluster referralId=${referralId} ` +
+      `diffPath=${lastCaseDiff ?? "none"}→${diff} ` +
+      `previousWait=${lastFinalWait} base=${baseWaitingTime} ` +
+      `lastExtra=${lastExtraWait} wait=-${computedExtraWait}`;
+
+    return {
+      computedExtraBotMessages: [message],
+      computedExtraWait: -computedExtraWait,
+    };
+  }
 
   const timeGapHours = diffFromLastToday / (60 * 60 * 1000);
   const timeDiffFromLastCaseHours = timeDiffFromLastCase / (60 * 60 * 1000);
