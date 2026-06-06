@@ -197,7 +197,8 @@ const getDangerZoneExtraWait = (
   const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
   const compensation = previousReduction;
 
-  // we made it 5 according to this case id 378569
+  // we made it 6 according to this case id 378569
+  // in this case we are in increasing
   const extraWait = (isFarFromLastToday ? 10 : 5) + compensation + extraBoost;
 
   const messages = [];
@@ -463,19 +464,19 @@ const getExtraTimeBasedLogs = async ({
     );
   }
 
-  if (isCurrentCaseJustAfterDanger) {
-    const afterDangerReduction = getAfterDangerReduction(
-      previousDelta,
-      lastTodayOutcome,
-      lastTodayOutcomeElapsedMs,
-    );
+  // if (isCurrentCaseJustAfterDanger) {
+  //   const afterDangerReduction = getAfterDangerReduction(
+  //     previousDelta,
+  //     lastTodayOutcome,
+  //     lastTodayOutcomeElapsedMs,
+  //   );
 
-    extraWait -= afterDangerReduction;
+  //   extraWait -= afterDangerReduction;
 
-    extraBotMessages.push(
-      `🌉 first-case-after-danger ${logCtx} previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs} wait=-${afterDangerReduction}ms`,
-    );
-  }
+  //   extraBotMessages.push(
+  //     `🌉 first-case-after-danger ${logCtx} previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs} wait=-${afterDangerReduction}ms`,
+  //   );
+  // }
 
   if (extraBasedRtt) {
     extraWait += extraBasedRtt;

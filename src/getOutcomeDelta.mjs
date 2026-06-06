@@ -15,9 +15,9 @@ const getOutcomeDelta = (outcome, elapsedMs) => {
       // Low elapsedMs means app already moved too fast / dashboard returned,
       // so we clicked too late. Reduce wait to click earlier next time.
       [OUTCOME_MAP.needLessWait]: -3,
-      [OUTCOME_MAP.lowWaiting]: elapsedMs <= 630 ? -3 : -2,
+      [OUTCOME_MAP.lowWaiting]: elapsedMs <= 635 ? -3 : -2,
       [OUTCOME_MAP.moderateWaiting]:
-        elapsedMs <= 730 ? -2 : elapsedMs <= 765 ? -1 : 0,
+        elapsedMs <= 740 ? -2 : elapsedMs <= 765 ? -1 : 0,
       [OUTCOME_MAP.goodWaiting]: elapsedMs >= 870 ? +1 : 0,
       [OUTCOME_MAP.needMoreWait]: elapsedMs < 980 ? +1 : +2,
       [OUTCOME_MAP.nearToBlock]:
