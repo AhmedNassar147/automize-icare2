@@ -167,19 +167,20 @@ const getAfterDangerReduction = (
     previousOutcome.includes(OUTCOME_MAP.lowWaiting) ||
     previousOutcome.includes(OUTCOME_MAP.moderateWaiting)
   ) {
-    return Math.max(0, 6 - positiveDelta);
+    const max = !positiveDelta ? 3 : 6;
+    return Math.max(0, max - positiveDelta);
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.goodWaiting)) {
-    return Math.max(0, 2 - positiveDelta);
+    return Math.max(0, 3 - positiveDelta);
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.needMoreWait)) {
-    return previousDelta + 2;
+    return previousDelta + 3;
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.nearToBlock)) {
-    return previousDelta + 2;
+    return previousDelta + 3;
   }
 
   return 1;
