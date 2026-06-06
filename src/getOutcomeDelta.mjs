@@ -14,24 +14,15 @@ const getOutcomeDelta = (outcome, elapsedMs) => {
     {
       // Low elapsedMs means app already moved too fast / dashboard returned,
       // so we clicked too late. Reduce wait to click earlier next time.
-      [OUTCOME_MAP.needLessWait]: -4,
+      [OUTCOME_MAP.needLessWait]: -3,
       [OUTCOME_MAP.lowWaiting]: elapsedMs <= 630 ? -3 : -2,
       [OUTCOME_MAP.moderateWaiting]:
-        elapsedMs <= 720 ? -2 : elapsedMs <= 745 ? -1 : 0,
-      [OUTCOME_MAP.goodWaiting]: elapsedMs >= 875 ? +1 : 0,
-      [OUTCOME_MAP.needMoreWait]: elapsedMs < 950 ? +1 : +2,
+        elapsedMs <= 730 ? -2 : elapsedMs <= 750 ? -1 : 0,
+      [OUTCOME_MAP.goodWaiting]: elapsedMs >= 870 ? +1 : 0,
+      [OUTCOME_MAP.needMoreWait]: elapsedMs < 980 ? +1 : +2,
       [OUTCOME_MAP.nearToBlock]:
-        elapsedMs >= 2000 ? +5 : elapsedMs >= 1600 ? +3 : +2,
+        elapsedMs >= 2000 ? +3 : elapsedMs >= 1600 ? +2 : 1,
       [OUTCOME_MAP.blocked]: 0,
-
-      // [OUTCOME_MAP.needLessWait]: -3,
-      // [OUTCOME_MAP.lowWaiting]: elapsedMs <= 630 ? -2 : -1,
-      // [OUTCOME_MAP.moderateWaiting]: elapsedMs <= 720 ? -2 : 0,
-      // [OUTCOME_MAP.goodWaiting]: elapsedMs >= 875 ? +1 : 0,
-      // [OUTCOME_MAP.needMoreWait]: elapsedMs < 950 ? +1 : +2,
-      // [OUTCOME_MAP.nearToBlock]:
-      //   elapsedMs >= 2000 ? +4 : elapsedMs >= 1600 ? +3 : +2,
-      // [OUTCOME_MAP.blocked]: 0,
     }[outcome] ?? 0
   );
 };

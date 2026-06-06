@@ -219,6 +219,7 @@ export const LOGS_SUMMARY_HEADERS = [
   "diff",
   "ID",
   "waitTime",
+  "localReadyAt",
   "clickedAt",
   "tookMS",
   "claimed",
@@ -245,5 +246,6 @@ export const TIMING_LOGS_WIDTHS = {
   claimed: 7,
   rtt: 6,
   delta: 5,
-  extraWaitMessage: 30,
+  localReadyAt: 13,
+  extraWaitMessage: 55,
 };

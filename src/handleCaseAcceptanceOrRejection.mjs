@@ -171,8 +171,6 @@ const handleCaseAcceptanceOrRejection =
         extraBotMessages.push(
           `Missing readySeenAt=${readySeenAt} zeroSeenAt=${zeroSeenAt} readySeenAtLocalMs=${readySeenAtLocalMs} extraBackendDelayMs=${extraBackendDelayMs} for referralId=${referralId}`,
         );
-
-        extraWait += 100;
       }
       const waitTime = baseWaitingTime + extraWait;
       const approvalMessage = `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\``;
@@ -192,14 +190,14 @@ const handleCaseAcceptanceOrRejection =
         }
       }
 
-      const updateResult = await patientStore.updatePatient(referralId, {
-        readySeenAtLocalMs,
-        waitTime: waitTime,
-      });
+      // const updateResult = await patientStore.updatePatient(referralId, {
+      //   readySeenAtLocalMs,
+      //   waitTime: waitTime,
+      // });
 
-      if (!updateResult.success) {
-        extraBotMessages.push(updateResult.message);
-      }
+      // if (!updateResult.success) {
+      //   extraBotMessages.push(updateResult.message);
+      // }
 
       const isTimeChanged = waitTime !== baseWaitingTime;
 
@@ -214,8 +212,6 @@ const handleCaseAcceptanceOrRejection =
         });
       }
 
-      await closePageSafely(page);
-
       const logs = {
         referralId,
         waitTime,
@@ -224,6 +220,7 @@ const handleCaseAcceptanceOrRejection =
         endDateBasedServerDateMs,
         zeroSeenAt,
         readySeenAt,
+        readySeenAtLocalMs,
         extraBackendDelayMs,
         referralEndDate,
         rtt,
@@ -234,12 +231,14 @@ const handleCaseAcceptanceOrRejection =
 
       await summarizeLogsAfterAcceptance(logs);
 
+      await closePageSafely(page);
+
       if (isAcceptanceAction) {
         patientStore.addNonClaimableCase(referralId, referralEndTimestamp);
       }
 
       if (extraBotMessages.length) {
-        await sleep(400);
+        await sleep(300);
         await sendTelegramMessage(extraBotMessages.join("\n\n"));
       }
 

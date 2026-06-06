@@ -39,6 +39,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     rtt,
     extraWaitMessage,
     delta,
+    readySeenAtLocalMs,
   } = data;
 
   let endToReady = "";
@@ -66,6 +67,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     rtt: rtt || "",
     extraWaitMessage,
     delta: delta || "",
+    localReadyAt: readySeenAtLocalMs || "",
   };
 
   const line = createPrettyRow(row);
@@ -190,6 +192,7 @@ export async function readLogsAsArray() {
         extraWaitMessage: current.extraWaitMessage || "",
         delta: parseInt(current.delta, 10) || null,
         ...parseOutcomeStatus(current.status),
+        readySeenAtLocalMs: parseInt(current.localReadyAt, 10) || null,
       };
     })
     .filter((r) => !!r.referralId);
@@ -260,3 +263,5 @@ export async function getCasesWithEmptyClaimStatus() {
       referralEndTimestamp: caseEndTimestamp,
     }));
 }
+
+await migrateCaseLogTimings();

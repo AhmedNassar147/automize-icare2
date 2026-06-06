@@ -579,7 +579,7 @@ class PatientStore extends EventEmitter {
       if (!patient) {
         return {
           success: false,
-          message: `❌ Patient ${referralId} Not found for update, (readySeenAtLocalMs)`,
+          message: `❌ Patient ${referralId} Not found for update`,
         };
       }
 
@@ -591,12 +591,12 @@ class PatientStore extends EventEmitter {
 
       return {
         success: true,
-        message: `✅ Patient ${referralId} updated (readySeenAtLocalMs).`,
+        message: `✅ Patient ${referralId} updated.`,
       };
     } catch (error) {
       return {
         success: false,
-        message: `❌ Patient ${referralId} not updated (readySeenAtLocalMs).`,
+        message: `❌ Patient ${referralId} not updated due to ${error?.message || error}.`,
       };
     }
   }
