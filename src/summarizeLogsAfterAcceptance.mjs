@@ -264,4 +264,4 @@ export async function getCasesWithEmptyClaimStatus() {
     }));
 }
 
-await migrateCaseLogTimings();
+// await migrateCaseLogTimings();

@@ -428,7 +428,7 @@ const getExtraTimeBasedLogs = async ({
   const rawExtraBasedRtt = getRttExtraWait(rtt);
 
   const isCurrentCaseJustAfterDanger =
-    wasLastTodayFarDangerZone && !isFarFromLastToday;
+    wasLastTodayDangerous && !isFarFromLastToday;
 
   const shouldIgnorePositiveRtt =
     isCurrentCaseJustAfterDanger && rawExtraBasedRtt > 0;
