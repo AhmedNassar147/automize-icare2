@@ -162,13 +162,13 @@ const getAfterDangerReduction = (
 
   const positiveDelta = Math.abs(previousDelta);
 
-  // if (
-  //   // previousOutcome.includes(OUTCOME_MAP.needLessWait) ||
-  //   // previousOutcome.includes(OUTCOME_MAP.lowWaiting) ||
-  //   previousOutcome.includes(OUTCOME_MAP.moderateWaiting)
-  // ) {
-  //   return 1;
-  // }
+  if (
+    previousOutcome.includes(OUTCOME_MAP.needLessWait) ||
+    previousOutcome.includes(OUTCOME_MAP.lowWaiting) ||
+    previousOutcome.includes(OUTCOME_MAP.moderateWaiting)
+  ) {
+    return previousDelta >= 2 ? 0 : 1;
+  }
 
   if (previousOutcome.includes(OUTCOME_MAP.goodWaiting)) {
     return !positiveDelta ? 1 : 2;
@@ -182,7 +182,7 @@ const getAfterDangerReduction = (
     return previousDelta + 1;
   }
 
-  return 1;
+  return 0;
 };
 
 const getDangerZoneExtraWait = (
@@ -464,19 +464,19 @@ const getExtraTimeBasedLogs = async ({
     );
   }
 
-  // if (isCurrentCaseJustAfterDanger) {
-  //   const afterDangerReduction = getAfterDangerReduction(
-  //     previousDelta,
-  //     lastTodayOutcome,
-  //     lastTodayOutcomeElapsedMs,
-  //   );
+  if (isCurrentCaseJustAfterDanger) {
+    const afterDangerReduction = getAfterDangerReduction(
+      previousDelta,
+      lastTodayOutcome,
+      lastTodayOutcomeElapsedMs,
+    );
 
-  //   extraWait -= afterDangerReduction;
+    extraWait -= afterDangerReduction;
 
-  //   extraBotMessages.push(
-  //     `🌉 first-case-after-danger ${logCtx} previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs} wait=-${afterDangerReduction}ms`,
-  //   );
-  // }
+    extraBotMessages.push(
+      `🌉 first-case-after-danger ${logCtx} previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs} wait=-${afterDangerReduction}ms`,
+    );
+  }
 
   if (extraBasedRtt) {
     extraWait += extraBasedRtt;
