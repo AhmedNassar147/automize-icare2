@@ -187,17 +187,16 @@ const getAfterDangerReduction = (
 };
 
 const getDangerZoneExtraWait = (
-  isUsingFullWait,
-  previousDelta,
   isFarFromLastToday,
   isTooFarCase,
+  previousDelta,
 ) => {
   const safePreviousDelta = Number.isFinite(previousDelta) ? previousDelta : 0;
   let previousReduction = Math.max(0, -safePreviousDelta);
   previousReduction = previousReduction ? Math.min(previousReduction, 2) : 0;
 
-  const extraBoost = isTooFarCase ? (previousReduction ? 1 : 2) : 0;
-  const compensation = isUsingFullWait ? previousReduction : 0;
+  const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
+  const compensation = previousReduction;
 
   const extraWait = (isFarFromLastToday ? 10 : 8) + compensation + extraBoost;
 
@@ -351,7 +350,10 @@ const analyzeReferralTimingPatterns = (
   const wasLastTodayFarDangerZone =
     wasLastTodayDangerous && wasFar && wasUsingFullWait;
 
+  const isCurrentCaseDangerZone = isDoubleZeroDangerZone || isRecoveryThenDrop;
+
   return {
+    isCurrentCaseDangerZone,
     isDoubleZeroDangerZone,
     isRecoveryThenDrop,
     lastTodayDiff,
@@ -411,6 +413,7 @@ const getExtraTimeBasedLogs = async ({
     lastCaseReferralId,
     lastTodayOutcome,
     lastTodayOutcomeElapsedMs,
+    isCurrentCaseDangerZone,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
@@ -487,18 +490,19 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (extraBackendDelayMs === 0) {
-    extraWait += -2;
-    extraBotMessages.push(`✅ backend-delay ${logCtx} delay=0ms wait=-2ms`);
+    // check case 378337
+    const value = 2;
+    extraWait -= value;
+    extraBotMessages.push(
+      `✅ backend-delay ${logCtx} delay=0ms wait=-${value}ms`,
+    );
   }
 
-  if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
-    const isUsingFullWait = true;
-    // const isUsingFullWait = !isDangerZoneFiredToday;
+  if (isCurrentCaseDangerZone) {
     const { dangerWait, dangerMessage } = getDangerZoneExtraWait(
-      isUsingFullWait,
-      previousDelta,
       isFarFromLastToday,
       isTooFarCase,
+      previousDelta,
     );
 
     extraWait += dangerWait;
