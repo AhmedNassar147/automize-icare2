@@ -362,13 +362,8 @@ const analyzeReferralTimingPatterns = (
   const _messageFromLastToday = messageFromLastToday || "";
 
   const wasLastTodayDangerous = _messageFromLastToday.includes("danger-zone");
-  const wasUsingFullWait = _messageFromLastToday.includes("fullWait=true");
-  const wasFar = _messageFromLastToday.includes("far=true");
   const wasMediumDangerPhase = _messageFromLastToday.includes("phase=medium");
   const wasFarDangerPhase = _messageFromLastToday.includes("phase=far");
-
-  const wasLastTodayFarDangerZone =
-    wasLastTodayDangerous && wasFar && wasUsingFullWait;
 
   const isCurrentCaseDangerZone = isDoubleZeroDangerZone || isRecoveryThenDrop;
 
@@ -397,7 +392,6 @@ const analyzeReferralTimingPatterns = (
     lastToday,
     previousDelta,
     lastTodayRTT,
-    wasLastTodayFarDangerZone,
     wasLastTodayDangerous,
     timeDiffFromLastCase,
     lastCaseReferralId,
@@ -405,7 +399,6 @@ const analyzeReferralTimingPatterns = (
     lastTodayOutcomeElapsedMs,
     lastExtraWait: safeLastExtraWait,
     lastFinalWait,
-    isCurrentCaseJustAfterDanger,
     isCurrentCaseNeedsDangerReduction,
   };
 };
@@ -440,7 +433,6 @@ const getExtraTimeBasedLogs = async ({
     diffFromLastToday,
     previousDelta,
     lastTodayRTT,
-    wasLastTodayFarDangerZone,
     wasLastTodayDangerous,
     timeDiffFromLastCase,
     lastCaseDiff,
