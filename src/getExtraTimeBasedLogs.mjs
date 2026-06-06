@@ -162,25 +162,24 @@ const getAfterDangerReduction = (
 
   const positiveDelta = Math.abs(previousDelta);
 
-  if (
-    previousOutcome.includes(OUTCOME_MAP.needLessWait) ||
-    previousOutcome.includes(OUTCOME_MAP.lowWaiting) ||
-    previousOutcome.includes(OUTCOME_MAP.moderateWaiting)
-  ) {
-    const max = !positiveDelta ? 3 : positiveDelta === 1 ? 4 : 5;
-    return Math.max(0, max - positiveDelta);
-  }
+  // if (
+  //   // previousOutcome.includes(OUTCOME_MAP.needLessWait) ||
+  //   // previousOutcome.includes(OUTCOME_MAP.lowWaiting) ||
+  //   previousOutcome.includes(OUTCOME_MAP.moderateWaiting)
+  // ) {
+  //   return 1;
+  // }
 
   if (previousOutcome.includes(OUTCOME_MAP.goodWaiting)) {
-    return Math.max(0, 3 - positiveDelta);
+    return !positiveDelta ? 1 : 2;
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.needMoreWait)) {
-    return previousDelta + 3;
+    return previousDelta + 1;
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.nearToBlock)) {
-    return previousDelta + 3;
+    return previousDelta + 1;
   }
 
   return 1;
@@ -198,7 +197,8 @@ const getDangerZoneExtraWait = (
   const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
   const compensation = previousReduction;
 
-  const extraWait = (isFarFromLastToday ? 10 : 8) + compensation + extraBoost;
+  // we made it 5 according to this case id 378569
+  const extraWait = (isFarFromLastToday ? 10 : 5) + compensation + extraBoost;
 
   const messages = [];
 
@@ -509,7 +509,7 @@ const getExtraTimeBasedLogs = async ({
     extraBotMessages.push(
       `⚠️ danger-zone ${logCtx} type=${
         isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"
-      } gap=${gapMin}min fullWait=${isUsingFullWait} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+${dangerWait}ms${
+      } gap=${gapMin}min fullWait=${isFarFromLastToday} previousDelta=${previousDelta} far=${isFarFromLastToday} wait=+${dangerWait}ms${
         dangerMessage ? `_AND_${dangerMessage}` : ""
       }`,
     );
