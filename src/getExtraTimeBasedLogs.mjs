@@ -477,7 +477,10 @@ const getExtraTimeBasedLogs = async ({
   const rawExtraBasedRtt = getRttExtraWait(rtt);
 
   const shouldIgnorePositiveRtt =
-    isCurrentCaseNeedsDangerReduction && rawExtraBasedRtt > 0;
+    rawExtraBasedRtt > 0 &&
+    (isCurrentCaseNeedsDangerReduction ||
+      // for this case 378585 we didn't need the 1 rawExtraBasedRtt based rtt
+      isCurrentCaseDangerZone);
 
   const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
 
