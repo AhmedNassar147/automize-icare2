@@ -487,8 +487,8 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (extraBackendDelayMs === 0) {
-    extraWait += -1;
-    extraBotMessages.push(`✅ backend-delay ${logCtx} delay=0ms wait=-1ms`);
+    extraWait += -2;
+    extraBotMessages.push(`✅ backend-delay ${logCtx} delay=0ms wait=-2ms`);
   }
 
   if (isDoubleZeroDangerZone || isRecoveryThenDrop) {
