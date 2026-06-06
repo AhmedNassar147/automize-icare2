@@ -177,11 +177,11 @@ const getAfterDangerReduction = (
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.needMoreWait)) {
-    return previousDelta + 1;
+    return previousDelta + 2;
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.nearToBlock)) {
-    return previousDelta + 1;
+    return previousDelta + 2;
   }
 
   return 0;
@@ -371,10 +371,9 @@ const analyzeReferralTimingPatterns = (
 
   const safeLastExtraWait = Number.isFinite(lastExtraWait) ? lastExtraWait : 0;
 
+  // we don't need !isFarFromLastToday && as u see for this case 378589
   const isCurrentCaseNeedsDangerReduction =
-    wasLastTodayDangerous &&
-    !isFarFromLastToday &&
-    (wasMediumDangerPhase || wasFarDangerPhase);
+    wasLastTodayDangerous && (wasMediumDangerPhase || wasFarDangerPhase);
 
   return {
     isCurrentCaseDangerZone,
@@ -537,8 +536,8 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (extraBackendDelayMs === 0) {
-    // check case 378337
-    const value = isFarFromLastToday ? 2 : 1;
+    // check case 378337 and 378589
+    const value = isFarFromLastToday ? 3 : 2;
     extraWait -= value;
     extraBotMessages.push(
       `✅ backend-delay ${logCtx} delay=0ms wait=-${value}ms`,
