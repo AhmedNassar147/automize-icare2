@@ -173,7 +173,8 @@ const getAfterDangerReduction = (
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.goodWaiting)) {
-    return !positiveDelta ? 1 : 2;
+    // return !positiveDelta ? 1 : 2;
+    return 2;
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.needMoreWait)) {
@@ -198,14 +199,8 @@ const getDangerZoneExtraWait = (
   const isFarCase = timeGapMinutes >= FAR_CASE_MIN;
   const isMedCase = timeGapMinutes >= 15;
 
-  // cases like 378569 and 378337
-  let baseDangerWait = 5;
-
-  if (isFarCase) {
-    baseDangerWait = 10;
-  } else if (isMedCase) {
-    baseDangerWait = 7;
-  }
+  // 5 for cases like 378569 and 378337
+  const baseDangerWait = isFarCase ? 10 : isMedCase ? 7 : 5;
 
   const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
   const dangerWait = baseDangerWait + previousReduction + extraBoost;
@@ -487,6 +482,8 @@ const getExtraTimeBasedLogs = async ({
   const isTooFarCase =
     isFarFromLastToday && timeGapHours >= 5 && extraBasedRtt <= 0;
 
+  const isFarOrFirstDayCase = isFirstCaseToday || isFarFromLastToday;
+
   const referralIdGap = lastCaseReferralId
     ? Number(referralId) - lastCaseReferralId
     : undefined;
@@ -582,18 +579,19 @@ const getExtraTimeBasedLogs = async ({
   const isNotFarAndNotHotCluster = !isFarFromLastToday && !isHotCluster;
 
   if (isCurrentDiffNegative) {
-    const initialWait =
-      isFirstCaseToday || isFarFromLastToday
-        ? WAITS_MAP.far
-        : isNotFarAndNotHotCluster
-          ? 1
-          : WAITS_MAP.default;
+    const waitBasedDiff = Math.abs(diff) / 1000;
 
-    let maxNewWait = Math.abs(diff) / 1000 + initialWait;
+    let maxNewWait = isFarOrFirstDayCase
+      ? WAITS_MAP.far
+      : isNotFarAndNotHotCluster
+        ? 1
+        : WAITS_MAP.default;
+
+    maxNewWait += waitBasedDiff >= 2000 ? 1 : 0;
 
     if (isLastTodayDiffNegative) {
       if (isTooFarCase && previousDelta <= 0) {
-        const boostValue = wasLastTodayDangerous ? 2 : 3;
+        const boostValue = wasLastTodayDangerous ? 1 : 2;
         maxNewWait += boostValue;
 
         extraBotMessages.push(
@@ -646,7 +644,7 @@ const getExtraTimeBasedLogs = async ({
 
     const extrTime = isUnizahBranch ? (isFirstCaseToday ? 2 : 1) : 0;
 
-    if (isFirstCaseToday || isFarFromLastToday) {
+    if (isFarOrFirstDayCase) {
       value = WAITS_MAP.far + extrTime;
     } else if (isHotCluster) {
       value = WAITS_MAP.hotCluster;
