@@ -539,7 +539,7 @@ const getExtraTimeBasedLogs = async ({
 
   let extraWait = bridgeWait;
 
-  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} waitBucket=${waitBucket} gap=${gapMin}min`;
+  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} gap=${gapMin}min waitBucket=${waitBucket}`;
 
   if (bridgeWait) {
     extraBotMessages.push(
