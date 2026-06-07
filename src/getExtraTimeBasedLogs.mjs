@@ -22,8 +22,6 @@ const WAITS_MAP = {
 
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
-
-  if (rtt >= 500) return +3;
   if (rtt >= 150) return +2;
   if (rtt >= 95) return +1;
 
@@ -189,30 +187,38 @@ const getAfterDangerReduction = (
 };
 
 const getDangerZoneExtraWait = (
-  timeGapMinutes,
+  isFarCase,
   isTooFarCase,
+  extraBackendDelayMs,
   previousDelta,
 ) => {
   const safePreviousDelta = Number.isFinite(previousDelta) ? previousDelta : 0;
-  const isFarCase = timeGapMinutes >= FAR_CASE_MIN;
-  const isMedCase = timeGapMinutes >= 15 && !isFarCase;
+  const previousReduction = Math.max(0, -safePreviousDelta);
 
-  let previousReduction = Math.max(0, -safePreviousDelta);
+  // far 10 case 378585
+  // not far case  378569 and this needed 7 becouse the previous one needed to be accepted at 2502
+  // not far case  378337 and this needed 5 becouse if we applied rule of delay == 0  we would claim it
 
-  previousReduction =
-    isFarCase || isMedCase ? previousReduction : Math.min(1, previousReduction);
-
-  // 5 for cases like 378569 and 378337
-  const baseDangerWait = isFarCase ? 10 : isMedCase ? 7 : 5;
+  const baseDangerWait = isFarCase ? 10 : 7;
+  const zeroDelayWait = extraBackendDelayMs === 0 ? -2 : 0;
 
   const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
-  const dangerWait = baseDangerWait + previousReduction + extraBoost;
+
+  const dangerWait =
+    baseDangerWait + previousReduction + extraBoost + zeroDelayWait;
 
   const messages = [
-    `base=${baseDangerWait} phase=${isFarCase ? "far" : isMedCase ? "medium" : "small"} previousDelta=${previousDelta}`,
+    `base=${baseDangerWait} phase=${isFarCase ? "far" : "normal"} previousDelta=${previousDelta}`,
   ];
 
-  if (extraBoost) messages.push(`too-far-boost=+${extraBoost}ms`);
+  if (zeroDelayWait < 0) {
+    messages.push(`backend-delay delay=0ms reduction=${zeroDelayWait}ms`);
+  }
+
+  if (extraBoost) {
+    messages.push(`too-far-boost=+${extraBoost}ms`);
+  }
+
   if (previousReduction) {
     messages.push(`previous-reduction-compensation=+${previousReduction}ms`);
   }
@@ -269,6 +275,7 @@ const analyzeReferralTimingPatterns = (
       lastTodayOutcomeElapsedMs: 0,
       lastExtraWait: 0,
       lastFinalWait: Number(process.env.WAIT_FOR_ACCEPT_MS || 0),
+      gapMin: 0,
     };
   }
 
@@ -360,7 +367,6 @@ const analyzeReferralTimingPatterns = (
   const _messageFromLastToday = messageFromLastToday || "";
 
   const wasLastTodayDangerous = _messageFromLastToday.includes("danger-zone");
-  const wasMediumDangerPhase = _messageFromLastToday.includes("phase=medium");
   const wasFarDangerPhase = _messageFromLastToday.includes("phase=far");
 
   const isCurrentCaseDangerZone = isDoubleZeroDangerZone || isRecoveryThenDrop;
@@ -369,9 +375,20 @@ const analyzeReferralTimingPatterns = (
 
   const safeLastExtraWait = Number.isFinite(lastExtraWait) ? lastExtraWait : 0;
 
-  // we don't need !isFarFromLastToday && as u see for this case 378589
-  const isCurrentCaseNeedsDangerReduction =
-    wasLastTodayDangerous && (wasMediumDangerPhase || wasFarDangerPhase);
+  const gapMin = +(diffFromLastToday / 60000).toFixed(1);
+
+  //  378548, 378585
+  // it should work on case like
+  // gap of 378277 nearly hour
+
+  // it shouldn't shouldn't work on case like
+  // gap of 378265 is 11 minutes
+  // gap of 378336 is 6 minutes
+  // gap of 378338 is 11 minutes
+  // gap of 378437 is 7 minutes
+  // 378548
+  // const isCurrentCaseNeedsDangerReduction =
+  //   wasLastTodayDangerous && gapMin >= 15 && wasFarDangerPhase;
 
   return {
     isCurrentCaseDangerZone,
@@ -396,7 +413,8 @@ const analyzeReferralTimingPatterns = (
     lastTodayOutcomeElapsedMs,
     lastExtraWait: safeLastExtraWait,
     lastFinalWait,
-    isCurrentCaseNeedsDangerReduction,
+    // isCurrentCaseNeedsDangerReduction,
+    gapMin,
   };
 };
 
@@ -440,6 +458,7 @@ const getExtraTimeBasedLogs = async ({
     lastExtraWait,
     lastFinalWait,
     isCurrentCaseNeedsDangerReduction,
+    gapMin,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
@@ -470,15 +489,10 @@ const getExtraTimeBasedLogs = async ({
   const timeGapHours = diffFromLastToday / (60 * 60 * 1000);
   const timeDiffFromLastCaseHours = timeDiffFromLastCase / (60 * 60 * 1000);
 
-  const gapMin = (diffFromLastToday / 60000).toFixed(1);
-
   const rawExtraBasedRtt = getRttExtraWait(rtt);
 
-  const shouldIgnorePositiveRtt =
-    rawExtraBasedRtt > 0 &&
-    (isCurrentCaseNeedsDangerReduction ||
-      // for this case 378585 we didn't need the 1 rawExtraBasedRtt based rtt
-      isCurrentCaseDangerZone);
+  const shouldIgnorePositiveRtt = rawExtraBasedRtt > 0 && wasLastTodayDangerous;
+  // || isCurrentCaseNeedsDangerReduction
 
   const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
 
@@ -512,19 +526,19 @@ const getExtraTimeBasedLogs = async ({
     );
   }
 
-  if (isCurrentCaseNeedsDangerReduction) {
-    const afterDangerReduction = getAfterDangerReduction(
-      previousDelta,
-      lastTodayOutcome,
-      lastTodayOutcomeElapsedMs,
-    );
+  // if (isCurrentCaseNeedsDangerReduction) {
+  //   const afterDangerReduction = getAfterDangerReduction(
+  //     previousDelta,
+  //     lastTodayOutcome,
+  //     lastTodayOutcomeElapsedMs,
+  //   );
 
-    extraWait -= afterDangerReduction;
+  //   extraWait -= afterDangerReduction;
 
-    extraBotMessages.push(
-      `🌉 first-case-after-danger ${logCtx} previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs} wait=-${afterDangerReduction}ms`,
-    );
-  }
+  //   extraBotMessages.push(
+  //     `🌉 first-case-after-danger ${logCtx} previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs} wait=-${afterDangerReduction}ms`,
+  //   );
+  // }
 
   if (extraBasedRtt) {
     extraWait += extraBasedRtt;
@@ -538,25 +552,11 @@ const getExtraTimeBasedLogs = async ({
     );
   }
 
-  if (extraBackendDelayMs === 0) {
-    // check case 378337 and 378589
-    let value = isFarFromLastToday ? 3 : 2;
-
-    if (isCurrentCaseNeedsDangerReduction) {
-      value = 5;
-    }
-
-    extraWait -= value;
-
-    extraBotMessages.push(
-      `✅ backend-delay ${logCtx} delay=0ms previousDelta=${previousDelta} far=${isFarFromLastToday} wait=-${value}ms`,
-    );
-  }
-
   if (isCurrentCaseDangerZone) {
     const { dangerWait, dangerMessage } = getDangerZoneExtraWait(
-      +gapMin,
+      isFarFromLastToday,
       isTooFarCase,
+      extraBackendDelayMs,
       previousDelta,
     );
 
@@ -579,6 +579,18 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
+  if (extraBackendDelayMs === 0) {
+    // 1-  we need to reduce if previous was danger check case 378589
+    // 2-  we need to reduce if previous was not danger check case 377247
+    let value = wasLastTodayDangerous ? 3 : 2;
+
+    extraWait -= value;
+
+    extraBotMessages.push(
+      `✅ backend-delay ${logCtx} delay=0ms isCurrentCaseDangerZone=${isCurrentCaseDangerZone} far=${isFarFromLastToday} wait=-${value}ms`,
+    );
+  }
+
   const isNotFarAndNotHotCluster = !isFarFromLastToday && !isHotCluster;
 
   if (isCurrentDiffNegative) {
@@ -586,23 +598,23 @@ const getExtraTimeBasedLogs = async ({
 
     let maxNewWait = isFarOrFirstDayCase
       ? WAITS_MAP.far
-      : isNotFarAndNotHotCluster
+      : isNotFarAndNotHotCluster || isHotCluster
         ? 1
         : WAITS_MAP.default;
 
     maxNewWait += waitBasedDiff >= 2000 ? 1 : 0;
 
     if (isLastTodayDiffNegative) {
-      if (isTooFarCase && previousDelta <= 0) {
-        const boostValue = wasLastTodayDangerous ? 1 : 2;
-        maxNewWait += boostValue;
+      // if (isTooFarCase && previousDelta <= 0) {
+      //   const boostValue = wasLastTodayDangerous ? 1 : 2;
+      //   maxNewWait += boostValue;
 
-        extraBotMessages.push(
-          `📊 far-negative-long-gap ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
-            1,
-          )} previousDelta=${previousDelta} wait=+${boostValue}ms`,
-        );
-      }
+      //   extraBotMessages.push(
+      //     `📊 far-negative-long-gap ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
+      //       1,
+      //     )} previousDelta=${previousDelta} wait=+${boostValue}ms`,
+      //   );
+      // }
 
       const consecutiveNegativeCountToday = getConsecutiveNegativeCountToday(
         todayCases,
@@ -610,19 +622,14 @@ const getExtraTimeBasedLogs = async ({
       );
 
       if (consecutiveNegativeCountToday >= 3 && !isHotCluster) {
-        const value = isFarFromLastToday ? maxNewWait : 2;
+        const value = maxNewWait;
         extraWait += value;
 
         extraBotMessages.push(
           `🔥 negative-chain ${logCtx} count=${consecutiveNegativeCountToday} hotCluster=${isHotCluster} far=${isFarFromLastToday} boost=+${value}ms`,
         );
       } else {
-        const waitValue = isFarFromLastToday
-          ? maxNewWait
-          : isHotCluster
-            ? Math.ceil(maxNewWait / 3)
-            : Math.ceil(maxNewWait / 2);
-
+        const waitValue = maxNewWait;
         extraWait += waitValue;
 
         extraBotMessages.push(
@@ -653,17 +660,17 @@ const getExtraTimeBasedLogs = async ({
       value = WAITS_MAP.hotCluster;
     }
 
-    const isStableAfterNegative =
-      isNotFarAndNotHotCluster &&
-      isLastTodayDiffNegative &&
-      isLargeRTT &&
-      rtt > lastTodayRTT;
+    // const isStableAfterNegative =
+    //   isNotFarAndNotHotCluster &&
+    //   isLastTodayDiffNegative &&
+    //   isLargeRTT &&
+    //   rtt > lastTodayRTT;
 
-    if (isStableAfterNegative) {
-      value += 1;
-    }
+    // if (isStableAfterNegative) {
+    //   value += 1;
+    // }
 
-    if (!isStableAfterNegative && isTooFarCase && previousDelta <= 0) {
+    if (!isLastTodayDiffNegative && isTooFarCase && previousDelta <= 0) {
       value += 1;
 
       extraBotMessages.push(
@@ -683,11 +690,11 @@ const getExtraTimeBasedLogs = async ({
         : `✅ stable ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${value}ms`,
     );
 
-    if (isStableAfterNegative) {
-      extraBotMessages.push(
-        `✅ stable-after-negative-rtt-boost ${logCtx} rtt=${rtt} lastTodayRTT=${lastTodayRTT} gap=${gapMin}min wait=+1ms`,
-      );
-    }
+    // if (isStableAfterNegative) {
+    //   extraBotMessages.push(
+    //     `✅ stable-after-negative-rtt-boost ${logCtx} rtt=${rtt} lastTodayRTT=${lastTodayRTT} gap=${gapMin}min wait=+1ms`,
+    //   );
+    // }
   }
 
   return {
