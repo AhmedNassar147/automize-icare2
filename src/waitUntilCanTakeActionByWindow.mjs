@@ -108,7 +108,7 @@ async function waitUntilCanTakeActionByWindow({
       const getPollDelay = (totalMsLeft) => {
         if (totalMsLeft <= 1000) return 0;
         if (totalMsLeft <= 3000) return 75;
-        if (totalMsLeft <= 10000) return 150;
+        if (totalMsLeft <= 10000) return 165;
         return 500;
       };
 
@@ -138,7 +138,11 @@ async function waitUntilCanTakeActionByWindow({
           };
         }
 
-        await sleep(getPollDelay(totalMsLeft));
+        const _delay = getPollDelay(totalMsLeft);
+
+        if (_delay > 0) {
+          await sleep(_delay);
+        }
       }
     },
     {

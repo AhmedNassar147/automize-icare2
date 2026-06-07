@@ -169,7 +169,7 @@ const getAfterDangerReduction = (
     previousOutcome.includes(OUTCOME_MAP.lowWaiting) ||
     previousOutcome.includes(OUTCOME_MAP.moderateWaiting)
   ) {
-    return previousDelta >= 2 ? 0 : 1;
+    return positiveDelta >= 2 ? 0 : 1;
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.goodWaiting)) {
