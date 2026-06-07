@@ -10,7 +10,7 @@ import { readLogsAsArray } from "./summarizeLogsAfterAcceptance.mjs";
 const FAR_CASE_MIN = 90; // 1.5 hours
 const FAR_CASE_MS = FAR_CASE_MIN * 60 * 1000;
 const ULTRA_HOT_CLUSTER_MS = 30 * 1000;
-const HOT_CLUSTER_MS = 4 * 60 * 1000;
+const HOT_CLUSTER_MS = 3 * 60 * 1000;
 const NEAR_CLUSTER_MS = 23 * 60 * 1000;
 
 const WAITS_MAP = {
@@ -539,7 +539,7 @@ const getExtraTimeBasedLogs = async ({
 
   let extraWait = bridgeWait;
 
-  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} waitBucket=${waitBucket}`;
+  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} waitBucket=${waitBucket} gap=${gapMin}min`;
 
   if (bridgeWait) {
     extraBotMessages.push(
@@ -572,7 +572,6 @@ const getExtraTimeBasedLogs = async ({
     const message = [
       `⚠️ danger-zone ${logCtx}`,
       `type=${isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"}`,
-      `gap=${gapMin}min`,
       `wait=+${dangerWait}ms`,
     ].join(" ");
 
@@ -614,7 +613,7 @@ const getExtraTimeBasedLogs = async ({
     extraWait -= value;
 
     extraBotMessages.push(
-      `✅ backend-delay ${logCtx} delay=0ms isCurrentCaseDangerZone=${isCurrentCaseDangerZone} far=${isFarFromLastToday} wait=-${value}ms`,
+      `✅ backend-delay ${logCtx} delay=0ms isCurrentCaseDangerZone=${isCurrentCaseDangerZone} wait=-${value}ms`,
     );
   }
 
@@ -648,7 +647,7 @@ const getExtraTimeBasedLogs = async ({
         extraWait += value;
 
         extraBotMessages.push(
-          `🔥 negative-chain ${logCtx} count=${consecutiveNegativeCountToday} hotCluster=${isHotCluster} far=${isFarFromLastToday} boost=+${value}ms`,
+          `🔥 negative-chain ${logCtx} count=${consecutiveNegativeCountToday} boost=+${value}ms`,
         );
       } else {
         const waitValue = maxNewWait;
@@ -656,8 +655,8 @@ const getExtraTimeBasedLogs = async ({
 
         extraBotMessages.push(
           isFarFromLastToday
-            ? `↔️ far-negative ${logCtx} gap=${gapMin}min wait=+${waitValue}ms`
-            : `🔁 consecutive-negative ${logCtx} hotCluster=${isHotCluster} far=${isFarFromLastToday} gap=${gapMin}min wait=+${waitValue}ms`,
+            ? `↔️ far-negative ${logCtx} wait=+${waitValue}ms`
+            : `🔁 consecutive-negative ${logCtx} wait=+${waitValue}ms`,
         );
       }
     } else {
@@ -665,9 +664,7 @@ const getExtraTimeBasedLogs = async ({
       const negativeText = isFirstCaseToday
         ? "🌅 first-day-negative"
         : "✅ first-negative";
-      extraBotMessages.push(
-        `${negativeText} ${logCtx} gap=${gapMin}min wait=+${maxNewWait}ms`,
-      );
+      extraBotMessages.push(`${negativeText} ${logCtx} wait=+${maxNewWait}ms`);
     }
   }
 
@@ -686,19 +683,19 @@ const getExtraTimeBasedLogs = async ({
 
     extraWait += value;
 
-    const farText = isFirstCaseToday ? "🌅 first-day-stable" : "↔️ far-stable";
+    const prefixText = isFirstCaseToday
+      ? "🌅 first-day-stable"
+      : isFarFromLastToday
+        ? "↔️ far-stable"
+        : "✅ stable";
 
-    extraBotMessages.push(
-      isFarFromLastToday
-        ? `${farText} ${logCtx} gap=${gapMin}min wait=+${value}ms`
-        : `✅ stable ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${value}ms`,
-    );
+    extraBotMessages.push(`${prefixText} ${logCtx} wait=+${value}ms`);
 
-    if (isStableAfterNegative) {
-      extraBotMessages.push(
-        `✅ stable-after-negative-rtt-boost ${logCtx} rtt=${rtt} lastTodayRTT=${lastTodayRTT} gap=${gapMin}min wait=+1ms`,
-      );
-    }
+    // if (isStableAfterNegative) {
+    //   extraBotMessages.push(
+    //     `✅ stable-after-negative-rtt-boost ${logCtx} rtt=${rtt} lastTodayRTT=${lastTodayRTT} wait=+1ms`,
+    //   );
+    // }
   }
 
   return {
