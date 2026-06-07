@@ -10,7 +10,7 @@ import { readLogsAsArray } from "./summarizeLogsAfterAcceptance.mjs";
 const FAR_CASE_MIN = 90; // 1.5 hours
 const FAR_CASE_MS = FAR_CASE_MIN * 60 * 1000;
 const ULTRA_HOT_CLUSTER_MS = 30 * 1000;
-const HOT_CLUSTER_MS = 5 * 60 * 1000;
+const HOT_CLUSTER_MS = 4 * 60 * 1000;
 const NEAR_CLUSTER_MS = 23 * 60 * 1000;
 
 const WAITS_MAP = {
@@ -539,7 +539,7 @@ const getExtraTimeBasedLogs = async ({
 
   let extraWait = bridgeWait;
 
-  const logCtx = `referralId=${referralId} waitBucket=${waitBucket} diffPath=${lastTodayDiff ?? "none"}→${diff}`;
+  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} waitBucket=${waitBucket}`;
 
   if (bridgeWait) {
     extraBotMessages.push(
@@ -674,15 +674,15 @@ const getExtraTimeBasedLogs = async ({
   if (diff >= 0) {
     let value = currentWait;
 
-    if (!isLastTodayDiffNegative && isTooFarCase && previousDelta <= 0) {
-      value += 1;
+    // if (!isLastTodayDiffNegative && isTooFarCase && previousDelta <= 0) {
+    //   value += 1;
 
-      extraBotMessages.push(
-        `✅ long-gap-boost ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
-          1,
-        )} previousDelta=${previousDelta} wait=+1ms`,
-      );
-    }
+    //   extraBotMessages.push(
+    //     `✅ long-gap-boost ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
+    //       1,
+    //     )} previousDelta=${previousDelta} wait=+1ms`,
+    //   );
+    // }
 
     extraWait += value;
 
@@ -694,11 +694,11 @@ const getExtraTimeBasedLogs = async ({
         : `✅ stable ${logCtx} hotCluster=${isHotCluster} gap=${gapMin}min wait=+${value}ms`,
     );
 
-    // if (isStableAfterNegative) {
-    //   extraBotMessages.push(
-    //     `✅ stable-after-negative-rtt-boost ${logCtx} rtt=${rtt} lastTodayRTT=${lastTodayRTT} gap=${gapMin}min wait=+1ms`,
-    //   );
-    // }
+    if (isStableAfterNegative) {
+      extraBotMessages.push(
+        `✅ stable-after-negative-rtt-boost ${logCtx} rtt=${rtt} lastTodayRTT=${lastTodayRTT} gap=${gapMin}min wait=+1ms`,
+      );
+    }
   }
 
   return {
