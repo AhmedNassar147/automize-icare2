@@ -194,10 +194,13 @@ const getDangerZoneExtraWait = (
   previousDelta,
 ) => {
   const safePreviousDelta = Number.isFinite(previousDelta) ? previousDelta : 0;
-  const previousReduction = Math.min(2, Math.max(0, -safePreviousDelta));
-
   const isFarCase = timeGapMinutes >= FAR_CASE_MIN;
-  const isMedCase = timeGapMinutes >= 15;
+  const isMedCase = timeGapMinutes >= 15 && !isFarCase;
+
+  let previousReduction = Math.max(0, -safePreviousDelta);
+
+  previousReduction =
+    isFarCase || isMedCase ? previousReduction : Math.min(1, previousReduction);
 
   // 5 for cases like 378569 and 378337
   const baseDangerWait = isFarCase ? 10 : isMedCase ? 7 : 5;
@@ -537,10 +540,10 @@ const getExtraTimeBasedLogs = async ({
 
   if (extraBackendDelayMs === 0) {
     // check case 378337 and 378589
-    let value = isFarFromLastToday ? 2 : 1;
+    let value = isFarFromLastToday ? 3 : 2;
 
-    if (isFarFromLastToday && isCurrentCaseNeedsDangerReduction) {
-      value = 4;
+    if (isCurrentCaseNeedsDangerReduction) {
+      value = 5;
     }
 
     extraWait -= value;
