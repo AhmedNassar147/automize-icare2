@@ -22,24 +22,17 @@ const WAITS_MAP = {
 
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
-  if (rtt >= 150) return +2;
-  if (rtt >= 95) return +1;
+  // if (rtt >= 150) return +2;
+  if (rtt >= 100) return +1;
 
   // extremely responsive session
-  if (rtt < 75) return -1;
+  // if (rtt < 75) return -1;
 
   return 0;
 };
 
-const getConsecutiveNegativeCountToday = (
-  todayCases,
-  isCurrentDiffNegative,
-) => {
-  let count = isCurrentDiffNegative ? 1 : 0;
-
-  if (!isCurrentDiffNegative) {
-    return 0;
-  }
+const getNegativeCountBeforeCurrent = (todayCases, diff) => {
+  let count = diff < 0 ? 1 : 0;
 
   for (let i = todayCases.length - 1; i >= 0; i--) {
     const item = todayCases[i];
@@ -424,6 +417,25 @@ const analyzeReferralTimingPatterns = (
   };
 };
 
+const reduceAfterPreviousLargeNegativeDiff = (
+  previousDiff,
+  currentDiff,
+  gapMin,
+) => {
+  if (previousDiff > -2000) return undefined;
+
+  const reduction = gapMin < 5 ? 0 : gapMin < 20 ? 1 : 2;
+
+  if (!reduction) return undefined;
+
+  const prefix = currentDiff >= 0 ? "stable" : "negative";
+
+  return {
+    reduction,
+    message: `⬇️ ${prefix}-after-large-negative-diff previousDiff=${previousDiff} gap=${gapMin}min wait=-${reduction}ms`,
+  };
+};
+
 const getExtraTimeBasedLogs = async ({
   referralId,
   referralEndTimestamp,
@@ -464,9 +476,13 @@ const getExtraTimeBasedLogs = async ({
     lastFinalWait,
     isCurrentCaseNeedsDangerReduction,
     gapMin,
+    lastCaseOfYesterday,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
+
+  const timeGapHours = diffFromLastToday / (60 * 60 * 1000);
+  const timeDiffFromLastCaseHours = timeDiffFromLastCase / (60 * 60 * 1000);
 
   const isHotCluster = !isFirstCaseToday && diffFromLastToday <= HOT_CLUSTER_MS;
 
@@ -475,6 +491,10 @@ const getExtraTimeBasedLogs = async ({
 
   const isNearCluster =
     diffFromLastToday > HOT_CLUSTER_MS && diffFromLastToday <= NEAR_CLUSTER_MS;
+
+  const isTooFarCase = isFarFromLastToday && timeGapHours >= 5;
+
+  const isFarOrFirstDayCase = isFirstCaseToday || isFarFromLastToday;
 
   // const isMediumGap =
   //   diffFromLastToday > NEAR_CLUSTER_MS && diffFromLastToday < FAR_CASE_MS;
@@ -498,21 +518,19 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
-  const timeGapHours = diffFromLastToday / (60 * 60 * 1000);
-  const timeDiffFromLastCaseHours = timeDiffFromLastCase / (60 * 60 * 1000);
-
   const rawExtraBasedRtt = getRttExtraWait(rtt);
+  const isPositiveRtt = rawExtraBasedRtt > 0;
+
+  // const shouldIgnorePositiveRtt =
+  //   isPositiveRtt &&
+  //   (wasLastTodayDangerous || isCurrentCaseNeedsDangerReduction);
 
   const shouldIgnorePositiveRtt =
-    rawExtraBasedRtt > 0 &&
-    (wasLastTodayDangerous || isCurrentCaseNeedsDangerReduction);
+    isPositiveRtt && isCurrentCaseNeedsDangerReduction;
 
   const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
 
-  const isTooFarCase =
-    isFarFromLastToday && timeGapHours >= 5 && extraBasedRtt <= 0;
-
-  const isFarOrFirstDayCase = isFirstCaseToday || isFarFromLastToday;
+  const isZeroBackendDelay = extraBackendDelayMs === 0;
 
   const referralIdGap = lastCaseReferralId
     ? Number(referralId) - lastCaseReferralId
@@ -547,18 +565,6 @@ const getExtraTimeBasedLogs = async ({
     );
   }
 
-  if (extraBasedRtt) {
-    extraWait += extraBasedRtt;
-    const sign = extraBasedRtt > 0 ? "+" : "";
-    extraBotMessages.push(`✅ rtt ${logCtx} wait=${sign}${extraBasedRtt}ms`);
-  }
-
-  if (shouldIgnorePositiveRtt) {
-    extraBotMessages.push(
-      `🚫 rtt-ignored-after-far-danger ${logCtx} rtt=${rtt} rawWait=+${rawExtraBasedRtt}ms`,
-    );
-  }
-
   if (isCurrentCaseDangerZone) {
     const { dangerWait, dangerMessage } = getDangerZoneExtraWait(
       isFarFromLastToday,
@@ -579,10 +585,138 @@ const getExtraTimeBasedLogs = async ({
       `${message}${dangerMessage ? `_AND_${dangerMessage}` : ""}`,
     );
 
+    if (isPositiveRtt) {
+      extraWait += extraBasedRtt;
+      const sign = extraBasedRtt > 0 ? "+" : "";
+      extraBotMessages.push(`✅ rtt wait=${sign}${extraBasedRtt}ms`);
+    }
+
     return {
       computedExtraBotMessages: extraBotMessages,
       computedExtraWait: extraWait,
     };
+  }
+
+  const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
+  const currentWait = WAITS_MAP[waitBucket] + extrTime;
+
+  const negativeDiffCount =
+    isFirstCaseToday || !isLastTodayDiffNegative
+      ? 0
+      : getNegativeCountBeforeCurrent(todayCases, diff);
+
+  if (isCurrentDiffNegative) {
+    const waitBasedDiff = Math.abs(diff) / 1000;
+
+    // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
+    let maxNewWait = currentWait;
+
+    // let waitReducedByLowerDiffMessage = undefined;
+
+    // if (waitBasedDiff >= 2000 && !isZeroBackendDelay) {
+    //   // cases 378278, 377140 need less wait to claim it
+    //   reductionValue = isHotCluster ? 0 : isNearCluster ? 1 : 2;
+    //   if (reductionValue) {
+    //     maxNewWait -= reductionValue;
+    //     waitReducedByLowerDiffMessage = `⬇️ negative-diff-2000 wait=-${reductionValue}ms`;
+    //   }
+    // }
+
+    if (isLastTodayDiffNegative) {
+      // if (isTooFarCase && previousDelta <= 0) {
+      //   const boostValue = wasLastTodayDangerous ? 1 : 2;
+      //   maxNewWait += boostValue;
+
+      //   extraBotMessages.push(
+      //     `📊 far-negative-long-gap ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
+      //       1,
+      //     )} previousDelta=${previousDelta} wait=+${boostValue}ms`,
+      //   );
+      // }
+
+      if (negativeDiffCount >= 3 && !isHotCluster) {
+        const value = maxNewWait;
+        extraWait += value;
+
+        extraBotMessages.push(
+          `🔥 negative-chain count=${negativeDiffCount} wait=+${value}ms`,
+        );
+
+        // if (waitReducedByLowerDiffValue) {
+        //   extraBotMessages.push(waitReducedByLowerDiffMessage);
+        // }
+      } else {
+        const waitValue = maxNewWait;
+        extraWait += waitValue;
+
+        extraBotMessages.push(
+          isFarFromLastToday
+            ? `↔️ far-negative wait=+${waitValue}ms`
+            : `🔁 consecutive-negative wait=+${waitValue}ms`,
+        );
+
+        // if (waitReducedByLowerDiffValue) {
+        //   extraBotMessages.push(waitReducedByLowerDiffMessage);
+        // }
+      }
+    } else {
+      extraWait += maxNewWait;
+      const negativeText = isFirstCaseToday
+        ? "🌅 first-day-negative"
+        : "✅ first-negative";
+      extraBotMessages.push(`${negativeText} ${logCtx} wait=+${maxNewWait}ms`);
+
+      // if (waitReducedByLowerDiffValue) {
+      //   extraBotMessages.push(waitReducedByLowerDiffMessage);
+      // }
+    }
+
+    // const reductionValue = reduceAfterPreviousLargeNegativeDiff(
+    //   lastTodayDiff,
+    //   diff,
+    //   gapMin,
+    // );
+
+    // if (reductionValue) {
+    //   extraWait -= reductionValue.reduction;
+    //   extraBotMessages.push(reductionValue.message);
+    // }
+  }
+
+  if (diff >= 0) {
+    extraWait += currentWait;
+
+    const prefixText = isFirstCaseToday
+      ? "🌅 first-day-stable"
+      : isFarFromLastToday
+        ? "↔️ far-stable"
+        : "✅ stable";
+
+    extraBotMessages.push(`${prefixText} ${logCtx} wait=+${currentWait}ms`);
+
+    // if (negativeDiffCount >= 2) {
+    //   const value = 2;
+    //   extraWait -= value;
+    //   extraBotMessages.push(
+    //     `✅ previous-negative-more-than-2 ${logCtx} wait=-${value}ms`,
+    //   );
+    // }
+
+    // for cases like 378278
+    const reductionValue = reduceAfterPreviousLargeNegativeDiff(
+      lastTodayDiff,
+      diff,
+      gapMin,
+    );
+
+    if (
+      reductionValue &&
+      !isZeroBackendDelay &&
+      !isCurrentCaseNeedsDangerReduction
+    ) {
+      extraWait -= reductionValue.reduction;
+      extraBotMessages.push(reductionValue.message);
+    }
   }
 
   let afterDangerReduction = 0;
@@ -598,104 +732,27 @@ const getExtraTimeBasedLogs = async ({
     extraWait -= afterDangerReduction;
 
     extraBotMessages.push(
-      `🌉 first-case-after-danger ${logCtx} previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs} wait=-${afterDangerReduction}ms`,
+      `🌉 first-case-after-danger previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs} wait=-${afterDangerReduction}ms`,
     );
+
+    if (shouldIgnorePositiveRtt) {
+      extraBotMessages.push(
+        `🚫 rtt-ignored-after-far-danger rtt=${rtt} rawWait=+${rawExtraBasedRtt}ms`,
+      );
+    }
   }
 
-  if (extraBackendDelayMs === 0) {
+  if (isZeroBackendDelay) {
     // 1-  we need to reduce if previous was danger check case 378589
     // 2-  we need to reduce if previous was not danger check case 377247
-    let value = 3;
+    let value = 2;
     if (wasLastTodayDangerous) {
       value = Math.max(1, 3 - afterDangerReduction);
     }
 
     extraWait -= value;
 
-    extraBotMessages.push(
-      `✅ backend-delay ${logCtx} delay=0ms isCurrentCaseDangerZone=${isCurrentCaseDangerZone} wait=-${value}ms`,
-    );
-  }
-
-  const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
-  const currentWait = WAITS_MAP[waitBucket] + extrTime;
-
-  if (isCurrentDiffNegative) {
-    const waitBasedDiff = Math.abs(diff) / 1000;
-
-    const maxNewWait = waitBasedDiff >= 2000 ? currentWait + 1 : currentWait;
-
-    if (isLastTodayDiffNegative) {
-      // if (isTooFarCase && previousDelta <= 0) {
-      //   const boostValue = wasLastTodayDangerous ? 1 : 2;
-      //   maxNewWait += boostValue;
-
-      //   extraBotMessages.push(
-      //     `📊 far-negative-long-gap ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
-      //       1,
-      //     )} previousDelta=${previousDelta} wait=+${boostValue}ms`,
-      //   );
-      // }
-
-      const consecutiveNegativeCountToday = getConsecutiveNegativeCountToday(
-        todayCases,
-        isCurrentDiffNegative,
-      );
-
-      if (consecutiveNegativeCountToday >= 3 && !isHotCluster) {
-        const value = maxNewWait;
-        extraWait += value;
-
-        extraBotMessages.push(
-          `🔥 negative-chain ${logCtx} count=${consecutiveNegativeCountToday} boost=+${value}ms`,
-        );
-      } else {
-        const waitValue = maxNewWait;
-        extraWait += waitValue;
-
-        extraBotMessages.push(
-          isFarFromLastToday
-            ? `↔️ far-negative ${logCtx} wait=+${waitValue}ms`
-            : `🔁 consecutive-negative ${logCtx} wait=+${waitValue}ms`,
-        );
-      }
-    } else {
-      extraWait += maxNewWait;
-      const negativeText = isFirstCaseToday
-        ? "🌅 first-day-negative"
-        : "✅ first-negative";
-      extraBotMessages.push(`${negativeText} ${logCtx} wait=+${maxNewWait}ms`);
-    }
-  }
-
-  if (diff >= 0) {
-    let value = currentWait;
-
-    // if (!isLastTodayDiffNegative && isTooFarCase && previousDelta <= 0) {
-    //   value += 1;
-
-    //   extraBotMessages.push(
-    //     `✅ long-gap-boost ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
-    //       1,
-    //     )} previousDelta=${previousDelta} wait=+1ms`,
-    //   );
-    // }
-
-    extraWait += value;
-
-    const prefixText = isFirstCaseToday
-      ? "🌅 first-day-stable"
-      : isFarFromLastToday
-        ? "↔️ far-stable"
-        : "✅ stable";
-
-    extraBotMessages.push(`${prefixText} ${logCtx} wait=+${value}ms`);
-
-    // if (isStableAfterNegative) {
-    //   extraBotMessages.push(
-    //     `✅ stable-after-negative-rtt-boost ${logCtx} rtt=${rtt} lastTodayRTT=${lastTodayRTT} wait=+1ms`,
-    //   );
-    // }
+    extraBotMessages.push(`✅ backend-delay delay=0ms  wait=-${value}ms`);
   }
 
   return {
