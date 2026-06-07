@@ -8,16 +8,16 @@ import getOutcomeDelta from "./getOutcomeDelta.mjs";
 import { readLogsAsArray } from "./summarizeLogsAfterAcceptance.mjs";
 
 const FAR_CASE_MIN = 90; // 1.5 hours
-const FAR_CASE_MS = FAR_CASE_MIN * 60000;
-
-const HOT_CLUSTER_MS = 4 * 60 * 1000;
-
-const ULTRA_HOT_CLUSTER_MS = 25 * 1000;
+const FAR_CASE_MS = FAR_CASE_MIN * 60 * 1000;
+const ULTRA_HOT_CLUSTER_MS = 30 * 1000;
+const HOT_CLUSTER_MS = 5 * 60 * 1000;
+const NEAR_CLUSTER_MS = 23 * 60 * 1000;
 
 const WAITS_MAP = {
+  hot: 0,
+  nearHot: 1,
+  medium: 2,
   far: 3,
-  default: 2,
-  hotCluster: 1,
 };
 
 const getRttExtraWait = (rtt) => {
@@ -153,34 +153,40 @@ const getFirstDayBridgeExtraWait = ({
   };
 };
 
+const getAfterDangerReductionByGap = (gapMin) => {
+  if (gapMin < 10) return 0;
+  if (gapMin < 30) return 1;
+  return 2;
+};
+
 const getAfterDangerReduction = (
+  gapMin,
   previousDelta,
   previousOutcome = "",
   previousElapsed,
 ) => {
   previousDelta = previousDelta || 0;
 
-  const positiveDelta = Math.abs(previousDelta);
+  const deltaMagnitude = Math.abs(previousDelta);
+  const maxReductionDelta = getAfterDangerReductionByGap(gapMin);
 
   if (
     previousOutcome.includes(OUTCOME_MAP.needLessWait) ||
     previousOutcome.includes(OUTCOME_MAP.lowWaiting) ||
     previousOutcome.includes(OUTCOME_MAP.moderateWaiting)
   ) {
-    return positiveDelta >= 2 ? 0 : 1;
+    return deltaMagnitude >= 2 ? 0 : maxReductionDelta;
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.goodWaiting)) {
-    // return !positiveDelta ? 1 : 2;
-    return 2;
+    return deltaMagnitude >= 1 ? 1 : maxReductionDelta;
   }
 
-  if (previousOutcome.includes(OUTCOME_MAP.needMoreWait)) {
-    return previousDelta + 2;
-  }
-
-  if (previousOutcome.includes(OUTCOME_MAP.nearToBlock)) {
-    return previousDelta + 2;
+  if (
+    previousOutcome.includes(OUTCOME_MAP.needMoreWait) ||
+    previousOutcome.includes(OUTCOME_MAP.nearToBlock)
+  ) {
+    return deltaMagnitude + maxReductionDelta;
   }
 
   return 0;
@@ -387,8 +393,8 @@ const analyzeReferralTimingPatterns = (
   // gap of 378338 is 11 minutes
   // gap of 378437 is 7 minutes
   // 378548
-  // const isCurrentCaseNeedsDangerReduction =
-  //   wasLastTodayDangerous && gapMin >= 15 && wasFarDangerPhase;
+  const isCurrentCaseNeedsDangerReduction =
+    wasLastTodayDangerous && gapMin >= 10 && wasFarDangerPhase;
 
   return {
     isCurrentCaseDangerZone,
@@ -413,7 +419,7 @@ const analyzeReferralTimingPatterns = (
     lastTodayOutcomeElapsedMs,
     lastExtraWait: safeLastExtraWait,
     lastFinalWait,
-    // isCurrentCaseNeedsDangerReduction,
+    isCurrentCaseNeedsDangerReduction,
     gapMin,
   };
 };
@@ -426,12 +432,11 @@ const getExtraTimeBasedLogs = async ({
   rtt,
   baseWaitingTime,
 }) => {
-  const { BRANCH_NAME /* DOES_SYSTEM_REDUCE_WAIT */ } = process.env;
+  const { IS_STABLE_WAITING_BRANCH /* DOES_SYSTEM_REDUCE_WAIT */ } =
+    process.env;
 
-  const isUnizahBranch = BRANCH_NAME === "unizah";
+  const isStableWaitingBranch = IS_STABLE_WAITING_BRANCH === "Y";
   // const doesSystemReducingWait = DOES_SYSTEM_REDUCE_WAIT === "Y";
-
-  const isLargeRTT = typeof rtt === "number" && rtt >= 80 && rtt < 95;
 
   const extraBotMessages = [];
   const logsData = await readLogsAsArray();
@@ -468,6 +473,13 @@ const getExtraTimeBasedLogs = async ({
   const isUltraHotCluster =
     !!lastFinalWait && timeDiffFromLastCase <= ULTRA_HOT_CLUSTER_MS;
 
+  const isNearCluster =
+    diffFromLastToday > HOT_CLUSTER_MS && diffFromLastToday <= NEAR_CLUSTER_MS;
+
+  // const isMediumGap =
+  //   diffFromLastToday > NEAR_CLUSTER_MS && diffFromLastToday < FAR_CASE_MS;
+
+  // for these case 378554, 378546
   if (isUltraHotCluster) {
     const reductionWait =
       lastExtraWait > 6
@@ -491,8 +503,9 @@ const getExtraTimeBasedLogs = async ({
 
   const rawExtraBasedRtt = getRttExtraWait(rtt);
 
-  const shouldIgnorePositiveRtt = rawExtraBasedRtt > 0 && wasLastTodayDangerous;
-  // || isCurrentCaseNeedsDangerReduction
+  const shouldIgnorePositiveRtt =
+    rawExtraBasedRtt > 0 &&
+    (wasLastTodayDangerous || isCurrentCaseNeedsDangerReduction);
 
   const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
 
@@ -516,29 +529,23 @@ const getExtraTimeBasedLogs = async ({
     startZero: true,
   });
 
+  const waitBucket = isFarOrFirstDayCase
+    ? "far"
+    : isHotCluster
+      ? "hot"
+      : isNearCluster
+        ? "nearHot"
+        : "medium";
+
   let extraWait = bridgeWait;
 
-  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff}`;
+  const logCtx = `referralId=${referralId} waitBucket=${waitBucket} diffPath=${lastTodayDiff ?? "none"}→${diff}`;
 
   if (bridgeWait) {
     extraBotMessages.push(
       `🌉 first-day-bridge referralId=${referralId} diffPath=${lastCaseDiff ?? "none"}→${diff} wait=+${bridgeWait}ms_AND_${bridgeMessage}`,
     );
   }
-
-  // if (isCurrentCaseNeedsDangerReduction) {
-  //   const afterDangerReduction = getAfterDangerReduction(
-  //     previousDelta,
-  //     lastTodayOutcome,
-  //     lastTodayOutcomeElapsedMs,
-  //   );
-
-  //   extraWait -= afterDangerReduction;
-
-  //   extraBotMessages.push(
-  //     `🌉 first-case-after-danger ${logCtx} previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs} wait=-${afterDangerReduction}ms`,
-  //   );
-  // }
 
   if (extraBasedRtt) {
     extraWait += extraBasedRtt;
@@ -579,10 +586,30 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
+  let afterDangerReduction = 0;
+
+  if (isCurrentCaseNeedsDangerReduction) {
+    afterDangerReduction = getAfterDangerReduction(
+      gapMin,
+      previousDelta,
+      lastTodayOutcome,
+      lastTodayOutcomeElapsedMs,
+    );
+
+    extraWait -= afterDangerReduction;
+
+    extraBotMessages.push(
+      `🌉 first-case-after-danger ${logCtx} previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs} wait=-${afterDangerReduction}ms`,
+    );
+  }
+
   if (extraBackendDelayMs === 0) {
     // 1-  we need to reduce if previous was danger check case 378589
     // 2-  we need to reduce if previous was not danger check case 377247
-    let value = wasLastTodayDangerous ? 3 : 2;
+    let value = 3;
+    if (wasLastTodayDangerous) {
+      value = Math.max(1, 3 - afterDangerReduction);
+    }
 
     extraWait -= value;
 
@@ -591,18 +618,13 @@ const getExtraTimeBasedLogs = async ({
     );
   }
 
-  const isNotFarAndNotHotCluster = !isFarFromLastToday && !isHotCluster;
+  const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
+  const currentWait = WAITS_MAP[waitBucket] + extrTime;
 
   if (isCurrentDiffNegative) {
     const waitBasedDiff = Math.abs(diff) / 1000;
 
-    let maxNewWait = isFarOrFirstDayCase
-      ? WAITS_MAP.far
-      : isNotFarAndNotHotCluster || isHotCluster
-        ? 1
-        : WAITS_MAP.default;
-
-    maxNewWait += waitBasedDiff >= 2000 ? 1 : 0;
+    const maxNewWait = waitBasedDiff >= 2000 ? currentWait + 1 : currentWait;
 
     if (isLastTodayDiffNegative) {
       // if (isTooFarCase && previousDelta <= 0) {
@@ -650,25 +672,7 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (diff >= 0) {
-    let value = isNotFarAndNotHotCluster ? 1 : WAITS_MAP.default;
-
-    const extrTime = isUnizahBranch ? (isFirstCaseToday ? 2 : 1) : 0;
-
-    if (isFarOrFirstDayCase) {
-      value = WAITS_MAP.far + extrTime;
-    } else if (isHotCluster) {
-      value = WAITS_MAP.hotCluster;
-    }
-
-    // const isStableAfterNegative =
-    //   isNotFarAndNotHotCluster &&
-    //   isLastTodayDiffNegative &&
-    //   isLargeRTT &&
-    //   rtt > lastTodayRTT;
-
-    // if (isStableAfterNegative) {
-    //   value += 1;
-    // }
+    let value = currentWait;
 
     if (!isLastTodayDiffNegative && isTooFarCase && previousDelta <= 0) {
       value += 1;
