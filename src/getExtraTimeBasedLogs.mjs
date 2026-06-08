@@ -146,6 +146,11 @@ const getFirstDayBridgeExtraWait = ({
   };
 };
 
+// we need to dig when current case after normal danger wait
+// if u check the 378745 case the previous one was normal danger and it should be
+// accepted on 2547 not 2549 and it was accepted on 2547 we need to not increase/decrease
+// the next one wait time which is 378745 case id
+
 const getAfterDangerReduction = (
   previousDelta,
   previousOutcome = "",
@@ -178,7 +183,7 @@ const getAfterDangerReduction = (
     return deltaMagnitude + 2;
   }
 
-  return 0;
+  return 2;
 };
 
 const getDangerZoneExtraWait = (
@@ -193,14 +198,16 @@ const getDangerZoneExtraWait = (
   // far 10 case 378585
   // not far case  378569 and this needed 7 becouse the previous one needed to be accepted at 2502
   // not far case  378337 and this needed 5 becouse if we applied rule of delay == 0  we would claim it
-
   const baseDangerWait = isFarCase ? 10 : 7;
   const zeroDelayWait = extraBackendDelayMs === 0 ? -2 : 0;
 
   const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
 
   const dangerWait =
-    baseDangerWait + previousReduction + extraBoost + zeroDelayWait;
+    baseDangerWait +
+    (isFarCase ? previousReduction : 0) +
+    extraBoost +
+    zeroDelayWait;
 
   const messages = [
     `base=${baseDangerWait} phase=${isFarCase ? "far" : "normal"} previousDelta=${previousDelta}`,
