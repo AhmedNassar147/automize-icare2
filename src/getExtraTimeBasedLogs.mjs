@@ -146,14 +146,7 @@ const getFirstDayBridgeExtraWait = ({
   };
 };
 
-const getAfterDangerReductionByGap = (gapMin) => {
-  if (gapMin < 10) return 0;
-  if (gapMin < 30) return 1;
-  return 2;
-};
-
 const getAfterDangerReduction = (
-  gapMin,
   previousDelta,
   previousOutcome = "",
   previousElapsed,
@@ -161,25 +154,28 @@ const getAfterDangerReduction = (
   previousDelta = previousDelta || 0;
 
   const deltaMagnitude = Math.abs(previousDelta);
-  const maxReductionDelta = getAfterDangerReductionByGap(gapMin);
 
   if (
     previousOutcome.includes(OUTCOME_MAP.needLessWait) ||
     previousOutcome.includes(OUTCOME_MAP.lowWaiting) ||
     previousOutcome.includes(OUTCOME_MAP.moderateWaiting)
   ) {
-    return deltaMagnitude >= 2 ? 0 : maxReductionDelta;
+    return deltaMagnitude >= 2 ? 0 : 2 - deltaMagnitude;
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.goodWaiting)) {
-    return deltaMagnitude >= 1 ? 1 : maxReductionDelta;
+    // this only needs 1 if outcome is good waiting without increasing
+    // so if delta increased by 1 we need to reduce by 2 to get to original wait
+    return deltaMagnitude > 0 ? 2 : 1;
   }
 
   if (
     previousOutcome.includes(OUTCOME_MAP.needMoreWait) ||
     previousOutcome.includes(OUTCOME_MAP.nearToBlock)
   ) {
-    return deltaMagnitude + maxReductionDelta;
+    // theses always sets global wait by postive value
+    // and since we need to reduce we need to go to original wait then reduce 2
+    return deltaMagnitude + 2;
   }
 
   return 0;
@@ -424,7 +420,7 @@ const reduceAfterPreviousLargeNegativeDiff = (
 ) => {
   if (previousDiff > -2000) return undefined;
 
-  const reduction = gapMin < 5 ? 0 : gapMin < 20 ? 1 : 2;
+  const reduction = gapMin < 5 ? 0 : gapMin < 20 ? 2 : 3;
 
   if (!reduction) return undefined;
 
@@ -723,7 +719,6 @@ const getExtraTimeBasedLogs = async ({
 
   if (isCurrentCaseNeedsDangerReduction) {
     afterDangerReduction = getAfterDangerReduction(
-      gapMin,
       previousDelta,
       lastTodayOutcome,
       lastTodayOutcomeElapsedMs,
@@ -747,12 +742,19 @@ const getExtraTimeBasedLogs = async ({
     // 2-  we need to reduce if previous was not danger check case 377247
     let value = 2;
     if (wasLastTodayDangerous) {
-      value = Math.max(1, 3 - afterDangerReduction);
+      value = Math.max(1, 3 - (afterDangerReduction || 1));
     }
 
     extraWait -= value;
 
     extraBotMessages.push(`✅ backend-delay delay=0ms  wait=-${value}ms`);
+  }
+
+  if (extraBackendDelayMs >= 2000) {
+    // we need check if we should reduce or not like case 378526
+    extraBotMessages.push(
+      `⚠️ backend-delay Ahmed should check if we need to reduce or not when delay=${extraBackendDelayMs}ms\n\nWe have a similar case (378526) with ${extraBackendDelayMs}ms delay`,
+    );
   }
 
   return {

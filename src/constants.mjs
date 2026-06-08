@@ -247,5 +247,5 @@ export const TIMING_LOGS_WIDTHS = {
   rtt: 6,
   delta: 5,
   localReadyAt: 13,
-  extraWaitMessage: 55,
+  extraWaitMessage: 25,
 };
