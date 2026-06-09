@@ -455,7 +455,7 @@ const reduceAfterPreviousLargeNegativeDiff = (
 ) => {
   if (previousDiff > -2000) return undefined;
 
-  const reduction = gapMin < 5 ? 0 : gapMin < 20 ? 2 : 3;
+  const reduction = gapMin < 5 ? 0 : gapMin <= 30 ? 2 : 3;
 
   if (!reduction) return undefined;
 
@@ -764,7 +764,8 @@ const getExtraTimeBasedLogs = async ({
     if (
       !isZeroBackendDelay &&
       !isCurrentCaseNeedsDangerReduction &&
-      !controlWaitTimeIfLastCaseNormalDangerous
+      !controlWaitTimeIfLastCaseNormalDangerous &&
+      previousDelta >= 0
     ) {
       // for cases like 378278
       const reductionValue = reduceAfterPreviousLargeNegativeDiff(
