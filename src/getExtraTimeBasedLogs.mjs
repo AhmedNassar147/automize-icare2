@@ -543,22 +543,26 @@ const getExtraTimeBasedLogs = async ({
   // const isMediumGap =
   //   diffFromLastToday > NEAR_CLUSTER_MS && diffFromLastToday < FAR_CASE_MS;
 
-  // for these case 378554, 378546
+  // for these case 378554, 378546,378768
   if (isUltraHotCluster) {
-    const reductionWait =
-      lastExtraWait > 6
-        ? Math.max(3, Math.floor(lastExtraWait / 2))
-        : lastExtraWait || 1;
+    const wait =
+      lastExtraWait > 6 ? Math.max(3, Math.floor(lastExtraWait / 2)) : 0;
 
     const message =
       `🌉 ultra-hot-cluster referralId=${referralId} ` +
       `diffPath=${lastCaseDiff ?? "none"}→${diff} ` +
       `previousWait=${lastFinalWait} base=${baseWaitingTime} ` +
-      `lastExtra=${lastExtraWait} wait=-${reductionWait}`;
+      `lastExtra=${lastExtraWait} wait=+${wait}`;
 
+    // you could see intelgram
+    // ultra-hot-cluster referralId=378768
+    // diffPath=-1000→-1000
+    // previousWait=2547 base=2544
+    // lastExtra=3 wait=0
+    // and since previous case updated to 2547ms as wait and baseWaitingTime is staled we need to add the value.
     return {
       computedExtraBotMessages: [message],
-      computedExtraWait: -reductionWait,
+      computedExtraWait: wait,
     };
   }
 
