@@ -63,7 +63,7 @@ const fetchCase = async (
       return {
         referralId,
         status: isClaimed ? "Yes" : "No",
-        errors,
+        hints: errors,
         statusID: status,
         shouldUpdateAndNotify: isClaimed,
       };
@@ -75,7 +75,7 @@ const fetchCase = async (
     referralId,
     status: "No",
     shouldUpdateAndNotify: true,
-    errors: ["Referral not found in any status tab."],
+    hints: ["Referral not found in any status tab."],
   };
 };
 
@@ -83,7 +83,7 @@ const updateAndNotifyUser = async ({
   sendTelegramMessage,
   referralId,
   status,
-  errors,
+  hints,
   statusID,
 }) => {
   const statusEmoji = status === "Yes" ? "✅" : "❌";
@@ -97,7 +97,7 @@ const updateAndNotifyUser = async ({
     `────────────────────────\n` +
     `🔢 *Referral ID:* \`${referralId}\`\n` +
     `📋 *Status:* ${statusText}` +
-    `${!!errors?.length ? `\n⚠️ *Errors:* ${errors.join("\n\n")}` : ""}`;
+    `${!!hints?.length ? `\n⚠️ *Hints:* ${hints.join("\n\n")}` : ""}`;
 
   await Promise.all([
     updateCaseInLog(referralId, { claimed: status }).catch((err) =>

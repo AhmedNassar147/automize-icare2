@@ -302,6 +302,8 @@ const analyzeReferralTimingPatterns = (
       lastFinalWait: Number(process.env.WAIT_FOR_ACCEPT_MS || 0),
       gapMin: 0,
       wasLastCaseNormalDangerous: false,
+      lastCaseOutcome: "",
+      lastCaseOutcomeElapsedMs: 0,
     };
   }
 
@@ -329,8 +331,12 @@ const analyzeReferralTimingPatterns = (
     rtt: _lastTodayRTT,
   } = lastToday || {};
 
-  const { waitTime: lastFinalWait, extraWait: lastExtraWait } =
-    lastCaseOfYesterday;
+  const {
+    waitTime: lastFinalWait,
+    extraWait: lastExtraWait,
+    outcome: lastCaseOutcome,
+    outcomeElapsedMs: lastCaseOutcomeElapsedMs,
+  } = lastCaseOfYesterday;
 
   const diffFromLastToday = getDiffMsBasedTimeStamp(
     referralEndTimestamp,
@@ -445,6 +451,8 @@ const analyzeReferralTimingPatterns = (
     isCurrentCaseNeedsDangerReduction,
     gapMin,
     wasLastCaseNormalDangerous,
+    lastCaseOutcome,
+    lastCaseOutcomeElapsedMs,
   };
 };
 
@@ -509,6 +517,8 @@ const getExtraTimeBasedLogs = async ({
     gapMin,
     lastCaseOfYesterday,
     wasLastCaseNormalDangerous,
+    lastCaseOutcome,
+    lastCaseOutcomeElapsedMs,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
@@ -527,6 +537,8 @@ const getExtraTimeBasedLogs = async ({
   const isTooFarCase = isFarFromLastToday && timeGapHours >= 5;
 
   const isFarOrFirstDayCase = isFirstCaseToday || isFarFromLastToday;
+
+  const currentHours = new Date().getHours();
 
   // const isMediumGap =
   //   diffFromLastToday > NEAR_CLUSTER_MS && diffFromLastToday < FAR_CASE_MS;
@@ -630,7 +642,34 @@ const getExtraTimeBasedLogs = async ({
   }
 
   const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
-  const currentWait = WAITS_MAP[waitBucket] + extrTime;
+  let currentWait = WAITS_MAP[waitBucket] + extrTime;
+
+  const isLastCaseWasLowWaiting = [
+    OUTCOME_MAP.lowWaiting,
+    OUTCOME_MAP.needLessWait,
+  ].includes(lastCaseOutcome);
+
+  const isLastCaseModerateWaiting =
+    lastCaseOutcome === OUTCOME_MAP.moderateWaiting;
+
+  const isLastCaseLowModerate =
+    lastCaseOutcome === OUTCOME_MAP.moderateWaiting &&
+    lastCaseOutcomeElapsedMs <= 765;
+
+  if (
+    isFirstCaseToday &&
+    timeDiffFromLastCaseHours >= 5 &&
+    currentHours >= 5 &&
+    (isLastCaseWasLowWaiting || isLastCaseModerateWaiting)
+  ) {
+    if (isLastCaseWasLowWaiting) {
+      currentWait = 1;
+    }
+
+    if (isLastCaseModerateWaiting) {
+      currentWait = lastCaseOutcomeElapsedMs <= 740 ? 1 : 2;
+    }
+  }
 
   const negativeDiffCount =
     isFirstCaseToday || !isLastTodayDiffNegative
@@ -719,7 +758,7 @@ const getExtraTimeBasedLogs = async ({
     let value = currentWait;
 
     const controlWaitTimeIfLastCaseNormalDangerous =
-      wasLastCaseNormalDangerous && gapMin >= 12;
+      wasLastCaseNormalDangerous && gapMin >= 12 && !isFirstCaseToday;
 
     if (controlWaitTimeIfLastCaseNormalDangerous) {
       // this for case like 378745 where it shouldn't add more wait
