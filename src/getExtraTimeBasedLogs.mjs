@@ -660,18 +660,25 @@ const getExtraTimeBasedLogs = async ({
     lastCaseOutcome === OUTCOME_MAP.moderateWaiting &&
     lastCaseOutcomeElapsedMs <= 765;
 
+  const isNotPerformedCase =
+    !lastCaseOutcome || lastCaseOutcome === "not-clicked";
+
   if (
     isFirstCaseToday &&
     timeDiffFromLastCaseHours >= 5 &&
-    currentHours >= 5 &&
-    (isLastCaseWasLowWaiting || isLastCaseModerateWaiting)
+    currentHours >= 6 &&
+    (isLastCaseWasLowWaiting || isLastCaseModerateWaiting || isNotPerformedCase)
   ) {
     if (isLastCaseWasLowWaiting) {
+      currentWait = 0;
+    }
+
+    if (isNotPerformedCase) {
       currentWait = 1;
     }
 
     if (isLastCaseModerateWaiting) {
-      currentWait = lastCaseOutcomeElapsedMs <= 740 ? 1 : 2;
+      currentWait = lastCaseOutcomeElapsedMs <= 740 ? 0 : 1;
     }
   }
 
