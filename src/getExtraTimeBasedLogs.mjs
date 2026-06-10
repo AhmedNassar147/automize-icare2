@@ -28,7 +28,7 @@ const DANGER_ZONE_PHASES = {
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
   // if (rtt >= 150) return +2;
-  if (rtt >= 100) return +1;
+  if (rtt >= 97) return +1;
 
   // extremely responsive session
   // if (rtt < 75) return -1;
@@ -573,8 +573,16 @@ const getExtraTimeBasedLogs = async ({
   //   isPositiveRtt &&
   //   (wasLastTodayDangerous || isCurrentCaseNeedsDangerReduction);
 
+  const controlWaitTimeIfLastCaseNormalDangerous =
+    wasLastCaseNormalDangerous &&
+    gapMin >= 12 &&
+    !isFirstCaseToday &&
+    !isCurrentDiffNegative;
+
   const shouldIgnorePositiveRtt =
-    isPositiveRtt && isCurrentCaseNeedsDangerReduction;
+    isPositiveRtt &&
+    (isCurrentCaseNeedsDangerReduction ||
+      controlWaitTimeIfLastCaseNormalDangerous);
 
   const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
 
@@ -605,6 +613,16 @@ const getExtraTimeBasedLogs = async ({
 
   let extraWait = 0;
 
+  let rttMessage = "";
+
+  const canUsePositiveRtt = isPositiveRtt && !shouldIgnorePositiveRtt;
+
+  if (canUsePositiveRtt) {
+    extraWait += extraBasedRtt;
+    const sign = extraBasedRtt > 0 ? "+" : "";
+    rttMessage = `✅ rtt wait=${sign}${extraBasedRtt}ms`;
+  }
+
   const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} gap=${gapMin}min waitBucket=${waitBucket}`;
 
   // if (bridgeWait) {
@@ -627,17 +645,14 @@ const getExtraTimeBasedLogs = async ({
       `⚠️ danger-zone ${logCtx}`,
       `type=${isDoubleZeroDangerZone ? "double-zero" : "recovery-drop"}`,
       `wait=+${dangerWait}ms`,
-    ].join(" ");
+      rttMessage,
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     extraBotMessages.push(
       `${message}${dangerMessage ? `_AND_${dangerMessage}` : ""}`,
     );
-
-    if (isPositiveRtt) {
-      extraWait += extraBasedRtt;
-      const sign = extraBasedRtt > 0 ? "+" : "";
-      extraBotMessages.push(`✅ rtt wait=${sign}${extraBasedRtt}ms`);
-    }
 
     return {
       computedExtraBotMessages: extraBotMessages,
@@ -648,47 +663,41 @@ const getExtraTimeBasedLogs = async ({
   const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
   let currentWait = WAITS_MAP[waitBucket] + extrTime;
 
-  const isLastCaseWasLowWaiting = [
-    OUTCOME_MAP.lowWaiting,
-    OUTCOME_MAP.needLessWait,
-  ].includes(lastCaseOutcome);
-
-  const isLastCaseModerateWaiting =
-    lastCaseOutcome === OUTCOME_MAP.moderateWaiting;
-
-  const isLastCaseLowModerate =
-    lastCaseOutcome === OUTCOME_MAP.moderateWaiting &&
-    lastCaseOutcomeElapsedMs <= 765;
-
-  const isNotPerformedCase =
-    !lastCaseOutcome || lastCaseOutcome === "not-clicked";
-
   if (
-    isFirstCaseToday &&
-    timeDiffFromLastCaseHours >= 5 &&
-    currentHours >= 6 &&
-    (isLastCaseWasLowWaiting || isLastCaseModerateWaiting || isNotPerformedCase)
+    !controlWaitTimeIfLastCaseNormalDangerous &&
+    timeDiffFromLastCaseHours >= 6
   ) {
+    const isLastCaseWasLowWaiting = [
+      OUTCOME_MAP.lowWaiting,
+      OUTCOME_MAP.needLessWait,
+    ].includes(lastCaseOutcome);
+
+    const isLastCaseModerateWaiting =
+      lastCaseOutcome === OUTCOME_MAP.moderateWaiting;
+
+    const isNotPerformedCase =
+      !lastCaseOutcome || lastCaseOutcome === "not-clicked";
+
     if (isLastCaseWasLowWaiting) {
       currentWait = 0;
     }
 
-    if (isNotPerformedCase) {
-      currentWait = 1;
-    }
+    // if (isNotPerformedCase) {
+    //   currentWait = 1;
+    // }
 
     if (isLastCaseModerateWaiting) {
-      currentWait = lastCaseOutcomeElapsedMs <= 740 ? 0 : 1;
+      currentWait = lastCaseOutcomeElapsedMs <= 740 ? -1 : -2;
     }
   }
 
-  const negativeDiffCount =
-    isFirstCaseToday || !isLastTodayDiffNegative
-      ? 0
-      : getNegativeCountBeforeCurrent(todayCases, diff);
-
   if (isCurrentDiffNegative) {
     const waitBasedDiff = Math.abs(diff) / 1000;
+
+    const negativeDiffCount =
+      isFirstCaseToday || !isLastTodayDiffNegative
+        ? 0
+        : getNegativeCountBeforeCurrent(todayCases, diff);
 
     // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
     let maxNewWait = currentWait;
@@ -724,6 +733,10 @@ const getExtraTimeBasedLogs = async ({
           `🔥 negative-chain count=${negativeDiffCount} wait=+${value}ms`,
         );
 
+        if (rttMessage) {
+          extraBotMessages.push(rttMessage);
+        }
+
         // if (waitReducedByLowerDiffValue) {
         //   extraBotMessages.push(waitReducedByLowerDiffMessage);
         // }
@@ -733,9 +746,13 @@ const getExtraTimeBasedLogs = async ({
 
         extraBotMessages.push(
           isFarFromLastToday
-            ? `↔️ far-negative wait=+${waitValue}ms`
-            : `🔁 consecutive-negative wait=+${waitValue}ms`,
+            ? `↔️ far-negative ${logCtx} wait=+${waitValue}ms`
+            : `🔁 consecutive-negative ${logCtx} wait=+${waitValue}ms`,
         );
+
+        if (rttMessage) {
+          extraBotMessages.push(rttMessage);
+        }
 
         // if (waitReducedByLowerDiffValue) {
         //   extraBotMessages.push(waitReducedByLowerDiffMessage);
@@ -747,6 +764,10 @@ const getExtraTimeBasedLogs = async ({
         ? "🌅 first-day-negative"
         : "✅ first-negative";
       extraBotMessages.push(`${negativeText} ${logCtx} wait=+${maxNewWait}ms`);
+
+      if (rttMessage) {
+        extraBotMessages.push(rttMessage);
+      }
 
       // if (waitReducedByLowerDiffValue) {
       //   extraBotMessages.push(waitReducedByLowerDiffMessage);
@@ -767,9 +788,6 @@ const getExtraTimeBasedLogs = async ({
 
   if (!isCurrentDiffNegative) {
     let value = currentWait;
-
-    const controlWaitTimeIfLastCaseNormalDangerous =
-      wasLastCaseNormalDangerous && gapMin >= 12 && !isFirstCaseToday;
 
     if (controlWaitTimeIfLastCaseNormalDangerous) {
       // this for case like 378745 where it shouldn't add more wait
@@ -803,13 +821,9 @@ const getExtraTimeBasedLogs = async ({
       `${prefixText} ${logCtx} wait=${sign}${Math.abs(value)}ms`,
     );
 
-    // if (negativeDiffCount >= 2) {
-    //   const value = 2;
-    //   extraWait -= value;
-    //   extraBotMessages.push(
-    //     `✅ previous-negative-more-than-2 ${logCtx} wait=-${value}ms`,
-    //   );
-    // }
+    if (rttMessage) {
+      extraBotMessages.push(rttMessage);
+    }
 
     if (
       !isZeroBackendDelay &&
