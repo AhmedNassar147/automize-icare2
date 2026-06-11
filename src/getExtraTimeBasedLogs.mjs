@@ -157,13 +157,13 @@ const getFirstDayBridgeExtraWait = ({
 // the next one wait time which is 378745 case id
 
 const getAfterDangerReduction = (
-  previousDelta,
+  lastTodayPreviousDelta,
   previousOutcome = "",
   dangerZonePhase,
 ) => {
-  previousDelta = previousDelta || 0;
+  lastTodayPreviousDelta = lastTodayPreviousDelta || 0;
 
-  const deltaMagnitude = Math.abs(previousDelta);
+  const deltaMagnitude = Math.abs(lastTodayPreviousDelta);
 
   const wasNormalDangerZone = dangerZonePhase === DANGER_ZONE_PHASES.normal;
 
@@ -176,7 +176,7 @@ const getAfterDangerReduction = (
       return deltaMagnitude >= 2 ? -Math.max(1, deltaMagnitude - 2) : 0;
     }
 
-    return deltaMagnitude >= 2 ? 0 : 2 - deltaMagnitude;
+    return deltaMagnitude >= 3 ? 1 : 2;
   }
 
   if (previousOutcome.includes(OUTCOME_MAP.goodWaiting)) {
@@ -189,7 +189,7 @@ const getAfterDangerReduction = (
         : 2
       : wasNormalDangerZone
         ? 0
-        : 1;
+        : 2;
   }
 
   if (
@@ -210,10 +210,9 @@ const getDangerZoneExtraWait = (
   isFarCase,
   isTooFarCase,
   extraBackendDelayMs,
-  previousDelta,
+  lastTodayPreviousDelta,
 ) => {
-  const safePreviousDelta = Number.isFinite(previousDelta) ? previousDelta : 0;
-  const previousReduction = Math.max(0, -safePreviousDelta);
+  const previousReduction = Math.max(0, -lastTodayPreviousDelta);
 
   // far 10 case 378585
   // not far case  378569 and this needed 7 becouse the previous one needed to be accepted at 2502
@@ -221,7 +220,8 @@ const getDangerZoneExtraWait = (
   const baseDangerWait = isFarCase ? 10 : 7;
   const zeroDelayWait = extraBackendDelayMs === 0 ? -2 : 0;
 
-  const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
+  // const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
+  const extraBoost = 0;
 
   const dangerWait =
     baseDangerWait +
@@ -233,7 +233,7 @@ const getDangerZoneExtraWait = (
   const phase = isFarCase ? DANGER_ZONE_PHASES.far : DANGER_ZONE_PHASES.normal;
 
   const messages = [
-    `base=${baseDangerWait} phase=${phase} previousDelta=${previousDelta}`,
+    `base=${baseDangerWait} phase=${phase} lastTodayPreviousDelta=${lastTodayPreviousDelta}`,
   ];
 
   if (zeroDelayWait < 0) {
@@ -268,6 +268,15 @@ const getDiffMsBasedTimeStamp = (
   return currentReferralEndTimestamp - lastReferralEndTimestamp;
 };
 
+const getCaseDelta = (initialValue, outcome, elapsedMs) => {
+  const delta =
+    typeof initialValue === "number"
+      ? initialValue
+      : getOutcomeDelta(outcome, elapsedMs);
+
+  return Number.isFinite(delta) ? delta : 0;
+};
+
 const analyzeReferralTimingPatterns = (
   logsData,
   referralEndTimestamp,
@@ -290,7 +299,7 @@ const analyzeReferralTimingPatterns = (
       isFarFromLastToday: true,
       diffFromLastToday: 0,
       lastToday: null,
-      previousDelta: 0,
+      lastTodayPreviousDelta: 0,
       lastTodayRTT: 0,
       wasLastTodayDangerous: false,
       lastCaseOfYesterday: null,
@@ -304,6 +313,8 @@ const analyzeReferralTimingPatterns = (
       wasLastCaseNormalDangerous: false,
       lastCaseOutcome: "",
       lastCaseOutcomeElapsedMs: 0,
+      gapMinLastCase: 0,
+      lastCasePreviousDelta: 0,
     };
   }
 
@@ -336,6 +347,7 @@ const analyzeReferralTimingPatterns = (
     extraWait: lastExtraWait,
     outcome: lastCaseOutcome,
     outcomeElapsedMs: lastCaseOutcomeElapsedMs,
+    delta: lastDelta,
   } = lastCaseOfYesterday;
 
   const diffFromLastToday = getDiffMsBasedTimeStamp(
@@ -391,10 +403,17 @@ const analyzeReferralTimingPatterns = (
 
   const isRecoveryThenDrop = isFirstDayRecovery || isSuperSinglePattern;
 
-  const previousDelta =
-    typeof lastTodayDelta === "number"
-      ? lastTodayDelta
-      : getOutcomeDelta(lastTodayOutcome, lastTodayOutcomeElapsedMs);
+  const lastTodayPreviousDelta = getCaseDelta(
+    lastTodayDelta,
+    lastTodayOutcome,
+    lastTodayOutcomeElapsedMs,
+  );
+
+  const lastCasePreviousDelta = getCaseDelta(
+    lastDelta,
+    lastCaseOutcome,
+    lastCaseOutcomeElapsedMs,
+  );
 
   const _messageFromLastToday = messageFromLastToday || "";
 
@@ -408,6 +427,7 @@ const analyzeReferralTimingPatterns = (
   const safeLastExtraWait = Number.isFinite(lastExtraWait) ? lastExtraWait : 0;
 
   const gapMin = +(diffFromLastToday / 60000).toFixed(1);
+  const gapMinLastCase = +(timeDiffFromLastCase / 60000).toFixed(1);
 
   //  378548, 378585
   // it should work on case like
@@ -420,7 +440,7 @@ const analyzeReferralTimingPatterns = (
   // gap of 378437 is 7 minutes
   // 378548
   const isCurrentCaseNeedsDangerReduction =
-    wasLastTodayDangerous && gapMin >= 10 && wasFarDangerPhase;
+    wasLastTodayDangerous && gapMinLastCase >= 10 && wasFarDangerPhase;
 
   const wasLastCaseNormalDangerous =
     wasLastTodayDangerous && !wasFarDangerPhase;
@@ -439,7 +459,7 @@ const analyzeReferralTimingPatterns = (
     isLastTodayDiffNegative,
     diffFromLastToday,
     lastToday,
-    previousDelta,
+    lastTodayPreviousDelta,
     lastTodayRTT,
     wasLastTodayDangerous,
     timeDiffFromLastCase,
@@ -453,6 +473,8 @@ const analyzeReferralTimingPatterns = (
     wasLastCaseNormalDangerous,
     lastCaseOutcome,
     lastCaseOutcomeElapsedMs,
+    gapMinLastCase,
+    lastCasePreviousDelta,
   };
 };
 
@@ -502,7 +524,7 @@ const getExtraTimeBasedLogs = async ({
     todayCases,
     isLastTodayDiffNegative,
     diffFromLastToday,
-    previousDelta,
+    lastTodayPreviousDelta,
     lastTodayRTT,
     wasLastTodayDangerous,
     timeDiffFromLastCase,
@@ -519,6 +541,8 @@ const getExtraTimeBasedLogs = async ({
     wasLastCaseNormalDangerous,
     lastCaseOutcome,
     lastCaseOutcomeElapsedMs,
+    gapMinLastCase,
+    lastCasePreviousDelta,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isFirstCaseToday = !todayCases?.length;
@@ -573,16 +597,16 @@ const getExtraTimeBasedLogs = async ({
   //   isPositiveRtt &&
   //   (wasLastTodayDangerous || isCurrentCaseNeedsDangerReduction);
 
-  const controlWaitTimeIfLastCaseNormalDangerous =
+  const isCurrentNeedsReductionAfterNormalDanger =
     wasLastCaseNormalDangerous &&
-    gapMin >= 12 &&
-    !isFirstCaseToday &&
+    gapMinLastCase >= 12 &&
     !isCurrentDiffNegative;
 
-  const shouldIgnorePositiveRtt =
-    isPositiveRtt &&
-    (isCurrentCaseNeedsDangerReduction ||
-      controlWaitTimeIfLastCaseNormalDangerous);
+  const willReductAfterDanger =
+    isCurrentNeedsReductionAfterNormalDanger ||
+    isCurrentCaseNeedsDangerReduction;
+
+  const shouldIgnorePositiveRtt = isPositiveRtt && willReductAfterDanger;
 
   const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
 
@@ -636,7 +660,7 @@ const getExtraTimeBasedLogs = async ({
       isFarFromLastToday,
       isTooFarCase,
       extraBackendDelayMs,
-      previousDelta,
+      lastTodayPreviousDelta,
     );
 
     extraWait += dangerWait;
@@ -663,10 +687,12 @@ const getExtraTimeBasedLogs = async ({
   const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
   let currentWait = WAITS_MAP[waitBucket] + extrTime;
 
-  if (
-    !controlWaitTimeIfLastCaseNormalDangerous &&
-    timeDiffFromLastCaseHours >= 6
-  ) {
+  const isThreeHoursOrMoreLeft = timeDiffFromLastCaseHours >= 3;
+
+  const willCalculateInitialWait =
+    !willReductAfterDanger && isThreeHoursOrMoreLeft;
+
+  if (willCalculateInitialWait) {
     const isLastCaseWasLowWaiting = [
       OUTCOME_MAP.lowWaiting,
       OUTCOME_MAP.needLessWait,
@@ -675,19 +701,15 @@ const getExtraTimeBasedLogs = async ({
     const isLastCaseModerateWaiting =
       lastCaseOutcome === OUTCOME_MAP.moderateWaiting;
 
+    if (isLastCaseWasLowWaiting) {
+      currentWait = -Math.max(0, 3 - Math.abs(lastCasePreviousDelta));
+    }
+
     const isNotPerformedCase =
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
 
-    if (isLastCaseWasLowWaiting) {
-      currentWait = 0;
-    }
-
-    // if (isNotPerformedCase) {
-    //   currentWait = 1;
-    // }
-
-    if (isLastCaseModerateWaiting) {
-      currentWait = lastCaseOutcomeElapsedMs <= 740 ? -1 : -2;
+    if (isNotPerformedCase) {
+      currentWait = -2;
     }
   }
 
@@ -714,14 +736,14 @@ const getExtraTimeBasedLogs = async ({
     // }
 
     if (isLastTodayDiffNegative) {
-      // if (isTooFarCase && previousDelta <= 0) {
+      // if (isTooFarCase && lastTodayPreviousDelta <= 0) {
       //   const boostValue = wasLastTodayDangerous ? 1 : 2;
       //   maxNewWait += boostValue;
 
       //   extraBotMessages.push(
       //     `📊 far-negative-long-gap ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
       //       1,
-      //     )} previousDelta=${previousDelta} wait=+${boostValue}ms`,
+      //     )} lastTodayPreviousDelta=${lastTodayPreviousDelta} wait=+${boostValue}ms`,
       //   );
       // }
 
@@ -789,12 +811,12 @@ const getExtraTimeBasedLogs = async ({
   if (!isCurrentDiffNegative) {
     let value = currentWait;
 
-    if (controlWaitTimeIfLastCaseNormalDangerous) {
+    if (isCurrentNeedsReductionAfterNormalDanger) {
       // this for case like 378745 where it shouldn't add more wait
       // last case normal dangerous and current with large time gap and positive diff
       const reduction = getAfterDangerReduction(
-        previousDelta,
-        lastTodayOutcome,
+        lastCasePreviousDelta,
+        lastCaseOutcome,
         DANGER_ZONE_PHASES.normal,
       );
       // reduction < 0 ? -reduction is for:  we were late on previous case and the outcome handler
@@ -809,7 +831,7 @@ const getExtraTimeBasedLogs = async ({
         ? "↔️ far-stable"
         : "✅ stable";
 
-    if (controlWaitTimeIfLastCaseNormalDangerous) {
+    if (isCurrentNeedsReductionAfterNormalDanger) {
       prefixText += "-after-normal-dangerous";
     }
 
@@ -827,15 +849,15 @@ const getExtraTimeBasedLogs = async ({
 
     if (
       !isZeroBackendDelay &&
-      !isCurrentCaseNeedsDangerReduction &&
-      !controlWaitTimeIfLastCaseNormalDangerous &&
-      previousDelta >= 0
+      !willReductAfterDanger &&
+      !isThreeHoursOrMoreLeft &&
+      lastCasePreviousDelta >= 0
     ) {
       // for cases like 378278
       const reductionValue = reduceAfterPreviousLargeNegativeDiff(
-        lastTodayDiff,
+        lastCaseDiff,
         diff,
-        gapMin,
+        gapMinLastCase,
       );
       if (reductionValue) {
         extraWait -= reductionValue.reduction;
@@ -848,15 +870,15 @@ const getExtraTimeBasedLogs = async ({
 
   if (isCurrentCaseNeedsDangerReduction) {
     afterDangerReduction = getAfterDangerReduction(
-      previousDelta,
-      lastTodayOutcome,
+      lastCasePreviousDelta,
+      lastCaseOutcome,
       DANGER_ZONE_PHASES.far,
     );
 
     extraWait -= afterDangerReduction;
 
     extraBotMessages.push(
-      `🌉 first-case-after-danger previousDelta=${previousDelta} previousOutcome=${lastTodayOutcome}_${lastTodayOutcomeElapsedMs || ""} wait=-${afterDangerReduction}ms`,
+      `🌉 first-case-after-danger previousDelta=${lastCasePreviousDelta} previousOutcome=${lastCaseOutcome}_${lastCaseOutcomeElapsedMs || ""} wait=-${afterDangerReduction}ms`,
     );
 
     if (shouldIgnorePositiveRtt) {
@@ -870,7 +892,7 @@ const getExtraTimeBasedLogs = async ({
     // 1-  we need to reduce if previous was danger check case 378589
     // 2-  we need to reduce if previous was not danger check case 377247
     let value = 2;
-    if (wasLastTodayDangerous) {
+    if (wasLastTodayDangerous && !willCalculateInitialWait) {
       value = Math.max(1, 2 - (afterDangerReduction || 1));
     }
 
