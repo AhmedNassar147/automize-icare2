@@ -649,7 +649,7 @@ const getExtraTimeBasedLogs = async ({
         extraWait += value;
 
         extraBotMessages.push(
-          `🔥 negative-chain count=${negativeDiffCount} wait=+${value}ms`,
+          `🔥 negative-chain count=${negativeDiffCount} wait=${value}ms`,
         );
 
         if (rttMessage) {
@@ -661,8 +661,8 @@ const getExtraTimeBasedLogs = async ({
 
         extraBotMessages.push(
           isFarFromLastToday
-            ? `↔️ far-negative ${logCtx} wait=+${waitValue}ms`
-            : `🔁 consecutive-negative ${logCtx} wait=+${waitValue}ms`,
+            ? `↔️ far-negative ${logCtx} wait=${waitValue}ms`
+            : `🔁 consecutive-negative ${logCtx} wait=${waitValue}ms`,
         );
 
         if (rttMessage) {
@@ -674,7 +674,7 @@ const getExtraTimeBasedLogs = async ({
       const negativeText = isFirstCaseToday
         ? "🌅 first-day-negative"
         : "✅ first-negative";
-      extraBotMessages.push(`${negativeText} ${logCtx} wait=+${maxNewWait}ms`);
+      extraBotMessages.push(`${negativeText} ${logCtx} wait=${maxNewWait}ms`);
 
       if (rttMessage) {
         extraBotMessages.push(rttMessage);
