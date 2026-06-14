@@ -556,7 +556,8 @@ const getExtraTimeBasedLogs = async ({
 
   if (isCurrentCaseDangerZone) {
     const { dangerWait, dangerMessage } = getDangerZoneExtraWait(
-      isFarFromLastToday && currentHours >= 12,
+      // isFarFromLastToday && currentHours >= 12,
+      isFarFromLastToday,
       isTooFarCase,
       extraBackendDelayMs,
       lastTodayPreviousDelta,
