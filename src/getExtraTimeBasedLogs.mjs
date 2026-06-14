@@ -85,72 +85,6 @@ const getTodayCases = (logsData, currentDayKey) => {
   );
 };
 
-const getFirstDayBridgeExtraWait = ({
-  referralEndTimestamp,
-  hoursGap,
-  referralIdGap,
-  lastCaseDiff,
-  currentDiff,
-  extraBasedRtt,
-  isFirstCaseToday,
-  startZero,
-}) => {
-  if (
-    startZero ||
-    !isFirstCaseToday ||
-    !Number.isFinite(hoursGap) ||
-    !Number.isFinite(currentDiff) ||
-    currentDiff >= 0
-  ) {
-    return {
-      bridgeWait: 0,
-      bridgeMessage: "",
-    };
-  }
-
-  const currentHour = new Date(referralEndTimestamp).getHours();
-
-  // Ignore very early first-day cases; allow bridge from 8:00 AM onward.
-  if (currentHour < 8) {
-    return {
-      bridgeWait: 0,
-      bridgeMessage: "",
-    };
-  }
-
-  const lastWasStable = typeof lastCaseDiff === "number" && lastCaseDiff >= 0;
-  const rttCompensation = extraBasedRtt > 0 ? extraBasedRtt : 0;
-
-  if (hoursGap >= 12 && referralIdGap >= 30) {
-    const value = Math.max(0, (lastWasStable ? 27 : 3) - rttCompensation);
-
-    return {
-      bridgeWait: value,
-      bridgeMessage:
-        `tier=large hour=${currentHour} hours=${hoursGap.toFixed(1)} ` +
-        `idGap=${referralIdGap} lastStable=${lastWasStable} ` +
-        `rttCompensation=${rttCompensation}`,
-    };
-  }
-
-  if (hoursGap >= 8 && referralIdGap >= 12) {
-    const value = Math.max(0, (lastWasStable ? 17 : 3) - rttCompensation);
-
-    return {
-      bridgeWait: value,
-      bridgeMessage:
-        `tier=medium hour=${currentHour} hours=${hoursGap.toFixed(1)} ` +
-        `idGap=${referralIdGap} lastStable=${lastWasStable} ` +
-        `rttCompensation=${rttCompensation}`,
-    };
-  }
-
-  return {
-    bridgeWait: 0,
-    bridgeMessage: "",
-  };
-};
-
 // we need to dig when current case after normal danger wait
 // if u check the 378745 case the previous one was normal danger and it should be
 // accepted on 2547 not 2549 and it was accepted on 2547 we need to not increase/decrease
@@ -207,7 +141,7 @@ const getAfterDangerReduction = (
 };
 
 const getDangerZoneExtraWait = (
-  isFarCase,
+  shouldUseFullWait,
   isTooFarCase,
   extraBackendDelayMs,
   lastTodayPreviousDelta,
@@ -217,20 +151,23 @@ const getDangerZoneExtraWait = (
   // far 10 case 378585
   // not far case  378569 and this needed 7 becouse the previous one needed to be accepted at 2502
   // not far case  378337 and this needed 5 becouse if we applied rule of delay == 0  we would claim it
-  const baseDangerWait = isFarCase ? 10 : 7;
+  const baseDangerWait = shouldUseFullWait ? 10 : 7;
   const zeroDelayWait = extraBackendDelayMs === 0 ? -2 : 0;
 
-  // const extraBoost = isTooFarCase && !previousReduction ? 1 : 0;
-  const extraBoost = 0;
+  // we use the too far for case like 378994
+  // it was too far gap more than 8 hours
+  const extraBoost = isTooFarCase ? 1 : 0;
 
   const dangerWait =
     baseDangerWait +
     // we should exclude the previous reduction when not far case example 378738
-    (isFarCase ? previousReduction : 0) +
+    (shouldUseFullWait ? previousReduction : 0) +
     extraBoost +
     zeroDelayWait;
 
-  const phase = isFarCase ? DANGER_ZONE_PHASES.far : DANGER_ZONE_PHASES.normal;
+  const phase = shouldUseFullWait
+    ? DANGER_ZONE_PHASES.far
+    : DANGER_ZONE_PHASES.normal;
 
   const messages = [
     `base=${baseDangerWait} phase=${phase} lastTodayPreviousDelta=${lastTodayPreviousDelta}`,
@@ -478,25 +415,6 @@ const analyzeReferralTimingPatterns = (
   };
 };
 
-const reduceAfterPreviousLargeNegativeDiff = (
-  previousDiff,
-  currentDiff,
-  gapMin,
-) => {
-  if (previousDiff > -2000) return undefined;
-
-  const reduction = gapMin < 5 ? 0 : gapMin <= 30 ? 2 : 3;
-
-  if (!reduction) return undefined;
-
-  const prefix = currentDiff >= 0 ? "stable" : "negative";
-
-  return {
-    reduction,
-    message: `⬇️ ${prefix}-after-large-negative-diff previousDiff=${previousDiff} gap=${gapMin}min wait=-${reduction}ms`,
-  };
-};
-
 const getExtraTimeBasedLogs = async ({
   referralId,
   referralEndTimestamp,
@@ -550,15 +468,17 @@ const getExtraTimeBasedLogs = async ({
   const timeGapHours = diffFromLastToday / (60 * 60 * 1000);
   const timeDiffFromLastCaseHours = timeDiffFromLastCase / (60 * 60 * 1000);
 
-  const isHotCluster = !isFirstCaseToday && diffFromLastToday <= HOT_CLUSTER_MS;
+  const isHotCluster =
+    !isFarFromLastToday && timeDiffFromLastCase <= HOT_CLUSTER_MS;
 
   const isUltraHotCluster =
     !!lastFinalWait && timeDiffFromLastCase <= ULTRA_HOT_CLUSTER_MS;
 
   const isNearCluster =
-    diffFromLastToday > HOT_CLUSTER_MS && diffFromLastToday <= NEAR_CLUSTER_MS;
+    timeDiffFromLastCase > HOT_CLUSTER_MS &&
+    timeDiffFromLastCase <= NEAR_CLUSTER_MS;
 
-  const isTooFarCase = isFarFromLastToday && timeGapHours >= 5;
+  const isTooFarCase = isFarFromLastToday && timeGapHours >= 6;
 
   const isFarOrFirstDayCase = isFirstCaseToday || isFarFromLastToday;
 
@@ -593,10 +513,6 @@ const getExtraTimeBasedLogs = async ({
   const rawExtraBasedRtt = getRttExtraWait(rtt);
   const isPositiveRtt = rawExtraBasedRtt > 0;
 
-  // const shouldIgnorePositiveRtt =
-  //   isPositiveRtt &&
-  //   (wasLastTodayDangerous || isCurrentCaseNeedsDangerReduction);
-
   const isCurrentNeedsReductionAfterNormalDanger =
     wasLastCaseNormalDangerous &&
     gapMinLastCase >= 12 &&
@@ -615,17 +531,6 @@ const getExtraTimeBasedLogs = async ({
   const referralIdGap = lastCaseReferralId
     ? Number(referralId) - lastCaseReferralId
     : undefined;
-
-  // const { bridgeMessage, bridgeWait } = getFirstDayBridgeExtraWait({
-  //   referralEndTimestamp,
-  //   currentDiff: diff,
-  //   lastCaseDiff,
-  //   hoursGap: timeDiffFromLastCaseHours,
-  //   referralIdGap: referralIdGap || 0,
-  //   extraBasedRtt,
-  //   isFirstCaseToday,
-  //   startZero: true,
-  // });
 
   const waitBucket = isFarOrFirstDayCase
     ? "far"
@@ -647,17 +552,11 @@ const getExtraTimeBasedLogs = async ({
     rttMessage = `✅ rtt wait=${sign}${extraBasedRtt}ms`;
   }
 
-  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} gap=${gapMin}min waitBucket=${waitBucket}`;
-
-  // if (bridgeWait) {
-  //   extraBotMessages.push(
-  //     `🌉 first-day-bridge referralId=${referralId} diffPath=${lastCaseDiff ?? "none"}→${diff} wait=+${bridgeWait}ms_AND_${bridgeMessage}`,
-  //   );
-  // }
+  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} gap=${gapMinLastCase}min waitBucket=${waitBucket}`;
 
   if (isCurrentCaseDangerZone) {
     const { dangerWait, dangerMessage } = getDangerZoneExtraWait(
-      isFarFromLastToday,
+      isFarFromLastToday && currentHours >= 12,
       isTooFarCase,
       extraBackendDelayMs,
       lastTodayPreviousDelta,
@@ -687,12 +586,12 @@ const getExtraTimeBasedLogs = async ({
   const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
   let currentWait = WAITS_MAP[waitBucket] + extrTime;
 
-  const isThreeHoursOrMoreLeft = timeDiffFromLastCaseHours >= 3;
+  const isTwoHoursOrMoreLeft = timeDiffFromLastCaseHours >= 2;
 
-  const willCalculateInitialWait =
-    !willReductAfterDanger && isThreeHoursOrMoreLeft;
+  const shouldCalculateInitialWait =
+    !willReductAfterDanger && isTwoHoursOrMoreLeft;
 
-  if (willCalculateInitialWait) {
+  if (shouldCalculateInitialWait) {
     const isLastCaseWasLowWaiting = [
       OUTCOME_MAP.lowWaiting,
       OUTCOME_MAP.needLessWait,
@@ -701,15 +600,34 @@ const getExtraTimeBasedLogs = async ({
     const isLastCaseModerateWaiting =
       lastCaseOutcome === OUTCOME_MAP.moderateWaiting;
 
-    if (isLastCaseWasLowWaiting) {
-      currentWait = -Math.max(0, 3 - Math.abs(lastCasePreviousDelta));
-    }
+    const positiveLastDelta = Math.abs(lastCasePreviousDelta || 0);
 
     const isNotPerformedCase =
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
 
-    if (isNotPerformedCase) {
-      currentWait = -2;
+    if (isLastCaseWasLowWaiting) {
+      const value = -Math.max(0, 4 - positiveLastDelta);
+      currentWait = value;
+      extraBotMessages.push(
+        `🔥 reducing-after-low-waiting wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
+      );
+    } else if (isLastCaseModerateWaiting) {
+      const value = -Math.max(0, 4 - (positiveLastDelta || 1));
+      currentWait = value;
+
+      extraBotMessages.push(
+        `🔥 reducing-after-moderate wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
+      );
+    } else if (isNotPerformedCase) {
+      const value = -3;
+      currentWait = value;
+      extraBotMessages.push(
+        `🔥 reducing-after-not-performed wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
+      );
+    } else {
+      const value = -2;
+      currentWait = value;
+      extraBotMessages.push(`🔥 reducing-initial-wait wait=${value}ms`);
     }
   }
 
@@ -724,29 +642,7 @@ const getExtraTimeBasedLogs = async ({
     // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
     let maxNewWait = currentWait;
 
-    // let waitReducedByLowerDiffMessage = undefined;
-
-    // if (waitBasedDiff >= 2000 && !isZeroBackendDelay) {
-    //   // cases 378278, 377140 need less wait to claim it
-    //   reductionValue = isHotCluster ? 0 : isNearCluster ? 1 : 2;
-    //   if (reductionValue) {
-    //     maxNewWait -= reductionValue;
-    //     waitReducedByLowerDiffMessage = `⬇️ negative-diff-2000 wait=-${reductionValue}ms`;
-    //   }
-    // }
-
     if (isLastTodayDiffNegative) {
-      // if (isTooFarCase && lastTodayPreviousDelta <= 0) {
-      //   const boostValue = wasLastTodayDangerous ? 1 : 2;
-      //   maxNewWait += boostValue;
-
-      //   extraBotMessages.push(
-      //     `📊 far-negative-long-gap ${logCtx} extraBasedRtt=${extraBasedRtt} hours=${timeGapHours.toFixed(
-      //       1,
-      //     )} lastTodayPreviousDelta=${lastTodayPreviousDelta} wait=+${boostValue}ms`,
-      //   );
-      // }
-
       if (negativeDiffCount >= 3 && !isHotCluster) {
         const value = maxNewWait;
         extraWait += value;
@@ -758,10 +654,6 @@ const getExtraTimeBasedLogs = async ({
         if (rttMessage) {
           extraBotMessages.push(rttMessage);
         }
-
-        // if (waitReducedByLowerDiffValue) {
-        //   extraBotMessages.push(waitReducedByLowerDiffMessage);
-        // }
       } else {
         const waitValue = maxNewWait;
         extraWait += waitValue;
@@ -775,10 +667,6 @@ const getExtraTimeBasedLogs = async ({
         if (rttMessage) {
           extraBotMessages.push(rttMessage);
         }
-
-        // if (waitReducedByLowerDiffValue) {
-        //   extraBotMessages.push(waitReducedByLowerDiffMessage);
-        // }
       }
     } else {
       extraWait += maxNewWait;
@@ -790,22 +678,7 @@ const getExtraTimeBasedLogs = async ({
       if (rttMessage) {
         extraBotMessages.push(rttMessage);
       }
-
-      // if (waitReducedByLowerDiffValue) {
-      //   extraBotMessages.push(waitReducedByLowerDiffMessage);
-      // }
     }
-
-    // const reductionValue = reduceAfterPreviousLargeNegativeDiff(
-    //   lastTodayDiff,
-    //   diff,
-    //   gapMin,
-    // );
-
-    // if (reductionValue) {
-    //   extraWait -= reductionValue.reduction;
-    //   extraBotMessages.push(reductionValue.message);
-    // }
   }
 
   if (!isCurrentDiffNegative) {
@@ -832,7 +705,7 @@ const getExtraTimeBasedLogs = async ({
         : "✅ stable";
 
     if (isCurrentNeedsReductionAfterNormalDanger) {
-      prefixText += "-after-normal-dangerous";
+      prefixText += "-after-normal-danger";
     }
 
     extraWait += value;
@@ -845,24 +718,6 @@ const getExtraTimeBasedLogs = async ({
 
     if (rttMessage) {
       extraBotMessages.push(rttMessage);
-    }
-
-    if (
-      !isZeroBackendDelay &&
-      !willReductAfterDanger &&
-      !isThreeHoursOrMoreLeft &&
-      lastCasePreviousDelta >= 0
-    ) {
-      // for cases like 378278
-      const reductionValue = reduceAfterPreviousLargeNegativeDiff(
-        lastCaseDiff,
-        diff,
-        gapMinLastCase,
-      );
-      if (reductionValue) {
-        extraWait -= reductionValue.reduction;
-        extraBotMessages.push(reductionValue.message);
-      }
     }
   }
 
@@ -878,7 +733,7 @@ const getExtraTimeBasedLogs = async ({
     extraWait -= afterDangerReduction;
 
     extraBotMessages.push(
-      `🌉 first-case-after-danger previousDelta=${lastCasePreviousDelta} previousOutcome=${lastCaseOutcome}_${lastCaseOutcomeElapsedMs || ""} wait=-${afterDangerReduction}ms`,
+      `🌉 first-case-after-far-danger previousDelta=${lastCasePreviousDelta} previousOutcome=${lastCaseOutcome}_${lastCaseOutcomeElapsedMs || ""} wait=-${afterDangerReduction}ms`,
     );
 
     if (shouldIgnorePositiveRtt) {
@@ -892,7 +747,7 @@ const getExtraTimeBasedLogs = async ({
     // 1-  we need to reduce if previous was danger check case 378589
     // 2-  we need to reduce if previous was not danger check case 377247
     let value = 2;
-    if (wasLastTodayDangerous && !willCalculateInitialWait) {
+    if (wasLastTodayDangerous && !shouldCalculateInitialWait) {
       value = Math.max(1, 2 - (afterDangerReduction || 1));
     }
 
