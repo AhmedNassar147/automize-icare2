@@ -234,7 +234,7 @@ import sendNtfyMessage from "./sendNtfyMessage.mjs";
     // Background collector
     (async () =>
       await waitForWaitingCountWithInterval({
-        collectionTabType: TABS_COLLECTION_TYPES.CONFIRMED,
+        collectionTabType: TABS_COLLECTION_TYPES.WAITING,
         browser,
         patientsStore,
         sendTelegramMessage,
@@ -303,7 +303,7 @@ import sendNtfyMessage from "./sendNtfyMessage.mjs";
           patientsStore,
           referralId,
           action,
-          skipTimeValidation: true,
+          // skipTimeValidation: true,
         });
 
         if (!success) {
