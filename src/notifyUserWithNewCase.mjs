@@ -8,7 +8,7 @@ import createConsoleMessage from "./createConsoleMessage.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import speakText from "./speakText.mjs";
 
-const notifyUserWithNewCase = async (referralId) => {
+const notifyUserWithNewCase = async (referralId, withActions) => {
   const { BRANCH_NAME, CLIENT_ID } = process.env;
 
   const clientOrBranchName = BRANCH_NAME || CLIENT_ID || "Unknown";
@@ -22,7 +22,7 @@ const notifyUserWithNewCase = async (referralId) => {
     ).catch((error) => {
       createConsoleMessage(error, "error", "SOUND error");
     });
-    await sendNtfyMessage(message);
+    await sendNtfyMessage(message, referralId, withActions);
   } catch (error) {
     createConsoleMessage(error, "error", "notifyUserWithNewCase error");
   }

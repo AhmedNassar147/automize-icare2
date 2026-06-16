@@ -57,7 +57,7 @@ const processSendPatientsToClient =
 
     if (!skipNotify && validPatients.length) {
       const [{ referralId }] = validPatients;
-      await notifyUserWithNewCase(referralId);
+      await notifyUserWithNewCase(referralId, true);
     }
   };
 

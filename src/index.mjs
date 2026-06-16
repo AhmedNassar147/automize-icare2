@@ -50,6 +50,8 @@ import { getCasesWithEmptyClaimStatus } from "./summarizeLogsAfterAcceptance.mjs
 import ensureCaseTimingLogsFile from "./ensureCaseTimingLogsFile.mjs";
 import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
 import { deleteOldCaseFiles } from "./db.mjs";
+import { startCloudflareTunnel } from "./startCloudflareTunnel.mjs";
+
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
 // https://github.com/FiloSottile/mkcert/releases
@@ -68,6 +70,9 @@ import { deleteOldCaseFiles } from "./db.mjs";
 
 // in power shell as admin => ipconfig /flushdns
 // to verify ping referralprogram.globemedsaudi.com // we see 127.0.0.1
+
+// to install clouldflar on windows
+// open powershell as admin => winget install Cloudflare.cloudflared
 
 (async () => {
   const {
@@ -404,6 +409,7 @@ import { deleteOldCaseFiles } from "./db.mjs";
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {
       createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`);
+      startCloudflareTunnel();
     });
 
     process.on("SIGINT", () => {
