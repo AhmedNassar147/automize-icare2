@@ -293,6 +293,25 @@ import { startCloudflareTunnel } from "./startCloudflareTunnel.mjs";
       }),
     );
 
+    app.get("/action", async (req, res) => {
+      const { referralId, action, token } = req.query;
+
+      console.log({
+        referralId,
+        action,
+        token,
+      });
+
+      // if (token !== process.env.ACTION_TOKEN) {
+      //   return res.status(403).send("Invalid token");
+      // }
+
+      // call your extracted Telegram callback logic here
+      // await handleReferralAction({ referralId, action, fromName: "ntfy" });
+
+      res.send(`✅ ${action} received for referral ${referralId}`);
+    });
+
     app.get("/settings", async (req, res) => {
       try {
         return res.status(200).json({
