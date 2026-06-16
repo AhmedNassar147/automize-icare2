@@ -6,7 +6,11 @@ let publicActionBaseUrl = null;
 export const getPublicActionBaseUrl = () => publicActionBaseUrl;
 
 const startCloudflareTunnel = () => {
-  const tunnel = spawn("cloudflared", [
+  const cloudflaredPath =
+    process.env.CLOUDFLARED_PATH ||
+    "C:\\Program Files (x86)\\cloudflared\\cloudflared.exe";
+
+  const tunnel = spawn(cloudflaredPath, [
     "tunnel",
     "--url",
     "https://localhost:8443",
