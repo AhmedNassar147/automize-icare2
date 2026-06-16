@@ -218,7 +218,6 @@ import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
     // );
 
     sendTelegramMessage = () => Promise.resolve();
-    startCloudflareTunnel();
 
     // if (typeof sendTelegramMessage === "function") {
     //   patientsStore.setTelegramMessageSender(sendTelegramMessage);
@@ -232,7 +231,7 @@ import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
     // Background collector
     (async () =>
       await waitForWaitingCountWithInterval({
-        collectionTabType: TABS_COLLECTION_TYPES.WAITING,
+        collectionTabType: TABS_COLLECTION_TYPES.CONFIRMED,
         browser,
         patientsStore,
         sendTelegramMessage,
@@ -431,6 +430,7 @@ import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {
       createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`);
+      startCloudflareTunnel();
     });
 
     process.on("SIGINT", () => {
