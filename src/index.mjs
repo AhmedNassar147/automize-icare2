@@ -231,7 +231,7 @@ import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
     // Background collector
     (async () =>
       await waitForWaitingCountWithInterval({
-        collectionTabType: TABS_COLLECTION_TYPES.CONFIRMED,
+        collectionTabType: TABS_COLLECTION_TYPES.WAITING,
         browser,
         patientsStore,
         sendTelegramMessage,
