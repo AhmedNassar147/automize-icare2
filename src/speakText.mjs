@@ -14,35 +14,27 @@ const speakText = ({
   useMaleVoice,
   volume = 94,
 }) => {
-  // // Input validation
-  // if (!text || typeof text !== "string") {
-  //   console.error("speakText: Invalid text provided");
-  //   return;
-  // }
+  return new Promise((resolve, reject) => {
+    const voice = useMaleVoice
+      ? "Microsoft David Desktop"
+      : "Microsoft Zira Desktop";
 
-  // if (volume < 0 || volume > 100) {
-  //   console.warn("speakText: Volume should be between 0-100");
-  //   volume = Math.max(0, Math.min(100, volume)); // Clamp value
-  // }
+    let count = 0;
+    const escapedText = text.replace(/'/g, "''").replace(/"/g, '""');
 
-  const voice = useMaleVoice
-    ? "Microsoft David Desktop"
-    : "Microsoft Zira Desktop";
+    const speak = () => {
+      if (count >= times) {
+        resolve();
+        return;
+      }
 
-  let count = 0;
-  const escapedText = text.replace(/'/g, "''").replace(/"/g, '""');
-
-  const speak = () => {
-    if (count >= times) return;
-
-    try {
       const ps = spawn("powershell", ["-NoProfile", "-Command", "-"], {
         stdio: ["pipe", "inherit", "inherit"],
       });
 
-      // Handle process errors
       ps.on("error", (error) => {
         createConsoleMessage(error, "error", "speakText: PowerShell Error");
+        reject(error);
       });
 
       ps.stdin.write(`
@@ -53,23 +45,32 @@ const speakText = ({
         $speak.Volume = ${volume};
         $speak.Speak('${escapedText}');
       `);
+
       ps.stdin.end();
 
       ps.on("exit", (code) => {
         if (code !== 0) {
-          createConsoleMessage(`speakText: Process exited with code ${code}`);
+          const error = new Error(
+            `speakText: Process exited with code ${code}`,
+          );
+
+          createConsoleMessage(error.message, "error");
+          reject(error);
+          return;
         }
+
         count++;
+
         if (count < times && delayMs > 0) {
           setTimeout(speak, delayMs);
+        } else {
+          resolve();
         }
       });
-    } catch (error) {
-      createConsoleMessage(error, "error", "speakText: Unexpected error:");
-    }
-  };
+    };
 
-  speak();
+    speak();
+  });
 };
 
 export default speakText;

@@ -20,15 +20,15 @@ const getOverridePathForUrl = (bundleUrl) => {
   const overridesFolder = join(
     process.env.USER_PROFILE_PATH,
     "Default",
-    "Overrides"
+    "Overrides",
   );
 
   return normalize(
     join(
       overridesFolder,
       url.hostname,
-      ...url.pathname.split("/").filter(Boolean)
-    )
+      ...url.pathname.split("/").filter(Boolean),
+    ),
   );
 };
 
@@ -71,7 +71,7 @@ async function patchBundleFromPage(page) {
   if (config.current === originalFileName) {
     createConsoleMessage(
       `✅ Original bundle unchanged (${originalFileName}), skipping...`,
-      "info"
+      "info",
     );
     return;
   }
@@ -79,7 +79,7 @@ async function patchBundleFromPage(page) {
   const overridePath = getOverridePathForUrl(bundleUrl);
 
   if (config.current) {
-    speakText({
+    await speakText({
       text: `Get Ahmed Nassar, globemed changed there code (${originalFileName})`,
       times: 20,
       useMaleVoice: true,
@@ -94,7 +94,7 @@ async function patchBundleFromPage(page) {
 
     createConsoleMessage(
       `✅ Need to make real chrome points to new (${originalFileName})`,
-      "warn"
+      "warn",
     );
   }
 
@@ -131,7 +131,7 @@ async function patchBundleFromPage(page) {
   if (!patchedBody.includes("GM__FILS")) {
     createConsoleMessage(
       `❌ The patched source hasn't the GM__FILS variable, skipping...`,
-      "error"
+      "error",
     );
 
     return;
@@ -153,7 +153,7 @@ async function patchBundleFromPage(page) {
 
   createConsoleMessage(
     `✅ Patched bundle written to Chrome Overrides: \n${overridePath}`,
-    "info"
+    "info",
   );
 }
 

@@ -117,7 +117,7 @@ const waitForWaitingCountWithInterval = async ({
 
         await sendTelegramMessage(message);
 
-        speakText({
+        await speakText({
           text: "App is Closed, Please check the app, try to open it manually",
           useMaleVoice: true,
           volume: 100,
@@ -147,7 +147,7 @@ const waitForWaitingCountWithInterval = async ({
           "Cannot bring app to front — please check if another window is blocking it";
 
         await sendTelegramMessage(message);
-        speakText({
+        await speakText({
           text: message,
           useMaleVoice: true,
           volume: 100,

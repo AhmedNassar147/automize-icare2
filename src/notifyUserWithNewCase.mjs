@@ -3,28 +3,33 @@
  * Helper: `notifyUserWithNewCase`.
  *
  */
-
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import speakText from "./speakText.mjs";
+import formatPatientToNtfy from "./formatPatientToNtfy.mjs";
 
-const notifyUserWithNewCase = async (referralId, withActions) => {
-  const { BRANCH_NAME, CLIENT_ID } = process.env;
+const notifyUserWithNewCase = async (patient) => {
+  const { USE_NTFY_AS_CASE_PROVIDER } = process.env;
 
-  const clientOrBranchName = BRANCH_NAME || CLIENT_ID || "Unknown";
-  const message = `At ${clientOrBranchName} NEW Patient ${referralId}`;
+  const withActions = USE_NTFY_AS_CASE_PROVIDER === "Y";
+  const message = formatPatientToNtfy(patient);
 
   try {
-    Promise.resolve(
+    void Promise.resolve(
       speakText({
-        text: `Check ${clientOrBranchName} bot, ` + `there is a new patient`,
+        text: "Check the bot, there is a new patient",
       }),
     ).catch((error) => {
       createConsoleMessage(error, "error", "SOUND error");
     });
-    await sendNtfyMessage(message, referralId, withActions);
+
+    await sendNtfyMessage(message, patient.referralId, withActions);
   } catch (error) {
-    createConsoleMessage(error, "error", "notifyUserWithNewCase error");
+    createConsoleMessage(
+      error,
+      "error",
+      `notifyUserWithNewCase referralId=${patient.referralId}`,
+    );
   }
 };
 

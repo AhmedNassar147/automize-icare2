@@ -366,7 +366,8 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       true,
     );
 
-    await notifyUserWithNewCase(referralId);
+    const patientData = patientsStore.getPatientByReferralId(referralId);
+    await notifyUserWithNewCase(patientData);
 
     if (pending.timeoutId) {
       clearTimeout(pending.timeoutId);

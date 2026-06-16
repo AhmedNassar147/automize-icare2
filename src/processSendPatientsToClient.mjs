@@ -8,9 +8,9 @@ import formatPatientToTelegramOrWA from "./formatPatientToTelegramOrWA.mjs";
 import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
 
 const processSendPatientsToClient =
-  (patientsStore, sendTelegramMessage, skipNotify = false) =>
+  (patientsStore, sendTelegramMessage) =>
   async (addedPatients = []) => {
-    const { USE_NTFY_AS_CASE_PROVIDER, FAKE_REJECTION_ENABLED } = process.env;
+    const { FAKE_REJECTION_ENABLED } = process.env;
     const fakeRejectionEnabled = FAKE_REJECTION_ENABLED === "Y";
 
     const validPatients = addedPatients.filter(Boolean);
@@ -45,24 +45,18 @@ const processSendPatientsToClient =
         );
 
         await sendTelegramMessage(
-          `⚠️ Failed to send patient info to NTFY:\n${reason}\n\nat processSendPatientsToClient task`,
+          `⚠️ Failed to process patient send task:\n${reason}\n\nat processSendPatientsToClient task`,
         ).catch((err) => {
           createConsoleMessage(
             err?.message || err,
             "error",
-            "failed to send processSendPatientsToClient error report (telegram message)",
+            "failed to send processSendPatientsToClient error report",
           );
         });
       }
     }
 
-    if (!skipNotify && validPatients.length) {
-      const [{ referralId }] = validPatients;
-      await notifyUserWithNewCase(
-        referralId,
-        USE_NTFY_AS_CASE_PROVIDER === "Y",
-      );
-    }
+    await Promise.allSettled(validPatients.map(notifyUserWithNewCase));
   };
 
 export default processSendPatientsToClient;

@@ -228,7 +228,7 @@ import sendNtfyMessage from "./sendNtfyMessage.mjs";
 
     patientsStore.on(
       "patientsAdded",
-      processSendPatientsToClient(patientsStore, sendTelegramMessage, false),
+      processSendPatientsToClient(patientsStore, sendTelegramMessage),
     );
 
     // Background collector
