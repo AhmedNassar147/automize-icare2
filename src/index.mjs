@@ -211,11 +211,14 @@ import { startCloudflareTunnel } from "./startCloudflareTunnel.mjs";
 
     await patientsStore.scheduleAllInitialPatients();
 
-    sendTelegramMessage = await installTelegramBotApi(
-      TG_TOKEN,
-      patientsStore,
-      browser,
-    );
+    // sendTelegramMessage = await installTelegramBotApi(
+    //   TG_TOKEN,
+    //   patientsStore,
+    //   browser,
+    // );
+
+    sendTelegramMessage = () => Promise.resolve();
+    startCloudflareTunnel();
 
     // if (typeof sendTelegramMessage === "function") {
     //   patientsStore.setTelegramMessageSender(sendTelegramMessage);
@@ -409,7 +412,6 @@ import { startCloudflareTunnel } from "./startCloudflareTunnel.mjs";
     // ---------- Start ----------
     server.listen(Number(PORT), HOST, () => {
       createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`);
-      startCloudflareTunnel();
     });
 
     process.on("SIGINT", () => {

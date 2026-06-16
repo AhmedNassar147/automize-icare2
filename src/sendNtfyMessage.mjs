@@ -10,6 +10,17 @@ const sendNtfyMessage = async (messsage, referralId, withActions) => {
   const baseUrl = getPublicActionBaseUrl();
   const notifierID = getCurrentUserNtfyID();
 
+  console.log("baseUrl", baseUrl);
+
+  const actions = !!(withActions && referralId)
+    ? [
+        `view, ✅ Accept, ${baseUrl}/action?referralId=${referralId}&action=accept`,
+        `view, ❌ Reject, ${baseUrl}/action?referralId=${referralId}&action=reject`,
+        `view, ❌ Cancel, ${baseUrl}/action?referralId=${referralId}&action=cancel`,
+        `view, 🟢 Online, ${baseUrl}/action?referralId=${referralId}&action=online`,
+      ].join("; ")
+    : undefined;
+
   return await fetch(`https://ntfy.sh/${notifierID}`, {
     method: "POST",
     body: messsage,
@@ -20,15 +31,7 @@ const sendNtfyMessage = async (messsage, referralId, withActions) => {
       // https://github.com/cityssm/node-ntfy-publish/blob/main/priorities.js
       Priority: "5", // Add this line for max priority,
       // Icon: "https://referralprogram.globemedsaudi.com/assets/MOHlogo-a80cbf2a.png",
-
-      Actions: !!(withActions && referralId)
-        ? [
-            `view, ✅ Accept, ${baseUrl}/action?referralId=${referralId}&action=accept`,
-            `view, ❌ Reject, ${baseUrl}/action?referralId=${referralId}&action=reject`,
-            `view, ❌ Cancel, ${baseUrl}/action?referralId=${referralId}&action=cancel`,
-            `view, 🟢 Online, ${baseUrl}/action?referralId=${referralId}&action=online`,
-          ].join("; ")
-        : undefined,
+      Actions: actions,
     },
   });
 };
