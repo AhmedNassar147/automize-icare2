@@ -292,23 +292,14 @@ import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
       }),
     );
 
-    app.get("/action", async (req, res) => {
-      const { referralId, action, token } = req.query;
-
+    app.post("/action", async (req, res) => {
+      const { action, referralId } = req.query;
       console.log({
-        referralId,
         action,
-        token,
+        referralId,
       });
 
-      // if (token !== process.env.ACTION_TOKEN) {
-      //   return res.status(403).send("Invalid token");
-      // }
-
-      // call your extracted Telegram callback logic here
-      // await handleReferralAction({ referralId, action, fromName: "ntfy" });
-
-      res.send(`✅ ${action} received for referral ${referralId}`);
+      return res.status(200).json({ status: "success" });
     });
 
     app.get("/settings", async (req, res) => {
@@ -428,10 +419,18 @@ import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
     );
 
     // ---------- Start ----------
-    server.listen(Number(PORT), HOST, () => {
-      createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`);
-      startCloudflareTunnel();
+    // server.listen(Number(PORT), HOST, () => {
+    //   createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`);
+    //   startCloudflareTunnel();
+    // });
+
+    await new Promise((resolve) => {
+      server.listen(Number(PORT), HOST, resolve);
     });
+
+    createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`, "info");
+
+    await startCloudflareTunnel();
 
     process.on("SIGINT", () => {
       void shutdown("SIGINT");

@@ -10,22 +10,14 @@ const sendNtfyMessage = async (messsage, referralId, withActions) => {
   const baseUrl = getPublicActionBaseUrl();
   const notifierID = getCurrentUserNtfyID();
 
-  console.log("baseUrl", baseUrl);
-
   let actions = undefined;
-
-  console.log({
-    withActions,
-    referralId,
-    baseUrl,
-  });
 
   if (withActions && referralId) {
     actions = [
       `http, Accept, ${baseUrl}/action?referralId=${referralId}&action=accept`,
       `http, Reject, ${baseUrl}/action?referralId=${referralId}&action=reject`,
       `http, Cancel, ${baseUrl}/action?referralId=${referralId}&action=cancel`,
-      `http, Online, ${baseUrl}/action?referralId=${referralId}&action=online`,
+      // `http, Online, ${baseUrl}/action?referralId=${referralId}&action=online`,
     ].join("; ");
   }
 
