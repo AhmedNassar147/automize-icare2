@@ -35,6 +35,7 @@ import {
 import createAndSendInvoiceReport from "./createAndSendInvoiceReport.mjs";
 import formatPatientToTelegramOrWA from "./formatPatientToTelegramOrWA.mjs";
 import { HOME_PAGE_URL, USER_ACTION_TYPES } from "./constants.mjs";
+import handleUserActionOnCase from "./handleUserActionOnCase.mjs";
 
 const execAsync = promisify(exec);
 
@@ -1693,174 +1694,73 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         createConsoleMessage(_message, "error");
         return reply(_message);
       }
-
       const [action, referralId] = data?.split("_") || [];
 
-      if (!action || !referralId) {
-        const _message = `❌ action=${action} or referralId=${referralId} not found`;
-        createConsoleMessage(
-          _message,
-          "error",
-          `installTelegramBotApi => callback_query => data=${data}`,
-        );
+      const {
+        message: _message,
+        success,
+        skipMessage,
+      } = await handleUserActionOnCase({
+        patientsStore,
+        referralId,
+        action,
+        onAcceptOrRejectForFileUpload: async () => {
+          const { fileData } =
+            (await getCurrentActionLetterFile(referralId, action, true)) || {};
 
-        return reply(_message);
+          if (!fileData) {
+            const _message = `❌ fileData not found for action=${action} and referralId=${referralId}`;
+            createConsoleMessage(_message, "error");
+            return await reply(_message);
+          }
+
+          const fileName = `${action}_${referralId}`;
+
+          const actionDocumentResponse = await bot
+            .sendDocument(
+              messageChatId,
+              fileData,
+              { reply_to_message_id: msgId, caption: `📎 ${fileName}` },
+              { filename: `${fileName}.pdf`, contentType: "application/pdf" },
+            )
+            .catch((err) => {
+              createConsoleMessage(
+                err?.message || err,
+                "error",
+                `sendDocument ${fileName}`,
+              );
+
+              return null;
+            });
+
+          const fileId = actionDocumentResponse?.document?.file_id;
+
+          if (fileId) {
+            upsertCaseFile(referralId, action, fileId);
+          }
+        },
+        onAnotherAction: () =>
+          confirmOnlineIfPending({
+            referralId,
+            chatId,
+            fromName,
+            reply,
+            // silent: true,
+            silent: false,
+          }),
+        onOnlineAction: () =>
+          confirmOnlineIfPending({
+            referralId,
+            chatId,
+            fromName,
+            reply,
+            silent: false,
+          }),
+      });
+
+      if (_message && !skipMessage) {
+        reply(_message);
       }
-
-      if (action === "online") {
-        await confirmOnlineIfPending({
-          referralId,
-          chatId,
-          fromName,
-          reply,
-          silent: false,
-        });
-
-        return;
-      }
-
-      const { patient } = patientsStore.findPatientByReferralId(referralId);
-
-      if (!patient) {
-        const _message = `❌ Patient not found for referralId=${referralId}`;
-        createConsoleMessage(_message, "info");
-        return reply(_message);
-      }
-
-      const rowKey = createPatientRowKey(patient);
-      const storedPatient = getWeeklyHistoryPatient(rowKey);
-
-      const isAccepted = action === "accept";
-      const isRejected = action === "reject";
-      const isCancelled = action === "cancel";
-      const isNoReply = action === "noreply";
-
-      if (isAccepted || isRejected || isCancelled || isNoReply) {
-        const canContinue = await confirmOnlineIfPending({
-          referralId,
-          chatId,
-          fromName,
-          reply,
-          // silent: true,
-          silent: false,
-        });
-
-        if (!canContinue) {
-          return;
-        }
-      }
-
-      if (isNoReply) {
-        const actionNames = [
-          ...new Set(
-            [storedPatient?.providerAction, "no reply"].filter(Boolean),
-          ),
-        ].join(" then ");
-
-        await patientsStore.scheduleFakeRejectProbe(referralId, false);
-
-        updateWeeklyHistoryPatients({
-          ...patient,
-          rowKey,
-          isSent: "yes",
-          isReceived: "yes",
-          providerAction: actionNames,
-        });
-
-        const prefix = "✅";
-        const messageReply = `${prefix} Done ${action} For (Referral ID: ${referralId})`;
-
-        createConsoleMessage(messageReply, "info");
-        return reply(messageReply);
-      }
-
-      if (action === "lefttime") {
-        const { message, timeMs } =
-          patientsStore.getReferralLeftTime(referralId);
-
-        return reply(message);
-      }
-
-      const timeValidation = patientsStore.canStillProcessPatient(referralId);
-
-      // Intentionally before timeValidation:
-      // even if bot processing is late, the doctor/user may have manually accepted/rejected,
-      // so we still archive and refresh the latest action letter file.
-      if (isAccepted || isRejected) {
-        const { fileData } = await getCurrentActionLetterFile(
-          referralId,
-          action,
-          true,
-        );
-
-        const fileName = `${action}_${referralId}`;
-
-        const actionDocumentResponse = await bot
-          .sendDocument(
-            messageChatId,
-            fileData,
-            { reply_to_message_id: msgId, caption: `📎 ${fileName}` },
-            { filename: `${fileName}.pdf`, contentType: "application/pdf" },
-          )
-          .catch((err) => {
-            createConsoleMessage(
-              err?.message || err,
-              "error",
-              `sendDocument ${fileName}`,
-            );
-
-            return null;
-          });
-
-        const fileId = actionDocumentResponse?.document?.file_id;
-
-        if (fileId) {
-          upsertCaseFile(referralId, action, fileId);
-        }
-      }
-
-      if (!timeValidation.success) {
-        const replyMessage = `${timeValidation.message} For (Referral ID: ${referralId})`;
-
-        const actionNames = [
-          ...new Set([storedPatient?.providerAction, action].filter(Boolean)),
-        ].join(" then ");
-
-        updateWeeklyHistoryPatients({
-          ...patient,
-          rowKey,
-          isSent: "yes",
-          isReceived: "yes",
-          providerAction: `${actionNames} with late reply`,
-        });
-
-        createConsoleMessage(replyMessage, "info");
-        return reply(replyMessage);
-      }
-
-      const scheduledAt = Date.now();
-
-      let result = {};
-      if (isAccepted) {
-        result = await patientsStore.scheduleAcceptedPatient(
-          referralId,
-          scheduledAt,
-        );
-      } else if (isRejected) {
-        result = await patientsStore.scheduleRejectedPatient(
-          referralId,
-          scheduledAt,
-        );
-      } else if (isCancelled) {
-        result = await patientsStore.cancelPatient(referralId);
-      }
-
-      const { success, message: replyMessage } = result;
-      const prefix = success ? "✅" : "❌";
-      const __message = `${prefix} (Referral ID: ${referralId})  ${replyMessage}`;
-
-      // Confirm to the user with a brief toast
-      return reply(__message);
     } catch (error) {
       createConsoleMessage(
         error,

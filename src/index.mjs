@@ -51,6 +51,8 @@ import ensureCaseTimingLogsFile from "./ensureCaseTimingLogsFile.mjs";
 import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
 import { deleteOldCaseFiles } from "./db.mjs";
 import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
+import handleUserActionOnCase from "./handleUserActionOnCase.mjs";
+import sendNtfyMessage from "./sendNtfyMessage.mjs";
 
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
@@ -294,13 +296,31 @@ import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
     );
 
     app.post("/action", async (req, res) => {
-      const { action, referralId } = req.query;
-      console.log({
-        action,
-        referralId,
-      });
+      try {
+        const { action, referralId } = req.query;
 
-      return res.status(200).json({ status: "success" });
+        const { message, success } = await handleUserActionOnCase({
+          patientsStore,
+          referralId,
+          action,
+        });
+
+        await sendNtfyMessage(message);
+
+        return res.status(success ? 200 : 400).json({
+          success,
+          message,
+        });
+      } catch (error) {
+        const message = error?.message || "Internal server error";
+
+        await sendNtfyMessage(`❌ ${message}`);
+
+        return res.status(500).json({
+          success: false,
+          message,
+        });
+      }
     });
 
     app.get("/settings", async (req, res) => {

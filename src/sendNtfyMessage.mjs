@@ -4,15 +4,15 @@
  *
  */
 import getCurrentUserNtfyID from "./getCurrentUserNtfyID.mjs";
-import { getPublicActionBaseUrl } from "./startCloudflareTunnel.mjs";
+import { waitForPublicActionBaseUrl } from "./startCloudflareTunnel.mjs";
 
-const sendNtfyMessage = async (messsage, referralId, withActions) => {
-  const baseUrl = getPublicActionBaseUrl();
+const sendNtfyMessage = async (message, referralId, withActions) => {
   const notifierID = getCurrentUserNtfyID();
 
   let actions = undefined;
 
   if (withActions && referralId) {
+    const baseUrl = await waitForPublicActionBaseUrl();
     actions = [
       `http, Accept, ${baseUrl}/action?referralId=${referralId}&action=accept`,
       `http, Reject, ${baseUrl}/action?referralId=${referralId}&action=reject`,
@@ -23,7 +23,7 @@ const sendNtfyMessage = async (messsage, referralId, withActions) => {
 
   return await fetch(`https://ntfy.sh/${notifierID}`, {
     method: "POST",
-    body: messsage,
+    body: message,
     headers: {
       Title: "CNHI",
       // https://github.com/cityssm/node-ntfy-publish/blob/main/emoji.js
