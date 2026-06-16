@@ -84,6 +84,7 @@ import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
     TG_TOKEN,
     CHROME_EXECUTABLE_PATH,
     USER_PROFILE_PATH,
+    USE_NTFY_AS_CASE_PROVIDER,
   } = process.env;
 
   let server;
@@ -430,7 +431,9 @@ import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
 
     createConsoleMessage(`HTTPS listening on https://${HOST}:${PORT}`, "info");
 
-    await startCloudflareTunnel();
+    if (USE_NTFY_AS_CASE_PROVIDER == "Y") {
+      await startCloudflareTunnel();
+    }
 
     process.on("SIGINT", () => {
       void shutdown("SIGINT");

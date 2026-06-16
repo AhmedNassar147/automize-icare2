@@ -10,7 +10,8 @@ import notifyUserWithNewCase from "./notifyUserWithNewCase.mjs";
 const processSendPatientsToClient =
   (patientsStore, sendTelegramMessage, skipNotify = false) =>
   async (addedPatients = []) => {
-    const fakeRejectionEnabled = process.env.FAKE_REJECTION_ENABLED === "Y";
+    const { USE_NTFY_AS_CASE_PROVIDER, FAKE_REJECTION_ENABLED } = process.env;
+    const fakeRejectionEnabled = FAKE_REJECTION_ENABLED === "Y";
 
     const validPatients = addedPatients.filter(Boolean);
 
@@ -57,7 +58,10 @@ const processSendPatientsToClient =
 
     if (!skipNotify && validPatients.length) {
       const [{ referralId }] = validPatients;
-      await notifyUserWithNewCase(referralId, true);
+      await notifyUserWithNewCase(
+        referralId,
+        USE_NTFY_AS_CASE_PROVIDER === "Y",
+      );
     }
   };
 
