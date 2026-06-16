@@ -178,7 +178,7 @@ const handleCaseAcceptanceOrRejection =
 
       const notificationResults = await Promise.allSettled([
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
-        sleep(Math.max(0, waitTime - 36)).then(() =>
+        sleep(Math.max(0, waitTime - 37)).then(() =>
           sendNtfyMessage(approvalMessage),
         ),
         summarizeLogsAfterAcceptance({

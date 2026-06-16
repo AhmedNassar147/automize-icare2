@@ -50,7 +50,7 @@ import { getCasesWithEmptyClaimStatus } from "./summarizeLogsAfterAcceptance.mjs
 import ensureCaseTimingLogsFile from "./ensureCaseTimingLogsFile.mjs";
 import handleSetCaseOutcome from "./handleSetCaseOutcome.mjs";
 import { deleteOldCaseFiles } from "./db.mjs";
-import { startCloudflareTunnel } from "./startCloudflareTunnel.mjs";
+import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
 
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
