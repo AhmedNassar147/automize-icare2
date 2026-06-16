@@ -212,13 +212,13 @@ import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
 
     await patientsStore.scheduleAllInitialPatients();
 
-    // sendTelegramMessage = await installTelegramBotApi(
-    //   TG_TOKEN,
-    //   patientsStore,
-    //   browser,
-    // );
+    sendTelegramMessage = await installTelegramBotApi(
+      TG_TOKEN,
+      patientsStore,
+      browser,
+    );
 
-    sendTelegramMessage = () => Promise.resolve();
+    // sendTelegramMessage = () => Promise.resolve();
 
     // if (typeof sendTelegramMessage === "function") {
     //   patientsStore.setTelegramMessageSender(sendTelegramMessage);
