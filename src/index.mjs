@@ -234,7 +234,7 @@ import sendNtfyMessage from "./sendNtfyMessage.mjs";
     // Background collector
     (async () =>
       await waitForWaitingCountWithInterval({
-        collectionTabType: TABS_COLLECTION_TYPES.WAITING,
+        collectionTabType: TABS_COLLECTION_TYPES.CONFIRMED,
         browser,
         patientsStore,
         sendTelegramMessage,
@@ -303,23 +303,19 @@ import sendNtfyMessage from "./sendNtfyMessage.mjs";
           patientsStore,
           referralId,
           action,
+          skipTimeValidation: true,
         });
 
-        await sendNtfyMessage(message);
+        if (!success) {
+          await sendNtfyMessage(message);
+          return res.status(400).type("text/plain").send(message);
+        }
 
-        return res.status(success ? 200 : 400).json({
-          success,
-          message,
-        });
+        return res.status(200).type("text/plain").send(message);
       } catch (error) {
         const message = error?.message || "Internal server error";
-
         await sendNtfyMessage(`❌ ${message}`);
-
-        return res.status(500).json({
-          success: false,
-          message,
-        });
+        return res.status(400).type("text/plain").send(message);
       }
     });
 

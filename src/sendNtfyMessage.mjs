@@ -31,7 +31,11 @@ const sendNtfyMessage = async (message, referralId, withActions) => {
       // https://github.com/cityssm/node-ntfy-publish/blob/main/priorities.js
       Priority: "5", // Add this line for max priority,
       // Icon: "https://referralprogram.globemedsaudi.com/assets/MOHlogo-a80cbf2a.png",
-      Actions: actions,
+      ...(actions
+        ? {
+            Actions: actions,
+          }
+        : null),
     },
   });
 };

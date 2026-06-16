@@ -1,17 +1,17 @@
+import { existsSync } from "fs";
 import { spawn, execSync } from "child_process";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 
 const getCloudflaredPath = () => {
-  try {
-    return execSync("where cloudflared", {
-      encoding: "utf8",
-    })
-      .split(/\r?\n/)
-      .find(Boolean)
-      .trim();
-  } catch {
-    return null;
-  }
+  const candidates = [
+    process.env.CLOUDFLARED_PATH,
+    "C:\\Program Files\\cloudflared\\cloudflared.exe",
+    "C:\\Program Files (x86)\\cloudflared\\cloudflared.exe",
+    `${process.env.LOCALAPPDATA}\\cloudflared\\cloudflared.exe`,
+    `${process.env.LOCALAPPDATA}\\Programs\\cloudflared\\cloudflared.exe`,
+  ].filter(Boolean);
+
+  return candidates.find((path) => existsSync(path)) || null;
 };
 
 let publicActionBaseUrl = null;
@@ -43,7 +43,7 @@ const startCloudflareTunnel = () => {
   const cloudflaredPath = getCloudflaredPath() || "cloudflared";
   // || "C:\\Program Files (x86)\\cloudflared\\cloudflared.exe";
 
-  console.log("cloudflaredPath", cloudflaredPath);
+  createConsoleMessage(`Cloudflare path: ${cloudflaredPath}`, "warn");
 
   tunnelReadyPromise = new Promise((resolve, reject) => {
     let resolved = false;

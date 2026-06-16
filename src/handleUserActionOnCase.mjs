@@ -17,6 +17,7 @@ const handleUserActionOnCase = async ({
   onOnlineAction,
   onAnotherAction,
   onAcceptOrRejectForFileUpload,
+  skipTimeValidation,
 }) => {
   if (!action || !referralId) {
     const _message = `❌ action=${action} or referralId=${referralId} not found`;
@@ -136,7 +137,7 @@ const handleUserActionOnCase = async ({
     await onAcceptOrRejectForFileUpload();
   }
 
-  if (!timeValidation.success) {
+  if (!skipTimeValidation && !timeValidation.success) {
     const replyMessage = `${timeValidation.message} For (Referral ID: ${referralId})`;
 
     const actionNames = [
