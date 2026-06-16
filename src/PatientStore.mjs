@@ -168,17 +168,17 @@ class PatientStore extends EventEmitter {
         continue;
       }
 
-      if (probePending) {
-        const { message } = await this.scheduleFakeRejectProbe(
-          patient.referralId,
-          true,
-        );
-        createConsoleMessage(
-          `Called From Initial Probe Schedule: ${message}`,
-          "info",
-        );
-        continue;
-      }
+      // if (probePending) {
+      //   const { message } = await this.scheduleFakeRejectProbe(
+      //     patient.referralId,
+      //     true,
+      //   );
+      //   createConsoleMessage(
+      //     `Called From Initial Probe Schedule: ${message}`,
+      //     "info",
+      //   );
+      //   continue;
+      // }
     }
   }
 

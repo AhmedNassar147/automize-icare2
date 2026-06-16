@@ -20,12 +20,12 @@ const sendNtfyMessage = async (messsage, referralId, withActions) => {
     baseUrl,
   });
 
-  if (!!(withActions && referralId)) {
+  if (withActions && referralId) {
     actions = [
-      `view, Accept, ${baseUrl}/action?referralId=${referralId}&action=accept`,
-      `view, Reject, ${baseUrl}/action?referralId=${referralId}&action=reject`,
-      `view, Cancel, ${baseUrl}/action?referralId=${referralId}&action=cancel`,
-      `view, Online, ${baseUrl}/action?referralId=${referralId}&action=online`,
+      `http, Accept, ${baseUrl}/action?referralId=${referralId}&action=accept`,
+      `http, Reject, ${baseUrl}/action?referralId=${referralId}&action=reject`,
+      `http, Cancel, ${baseUrl}/action?referralId=${referralId}&action=cancel`,
+      `http, Online, ${baseUrl}/action?referralId=${referralId}&action=online`,
     ].join("; ");
   }
 
