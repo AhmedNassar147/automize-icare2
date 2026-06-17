@@ -36,6 +36,7 @@ import createAndSendInvoiceReport from "./createAndSendInvoiceReport.mjs";
 import formatPatientToTelegramOrWA from "./formatPatientToTelegramOrWA.mjs";
 import { HOME_PAGE_URL, USER_ACTION_TYPES } from "./constants.mjs";
 import handleUserActionOnCase from "./handleUserActionOnCase.mjs";
+import sendNtfyMessage from "./sendNtfyMessage.mjs";
 
 const execAsync = promisify(exec);
 
@@ -1543,8 +1544,41 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   };
 
-  bot.on("polling_error", (err) => {
-    createConsoleMessage(err.message, "warn", "⚠️ Telegram polling error:");
+  let lastPollingErrorNtfyAt = 0;
+
+  bot.on("polling_error", async (err) => {
+    const telegramError = err?.message || String(err);
+
+    let message =
+      `⚠️ Telegram polling error: ${telegramError}\n\n` +
+      "Something went wrong with Telegram polling. Please restart the app.";
+
+    const isTelegramTimeoutError = telegramError.includes("connect ETIMEDOUT");
+
+    if (isTelegramTimeoutError) {
+      message =
+        `⚠️ Telegram polling error: ${telegramError}\n\n` +
+        `1- Close the app and clear the patient data if found.\n` +
+        `2- Go to .env file and set USE_NTFY_AS_CASE_PROVIDER=Y\n` +
+        `3- Restart the app.`;
+    }
+
+    createConsoleMessage(telegramError, "warn", "⚠️ Telegram polling error:");
+
+    const now = Date.now();
+    const shouldNotify = now - lastPollingErrorNtfyAt > 60_000;
+
+    if (shouldNotify) {
+      lastPollingErrorNtfyAt = now;
+
+      await sendNtfyMessage(message).catch((error) => {
+        createConsoleMessage(
+          error,
+          "error",
+          "Failed to send polling error ntfy",
+        );
+      });
+    }
   });
 
   const confirmOnlineIfPending = async ({
