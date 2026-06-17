@@ -25,6 +25,7 @@ const formatPatientToNtfy = (patient) => {
     referralEndDateActionablAt,
     cutoffTimeMs,
     referralEndDate,
+    transferUrl,
   } = patient;
 
   const { BRANCH_NAME, CLIENT_ID, USE_NTFY_AS_CASE_PROVIDER } = process.env;
@@ -51,10 +52,11 @@ const formatPatientToNtfy = (patient) => {
   const message =
     `🚨 New Case Alert!\n\n` +
     `🔢 Referral ID: ${safe(referralId)}\n` +
-    `🔗 Client: ${safe(clientOrBranchName)}\n\n` +
     `🕐 Actionable At: ${safe(referralEndDateActionablAt)}\n` +
     `🕐 Cutoff Time: ${cutoffLabel}\n` +
     `🕐 Ends At: ${safe(referralEndDate)}\n` +
+    `🔗 Client: ${safe(clientOrBranchName)}\n\n` +
+    `🔗 Report: ${safe(transferUrl)}\n\n` +
     `────────────────────────\n\n` +
     `👤 Name: ${safe(patientName)}\n` +
     `📱 Mobile: ${safe(mobileNumber)}\n` +

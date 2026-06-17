@@ -39,7 +39,6 @@ import handleUserActionOnCase from "./handleUserActionOnCase.mjs";
 
 const execAsync = promisify(exec);
 
-const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 const ONLINE_CONFIRM_TIMEOUT_MS = 2 * 60 * 1000;
 
 const COMMANDS = {
@@ -430,39 +429,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         }
       }
 
-      const files = await formatFilesToTelegram(_files);
-
-      if (!files?.length) return;
-
-      const photos = [];
-      const docs = [];
-      const excelFiles = [];
-
-      for (const file of files) {
-        const cleanBase64 = file.fileBase64
-          .replace(/^data:.*?base64,/, "")
-          .trim();
-
-        const buffer = Buffer.from(cleanBase64, "base64");
-        const extension = (file.extension || "pdf").toLowerCase();
-        const filename = `${file.fileName}.${extension}`;
-        const mimeType = getMimeType(extension);
-
-        const item = {
-          buffer,
-          filename,
-          mimeType: mimeType,
-          caption: `📎 ${file.fileName}`,
-        };
-
-        if (extension === "xlsx") {
-          excelFiles.push(item);
-        } else if (imageExtensions.includes(extension)) {
-          photos.push(item);
-        } else {
-          docs.push(item);
-        }
-      }
+      const { docs, excelFiles, photos } = await formatFilesToTelegram(_files);
 
       if (excelFiles.length) {
         // Send PDFs individually
@@ -504,7 +471,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       }
 
       const { fileName: firstFileName } =
-        files.find(({ fileName }) => !!fileName) ?? {};
+        [...docs, ...photos].find(({ fileName }) => !!fileName) ?? {};
 
       const finalMergedFileName = `${firstFileName}_merged`;
 
@@ -514,7 +481,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         finalMergedFileName,
       );
 
-      const compressedMerged = await compressPdfGentlly(merged, {
+      const { compressedMerged } = await compressPdfGentlly(merged, {
         unlinkFilesFinally: true,
       });
 

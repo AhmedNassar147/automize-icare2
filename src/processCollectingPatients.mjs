@@ -10,6 +10,7 @@ import sleep from "./sleep.mjs";
 import insureFetchedPatientData from "./insureFetchedPatientData.mjs";
 import formateDateToString from "./formateDateToString.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
+import uploadToTransferIt from "./uploadToTransferIt.mjs";
 
 const getLeftMsBasedCaseMessage = (caseAlertMessage) => {
   const match = caseAlertMessage.match(
@@ -175,8 +176,29 @@ const processCollectingPatients = async ({
         continue;
       }
 
+      let transferUrl;
+
+      const { USE_NTFY_AS_CASE_PROVIDER } = process.env;
+
+      if (USE_NTFY_AS_CASE_PROVIDER === "Y") {
+        const uploadResult = await uploadToTransferIt({
+          browser,
+          files: patientData.files,
+          title: `ReferralId=${referralId}-report`,
+        });
+        transferUrl = uploadResult.transferUrl;
+
+        if (!uploadResult.success) {
+          createConsoleMessage(
+            `❌ Error uploading files for referralId=${referralId} => uploadResult=${JSON.stringify(uploadResult)}`,
+            "error",
+          );
+        }
+      }
+
       const finalData = {
         referralId,
+        transferUrl,
         ...getSaudiStartAndEndDate({
           referralDate,
           detailsAPiServerResponseTimeMS,

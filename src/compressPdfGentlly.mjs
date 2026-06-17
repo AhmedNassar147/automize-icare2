@@ -9,6 +9,9 @@ import { writeFile, unlink, readFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 
+export const unlinkFiles = (...files) =>
+  Promise.allSettled(files.filter(Boolean).map((file) => unlink(file)));
+
 // 1- install Ghostscript https://ghostscript.com/releases/gsdnld.html
 // 2- add C:\Program Files\gs\gs__your_version\bin to your PATH environment variable
 // 3- check gswin64c --version works in your terminal
@@ -94,11 +97,16 @@ export default async function compressPdfGentlly(pdfBytes, opts = {}) {
 
     await run(gsPath, args);
     const out = await readFile(outFile);
+    const compressedMerged = out.length < buff.length ? out : buff;
 
-    return out.length < buff.length ? out : buff;
+    return {
+      compressedMerged,
+      inFile,
+      outFile,
+    };
   } finally {
     if (unlinkFilesFinally) {
-      await Promise.allSettled([unlink(inFile), unlink(outFile)]);
+      await unlinkFiles(inFile, outFile);
     }
   }
 }
