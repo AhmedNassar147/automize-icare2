@@ -487,16 +487,20 @@ const getExtraTimeBasedLogs = async ({
   // const isMediumGap =
   //   diffFromLastToday > NEAR_CLUSTER_MS && diffFromLastToday < FAR_CASE_MS;
 
-  // for these case 378554, 378546,378768
+  // for these case  378546,378768
   if (isUltraHotCluster) {
     const wait =
-      lastExtraWait > 6 ? Math.max(3, Math.floor(lastExtraWait / 2)) : 0;
+      lastExtraWait > 6
+        ? Math.max(3, Math.floor(lastExtraWait / 2))
+        : lastExtraWait <= 0
+          ? lastExtraWait
+          : 0;
 
     const message =
       `🌉 ultra-hot-cluster referralId=${referralId} ` +
       `diffPath=${lastCaseDiff ?? "none"}→${diff} ` +
       `previousWait=${lastFinalWait} base=${baseWaitingTime} ` +
-      `lastExtra=${lastExtraWait} wait=+${wait}`;
+      `lastExtra=${lastExtraWait} wait=${wait}`;
 
     // you could see intelgram
     // ultra-hot-cluster referralId=378768
