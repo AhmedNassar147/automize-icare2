@@ -471,8 +471,9 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       }
 
       const { baseName } =
-        [...docs, ...photos].find(({ filename }) => !!(filename && baseName)) ??
-        {};
+        [...docs, ...photos].find(
+          ({ filename, baseName }) => !!(filename && baseName),
+        ) ?? {};
 
       const finalMergedFileName = `${baseName || targetReferralIdForButtons}_merged.pdf`;
 
