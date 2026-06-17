@@ -951,7 +951,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
 
     const isActive = value === "1";
-    const isSame = currentNewPregeneratedTokenState === value;
+    const isSame = isEnvValueActive === isActive;
     const status = isActive ? "enabled" : "disabled";
 
     if (isSame) {
