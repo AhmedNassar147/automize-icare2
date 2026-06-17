@@ -1223,7 +1223,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         `────────────────────────\n\n` +
         `*⚙️ current waitingTime* → \`${current}ms\`\n\n` +
         `*📍 Auto waiting* → \`${isAutoWaitingActive ? "Enabled" : "Disabled"}\`\n\n` +
-        `*📍 is Uinsg Real Patient* → \`${referralId === "test" ? "No" : "Yes"}\`\n\n` +
+        `*📍 is Using Real Patient* → \`${referralId === "test" ? "No" : "Yes"}\`\n\n` +
         `${formatResult("📊 Stable diff=0", zeroResult)}\n\n` +
         `${formatResult("📉 Negative diff<0", negativeResult)}\n\n` +
         `${formatResult("📶 RTT normal 70ms", normalRttResult)}\n\n` +
