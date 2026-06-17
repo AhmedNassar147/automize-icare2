@@ -70,7 +70,8 @@ const uploadToTransferIt = async ({
       };
     }
 
-    await fileInput.uploadFile(compressedMerged);
+    const uploadFilePath = compressionResult.usedCompressed ? outFile : inFile;
+    await fileInput.uploadFile(uploadFilePath);
 
     await page.waitForSelector(".js-added-files-section:not(.hidden)", {
       timeout: 30000,

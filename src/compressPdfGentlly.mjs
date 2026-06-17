@@ -97,12 +97,16 @@ export default async function compressPdfGentlly(pdfBytes, opts = {}) {
 
     await run(gsPath, args);
     const out = await readFile(outFile);
-    const compressedMerged = out.length < buff.length ? out : buff;
+
+    const usedCompressed = out.length < buff.length;
+
+    const compressedMerged = usedCompressed ? out : buff;
 
     return {
       compressedMerged,
       inFile,
       outFile,
+      usedCompressed,
     };
   } finally {
     if (unlinkFilesFinally) {
