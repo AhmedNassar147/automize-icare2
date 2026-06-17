@@ -3,6 +3,7 @@
  * Helper: `formatFilesToTelegram`.
  *
  */
+import { parse } from "path";
 import containsExcludedText from "./containsExcludedText.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import getMimeType from "./getMimeType.mjs";
@@ -83,11 +84,15 @@ const formatFilesToTelegram = async (files) => {
 
     const mimeType = getMimeType(extension);
 
+    const { name: baseName, ext } = parse(filename || "");
+
     const item = {
       buffer,
       filename,
       mimeType,
       caption: `📎 ${rawFileName}`,
+      baseName,
+      ext,
     };
 
     if (extension === "xlsx") {

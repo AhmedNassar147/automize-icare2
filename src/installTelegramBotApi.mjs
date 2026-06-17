@@ -470,10 +470,11 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         return;
       }
 
-      const { filename: firstFileName } =
-        [...docs, ...photos].find(({ filename }) => !!filename) ?? {};
+      const { baseName } =
+        [...docs, ...photos].find(({ filename }) => !!(filename && baseName)) ??
+        {};
 
-      const finalMergedFileName = `${firstFileName || "GM-Files"}_merged`;
+      const finalMergedFileName = `${baseName || targetReferralIdForButtons}_merged.pdf`;
 
       const merged = await mergeAllToPdf(
         photos || [],
@@ -490,7 +491,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         compressedMerged,
         {
           reply_to_message_id: messageId,
-          caption: `${finalMergedFileName}`,
+          caption: baseName || "",
         },
         {
           filename: finalMergedFileName,

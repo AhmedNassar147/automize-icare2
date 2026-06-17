@@ -9,12 +9,7 @@ import formatFilesToTelegram from "./formatFilesToTelgram.mjs";
 import mergeAllToPdf from "./mergeFilesToOne.mjs";
 import sleep from "./sleep.mjs";
 
-const uploadToTransferIt = async ({
-  files = [],
-  title = "GM-Files",
-  message = "",
-  browser,
-}) => {
+const uploadToTransferIt = async ({ files = [], message = "", browser }) => {
   if (!browser) {
     return {
       success: false,
@@ -48,10 +43,11 @@ const uploadToTransferIt = async ({
       };
     }
 
-    const { fileName: firstFileName } =
-      files.find(({ fileName }) => !!fileName) ?? {};
+    const { baseName } =
+      [...docs, ...photos].find(({ filename }) => !!(filename && baseName)) ??
+      {};
 
-    const finalMergedFileName = `${firstFileName || "GM-Files"}_merged`;
+    const finalMergedFileName = `${baseName || "Gm-File"}_merged.pdf`;
 
     const mergedFile = await mergeAllToPdf(photos, docs, finalMergedFileName);
 
@@ -82,7 +78,7 @@ const uploadToTransferIt = async ({
     });
 
     await page.click("#glb-title-input", { clickCount: 3 });
-    await page.type("#glb-title-input", title);
+    await page.type("#glb-title-input", finalMergedFileName);
 
     if (message) {
       await page.waitForSelector("#glb-msg-area", {
