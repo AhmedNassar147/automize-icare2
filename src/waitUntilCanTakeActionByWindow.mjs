@@ -1,12 +1,13 @@
 /*
  * Helper: waitUntilCanTakeActionByWindow (poll until last 30ms)
  */
-import { globMedHeaders } from "./constants.mjs";
+import { globMedHeaders, cutoffTimeMs } from "./constants.mjs";
 
 async function waitUntilCanTakeActionByWindow({
   page,
   referralId,
   onZeroSecond,
+  onTimeToGenerateToken,
 }) {
   let fnName = null;
 
@@ -15,10 +16,27 @@ async function waitUntilCanTakeActionByWindow({
     await page.exposeFunction(fnName, onZeroSecond);
   }
 
+  let onTimeToGenerateTokenFnName = null;
+
+  if (onTimeToGenerateToken) {
+    onTimeToGenerateTokenFnName = `onTimeToGenerateToken_${Date.now()}`;
+    await page.exposeFunction(
+      onTimeToGenerateTokenFnName,
+      onTimeToGenerateToken,
+    );
+  }
+
   return await page.evaluate(
-    async ({ globMedHeaders, referralId, fnName }) => {
+    async ({
+      globMedHeaders,
+      referralId,
+      fnName,
+      onTimeToGenerateTokenFnName,
+      cutoffTimeMs,
+    }) => {
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+      let onGenerateTokenCalled = false;
       let onZeroSecondCalled = false;
       let zeroSeenAt = 0;
       let readySeenAt = 0;
@@ -64,6 +82,16 @@ async function waitUntilCanTakeActionByWindow({
             const secsLeft = parseInt(match?.[2], 10) || 0;
 
             totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
+
+            if (
+              totalMsLeft <= cutoffTimeMs &&
+              totalMsLeft >= 10 &&
+              !onGenerateTokenCalled &&
+              onTimeToGenerateTokenFnName
+            ) {
+              onGenerateTokenCalled = true;
+              await window[onTimeToGenerateTokenFnName]?.();
+            }
 
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
               await window[fnName]?.();
@@ -149,6 +177,8 @@ async function waitUntilCanTakeActionByWindow({
       globMedHeaders,
       referralId,
       fnName,
+      onTimeToGenerateTokenFnName,
+      cutoffTimeMs,
     },
   );
 }

@@ -38,8 +38,12 @@ const handleCaseAcceptanceOrRejection =
     } = patient;
 
     try {
-      const { CLIENT_NAME, WAIT_FOR_ACCEPT_MS, ENABLE_AUTO_WAITING } =
-        process.env;
+      const {
+        CLIENT_NAME,
+        WAIT_FOR_ACCEPT_MS,
+        ENABLE_AUTO_WAITING,
+        USE_PREGENERATED_TOKEN_WAY,
+      } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
       const isFakeReject = actionType === FAKE_REJECT_PROBE;
@@ -51,6 +55,9 @@ const handleCaseAcceptanceOrRejection =
         );
 
       const routerKey = Math.random().toString(36).slice(2, 8);
+
+      const shouldGenerateToken =
+        USE_PREGENERATED_TOKEN_WAY === "Y" && isAcceptanceAction;
 
       const onZeroSecond = () => {
         if (isFakeReject) {
@@ -66,6 +73,21 @@ const handleCaseAcceptanceOrRejection =
             clientName: CLIENT_NAME,
             fileName,
             actionType,
+            routerKey,
+            shouldUsePreGeneratedToken: shouldGenerateToken,
+          },
+        });
+      };
+
+      const onTimeToGenerateToken = () => {
+        if (isFakeReject || !shouldGenerateToken) {
+          return;
+        }
+        broadcast({
+          type: "generate-token",
+          data: {
+            referralId,
+            shouldGenerateToken,
             routerKey,
           },
         });
@@ -142,6 +164,7 @@ const handleCaseAcceptanceOrRejection =
         page,
         referralId,
         onZeroSecond,
+        onTimeToGenerateToken,
       });
 
       const diff = referralEndTimestamp - readySeenAt;

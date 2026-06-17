@@ -302,9 +302,9 @@ function moveAcceptButtonToTopLevelChildren(
   return next;
 }
 
-const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
+const getAccpetanceButtonHandlerSection = (acceptButton, sourceCode = "") => {
   const handlerName = extractOnClickHandler(acceptButton);
-  if (!handlerName) return sourceCode; // safely skip this patch
+  if (!handlerName) return undefined; // safely skip this patch
 
   // 2) Find where that handler starts: "Rt = async (...) => {"
   const handlerStartRegex = new RegExp(
@@ -313,19 +313,51 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   const startMatch = sourceCode.match(handlerStartRegex);
 
   if (!startMatch) {
-    return sourceCode;
+    return undefined;
   }
 
   const startIndex = startMatch.index;
   if (startIndex == null || startIndex < 0) {
-    return sourceCode;
+    return undefined;
   }
 
   // 3) Take a window after the start of the handler (3.5k chars worked for you)
   const WINDOW_SIZE = 1500;
   const windowStart = startIndex;
   const windowEnd = Math.min(sourceCode.length, windowStart + WINDOW_SIZE);
-  let segment = sourceCode.slice(windowStart, windowEnd);
+  return {
+    segmentSection: sourceCode.slice(windowStart, windowEnd),
+    windowStart,
+    windowEnd,
+  };
+};
+
+const addFilesFromLocalStorage = (
+  sourceCode,
+  acceptButton,
+  recaptchaTrigerFnName,
+) => {
+  let result = getAccpetanceButtonHandlerSection(acceptButton, sourceCode);
+
+  if (!result) {
+    return sourceCode;
+  }
+
+  const { segmentSection, windowStart, windowEnd } = result;
+  let segment = segmentSection;
+
+  if (recaptchaTrigerFnName) {
+    const regex = new RegExp(
+      `((?:const|let|var)\\s+(\\w+)\\s*=\\s*)await\\s+${recaptchaTrigerFnName}\\s*\\(\\s*\\)\\s*;`,
+      "g",
+    );
+
+    segment = segment.replace(
+      regex,
+      (_, declaration) =>
+        `const cachedToken=localStorage.getItem("prgenerateTkn");${declaration}cachedToken?{success:true,token:cachedToken}:await ${recaptchaTrigerFnName}();`,
+    );
+  }
 
   // 4) Inside that segment, find which variable is assigned to `files:`
   const filesVarRegex = /files:\s*([A-Za-z_$][\w$]*)/;
@@ -374,89 +406,42 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   return sourceCode;
 };
 
-const addPrepareButton = (sectionText, acceptButtonObject) => {
+const getRecaptchaFunctionRelatedToAcceptFunction = (sourceCode) => {
+  const searchStr =
+    '{"/dashboard/referral":{name:"Dashboard",path:"/Dashboard/Referral"}';
+
+  const index = sourceCode.indexOf(searchStr);
+  if (index > 0) {
+    const slicedString = sourceCode.slice(index - 214, index);
+    const match = slicedString.match(/triggerRecaptcha:(\w+)/) || [];
+    return match[1];
+  }
+  // Or case-insensitive
+  const indexCI = sourceCode.toLowerCase().indexOf(searchStr.toLowerCase());
+
+  if (indexCI > 0) {
+    const slicedString = sourceCode.slice(indexCI - 214, indexCI);
+    const match = slicedString.match(/triggerRecaptcha:(\w+)/) || [];
+    return match[1];
+  }
+
+  return undefined;
+};
+
+const addPrepareButton = (
+  sectionText,
+  acceptButtonObject,
+  recaptchaTrigerFnName,
+) => {
   const injectedOnClick =
-    "onClick:async(e)=>{" +
-    "const btn=e.currentTarget;" +
-    'if(btn.dataset.phase==="ready"){return;}' +
-    "btn.disabled=true;" +
-    "if(!btn.dataset.startTime){btn.dataset.startTime=String(Date.now());}" +
-    "const _startTime=Number(btn.dataset.startTime);" +
-    'const phase=btn.dataset.phase||"";' +
-    "console.log('[GM] prepare clicked, phase='+phase+' started at '+new Date(_startTime).toISOString());" +
-    'btn.style.fontWeight="bold";' +
-    'btn.style.fontSize="15px";' +
-    'const waitTime=Number(localStorage.getItem("GM__TIME")||0);' +
-    'const extraWaitTime=Number(localStorage.getItem("GM__EXTRA_TIME")||0);' +
-    // Shared fetch logic - returns true if ready
-    "const doFetch=async()=>{" +
-    'btn.innerText="Fetching...";' +
-    "let resultDATA=await refetchReferralDetails();" +
-    "const msg=resultDATA?.data?.message||'';" +
-    "if(!msg){" +
-    "console.log('[GM] ready, no message',resultDATA);" +
-    "await fetch(location.href);" +
-    "await refetchPatientInfo();" +
-    "resultDATA=await refetchReferralDetails();" +
-    "const _readyTime=Date.now();" +
-    "console.log('[GM] ready at '+new Date(_readyTime).toISOString()+' took '+((_readyTime-_startTime)/1000).toFixed(3)+'s');" +
-    'btn.innerText="Ready";' +
-    "btn.style.backgroundColor='#56c75d';" +
-    'btn.dataset.phase="ready";' +
-    "btn.disabled=true;" +
-    "return true;" +
-    "}else{" +
-    "const match=msg.match(/(\\d+)\\s*(?:minute(?:\\(s\\))?|mins?|min)\\s+and\\s+(\\d+)\\s*(?:second(?:\\(s\\))?|secs?|sec)/);" +
-    "const minsLeft=parseInt(match?.[1],10)||0;" +
-    "const secsLeft=parseInt(match?.[2],10)||0;" +
-    "console.log('[GM] not ready, message='+msg+' mins='+minsLeft+' secs='+secsLeft);" +
-    'btn.innerText="Click again: "+minsLeft+"m "+secsLeft+"s";' +
-    'btn.style.backgroundColor="#ff3d57";' +
-    'btn.dataset.phase="countdown_done";' +
-    "btn.disabled=false;" +
-    "return false;" +
+    "onClick:async()=>{" +
+    'const shouldGenerateToken=localStorage.getItem("shouldGenerateTkn")==="1";' +
+    `if(shouldGenerateToken&&${recaptchaTrigerFnName}){` +
+    `const result=await ${recaptchaTrigerFnName}();` +
+    "if(result.success){" +
+    'localStorage.setItem("prgenerateTkn",result.token);' +
+    "document.querySelector('a[href=\"/dashboard/referral\"]')?.click?.();" +
     "}" +
-    "};" +
-    // Phase: countdown already done, skip straight to fetch
-    'if(phase==="countdown_done"){' +
-    "try{await doFetch();}" +
-    "catch(e){console.log('Error',e)}" +
-    "return;" +
-    "}" +
-    // Phase: first click — full countdown using while loop
-    'if(!waitTime||waitTime<=0){btn.innerText="No time set";btn.disabled=false;return;}' +
-    "const start=Date.now();" +
-    "while(true){" +
-    "const elapsed=Date.now()-start;" +
-    "const left=Math.max(0,waitTime-elapsed);" +
-    "const progress=Math.min(1,elapsed/waitTime);" +
-    'btn.innerText=" "+(elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
-    "if(left<=110&&!!extraWaitTime){" +
-    "let isReady=false;" +
-    "try{isReady=await doFetch();}" +
-    "catch(e){console.log('Error',e)}" +
-    "const remaining=Math.max(0,(waitTime-(Date.now()-start))+extraWaitTime);" +
-    "if(isReady&&remaining>0)await new Promise(r=>setTimeout(r,remaining));" +
-    "break;" +
-    "}" +
-    "if(left<=0){break;}" +
-    "let delay;" +
-    "if(progress<0.3){delay=40+Math.random()*20;}" +
-    "else if(progress<0.8){delay=120+Math.random()*80;}" +
-    "else{delay=30+Math.random()*20;}" +
-    "delay=Math.min(left,delay);" +
-    "await new Promise(r=>setTimeout(r,delay));" +
-    "}" +
-    // After countdown completes
-    'if(btn.dataset.phase!=="ready"){' +
-    'btn.dataset.phase="countdown_done";' +
-    'btn.innerText="Click again";' +
-    'btn.style.backgroundColor="#ff3d57";' +
-    "btn.disabled=false;" +
-    "}else{" +
-    'btn.innerText="Ready";' +
-    "btn.style.backgroundColor='#56c75d';" +
-    "btn.disabled=true;" +
     "}" +
     "}";
 
@@ -472,185 +457,6 @@ const addPrepareButton = (sectionText, acceptButtonObject) => {
   );
 };
 
-const getDashboardButtonAliases = (sourceCode) => {
-  const idx = sourceCode.indexOf('"CREATE_REFERRAL"');
-  if (idx === -1) return null;
-
-  const snippet = sourceCode.slice(Math.max(0, idx - 600), idx + 50);
-
-  const btnMatch = snippet.match(
-    /children:\s*[A-Za-z_$][\w$]*\.jsx\(([A-Za-z_$][\w$]*),\s*\{\s*variant:\s*"contained"/,
-  );
-
-  const iconMatch = snippet.match(
-    /[A-Za-z_$][\w$]*\.jsx\(([A-Za-z_$][\w$]*),\s*\{\s*children:\s*"add"\s*\}/,
-  );
-
-  if (!btnMatch || !iconMatch) return null;
-
-  return { btnAlias: btnMatch[1], iconAlias: iconMatch[1] };
-};
-
-const addSettingsToDashboard = (sourceCode) => {
-  const btnPattern =
-    /(children:\s*[A-Za-z_$][\w$]*\s*\(\s*"CREATE_REFERRAL"\s*\)\s*\}\)\s*\}\))(\])/;
-
-  if (!btnPattern.test(sourceCode)) {
-    console.warn("[GM] addSettingsToDashboard: button anchor not found");
-    return sourceCode;
-  }
-
-  const dialogPattern = /(categoryReference:[^\]]+\]\}\))(\])/;
-
-  if (!dialogPattern.test(sourceCode)) {
-    console.warn("[GM] addSettingsToDashboard: dialog anchor not found");
-    return sourceCode;
-  }
-
-  const reactAlias = getReactAlias(sourceCode);
-  const aliases = getDashboardButtonAliases(sourceCode);
-
-  if (!aliases) {
-    console.warn("[GM] addSettingsToDashboard: button aliases not found");
-    return sourceCode;
-  }
-
-  const { btnAlias, iconAlias } = aliases;
-
-  const CSS =
-    `#gm-dialog{border:none;border-radius:8px;padding:24px;min-width:360px;box-shadow:0 11px 15px rgba(0,0,0,0.2);font-family:Roboto,sans-serif;}` +
-    `#gm-dialog::backdrop{background:rgba(0,0,0,0.5);}` +
-    `#gm-dialog h2{margin:0 0 20px;font-size:1.25rem;font-weight:500;color:white;}` +
-    `#gm-dialog label{display:block;font-size:0.875rem;color:white;margin-bottom:4px;}` +
-    `#gm-dialog input[type=number]{width:100%;padding:8px 12px;border:1px solid rgba(0,0,0,0.23);border-radius:4px;font-size:1rem;box-sizing:border-box;outline:none;transition:border-color 0.2s;}` +
-    `#gm-dialog input[type=number]:focus{border-color:#1976d2;border-width:2px;}` +
-    `#gm-dialog .gm-field{margin-bottom:16px;}` +
-    `#gm-dialog .gm-input-row{display:flex;align-items:center;gap:8px;}` +
-    `#gm-dialog .gm-input-row input{flex:1;}` +
-    `#gm-dialog .gm-seconds{font-size:0.875rem;color:white;white-space:nowrap;min-width:48px;}` +
-    `#gm-dialog .gm-checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;}` +
-    `#gm-dialog .gm-checkbox-row input[type=checkbox]{width:18px;height:18px;cursor:pointer;}` +
-    `#gm-dialog .gm-checkbox-row span{font-size:0.875rem;color:white;}` +
-    `#gm-dialog .gm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;}` +
-    `#gm-dialog button{padding:6px 16px;border-radius:4px;font-size:0.875rem;font-weight:500;cursor:pointer;border:none;text-transform:uppercase;letter-spacing:0.02857em;}` +
-    `#gm-dialog .gm-btn-cancel{background:transparent;color:#1976d2;}` +
-    `#gm-dialog .gm-btn-cancel:hover{background:rgba(25,118,210,0.04);}` +
-    `#gm-dialog .gm-btn-save{background:#1976d2;color:#fff;}` +
-    `#gm-dialog .gm-btn-save:hover{background:#1565c0;}`;
-
-  const onClickHandler =
-    `async()=>{` +
-    `const dialog=document.getElementById('gm-dialog');` +
-    `if(!dialog)return;` +
-    `if(!dialog.dataset.init){` +
-    `dialog.dataset.init='1';` +
-    `const style=document.createElement('style');` +
-    `style.textContent='${CSS}';` +
-    `document.head.appendChild(style);` +
-    `const enforceMax4=function(){if(this.value.length>4)this.value=this.value.slice(0,4);};` +
-    `const updateSeconds=(inputId,spanId)=>{` +
-    `const input=document.getElementById(inputId);` +
-    `const span=document.getElementById(spanId);` +
-    `if(!input||!span)return;` +
-    `input.addEventListener('input',function(){` +
-    `enforceMax4.call(this);` +
-    `const ms=parseInt(this.value,10);` +
-    `span.textContent=isNaN(ms)||ms<=0?'':(ms/1000).toFixed(3)+'s';` +
-    `});` +
-    `};` +
-    `updateSeconds('gm-wait-input','gm-wait-seconds');` +
-    `updateSeconds('gm-extra-input','gm-extra-seconds');` +
-    `document.getElementById('gm-cancel')?.addEventListener('click',()=>dialog.close());` +
-    `document.getElementById('gm-extra-check')?.addEventListener('change',function(){` +
-    `document.getElementById('gm-extra-field').style.display=this.checked?'block':'none';` +
-    `});` +
-    `document.getElementById('gm-save')?.addEventListener('click',async()=>{` +
-    `const waitVal=parseInt(document.getElementById('gm-wait-input')?.value,10);` +
-    `const ec=document.getElementById('gm-extra-check');` +
-    `const extraVal=ec?.checked?parseInt(document.getElementById('gm-extra-input')?.value,10):undefined;` +
-    `try{` +
-    `await fetch('https://localhost:8443/settings',{` +
-    `method:'POST',` +
-    `headers:{'Content-Type':'application/json'},` +
-    `body:JSON.stringify({whatsAppWait:waitVal,waitBeforeReady:extraVal})` +
-    `});` +
-    `}catch(e){console.log('[GM] save settings failed',e);}` +
-    `dialog.close();` +
-    `});` +
-    `dialog.addEventListener('click',function(e){` +
-    `const rect=dialog.getBoundingClientRect();` +
-    `if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)dialog.close();` +
-    `});` +
-    `}` +
-    // Load values from API on every open
-    `const waitInput=document.getElementById('gm-wait-input');` +
-    `const waitSeconds=document.getElementById('gm-wait-seconds');` +
-    `const extraCheck=document.getElementById('gm-extra-check');` +
-    `const extraField=document.getElementById('gm-extra-field');` +
-    `const extraInput=document.getElementById('gm-extra-input');` +
-    `const extraSeconds=document.getElementById('gm-extra-seconds');` +
-    `try{` +
-    `const res=await fetch('https://localhost:8443/settings');` +
-    `const settings=await res.json();` +
-    `if(waitInput)waitInput.value=settings.whatsAppWait||'';` +
-    `if(waitSeconds&&settings.whatsAppWait)waitSeconds.textContent=(settings.whatsAppWait/1000).toFixed(3)+'s';` +
-    `const hasExtra=!!settings.waitBeforeReady;` +
-    `if(extraCheck)extraCheck.checked=hasExtra;` +
-    `if(extraField)extraField.style.display=hasExtra?'block':'none';` +
-    `if(extraInput)extraInput.value=settings.waitBeforeReady||'';` +
-    `if(extraSeconds&&settings.waitBeforeReady)extraSeconds.textContent=(settings.waitBeforeReady/1000).toFixed(3)+'s';` +
-    `}catch(e){console.log('[GM] load settings failed',e);}` +
-    `dialog.showModal();` +
-    `}`;
-
-  // Inject settings button into dashboard button row
-  const settingsBtn =
-    `,${reactAlias}.jsx(${btnAlias},{variant:"contained",color:"primary",size:"small",` +
-    `startIcon:${reactAlias}.jsx(${iconAlias},{children:"settings"}),` +
-    `onClick:${onClickHandler},` +
-    `children:"😉 Settings"})`;
-
-  sourceCode = sourceCode.replace(
-    btnPattern,
-    (_, before, bracket) => before + settingsBtn + bracket,
-  );
-
-  // Inject dialog as native React element into dashboard JSX
-  const dialogEl =
-    `,${reactAlias}.jsx("dialog",{id:"gm-dialog",children:[` +
-    `${reactAlias}.jsx("h2",{children:"Set Settings for next patient"}),` +
-    `${reactAlias}.jsx("div",{className:"gm-field",children:[` +
-    `${reactAlias}.jsx("label",{children:"WAIT_FOR_ACCEPT_MS (whatsapp) (ms)"}),` +
-    `${reactAlias}.jsx("div",{className:"gm-input-row",children:[` +
-    `${reactAlias}.jsx("input",{id:"gm-wait-input",type:"number",min:0,step:1,placeholder:"e.g. 1975"}),` +
-    `${reactAlias}.jsx("span",{id:"gm-wait-seconds",className:"gm-seconds"})` +
-    `]})` +
-    `]}),` +
-    `${reactAlias}.jsx("div",{className:"gm-checkbox-row",children:[` +
-    `${reactAlias}.jsx("input",{id:"gm-extra-check",type:"checkbox"}),` +
-    `${reactAlias}.jsx("span",{children:"Enter in last second"})` +
-    `]}),` +
-    `${reactAlias}.jsx("div",{id:"gm-extra-field",className:"gm-field",style:{display:"none"},children:[` +
-    `${reactAlias}.jsx("label",{children:"How long to wait before ready (ms)"}),` +
-    `${reactAlias}.jsx("div",{className:"gm-input-row",children:[` +
-    `${reactAlias}.jsx("input",{id:"gm-extra-input",type:"number",min:0,step:1,placeholder:"e.g. 2181"}),` +
-    `${reactAlias}.jsx("span",{id:"gm-extra-seconds",className:"gm-seconds"})` +
-    `]})` +
-    `]}),` +
-    `${reactAlias}.jsx("div",{className:"gm-actions",children:[` +
-    `${reactAlias}.jsx("button",{className:"gm-btn-cancel",id:"gm-cancel",children:"Cancel"}),` +
-    `${reactAlias}.jsx("button",{className:"gm-btn-save",id:"gm-save",children:"Save"})` +
-    `]})` +
-    `]})`;
-
-  sourceCode = sourceCode.replace(
-    dialogPattern,
-    (_, before, bracket) => before + dialogEl + bracket,
-  );
-
-  return sourceCode;
-};
-
 const addAcceptClickLogger = (sourceCode) => {
   const injection =
     'document.addEventListener("click",function(e){' +
@@ -659,6 +465,7 @@ const addAcceptClickLogger = (sourceCode) => {
     "if(!btn)return;" +
     'const txt=btn.innerText||"";' +
     'if(!txt.includes("Accept"))return;' +
+    "localStorage.removeItem('prgenerateTkn');" +
     'const pb=document.querySelector("[data-gm-prepare]");' +
     'const k=Date.now()+"GM__PREPARE_TIME";' +
     'const k_v=pb?.innerText||"";' +
@@ -673,7 +480,7 @@ const addAcceptClickLogger = (sourceCode) => {
 function modifyGlobMedSourceCode(code) {
   let _sourceCode = code;
 
-  _sourceCode = addSettingsToDashboard(_sourceCode);
+  // _sourceCode = addSettingsToDashboard(_sourceCode);
 
   // Usage — synchronous, no await needed
   _sourceCode = makeApisExposeRefetch(
@@ -728,14 +535,21 @@ function modifyGlobMedSourceCode(code) {
 
   const acceptText = accept.text;
 
-  sectionText = addPrepareButton(sectionText, accept);
+  const recaptchaTrigerFnName =
+    getRecaptchaFunctionRelatedToAcceptFunction(sourceCode);
+
+  sectionText = addPrepareButton(sectionText, accept, recaptchaTrigerFnName);
 
   sourceCode =
     sourceCode.slice(0, section.start) +
     sectionText +
     sourceCode.slice(section.end);
 
-  sourceCode = addFilesFromLocalStorage(sourceCode, acceptText);
+  sourceCode = addFilesFromLocalStorage(
+    sourceCode,
+    acceptText,
+    recaptchaTrigerFnName,
+  );
 
   return addAcceptClickLogger(sourceCode);
 }
@@ -747,3 +561,182 @@ function modifyGlobMedSourceCode(code) {
 // await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;
+
+// const getDashboardButtonAliases = (sourceCode) => {
+//   const idx = sourceCode.indexOf('"CREATE_REFERRAL"');
+//   if (idx === -1) return null;
+
+//   const snippet = sourceCode.slice(Math.max(0, idx - 600), idx + 50);
+
+//   const btnMatch = snippet.match(
+//     /children:\s*[A-Za-z_$][\w$]*\.jsx\(([A-Za-z_$][\w$]*),\s*\{\s*variant:\s*"contained"/,
+//   );
+
+//   const iconMatch = snippet.match(
+//     /[A-Za-z_$][\w$]*\.jsx\(([A-Za-z_$][\w$]*),\s*\{\s*children:\s*"add"\s*\}/,
+//   );
+
+//   if (!btnMatch || !iconMatch) return null;
+
+//   return { btnAlias: btnMatch[1], iconAlias: iconMatch[1] };
+// };
+
+// const addSettingsToDashboard = (sourceCode) => {
+//   const btnPattern =
+//     /(children:\s*[A-Za-z_$][\w$]*\s*\(\s*"CREATE_REFERRAL"\s*\)\s*\}\)\s*\}\))(\])/;
+
+//   if (!btnPattern.test(sourceCode)) {
+//     console.warn("[GM] addSettingsToDashboard: button anchor not found");
+//     return sourceCode;
+//   }
+
+//   const dialogPattern = /(categoryReference:[^\]]+\]\}\))(\])/;
+
+//   if (!dialogPattern.test(sourceCode)) {
+//     console.warn("[GM] addSettingsToDashboard: dialog anchor not found");
+//     return sourceCode;
+//   }
+
+//   const reactAlias = getReactAlias(sourceCode);
+//   const aliases = getDashboardButtonAliases(sourceCode);
+
+//   if (!aliases) {
+//     console.warn("[GM] addSettingsToDashboard: button aliases not found");
+//     return sourceCode;
+//   }
+
+//   const { btnAlias, iconAlias } = aliases;
+
+//   const CSS =
+//     `#gm-dialog{border:none;border-radius:8px;padding:24px;min-width:360px;box-shadow:0 11px 15px rgba(0,0,0,0.2);font-family:Roboto,sans-serif;}` +
+//     `#gm-dialog::backdrop{background:rgba(0,0,0,0.5);}` +
+//     `#gm-dialog h2{margin:0 0 20px;font-size:1.25rem;font-weight:500;color:white;}` +
+//     `#gm-dialog label{display:block;font-size:0.875rem;color:white;margin-bottom:4px;}` +
+//     `#gm-dialog input[type=number]{width:100%;padding:8px 12px;border:1px solid rgba(0,0,0,0.23);border-radius:4px;font-size:1rem;box-sizing:border-box;outline:none;transition:border-color 0.2s;}` +
+//     `#gm-dialog input[type=number]:focus{border-color:#1976d2;border-width:2px;}` +
+//     `#gm-dialog .gm-field{margin-bottom:16px;}` +
+//     `#gm-dialog .gm-input-row{display:flex;align-items:center;gap:8px;}` +
+//     `#gm-dialog .gm-input-row input{flex:1;}` +
+//     `#gm-dialog .gm-seconds{font-size:0.875rem;color:white;white-space:nowrap;min-width:48px;}` +
+//     `#gm-dialog .gm-checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;}` +
+//     `#gm-dialog .gm-checkbox-row input[type=checkbox]{width:18px;height:18px;cursor:pointer;}` +
+//     `#gm-dialog .gm-checkbox-row span{font-size:0.875rem;color:white;}` +
+//     `#gm-dialog .gm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;}` +
+//     `#gm-dialog button{padding:6px 16px;border-radius:4px;font-size:0.875rem;font-weight:500;cursor:pointer;border:none;text-transform:uppercase;letter-spacing:0.02857em;}` +
+//     `#gm-dialog .gm-btn-cancel{background:transparent;color:#1976d2;}` +
+//     `#gm-dialog .gm-btn-cancel:hover{background:rgba(25,118,210,0.04);}` +
+//     `#gm-dialog .gm-btn-save{background:#1976d2;color:#fff;}` +
+//     `#gm-dialog .gm-btn-save:hover{background:#1565c0;}`;
+
+//   const onClickHandler =
+//     `async()=>{` +
+//     `const dialog=document.getElementById('gm-dialog');` +
+//     `if(!dialog)return;` +
+//     `if(!dialog.dataset.init){` +
+//     `dialog.dataset.init='1';` +
+//     `const style=document.createElement('style');` +
+//     `style.textContent='${CSS}';` +
+//     `document.head.appendChild(style);` +
+//     `const enforceMax4=function(){if(this.value.length>4)this.value=this.value.slice(0,4);};` +
+//     `const updateSeconds=(inputId,spanId)=>{` +
+//     `const input=document.getElementById(inputId);` +
+//     `const span=document.getElementById(spanId);` +
+//     `if(!input||!span)return;` +
+//     `input.addEventListener('input',function(){` +
+//     `enforceMax4.call(this);` +
+//     `const ms=parseInt(this.value,10);` +
+//     `span.textContent=isNaN(ms)||ms<=0?'':(ms/1000).toFixed(3)+'s';` +
+//     `});` +
+//     `};` +
+//     `updateSeconds('gm-wait-input','gm-wait-seconds');` +
+//     `updateSeconds('gm-extra-input','gm-extra-seconds');` +
+//     `document.getElementById('gm-cancel')?.addEventListener('click',()=>dialog.close());` +
+//     `document.getElementById('gm-extra-check')?.addEventListener('change',function(){` +
+//     `document.getElementById('gm-extra-field').style.display=this.checked?'block':'none';` +
+//     `});` +
+//     `document.getElementById('gm-save')?.addEventListener('click',async()=>{` +
+//     `const waitVal=parseInt(document.getElementById('gm-wait-input')?.value,10);` +
+//     `const ec=document.getElementById('gm-extra-check');` +
+//     `const extraVal=ec?.checked?parseInt(document.getElementById('gm-extra-input')?.value,10):undefined;` +
+//     `try{` +
+//     `await fetch('https://localhost:8443/settings',{` +
+//     `method:'POST',` +
+//     `headers:{'Content-Type':'application/json'},` +
+//     `body:JSON.stringify({whatsAppWait:waitVal,waitBeforeReady:extraVal})` +
+//     `});` +
+//     `}catch(e){console.log('[GM] save settings failed',e);}` +
+//     `dialog.close();` +
+//     `});` +
+//     `dialog.addEventListener('click',function(e){` +
+//     `const rect=dialog.getBoundingClientRect();` +
+//     `if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)dialog.close();` +
+//     `});` +
+//     `}` +
+//     // Load values from API on every open
+//     `const waitInput=document.getElementById('gm-wait-input');` +
+//     `const waitSeconds=document.getElementById('gm-wait-seconds');` +
+//     `const extraCheck=document.getElementById('gm-extra-check');` +
+//     `const extraField=document.getElementById('gm-extra-field');` +
+//     `const extraInput=document.getElementById('gm-extra-input');` +
+//     `const extraSeconds=document.getElementById('gm-extra-seconds');` +
+//     `try{` +
+//     `const res=await fetch('https://localhost:8443/settings');` +
+//     `const settings=await res.json();` +
+//     `if(waitInput)waitInput.value=settings.whatsAppWait||'';` +
+//     `if(waitSeconds&&settings.whatsAppWait)waitSeconds.textContent=(settings.whatsAppWait/1000).toFixed(3)+'s';` +
+//     `const hasExtra=!!settings.waitBeforeReady;` +
+//     `if(extraCheck)extraCheck.checked=hasExtra;` +
+//     `if(extraField)extraField.style.display=hasExtra?'block':'none';` +
+//     `if(extraInput)extraInput.value=settings.waitBeforeReady||'';` +
+//     `if(extraSeconds&&settings.waitBeforeReady)extraSeconds.textContent=(settings.waitBeforeReady/1000).toFixed(3)+'s';` +
+//     `}catch(e){console.log('[GM] load settings failed',e);}` +
+//     `dialog.showModal();` +
+//     `}`;
+
+//   // Inject settings button into dashboard button row
+//   const settingsBtn =
+//     `,${reactAlias}.jsx(${btnAlias},{variant:"contained",color:"primary",size:"small",` +
+//     `startIcon:${reactAlias}.jsx(${iconAlias},{children:"settings"}),` +
+//     `onClick:${onClickHandler},` +
+//     `children:"😉 Settings"})`;
+
+//   sourceCode = sourceCode.replace(
+//     btnPattern,
+//     (_, before, bracket) => before + settingsBtn + bracket,
+//   );
+
+//   // Inject dialog as native React element into dashboard JSX
+//   const dialogEl =
+//     `,${reactAlias}.jsx("dialog",{id:"gm-dialog",children:[` +
+//     `${reactAlias}.jsx("h2",{children:"Set Settings for next patient"}),` +
+//     `${reactAlias}.jsx("div",{className:"gm-field",children:[` +
+//     `${reactAlias}.jsx("label",{children:"WAIT_FOR_ACCEPT_MS (whatsapp) (ms)"}),` +
+//     `${reactAlias}.jsx("div",{className:"gm-input-row",children:[` +
+//     `${reactAlias}.jsx("input",{id:"gm-wait-input",type:"number",min:0,step:1,placeholder:"e.g. 1975"}),` +
+//     `${reactAlias}.jsx("span",{id:"gm-wait-seconds",className:"gm-seconds"})` +
+//     `]})` +
+//     `]}),` +
+//     `${reactAlias}.jsx("div",{className:"gm-checkbox-row",children:[` +
+//     `${reactAlias}.jsx("input",{id:"gm-extra-check",type:"checkbox"}),` +
+//     `${reactAlias}.jsx("span",{children:"Enter in last second"})` +
+//     `]}),` +
+//     `${reactAlias}.jsx("div",{id:"gm-extra-field",className:"gm-field",style:{display:"none"},children:[` +
+//     `${reactAlias}.jsx("label",{children:"How long to wait before ready (ms)"}),` +
+//     `${reactAlias}.jsx("div",{className:"gm-input-row",children:[` +
+//     `${reactAlias}.jsx("input",{id:"gm-extra-input",type:"number",min:0,step:1,placeholder:"e.g. 2181"}),` +
+//     `${reactAlias}.jsx("span",{id:"gm-extra-seconds",className:"gm-seconds"})` +
+//     `]})` +
+//     `]}),` +
+//     `${reactAlias}.jsx("div",{className:"gm-actions",children:[` +
+//     `${reactAlias}.jsx("button",{className:"gm-btn-cancel",id:"gm-cancel",children:"Cancel"}),` +
+//     `${reactAlias}.jsx("button",{className:"gm-btn-save",id:"gm-save",children:"Save"})` +
+//     `]})` +
+//     `]})`;
+
+//   sourceCode = sourceCode.replace(
+//     dialogPattern,
+//     (_, before, bracket) => before + dialogEl + bracket,
+//   );
+
+//   return sourceCode;
+// };
