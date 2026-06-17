@@ -429,7 +429,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         }
       }
 
-      const { docs, excelFiles, photos } = await formatFilesToTelegram(_files);
+      const { docs, photos, excelFiles } = await formatFilesToTelegram(_files);
 
       if (excelFiles.length) {
         // Send PDFs individually
@@ -470,10 +470,10 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         return;
       }
 
-      const { fileName: firstFileName } =
-        [...docs, ...photos].find(({ fileName }) => !!fileName) ?? {};
+      const { filename: firstFileName } =
+        [...docs, ...photos].find(({ filename }) => !!filename) ?? {};
 
-      const finalMergedFileName = `${firstFileName}_merged`;
+      const finalMergedFileName = `${firstFileName || "GM-Files"}_merged`;
 
       const merged = await mergeAllToPdf(
         photos || [],
@@ -493,7 +493,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
           caption: `${finalMergedFileName}`,
         },
         {
-          filename: `${finalMergedFileName}.pdf`,
+          filename: finalMergedFileName,
           contentType: "application/pdf",
         },
       );
