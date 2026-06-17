@@ -1131,7 +1131,6 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       return;
     }
 
-    const referralEndTimestamp = Date.now();
     const { ENABLE_AUTO_WAITING, WAIT_FOR_ACCEPT_MS } = process.env;
     const current = Number(WAIT_FOR_ACCEPT_MS);
     const isAutoWaitingActive = ENABLE_AUTO_WAITING === "1";
@@ -1140,22 +1139,30 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       `${title} → extra \`${result.computedExtraWait}ms\` → *\`${current + result.computedExtraWait}ms\`*\n` +
       `${result.computedExtraBotMessages.join("\n") || "No messages"}`;
 
-    const zeroResult = await getExtraTimeBasedLogs({
+    const firstGoingToAccept = patientsStore.getFirstGoingToAccept(true);
+
+    const { referralId, referralEndTimestamp } = {
       referralId: "test",
+      referralEndTimestamp: Date.now(),
+      ...(firstGoingToAccept || {}),
+    };
+
+    const zeroResult = await getExtraTimeBasedLogs({
+      referralId,
       referralEndTimestamp,
       diff: 0,
       baseWaitingTime: current,
     });
 
     const negativeResult = await getExtraTimeBasedLogs({
-      referralId: "test",
+      referralId,
       referralEndTimestamp,
       diff: -1000,
       baseWaitingTime: current,
     });
 
     const normalRttResult = await getExtraTimeBasedLogs({
-      referralId: "test",
+      referralId,
       referralEndTimestamp,
       diff: 0,
       rtt: 70,
@@ -1163,7 +1170,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     });
 
     const rtt95Result = await getExtraTimeBasedLogs({
-      referralId: "test",
+      referralId,
       referralEndTimestamp,
       diff: 0,
       rtt: 95,
@@ -1171,7 +1178,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     });
 
     const rtt130Result = await getExtraTimeBasedLogs({
-      referralId: "test",
+      referralId,
       referralEndTimestamp,
       diff: 0,
       rtt: 130,
@@ -1179,7 +1186,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     });
 
     const normalRttWithNegativeResult = await getExtraTimeBasedLogs({
-      referralId: "test",
+      referralId,
       referralEndTimestamp,
       diff: -1000,
       rtt: 70,
@@ -1187,7 +1194,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     });
 
     const rtt130WithNegativeResult = await getExtraTimeBasedLogs({
-      referralId: "test",
+      referralId,
       referralEndTimestamp,
       diff: -1000,
       rtt: 130,
@@ -1195,7 +1202,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     });
 
     const normalBackendDelayResult = await getExtraTimeBasedLogs({
-      referralId: "test",
+      referralId,
       referralEndTimestamp,
       diff: 0,
       extraBackendDelayMs: 1000,
@@ -1203,7 +1210,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     });
 
     const highBackendDelayResult = await getExtraTimeBasedLogs({
-      referralId: "test",
+      referralId,
       referralEndTimestamp,
       diff: 0,
       extraBackendDelayMs: 2000,
@@ -1216,6 +1223,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
         `────────────────────────\n\n` +
         `*⚙️ current waitingTime* → \`${current}ms\`\n\n` +
         `*📍 Auto waiting* → \`${isAutoWaitingActive ? "Enabled" : "Disabled"}\`\n\n` +
+        `*📍 is Uinsg Real Patient* → \`${referralId === "test" ? "No" : "Yes"}\`\n\n` +
         `${formatResult("📊 Stable diff=0", zeroResult)}\n\n` +
         `${formatResult("📉 Negative diff<0", negativeResult)}\n\n` +
         `${formatResult("📶 RTT normal 70ms", normalRttResult)}\n\n` +
