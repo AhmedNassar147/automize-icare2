@@ -64,6 +64,12 @@ const COMMANDS = {
       "Get or set auto wait. Examples: /auto_wait OR /auto_wait 1 OR /auto_wait 0",
     command: "auto_wait",
   },
+  new_token_way: {
+    value: /\/new_token_way(?:\s+(\S+))?$/,
+    description:
+      "Get or set the new token way. Examples: /new_token_way OR /new_token_way 1 OR /new_token_way 0",
+    command: "new_token_way",
+  },
   f_accept: {
     value: /\/f_accept$/,
     description: "get first patient to be accepted with time left details",
@@ -910,6 +916,64 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
       await sendBotMessage(
         activeChatId,
         `🔔 \`${fromName}\` changed \`autoWait\` to \`${status}\`.`,
+      );
+    }
+  });
+
+  bot.onText(COMMANDS.new_token_way.value, async (msg, match) => {
+    const { unAuthorizedMessage, chatId, fromName } =
+      getIfNotAuthorizedMessage(msg);
+
+    if (unAuthorizedMessage) {
+      await sendBotMessage(chatId, unAuthorizedMessage);
+      return;
+    }
+
+    const value = match?.[1];
+
+    if (value && !["1", "0"].includes(value)) {
+      return await sendBotMessage(
+        chatId,
+        `⛔ Invalid value \`${value}\`.\nUsage:\n/new_token_way\n/new_token_way 1\n/new_token_way 0`,
+      );
+    }
+
+    const currentNewPregeneratedTokenState =
+      process.env.USE_PREGENERATED_TOKEN_WAY;
+
+    const isEnvValueActive = currentNewPregeneratedTokenState === "Y";
+
+    if (!value) {
+      return await sendBotMessage(
+        chatId,
+        `✅ new pregenerated token way is \`${isEnvValueActive ? "enabled" : "disabled"}\`.`,
+      );
+    }
+
+    const isActive = value === "1";
+    const isSame = currentNewPregeneratedTokenState === value;
+    const status = isActive ? "enabled" : "disabled";
+
+    if (isSame) {
+      return await sendBotMessage(
+        chatId,
+        `⛔ new pregenerated token way is already \`${status}\`.`,
+      );
+    }
+
+    updateEnvFile({ USE_PREGENERATED_TOKEN_WAY: value === "1" ? "Y" : "N" });
+
+    await sendBotMessage(
+      chatId,
+      `✅ New pregenerated token way updated to \`${status}\`.`,
+    );
+
+    const activeChatId = getActiveChatID();
+
+    if (activeChatId !== chatId) {
+      await sendBotMessage(
+        activeChatId,
+        `🔔 \`${fromName}\` changed \`New pregenerated token way\` to \`${status}\`.`,
       );
     }
   });
