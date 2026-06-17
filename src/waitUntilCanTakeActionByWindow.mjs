@@ -83,9 +83,15 @@ async function waitUntilCanTakeActionByWindow({
 
             totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
 
+            // since could goes fires the action and in handleCaseAcceptanceOrRejection takes time
+            // we need to exclude some seconds
+            const maxTimeWindow = cutoffTimeMs - 3000;
+            // so user can move mouse and hover the prepare button then click
+            const minTimeWindow = 12_000;
+
             if (
-              totalMsLeft <= cutoffTimeMs &&
-              totalMsLeft >= 10 &&
+              totalMsLeft <= maxTimeWindow &&
+              totalMsLeft >= minTimeWindow &&
               !onGenerateTokenCalled &&
               onTimeToGenerateTokenFnName
             ) {
