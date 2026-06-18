@@ -101,7 +101,7 @@ async function waitUntilCanTakeActionByWindow({
 
             // since could goes fires the action and in handleCaseAcceptanceOrRejection takes time
             // we need to exclude some seconds
-            const maxTimeWindow = 14_000;
+            const maxTimeWindow = 12_000;
 
             if (
               totalMsLeft <= maxTimeWindow &&
