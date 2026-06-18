@@ -12,6 +12,7 @@ import createReloadAndCheckIfShouldCreateNewPage from "./createReloadAndCheckIfS
 import handleLockedOutRetry from "./handleLockedOutRetry.mjs";
 import sleep from "./sleep.mjs";
 import checkReferralSelectedStatus from "./checkReferralSelectedStatus.mjs";
+import { navigateToNewDetailsPage } from "./handleCaseAcceptanceOrRejection.mjs";
 import {
   pauseController,
   pause,
@@ -217,6 +218,16 @@ const waitForWaitingCountWithInterval = async ({
         await pausableSleep(waitTime);
       }
 
+      await navigateToNewDetailsPage({
+        page,
+        referralId,
+      });
+
+      const cookies = await page.cookies(page.url());
+
+      console.log("cookies", cookies);
+
+      await sleep(200_000);
       const patientsLength = patients.length ?? 0;
 
       if (!patientsLength) {

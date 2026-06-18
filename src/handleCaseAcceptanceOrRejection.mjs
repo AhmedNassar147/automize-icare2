@@ -20,7 +20,7 @@ import {
   APP_URL,
 } from "./constants.mjs";
 
-const navigateToNewDetailsPage = async ({
+export const navigateToNewDetailsPage = async ({
   page,
   referralId,
   _routerKey,
