@@ -39,6 +39,9 @@ const navigateToNewDetailsPage = async ({
       }
 
       const navigate = () => {
+        try {
+          targetWindow?.focus();
+        } catch {}
         targetWindow.history.pushState(
           {
             usr: { idReferral: referralId, type: "Referral" },
