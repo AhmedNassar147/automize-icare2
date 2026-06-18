@@ -1620,16 +1620,19 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
 
   bot.on("polling_error", async (err) => {
     const telegramError = err?.message || String(err);
+    const { BRANCH_NAME, CLIENT_ID } = process.env;
+
+    const baseMessage = `⚠️ At ${BRANCH_NAME || CLIENT_ID} Telegram polling error: ${telegramError}\n\n`;
 
     let message =
-      `⚠️ Telegram polling error: ${telegramError}\n\n` +
+      baseMessage +
       "Something went wrong with Telegram polling. Please restart the app.";
 
     const isTelegramTimeoutError = telegramError.includes("connect ETIMEDOUT");
 
     if (isTelegramTimeoutError) {
       message =
-        `⚠️ Telegram polling error: ${telegramError}\n\n` +
+        baseMessage +
         `1- Close the app and clear the patient data if found.\n` +
         `2- Go to .env file and set USE_NTFY_AS_CASE_PROVIDER=Y\n` +
         `3- Restart the app.`;
