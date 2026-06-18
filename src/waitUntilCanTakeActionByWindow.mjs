@@ -1,28 +1,40 @@
 /*
  * Helper: waitUntilCanTakeActionByWindow (poll until last 30ms)
  */
-import { globMedHeaders, cutoffTimeMs } from "./constants.mjs";
+import { globMedHeaders } from "./constants.mjs";
 
 async function waitUntilCanTakeActionByWindow({
   page,
   referralId,
   onZeroSecond,
   onTimeToGenerateToken,
+  onTimeUpAfterTokenGenerated,
 }) {
+  const now = Date.now();
   let fnName = null;
 
   if (onZeroSecond) {
-    fnName = `onZeroSecond_${Date.now()}`;
+    fnName = `onZeroSecond_${now}`;
     await page.exposeFunction(fnName, onZeroSecond);
   }
 
   let onTimeToGenerateTokenFnName = null;
 
   if (onTimeToGenerateToken) {
-    onTimeToGenerateTokenFnName = `onTimeToGenerateToken_${Date.now()}`;
+    onTimeToGenerateTokenFnName = `onTimeToGenerateToken_${now}`;
     await page.exposeFunction(
       onTimeToGenerateTokenFnName,
       onTimeToGenerateToken,
+    );
+  }
+
+  let onTimeUpAfterTokenGeneratedFnName = null;
+
+  if (onTimeUpAfterTokenGenerated) {
+    onTimeUpAfterTokenGeneratedFnName = `onTimeUpAfterTokenGenerated_${now}`;
+    await page.exposeFunction(
+      onTimeUpAfterTokenGeneratedFnName,
+      onTimeUpAfterTokenGenerated,
     );
   }
 
@@ -32,15 +44,19 @@ async function waitUntilCanTakeActionByWindow({
       referralId,
       fnName,
       onTimeToGenerateTokenFnName,
-      cutoffTimeMs,
+      onTimeUpAfterTokenGeneratedFnName,
     }) => {
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+      let isTimeUpFunctionCalled = false;
       let onGenerateTokenCalled = false;
       let onZeroSecondCalled = false;
       let zeroSeenAt = 0;
       let readySeenAt = 0;
       let readySeenAtLocalMs = 0;
+      let leftTimeWhenCalledGenerateToken = 0;
+
+      const minTokenAgeMs = [4000, 5000][Math.floor(Math.random() * 2)];
 
       async function fetchDetailsOnce() {
         try {
@@ -85,18 +101,30 @@ async function waitUntilCanTakeActionByWindow({
 
             // since could goes fires the action and in handleCaseAcceptanceOrRejection takes time
             // we need to exclude some seconds
-            const maxTimeWindow = cutoffTimeMs - 3000;
-            // so user can move mouse and hover the prepare button then click
-            const minTimeWindow = 12_000;
+            const maxTimeWindow = 14_000;
 
             if (
               totalMsLeft <= maxTimeWindow &&
-              totalMsLeft >= minTimeWindow &&
               !onGenerateTokenCalled &&
               onTimeToGenerateTokenFnName
             ) {
-              onGenerateTokenCalled = true;
               await window[onTimeToGenerateTokenFnName]?.();
+              onGenerateTokenCalled = true;
+              leftTimeWhenCalledGenerateToken = totalMsLeft;
+            }
+
+            const timeBoundary =
+              totalMsLeft <= 6_000 ||
+              leftTimeWhenCalledGenerateToken - totalMsLeft >= minTokenAgeMs;
+
+            if (
+              onGenerateTokenCalled &&
+              timeBoundary &&
+              !isTimeUpFunctionCalled &&
+              onTimeUpAfterTokenGeneratedFnName
+            ) {
+              await window[onTimeUpAfterTokenGeneratedFnName]?.();
+              isTimeUpFunctionCalled = true;
             }
 
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
@@ -169,6 +197,7 @@ async function waitUntilCanTakeActionByWindow({
             extraBackendDelayMs:
               zeroSeenAt && readySeenAt ? readySeenAt - zeroSeenAt : null,
             readySeenAtLocalMs,
+            leftTimeWhenCalledGenerateToken,
           };
         }
 
@@ -184,7 +213,7 @@ async function waitUntilCanTakeActionByWindow({
       referralId,
       fnName,
       onTimeToGenerateTokenFnName,
-      cutoffTimeMs,
+      onTimeUpAfterTokenGeneratedFnName,
     },
   );
 }

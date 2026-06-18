@@ -43,6 +43,7 @@ const handleCaseAcceptanceOrRejection =
         WAIT_FOR_ACCEPT_MS,
         ENABLE_AUTO_WAITING,
         USE_PREGENERATED_TOKEN_WAY,
+        USE_NTFY_AS_CASE_PROVIDER,
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
@@ -56,8 +57,23 @@ const handleCaseAcceptanceOrRejection =
 
       const routerKey = Math.random().toString(36).slice(2, 8);
 
+      const isNtfyFullMessageProvider = USE_NTFY_AS_CASE_PROVIDER === "Y";
+
+      const sendMessage = (message) => {
+        if (isNtfyFullMessageProvider) {
+          return sendNtfyMessage(message);
+        }
+        return sendTelegramMessage(`🚨 <b>${message}</b> 🚨`);
+      };
+
       const shouldGenerateToken =
-        USE_PREGENERATED_TOKEN_WAY === "Y" && isAcceptanceAction;
+        USE_PREGENERATED_TOKEN_WAY === "Y" &&
+        isAcceptanceAction &&
+        !isFakeReject;
+
+      if (shouldGenerateToken) {
+        await sendMessage("Prepare token");
+      }
 
       const onZeroSecond = () => {
         if (isFakeReject) {
@@ -79,10 +95,11 @@ const handleCaseAcceptanceOrRejection =
         });
       };
 
-      const onTimeToGenerateToken = () => {
-        if (isFakeReject || !shouldGenerateToken) {
+      const onTimeToGenerateToken = async () => {
+        if (!shouldGenerateToken) {
           return;
         }
+
         broadcast({
           type: "generate-token",
           data: {
@@ -91,6 +108,13 @@ const handleCaseAcceptanceOrRejection =
             routerKey,
           },
         });
+      };
+
+      const onTimeUpAfterTokenGenerated = async () => {
+        if (!shouldGenerateToken) {
+          return;
+        }
+        await sendMessage("Click Prepare");
       };
 
       const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
@@ -160,11 +184,13 @@ const handleCaseAcceptanceOrRejection =
         extraBackendDelayMs,
         readySeenAtLocalMs,
         rtt,
+        leftTimeWhenCalledGenerateToken,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
         onZeroSecond,
         onTimeToGenerateToken,
+        onTimeUpAfterTokenGenerated,
       });
 
       const diff = referralEndTimestamp - readySeenAt;
@@ -197,7 +223,7 @@ const handleCaseAcceptanceOrRejection =
         );
       }
       const waitTime = baseWaitingTime + extraWait;
-      const approvalMessage = `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\``;
+      const approvalMessage = `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\` leftTimeWhenCalledGenerateToken=${leftTimeWhenCalledGenerateToken}`;
 
       const notificationResults = await Promise.allSettled([
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
