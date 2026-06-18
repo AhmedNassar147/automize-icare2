@@ -56,7 +56,8 @@ async function waitUntilCanTakeActionByWindow({
       let readySeenAtLocalMs = 0;
       let leftTimeWhenCalledGenerateToken = 0;
 
-      const minTokenAgeMs = [4000, 5000][Math.floor(Math.random() * 2)];
+      // const minTokenAgeMs = [4000, 5000][Math.floor(Math.random() * 2)];
+      const minTokenAgeMs = 5_000;
 
       async function fetchDetailsOnce() {
         try {
@@ -101,7 +102,7 @@ async function waitUntilCanTakeActionByWindow({
 
             // since could goes fires the action and in handleCaseAcceptanceOrRejection takes time
             // we need to exclude some seconds
-            const maxTimeWindow = 12_000;
+            const maxTimeWindow = 13_000;
 
             if (
               totalMsLeft <= maxTimeWindow &&
