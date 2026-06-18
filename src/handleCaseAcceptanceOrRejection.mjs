@@ -9,15 +9,72 @@ import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
 import summarizeLogsAfterAcceptance from "./summarizeLogsAfterAcceptance.mjs";
-import {
-  FAKE_REJECT_PROBE,
-  HOME_PAGE_URL,
-  USER_ACTION_TYPES,
-} from "./constants.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
 import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
+import {
+  FAKE_REJECT_PROBE,
+  HOME_PAGE_URL,
+  USER_ACTION_TYPES,
+  APP_URL,
+} from "./constants.mjs";
+
+const navigateToNewDetailsPage = async ({
+  page,
+  referralId,
+  _routerKey,
+  shouldOpenNewWindow,
+}) => {
+  const routerKey = _routerKey || Math.random().toString(36).slice(2, 8);
+
+  await page.evaluate(
+    ({ referralId, routerKey, shouldOpenNewWindow, APP_URL }) => {
+      const targetWindow = shouldOpenNewWindow
+        ? window.open(APP_URL, "_blank")
+        : window;
+
+      if (!targetWindow) {
+        return;
+      }
+
+      const navigate = () => {
+        targetWindow.history.pushState(
+          {
+            usr: { idReferral: referralId, type: "Referral" },
+            key: routerKey,
+            idx: targetWindow.history.state?.idx + 1 || 1,
+          },
+          "",
+          "/referral/details",
+        );
+
+        targetWindow.dispatchEvent(
+          new PopStateEvent("popstate", {
+            state: targetWindow.history.state,
+          }),
+        );
+      };
+
+      if (shouldOpenNewWindow) {
+        const timer = setInterval(() => {
+          try {
+            if (
+              targetWindow &&
+              targetWindow.location.origin === window.location.origin
+            ) {
+              clearInterval(timer);
+              navigate();
+            }
+          } catch {}
+        }, 20);
+      } else {
+        navigate();
+      }
+    },
+    { referralId, routerKey, APP_URL, shouldOpenNewWindow },
+  );
+};
 
 const handleCaseAcceptanceOrRejection =
   ({
@@ -75,10 +132,32 @@ const handleCaseAcceptanceOrRejection =
         await sendMessage("Prepare token");
       }
 
-      const onZeroSecond = () => {
+      const onZeroSecond = async () => {
         if (isFakeReject) {
           return;
         }
+
+        await navigateToNewDetailsPage({
+          page,
+          referralId,
+          shouldOpenNewWindow: true,
+        });
+      };
+
+      const onTimeToGenerateToken = async () => {
+        if (!shouldGenerateToken) {
+          return;
+        }
+
+        // broadcast({
+        //   type: "generate-token",
+        //   data: {
+        //     referralId,
+        //     // shouldGenerateToken,
+        //     routerKey,
+        //   },
+        // });
+
         broadcast({
           type: "case-acceptance-or-rejection",
           data: {
@@ -89,22 +168,6 @@ const handleCaseAcceptanceOrRejection =
             clientName: CLIENT_NAME,
             fileName,
             actionType,
-            routerKey,
-            shouldUsePreGeneratedToken: shouldGenerateToken,
-          },
-        });
-      };
-
-      const onTimeToGenerateToken = async () => {
-        if (!shouldGenerateToken) {
-          return;
-        }
-
-        broadcast({
-          type: "generate-token",
-          data: {
-            referralId,
-            shouldGenerateToken,
             routerKey,
           },
         });
@@ -124,24 +187,11 @@ const handleCaseAcceptanceOrRejection =
         noBundleCheck: true,
       });
 
-      await page.evaluate(
-        ({ referralId, routerKey }) => {
-          window.history.pushState(
-            {
-              usr: { idReferral: referralId, type: "Referral" },
-              key: routerKey, // e.g. "a3f9kx"
-              idx: window.history.state?.idx + 1 || 1,
-            },
-            "",
-            "/referral/details",
-          );
-          window.dispatchEvent(
-            new PopStateEvent("popstate", { state: window.history.state }),
-          );
-        },
-        { referralId, routerKey },
-      );
-
+      await navigateToNewDetailsPage({
+        page,
+        referralId,
+        _routerKey: routerKey,
+      });
       const currentUrl = page.url().toLowerCase();
 
       const remainingMs = referralEndTimestamp - Date.now();
@@ -190,7 +240,7 @@ const handleCaseAcceptanceOrRejection =
         referralId,
         onZeroSecond,
         onTimeToGenerateToken,
-        onTimeUpAfterTokenGenerated,
+        // onTimeUpAfterTokenGenerated,
       });
 
       const diff = referralEndTimestamp - readySeenAt;

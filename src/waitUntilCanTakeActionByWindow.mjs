@@ -102,7 +102,7 @@ async function waitUntilCanTakeActionByWindow({
 
             // since could goes fires the action and in handleCaseAcceptanceOrRejection takes time
             // we need to exclude some seconds
-            const maxTimeWindow = 13_000;
+            const maxTimeWindow = 10_000;
 
             if (
               totalMsLeft <= maxTimeWindow &&
@@ -114,19 +114,19 @@ async function waitUntilCanTakeActionByWindow({
               leftTimeWhenCalledGenerateToken = totalMsLeft;
             }
 
-            const timeBoundary =
-              totalMsLeft <= 6_000 ||
-              leftTimeWhenCalledGenerateToken - totalMsLeft >= minTokenAgeMs;
+            // const timeBoundary =
+            //   totalMsLeft <= 6_000 ||
+            //   leftTimeWhenCalledGenerateToken - totalMsLeft >= minTokenAgeMs;
 
-            if (
-              onGenerateTokenCalled &&
-              timeBoundary &&
-              !isTimeUpFunctionCalled &&
-              onTimeUpAfterTokenGeneratedFnName
-            ) {
-              await window[onTimeUpAfterTokenGeneratedFnName]?.();
-              isTimeUpFunctionCalled = true;
-            }
+            // if (
+            //   onGenerateTokenCalled &&
+            //   timeBoundary &&
+            //   !isTimeUpFunctionCalled &&
+            //   onTimeUpAfterTokenGeneratedFnName
+            // ) {
+            //   await window[onTimeUpAfterTokenGeneratedFnName]?.();
+            //   isTimeUpFunctionCalled = true;
+            // }
 
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
               await window[fnName]?.();
