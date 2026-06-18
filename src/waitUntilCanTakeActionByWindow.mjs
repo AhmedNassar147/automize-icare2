@@ -7,22 +7,33 @@ async function waitUntilCanTakeActionByWindow({
   page,
   referralId,
   onZeroSecond,
+  onLastSeconds,
 }) {
+  const now = Date.now();
   let fnName = null;
 
   if (onZeroSecond) {
-    fnName = `onZeroSecond_${Date.now()}`;
+    fnName = `onZeroSecond_${now}`;
     await page.exposeFunction(fnName, onZeroSecond);
   }
 
+  let onLastSecondsFnName = null;
+
+  if (onLastSeconds) {
+    onLastSecondsFnName = `onLastSeconds_${now}`;
+    await page.exposeFunction(onLastSecondsFnName, onLastSeconds);
+  }
+
   return await page.evaluate(
-    async ({ globMedHeaders, referralId, fnName }) => {
+    async ({ globMedHeaders, referralId, fnName, onLastSecondsFnName }) => {
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+      let lastSecondsFnCalled = false;
       let onZeroSecondCalled = false;
       let zeroSeenAt = 0;
       let readySeenAt = 0;
       let readySeenAtLocalMs = 0;
+      let leftTimeWhenLastSecondsCalled = 0;
 
       async function fetchDetailsOnce() {
         try {
@@ -64,6 +75,20 @@ async function waitUntilCanTakeActionByWindow({
             const secsLeft = parseInt(match?.[2], 10) || 0;
 
             totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
+
+            // since could goes fires the action and in handleCaseAcceptanceOrRejection takes time
+            // we need to exclude some seconds
+            const maxTimeWindow = 10_000;
+
+            if (
+              totalMsLeft <= maxTimeWindow &&
+              !lastSecondsFnCalled &&
+              onLastSecondsFnName
+            ) {
+              await window[onLastSecondsFnName]?.();
+              lastSecondsFnCalled = true;
+              leftTimeWhenLastSecondsCalled = totalMsLeft;
+            }
 
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
               await window[fnName]?.();
@@ -135,6 +160,7 @@ async function waitUntilCanTakeActionByWindow({
             extraBackendDelayMs:
               zeroSeenAt && readySeenAt ? readySeenAt - zeroSeenAt : null,
             readySeenAtLocalMs,
+            leftTimeWhenLastSecondsCalled,
           };
         }
 
@@ -149,6 +175,7 @@ async function waitUntilCanTakeActionByWindow({
       globMedHeaders,
       referralId,
       fnName,
+      onLastSecondsFnName,
     },
   );
 }
