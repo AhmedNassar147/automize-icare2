@@ -53,6 +53,7 @@ import { deleteOldCaseFiles } from "./db.mjs";
 import startCloudflareTunnel from "./startCloudflareTunnel.mjs";
 import handleUserActionOnCase from "./handleUserActionOnCase.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
+import modifyGlobMedSourceCode from "./modifyGlobMedSourceCode.mjs";
 
 // import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 
@@ -197,6 +198,71 @@ import sendNtfyMessage from "./sendNtfyMessage.mjs";
         "--disable-backgrounding-occluded-windows", // ← don't suspend hidden windows
         "--disable-renderer-backgrounding", // ← keep renderer active in background
       ],
+    });
+
+    // referralprogram.globemedsaudi.com\\assets\\index-1f5a3bb7.js
+
+    const setupPage = async (page) => {
+      await page.evaluateOnNewDocument(() => {
+        const scrollWhenReady = () => {
+          if (document.body?.scrollHeight > 1000) {
+            window.scrollTo(0, 600);
+            return;
+          }
+
+          setTimeout(scrollWhenReady, 50);
+        };
+
+        window.addEventListener("load", scrollWhenReady);
+      });
+
+      await page.setRequestInterception(true);
+
+      page.on("request", async (req) => {
+        try {
+          if (
+            // req.url().includes("index-1f5a3bb7.") &&
+            // req.url().endsWith(".js")
+            req.resourceType() === "script" &&
+            req.url().includes("/assets/index-") &&
+            req.url().endsWith(".js")
+          ) {
+            try {
+              const res = await fetch(req.url());
+              let body = await res.text();
+
+              body = modifyGlobMedSourceCode(body);
+
+              await req.respond({
+                status: res.status,
+                headers: Object.fromEntries(res.headers.entries()),
+                body,
+              });
+            } catch (error) {
+              console.error("Error when Patching", error?.message || error);
+              await req.continue();
+            }
+            return;
+          }
+
+          await req.continue();
+        } catch (error) {
+          try {
+            await req.continue();
+          } catch {}
+        }
+      });
+    };
+
+    // for (const page of await browser.pages()) {
+    //   await setupPage(page);
+    // }
+
+    browser.on("targetcreated", async (target) => {
+      if (target.type() !== "page") return;
+
+      const page = await target.page();
+      await setupPage(page);
     });
 
     // Restore collected patients, bootstrap store
