@@ -222,7 +222,9 @@ const handleCaseAcceptanceOrRejection =
           `Missing readySeenAt=${readySeenAt} zeroSeenAt=${zeroSeenAt} readySeenAtLocalMs=${readySeenAtLocalMs} extraBackendDelayMs=${extraBackendDelayMs} for referralId=${referralId}`,
         );
       }
-      const waitTime = baseWaitingTime + extraWait;
+      const waitTime = shouldGenerateToken
+        ? Math.max(2500, baseWaitingTime)
+        : baseWaitingTime + extraWait;
       const approvalMessage = `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\` leftTimeWhenCalledGenerateToken=${leftTimeWhenCalledGenerateToken}`;
 
       const notificationResults = await Promise.allSettled([
