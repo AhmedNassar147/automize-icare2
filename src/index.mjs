@@ -194,9 +194,16 @@ import modifyGlobMedSourceCode from "./modifyGlobMedSourceCode.mjs";
       ignoreDefaultArgs: ["--enable-automation"],
       args: [
         "--start-maximized",
+        "--disable-blink-features=AutomationControlled", // Prevent `navigator.webdriver = true`
+        // "--disable-extensions", // Prevents loading suspicious default extensions
         "--disable-background-timer-throttling", // ← don't slow down background tabs
         "--disable-backgrounding-occluded-windows", // ← don't suspend hidden windows
         "--disable-renderer-backgrounding", // ← keep renderer active in background
+        "--enable-gpu",
+        "--use-gl=desktop",
+        "--enable-webgl", // WebGL is often checked
+        "--enable-webgl2",
+        "--disable-dev-shm-usage", // Stability; safe even if not needed
       ],
     });
 

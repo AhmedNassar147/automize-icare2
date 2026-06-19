@@ -112,24 +112,99 @@ const handleCaseAcceptanceOrRejection =
 
       const routerKey = Math.random().toString(36).slice(2, 8);
 
-      const onZeroSecond = () => {
-        if (isFakeReject) {
-          return;
-        }
-        broadcast({
-          type: "case-acceptance-or-rejection",
-          data: {
-            referralId,
-            filebase64,
-            referralEndTimestamp,
-            providerName,
-            clientName: CLIENT_NAME,
-            fileName,
-            actionType,
-            routerKey,
+      const files = isAcceptanceAction
+        ? JSON.stringify([
+            {
+              fileName,
+              fileData: filebase64,
+              fileExtension: 0,
+              userCode: CLIENT_NAME,
+              idAttachmentType: 14,
+              languageCode: 1,
+            },
+          ])
+        : "";
+
+      const onZeroSecond = async () => {
+        if (isFakeReject) return;
+
+        const pages = await browser.pages();
+
+        const neededPage =
+          pages[pages.length - 2] ||
+          pages.find((p) =>
+            p.url().toLowerCase().includes("/dashboard/referral"),
+          );
+
+        console.log(
+          "selected page:",
+          neededPage?.url(),
+          "all pages:",
+          pages.map((p, i) => `${i}: ${p.url()}`),
+        );
+
+        await neededPage.bringToFront();
+
+        const clicked = await neededPage.evaluate(
+          ({ referralId, files }) => {
+            if (files) {
+              localStorage.setItem("GM__FILS", files);
+            }
+
+            const normalize = (str) => (str || "").trim();
+            const colIndex = 2;
+
+            const spans = document.querySelectorAll(
+              `table.MuiTable-root tbody tr td:nth-of-type(${colIndex}) span`,
+            );
+
+            const target = normalize(String(referralId));
+
+            for (const span of spans) {
+              const txt = normalize(span.textContent || "");
+              if (txt !== target) continue;
+
+              const row = span.closest("tr");
+              const iconButton = row?.querySelector("td.iconCell button");
+
+              if (iconButton) {
+                iconButton.click();
+                return true;
+              }
+            }
+
+            return false;
           },
-        });
+          { referralId, files },
+        );
+
+        if (!clicked) {
+          await navigateToNewDetailsPage({
+            page: neededPage,
+            referralId,
+          });
+        }
       };
+
+      // const onZeroSecond = () => {
+      //   if (isFakeReject) {
+      //     return;
+      //   }
+
+      //   // broadcast({
+      //   //   type: "case-acceptance-or-rejection",
+      //   //   data: {
+      //   //     referralId,
+      //   //     filebase64,
+      //   //     referralEndTimestamp,
+      //   //     providerName,
+      //   //     clientName: CLIENT_NAME,
+      //   //     fileName,
+      //   //     actionType,
+      //   //     routerKey,
+      //   //   },
+      //   // });
+      // };
 
       const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
         browser,
@@ -138,11 +213,11 @@ const handleCaseAcceptanceOrRejection =
         noBundleCheck: true,
       });
 
-      await navigateToNewDetailsPage({
-        page,
-        referralId,
-        _routerKey: routerKey,
-      });
+      // await navigateToNewDetailsPage({
+      //   page,
+      //   referralId,
+      //   _routerKey: routerKey,
+      // });
 
       const currentUrl = page.url().toLowerCase();
 
