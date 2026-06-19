@@ -112,21 +112,8 @@ const handleCaseAcceptanceOrRejection =
 
       const routerKey = Math.random().toString(36).slice(2, 8);
 
-      // const files = isAcceptanceAction
-      //   ? JSON.stringify([
-      //       {
-      //         fileName,
-      //         fileData: filebase64,
-      //         fileExtension: 0,
-      //         userCode: CLIENT_NAME,
-      //         idAttachmentType: 14,
-      //         languageCode: 1,
-      //       },
-      //     ])
-      //   : "";
-
       const files = isAcceptanceAction
-        ? [
+        ? JSON.stringify([
             {
               fileName,
               fileData: filebase64,
@@ -135,78 +122,174 @@ const handleCaseAcceptanceOrRejection =
               idAttachmentType: 14,
               languageCode: 1,
             },
-          ]
-        : undefined;
+          ])
+        : "";
+
+      const allPatients = patientStore.getAllPatients();
+
+      const hasTooNearCase = allPatients.some(
+        ({ referralId: id, referralEndTimestamp: currentCaseTs }) => {
+          if (String(id) === String(referralId) || !currentCaseTs) return false;
+
+          const diff = currentCaseTs - Date.now();
+          return diff > 0 && diff <= 4 * 60 * 1000;
+        },
+      );
 
       const onZeroSecond = async () => {
         if (isFakeReject) return;
 
-        broadcast({
-          type: "case-acceptance-or-rejection",
-          data: {
-            referralId,
-            actionType,
-            routerKey,
-            files,
+        const pages = await browser.pages();
+
+        const neededPage =
+          pages[pages.length - 2] ||
+          pages.find((p) =>
+            p.url().toLowerCase().includes("/dashboard/referral"),
+          );
+
+        if (!neededPage) {
+          throw new Error(`No neededPage found for referralId=${referralId}`);
+        }
+
+        console.log(
+          "selected page:",
+          neededPage.url(),
+          "all pages:",
+          pages.map((p, i) => `${i}: ${p.url()}`),
+        );
+
+        await neededPage.bringToFront();
+
+        const clicked = await neededPage.evaluate(
+          ({ referralId, files, hasTooNearCase }) => {
+            if (files) {
+              localStorage.setItem("GM__FILS", files);
+            }
+
+            if (!window.__gmAcceptTimingInstalled) {
+              window.__gmAcceptTimingInstalled = true;
+
+              let clickedAt = 0;
+              let reported = false;
+
+              const isDashboard = () =>
+                /^\/dashboard\/referral/i.test(location.pathname);
+
+              const isDetails = () =>
+                /^\/referral\/details/i.test(location.pathname);
+
+              const report = (payload) => {
+                if (reported) return;
+                reported = true;
+                fetch("https://localhost:8443/setCaseOutcome", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                })
+                  .catch(() => {})
+                  .finally(() => {
+                    if (!hasTooNearCase) {
+                      window.close();
+                    }
+                  });
+              };
+
+              const checkRouteAfterClick = () => {
+                if (!clickedAt) return;
+
+                const elapsedMs = Date.now() - clickedAt;
+
+                if (isDashboard()) {
+                  report({
+                    referralId,
+                    clickedAt,
+                    elapsedMs,
+                    blocked: false,
+                    finalUrl: location.href,
+                  });
+                  clickedAt = 0;
+                  return;
+                }
+
+                if (!isDetails()) {
+                  report({
+                    referralId,
+                    clickedAt,
+                    elapsedMs,
+                    blocked: true,
+                    finalUrl: location.href,
+                  });
+                  clickedAt = 0;
+                }
+              };
+
+              const wrapHistory = (original) =>
+                function (...args) {
+                  const result = original.apply(this, args);
+                  setTimeout(checkRouteAfterClick, 0);
+                  return result;
+                };
+
+              history.pushState = wrapHistory(history.pushState);
+              history.replaceState = wrapHistory(history.replaceState);
+
+              window.addEventListener("popstate", () => {
+                setTimeout(checkRouteAfterClick, 0);
+              });
+
+              document.addEventListener(
+                "click",
+                (e) => {
+                  const time = Date.now();
+                  const btn = e.target.closest(
+                    ".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])",
+                  );
+
+                  if (!btn) return;
+
+                  const text = btn.textContent.trim().toLowerCase();
+
+                  if (!text.includes("accept referral")) return;
+
+                  clickedAt = time;
+                },
+                true,
+              );
+            }
+
+            const normalize = (str) => (str || "").trim();
+            const colIndex = 2;
+
+            const spans = document.querySelectorAll(
+              `table.MuiTable-root tbody tr td:nth-of-type(${colIndex}) span`,
+            );
+
+            const target = normalize(String(referralId));
+
+            for (const span of spans) {
+              const txt = normalize(span.textContent || "");
+              if (txt !== target) continue;
+
+              const row = span.closest("tr");
+              const iconButton = row?.querySelector("td.iconCell button");
+
+              if (iconButton) {
+                iconButton.click();
+                return true;
+              }
+            }
+
+            return false;
           },
-        });
+          { referralId, files, hasTooNearCase },
+        );
 
-        // const pages = await browser.pages();
-
-        // const neededPage =
-        //   pages[pages.length - 2] ||
-        //   pages.find((p) =>
-        //     p.url().toLowerCase().includes("/dashboard/referral"),
-        //   );
-
-        // console.log(
-        //   "selected page:",
-        //   neededPage?.url(),
-        //   "all pages:",
-        //   pages.map((p, i) => `${i}: ${p.url()}`),
-        // );
-
-        // await neededPage.bringToFront();
-
-        // const clicked = await neededPage.evaluate(
-        //   ({ referralId, files }) => {
-        //     if (files) {
-        //       localStorage.setItem("GM__FILS", files);
-        //     }
-
-        //     const normalize = (str) => (str || "").trim();
-        //     const colIndex = 2;
-
-        //     const spans = document.querySelectorAll(
-        //       `table.MuiTable-root tbody tr td:nth-of-type(${colIndex}) span`,
-        //     );
-
-        //     const target = normalize(String(referralId));
-
-        //     for (const span of spans) {
-        //       const txt = normalize(span.textContent || "");
-        //       if (txt !== target) continue;
-
-        //       const row = span.closest("tr");
-        //       const iconButton = row?.querySelector("td.iconCell button");
-
-        //       if (iconButton) {
-        //         iconButton.click();
-        //         return true;
-        //       }
-        //     }
-
-        //     return false;
-        //   },
-        //   { referralId, files },
-        // );
-
-        // if (!clicked) {
-        //   await navigateToNewDetailsPage({
-        //     page: neededPage,
-        //     referralId,
-        //   });
-        // }
+        if (!clicked) {
+          await navigateToNewDetailsPage({
+            page: neededPage,
+            referralId,
+          });
+        }
       };
 
       const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
@@ -215,12 +298,6 @@ const handleCaseAcceptanceOrRejection =
         noCursor: true,
         noBundleCheck: true,
       });
-
-      // await navigateToNewDetailsPage({
-      //   page,
-      //   referralId,
-      //   _routerKey: routerKey,
-      // });
 
       const currentUrl = page.url().toLowerCase();
 

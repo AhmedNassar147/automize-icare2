@@ -601,27 +601,29 @@ class PatientStore extends EventEmitter {
     }
   }
 
+  getAllGoingToAccept(skipExpired = false) {
+    return this.getAllPatients()?.filter((patient) => {
+      const isApplicable =
+        patient?.userActionName === "accept" &&
+        Number.isFinite(patient?.referralEndTimestamp);
+
+      if (isApplicable && skipExpired) {
+        return patient.referralEndTimestamp > Date.now();
+      }
+
+      return isApplicable;
+    });
+  }
+
   getFirstGoingToAccept(skipExpired = false) {
-    return this.getAllPatients()
-      ?.filter((patient) => {
-        const isApplicable =
-          patient?.userActionName === "accept" &&
-          Number.isFinite(patient?.referralEndTimestamp);
-
-        if (isApplicable && skipExpired) {
-          return patient.referralEndTimestamp > Date.now();
-        }
-
-        return isApplicable;
-      })
-      .reduce(
-        (earliest, current) =>
-          !earliest ||
-          current.referralEndTimestamp < earliest.referralEndTimestamp
-            ? current
-            : earliest,
-        undefined,
-      );
+    return this.getAllGoingToAccept(skipExpired)?.reduce(
+      (earliest, current) =>
+        !earliest ||
+        current.referralEndTimestamp < earliest.referralEndTimestamp
+          ? current
+          : earliest,
+      undefined,
+    );
   }
 
   getReferralLeftTime(referralId) {
