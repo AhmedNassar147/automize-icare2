@@ -139,13 +139,33 @@ const handleCaseAcceptanceOrRejection =
       const onZeroSecond = async () => {
         if (isFakeReject) return;
 
-        const pages = await browser.pages();
+        const t0 = performance.now();
 
-        const neededPage =
-          pages[pages.length - 2] ||
-          pages.find((p) =>
-            p.url().toLowerCase().includes("/dashboard/referral"),
-          );
+        let pages = await browser.pages();
+
+        const pagesCount = pages.length;
+        let neededPage = undefined;
+
+        if (pagesCount >= 4) {
+          neededPage = pages[pagesCount - 2];
+        } else {
+          console.log("Opening new page length:", pagesCount);
+
+          await page.evaluate((APP_URL) => {
+            window.open(APP_URL, "_blank");
+          }, APP_URL);
+
+          while (true) {
+            pages = await browser.pages();
+
+            if (pages.length > pagesCount) {
+              neededPage = pages[pages.length - 1];
+              break;
+            }
+
+            await sleep(40);
+          }
+        }
 
         if (!neededPage) {
           throw new Error(`No neededPage found for referralId=${referralId}`);
@@ -166,11 +186,15 @@ const handleCaseAcceptanceOrRejection =
               localStorage.setItem("GM__FILS", files);
             }
 
+            // update values for current case
+            window.__gmReferralId = referralId;
+            window.__gmHasTooNearCase = hasTooNearCase;
+            window.__gmReported = false;
+
             if (!window.__gmAcceptTimingInstalled) {
               window.__gmAcceptTimingInstalled = true;
 
               let clickedAt = 0;
-              let reported = false;
 
               const isDashboard = () =>
                 /^\/dashboard\/referral/i.test(location.pathname);
@@ -179,16 +203,20 @@ const handleCaseAcceptanceOrRejection =
                 /^\/referral\/details/i.test(location.pathname);
 
               const report = (payload) => {
-                if (reported) return;
-                reported = true;
+                if (window.__gmReported) return;
+
+                window.__gmReported = true;
+
                 fetch("https://localhost:8443/setCaseOutcome", {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
                   body: JSON.stringify(payload),
                 })
                   .catch(() => {})
                   .finally(() => {
-                    if (!hasTooNearCase) {
+                    if (!window.__gmHasTooNearCase) {
                       window.close();
                     }
                   });
@@ -201,24 +229,26 @@ const handleCaseAcceptanceOrRejection =
 
                 if (isDashboard()) {
                   report({
-                    referralId,
+                    referralId: window.__gmReferralId,
                     clickedAt,
                     elapsedMs,
                     blocked: false,
                     finalUrl: location.href,
                   });
+
                   clickedAt = 0;
                   return;
                 }
 
                 if (!isDetails()) {
                   report({
-                    referralId,
+                    referralId: window.__gmReferralId,
                     clickedAt,
                     elapsedMs,
                     blocked: true,
                     finalUrl: location.href,
                   });
+
                   clickedAt = 0;
                 }
               };
@@ -226,7 +256,9 @@ const handleCaseAcceptanceOrRejection =
               const wrapHistory = (original) =>
                 function (...args) {
                   const result = original.apply(this, args);
+
                   setTimeout(checkRouteAfterClick, 0);
+
                   return result;
                 };
 
@@ -240,7 +272,6 @@ const handleCaseAcceptanceOrRejection =
               document.addEventListener(
                 "click",
                 (e) => {
-                  const time = Date.now();
                   const btn = e.target.closest(
                     ".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])",
                   );
@@ -251,7 +282,7 @@ const handleCaseAcceptanceOrRejection =
 
                   if (!text.includes("accept referral")) return;
 
-                  clickedAt = time;
+                  clickedAt = Date.now();
                 },
                 true,
               );
@@ -268,6 +299,7 @@ const handleCaseAcceptanceOrRejection =
 
             for (const span of spans) {
               const txt = normalize(span.textContent || "");
+
               if (txt !== target) continue;
 
               const row = span.closest("tr");
@@ -290,6 +322,12 @@ const handleCaseAcceptanceOrRejection =
             referralId,
           });
         }
+
+        console.log(
+          `Navigated to required page in ${Math.round(
+            performance.now() - t0,
+          )}ms`,
+        );
       };
 
       const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
