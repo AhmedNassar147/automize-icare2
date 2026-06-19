@@ -265,12 +265,12 @@ import modifyGlobMedSourceCode from "./modifyGlobMedSourceCode.mjs";
     //   await setupPage(page);
     // }
 
-    browser.on("targetcreated", async (target) => {
-      if (target.type() !== "page") return;
+    // browser.on("targetcreated", async (target) => {
+    //   if (target.type() !== "page") return;
 
-      const page = await target.page();
-      await setupPage(page);
-    });
+    //   const page = await target.page();
+    //   await setupPage(page);
+    // });
 
     // Restore collected patients, bootstrap store
     const collectedPatients = await readJsonFile(
