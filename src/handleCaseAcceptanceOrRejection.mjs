@@ -19,6 +19,7 @@ import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
 import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
+import writePollLogsData from "./writePollLogsData.mjs";
 
 export const navigateToNewDetailsPage = async ({
   page,
@@ -307,8 +308,21 @@ const handleCaseAcceptanceOrRejection =
         patientStore.addNonClaimableCase(referralId, referralEndTimestamp);
       }
 
+      await writePollLogsData({
+        actionType,
+        extraBackendDelayMs,
+        loopCountWhenSecondIsOne,
+        readySeenAt,
+        readySeenAtLocalMs,
+        referralId,
+        rtt,
+        waitTime,
+        zeroSeenAt,
+        timesWhenOneSecondStartedAndEnded,
+      });
+
       if (extraBotMessages.length) {
-        await sleep(300);
+        await sleep(250);
         await sendTelegramMessage(extraBotMessages.join("\n\n"));
       }
 
@@ -316,14 +330,6 @@ const handleCaseAcceptanceOrRejection =
         `patient=${referralId}, computedExtraWait=${computedExtraWait} computedExtraBotMessages=${computedExtraBotMessages.join("\n")}`,
         "warn",
       );
-
-      console.log({
-        referralId,
-        loopCountWhenSecondIsOne,
-        timesWhenOneSecondStartedAndEnded: JSON.stringify(
-          timesWhenOneSecondStartedAndEnded,
-        ),
-      });
 
       // continueFetchingPatientsIfPaused();
     } catch (error) {

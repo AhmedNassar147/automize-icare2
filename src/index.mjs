@@ -41,6 +41,7 @@ import {
   TABS_COLLECTION_TYPES,
   APP_URL,
   FAKE_REJECT_PROBE,
+  pollLogsFolderPath,
 } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import checkSiteCodeConfig from "./checkSiteCodeConfig.mjs";
@@ -179,6 +180,7 @@ import modifyGlobMedSourceCode from "./modifyGlobMedSourceCode.mjs";
       generateFolderIfNotExisting(generatedPdfsPathForRejection),
       generateFolderIfNotExisting(htmlFilesPath),
       generateFolderIfNotExisting(generatedSummaryFolderPath),
+      generateFolderIfNotExisting(pollLogsFolderPath),
       ensureCaseTimingLogsFile(),
       checkSiteCodeConfig(),
     ]);
