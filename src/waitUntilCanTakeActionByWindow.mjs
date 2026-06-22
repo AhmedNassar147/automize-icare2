@@ -28,6 +28,9 @@ async function waitUntilCanTakeActionByWindow({
     async ({ globMedHeaders, referralId, fnName, onLastSecondsFnName }) => {
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+      let loopCountWhenSecondIsOne = 0;
+      let timesWhenOneSecondStartedAndEnded = [];
+
       let lastSecondsFnCalled = false;
       let onZeroSecondCalled = false;
       let zeroSeenAt = 0;
@@ -76,24 +79,43 @@ async function waitUntilCanTakeActionByWindow({
 
             totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
 
+            if (totalMsLeft === 1000) {
+              loopCountWhenSecondIsOne += 1;
+              timesWhenOneSecondStartedAndEnded.push({
+                phase: "one",
+                serverNow,
+                localNow,
+                diff: localNow - (serverNow || 0),
+              });
+            }
+
             // since could goes fires the action and in handleCaseAcceptanceOrRejection takes time
             // we need to exclude some seconds
-            const maxTimeWindow = 10_000;
+            // const maxTimeWindow = 10_000;
 
-            if (
-              totalMsLeft <= maxTimeWindow &&
-              !lastSecondsFnCalled &&
-              onLastSecondsFnName
-            ) {
-              await window[onLastSecondsFnName]?.();
-              lastSecondsFnCalled = true;
-              leftTimeWhenLastSecondsCalled = totalMsLeft;
-            }
+            // if (
+            //   totalMsLeft <= maxTimeWindow &&
+            //   !lastSecondsFnCalled &&
+            //   onLastSecondsFnName
+            // ) {
+            //   await window[onLastSecondsFnName]?.();
+            //   lastSecondsFnCalled = true;
+            //   leftTimeWhenLastSecondsCalled = totalMsLeft;
+            // }
 
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
               await window[fnName]?.();
               onZeroSecondCalled = true;
               zeroSeenAt = serverNow || localNow;
+
+              if (loopCountWhenSecondIsOne) {
+                timesWhenOneSecondStartedAndEnded.push({
+                  phase: "below-one",
+                  serverNow,
+                  localNow,
+                  diff: localNow - (serverNow || 0),
+                });
+              }
             }
           }
 
@@ -161,6 +183,8 @@ async function waitUntilCanTakeActionByWindow({
               zeroSeenAt && readySeenAt ? readySeenAt - zeroSeenAt : null,
             readySeenAtLocalMs,
             leftTimeWhenLastSecondsCalled,
+            timesWhenOneSecondStartedAndEnded,
+            loopCountWhenSecondIsOne,
           };
         }
 

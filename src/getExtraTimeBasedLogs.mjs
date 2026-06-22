@@ -751,7 +751,7 @@ const getExtraTimeBasedLogs = async ({
   if (isZeroBackendDelay) {
     // 1-  we need to reduce if previous was danger check case 378589
     // 2-  we need to reduce if previous was not danger check case 377247
-    let value = 2;
+    let value = 1;
     if (wasLastTodayDangerous && !shouldCalculateInitialWait) {
       value = Math.max(1, 2 - (afterDangerReduction || 1));
     }

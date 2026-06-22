@@ -150,63 +150,6 @@ const handleCaseAcceptanceOrRejection =
             files,
           },
         });
-
-        // const pages = await browser.pages();
-
-        // const neededPage =
-        //   pages[pages.length - 2] ||
-        //   pages.find((p) =>
-        //     p.url().toLowerCase().includes("/dashboard/referral"),
-        //   );
-
-        // console.log(
-        //   "selected page:",
-        //   neededPage?.url(),
-        //   "all pages:",
-        //   pages.map((p, i) => `${i}: ${p.url()}`),
-        // );
-
-        // await neededPage.bringToFront();
-
-        // const clicked = await neededPage.evaluate(
-        //   ({ referralId, files }) => {
-        //     if (files) {
-        //       localStorage.setItem("GM__FILS", files);
-        //     }
-
-        //     const normalize = (str) => (str || "").trim();
-        //     const colIndex = 2;
-
-        //     const spans = document.querySelectorAll(
-        //       `table.MuiTable-root tbody tr td:nth-of-type(${colIndex}) span`,
-        //     );
-
-        //     const target = normalize(String(referralId));
-
-        //     for (const span of spans) {
-        //       const txt = normalize(span.textContent || "");
-        //       if (txt !== target) continue;
-
-        //       const row = span.closest("tr");
-        //       const iconButton = row?.querySelector("td.iconCell button");
-
-        //       if (iconButton) {
-        //         iconButton.click();
-        //         return true;
-        //       }
-        //     }
-
-        //     return false;
-        //   },
-        //   { referralId, files },
-        // );
-
-        // if (!clicked) {
-        //   await navigateToNewDetailsPage({
-        //     page: neededPage,
-        //     referralId,
-        //   });
-        // }
       };
 
       const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
@@ -258,12 +201,18 @@ const handleCaseAcceptanceOrRejection =
         );
       }
 
+      extraBotMessages.push(
+        `Time remaining before loop: ${referralEndTimestamp - Date.now()}`,
+      );
+
       const {
         zeroSeenAt,
         readySeenAt,
         extraBackendDelayMs,
         readySeenAtLocalMs,
         rtt,
+        timesWhenOneSecondStartedAndEnded,
+        loopCountWhenSecondIsOne,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
@@ -300,7 +249,13 @@ const handleCaseAcceptanceOrRejection =
         );
       }
       const waitTime = baseWaitingTime + extraWait;
-      const approvalMessage = `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\``;
+      const approvalMessage = [
+        `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\``,
+        "",
+        `loopCountWhenSecondIsOne=${loopCountWhenSecondIsOne}`,
+        "",
+        `times=${JSON.stringify(timesWhenOneSecondStartedAndEnded)}`,
+      ].join("\n\n");
 
       const notificationResults = await Promise.allSettled([
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
@@ -361,6 +316,14 @@ const handleCaseAcceptanceOrRejection =
         `patient=${referralId}, computedExtraWait=${computedExtraWait} computedExtraBotMessages=${computedExtraBotMessages.join("\n")}`,
         "warn",
       );
+
+      console.log({
+        referralId,
+        loopCountWhenSecondIsOne,
+        timesWhenOneSecondStartedAndEnded: JSON.stringify(
+          timesWhenOneSecondStartedAndEnded,
+        ),
+      });
 
       // continueFetchingPatientsIfPaused();
     } catch (error) {
