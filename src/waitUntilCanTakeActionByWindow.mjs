@@ -1,5 +1,5 @@
 /*
- * Helper: waitUntilCanTakeActionByWindow (poll until last 30ms)
+ * Helper: waitUntilCanTakeActionByWindow
  */
 import { globMedHeaders } from "./constants.mjs";
 
@@ -26,21 +26,27 @@ async function waitUntilCanTakeActionByWindow({
 
   return await page.evaluate(
     async ({ globMedHeaders, referralId, fnName, onLastSecondsFnName }) => {
-      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
       let loopCountWhenSecondIsOne = 0;
       let timesWhenOneSecondStartedAndEnded = [];
 
       let lastSecondsFnCalled = false;
       let onZeroSecondCalled = false;
+
       let zeroSeenAt = 0;
       let readySeenAt = 0;
       let readySeenAtLocalMs = 0;
       let leftTimeWhenLastSecondsCalled = 0;
 
-      async function fetchDetailsOnce() {
+      let lastPollLocalNow = 0;
+      let lastServerNow = null;
+      let sameServerSecondIndex = 0;
+
+      async function fetchDetailsOnce(attempt) {
+        const requestStartsAt = Date.now();
+
         try {
-          const requestStartsAt = Date.now();
           const r = await fetch(`/referrals/details?_=${Date.now()}`, {
             method: "POST",
             headers: {
@@ -52,17 +58,40 @@ async function waitUntilCanTakeActionByWindow({
             cache: "no-store",
             credentials: "include",
           });
-          const localNow = Date.now();
 
-          if (!r?.ok)
+          const localNow = Date.now();
+          const rtt = localNow - requestStartsAt;
+
+          if (!r?.ok) {
             return {
               ok: false,
               reason: `HTTP ${r.status}`,
+              localNow,
+              serverNow: null,
+              totalMsLeft: -1,
+              rtt,
             };
+          }
 
-          // 🕒 Read server time from response header
-          const serverDate = r.headers.get("Date");
-          const serverNow = serverDate ? new Date(serverDate).getTime() : null;
+          const serverDateRaw = r.headers.get("Date");
+          const serverNow = serverDateRaw
+            ? new Date(serverDateRaw).getTime()
+            : null;
+
+          const diff = serverNow ? localNow - serverNow : null;
+
+          const gapFromPreviousPollMs = lastPollLocalNow
+            ? requestStartsAt - lastPollLocalNow
+            : null;
+
+          if (serverNow === lastServerNow) {
+            sameServerSecondIndex += 1;
+          } else {
+            sameServerSecondIndex = 1;
+            lastServerNow = serverNow;
+          }
+
+          lastPollLocalNow = localNow;
 
           const j = await r.json().catch(() => null);
           const { canTakeAction, canUpdate, status, message } = j?.data ?? {};
@@ -74,6 +103,19 @@ async function waitUntilCanTakeActionByWindow({
               /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/,
             );
 
+            // if (!match) {
+            //   return {
+            //     ok: false,
+            //     reason: "unparsed-message",
+            //     message,
+            //     serverDateRaw,
+            //     serverNow,
+            //     localNow,
+            //     totalMsLeft,
+            //     rtt,
+            //   };
+            // }
+
             const minsLeft = parseInt(match?.[1], 10) || 0;
             const secsLeft = parseInt(match?.[2], 10) || 0;
 
@@ -81,27 +123,23 @@ async function waitUntilCanTakeActionByWindow({
 
             if (totalMsLeft === 1000) {
               loopCountWhenSecondIsOne += 1;
+
               timesWhenOneSecondStartedAndEnded.push({
                 phase: "one",
+                attempt,
+                requestStartsAt,
+                responseReceivedAt: localNow,
+                serverDateRaw,
                 serverNow,
                 localNow,
-                diff: localNow - (serverNow || 0),
+                diff,
+                rtt,
+                gapFromPreviousPollMs,
+                sameServerSecondIndex,
+                totalMsLeft,
+                message,
               });
             }
-
-            // since could goes fires the action and in handleCaseAcceptanceOrRejection takes time
-            // we need to exclude some seconds
-            // const maxTimeWindow = 10_000;
-
-            // if (
-            //   totalMsLeft <= maxTimeWindow &&
-            //   !lastSecondsFnCalled &&
-            //   onLastSecondsFnName
-            // ) {
-            //   await window[onLastSecondsFnName]?.();
-            //   lastSecondsFnCalled = true;
-            //   leftTimeWhenLastSecondsCalled = totalMsLeft;
-            // }
 
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
               await window[fnName]?.();
@@ -110,23 +148,50 @@ async function waitUntilCanTakeActionByWindow({
 
               if (loopCountWhenSecondIsOne) {
                 timesWhenOneSecondStartedAndEnded.push({
-                  phase: "below-one",
+                  phase: "actual-zero",
+                  attempt,
+                  requestStartsAt,
+                  responseReceivedAt: localNow,
+                  serverDateRaw,
                   serverNow,
                   localNow,
-                  diff: localNow - (serverNow || 0),
+                  diff,
+                  rtt,
+                  gapFromPreviousPollMs,
+                  sameServerSecondIndex,
+                  totalMsLeft,
+                  message,
                 });
               }
             }
           }
 
           const ok =
-            !!(canTakeAction && canUpdate && status === "P") && !message;
+            Boolean(canTakeAction && canUpdate && status === "P") && !message;
 
           if (ok) {
             if (!onZeroSecondCalled && fnName) {
               await window[fnName]?.();
               onZeroSecondCalled = true;
               zeroSeenAt = serverNow || localNow;
+            }
+
+            if (loopCountWhenSecondIsOne) {
+              timesWhenOneSecondStartedAndEnded.push({
+                phase: "ready",
+                attempt,
+                requestStartsAt,
+                responseReceivedAt: localNow,
+                serverDateRaw,
+                serverNow,
+                localNow,
+                diff,
+                rtt,
+                gapFromPreviousPollMs,
+                sameServerSecondIndex,
+                totalMsLeft,
+                message: message || null,
+              });
             }
 
             readySeenAt = serverNow || localNow;
@@ -137,17 +202,21 @@ async function waitUntilCanTakeActionByWindow({
             ok,
             reason: ok ? "ready" : "not-ready",
             message: message || null,
+            serverDateRaw,
             serverNow,
             localNow,
             totalMsLeft,
-            rtt: localNow - requestStartsAt,
+            rtt,
           };
-        } catch (e) {
+        } catch (error) {
           return {
             ok: false,
-            reason: e?.name || "err in catch",
+            reason: error?.name || "err in catch",
+            errorMessage: error?.message || String(error),
             serverNow: null,
             localNow: null,
+            totalMsLeft: -1,
+            rtt: null,
           };
         }
       }
@@ -163,16 +232,16 @@ async function waitUntilCanTakeActionByWindow({
       let attempts = 0;
 
       while (true) {
-        attempts++;
+        attempts += 1;
 
         const { totalMsLeft, ok, localNow, message, rtt } =
-          await fetchDetailsOnce();
+          await fetchDetailsOnce(attempts);
 
         if (ok) {
           return {
             isOk: true,
             reason: "ready",
-            message: message,
+            message,
             elapsedMs: Math.round(performance.now() - tStart),
             attempts,
             claimableLocalTime: localNow,
@@ -183,15 +252,15 @@ async function waitUntilCanTakeActionByWindow({
               zeroSeenAt && readySeenAt ? readySeenAt - zeroSeenAt : null,
             readySeenAtLocalMs,
             leftTimeWhenLastSecondsCalled,
-            timesWhenOneSecondStartedAndEnded,
             loopCountWhenSecondIsOne,
+            timesWhenOneSecondStartedAndEnded,
           };
         }
 
-        const _delay = getPollDelay(totalMsLeft);
+        const delay = getPollDelay(totalMsLeft);
 
-        if (_delay > 0) {
-          await sleep(_delay);
+        if (delay > 0) {
+          await sleep(delay);
         }
       }
     },
