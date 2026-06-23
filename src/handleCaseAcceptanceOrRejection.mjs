@@ -277,9 +277,9 @@ const handleCaseAcceptanceOrRejection =
 
       for (const result of notificationResults) {
         if (result.status === "rejected") {
-          extraBotMessages.push(
-            `⚠️ Notification failed: ${result.reason?.message || result.reason}`,
-          );
+          const message = `⚠️ Notification failed: ${result.reason?.message || result.reason}`;
+          createConsoleMessage(message, "error");
+          extraBotMessages.push(message);
         }
       }
 
