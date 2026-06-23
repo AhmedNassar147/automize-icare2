@@ -11,6 +11,7 @@ import { pollLogsFolderPath } from "./constants.mjs";
 const writePollLogsData = async ({
   timesWhenOneSecondStartedAndEnded = [],
   loopCountWhenSecondIsOne,
+  timingSummary,
   referralId,
   actionType,
   waitTime,
@@ -45,6 +46,7 @@ const writePollLogsData = async ({
     rtt,
     loopCountWhenSecondIsOne,
     isSameServerDate,
+    timingSummary,
     timesWhenOneSecondStartedAndEnded,
   };
 

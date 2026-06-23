@@ -214,6 +214,7 @@ const handleCaseAcceptanceOrRejection =
         rtt,
         timesWhenOneSecondStartedAndEnded,
         loopCountWhenSecondIsOne,
+        timingSummary,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
@@ -319,6 +320,7 @@ const handleCaseAcceptanceOrRejection =
         waitTime,
         zeroSeenAt,
         timesWhenOneSecondStartedAndEnded,
+        timingSummary,
       });
 
       if (extraBotMessages.length) {

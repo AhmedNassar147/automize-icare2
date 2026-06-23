@@ -28,20 +28,54 @@ async function waitUntilCanTakeActionByWindow({
     async ({ globMedHeaders, referralId, fnName, onLastSecondsFnName }) => {
       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-      let loopCountWhenSecondIsOne = 0;
-      let timesWhenOneSecondStartedAndEnded = [];
+      const pollLogs = [];
 
-      let lastSecondsFnCalled = false;
+      let loopCountWhenSecondIsOne = 0;
       let onZeroSecondCalled = false;
 
       let zeroSeenAt = 0;
       let readySeenAt = 0;
       let readySeenAtLocalMs = 0;
+
       let leftTimeWhenLastSecondsCalled = 0;
 
       let lastPollLocalNow = 0;
       let lastServerNow = null;
       let sameServerSecondIndex = 0;
+
+      const pushPollLog = (entry) => {
+        pollLogs.push(entry);
+      };
+
+      const getDerivedTiming = () => {
+        const oneEntries = pollLogs.filter((x) => x.phase === "one");
+        const actualZero = pollLogs.find((x) => x.phase === "actual-zero");
+        const ready = pollLogs.find((x) => x.phase === "ready");
+        const lastOne = oneEntries.at(-1);
+
+        return {
+          firstOneLocalNow: oneEntries[0]?.localNow ?? null,
+          lastOneLocalNow: lastOne?.localNow ?? null,
+          actualZeroLocalNow: actualZero?.localNow ?? null,
+          readyLocalNow: ready?.localNow ?? null,
+
+          firstOneDiff: oneEntries[0]?.diff ?? null,
+          lastOneDiff: lastOne?.diff ?? null,
+          actualZeroDiff: actualZero?.diff ?? null,
+          readyDiff: ready?.diff ?? null,
+
+          lastOneToActualZeroMs:
+            lastOne && actualZero
+              ? actualZero.localNow - lastOne.localNow
+              : null,
+
+          actualZeroToReadyMs:
+            actualZero && ready ? ready.localNow - actualZero.localNow : null,
+
+          lastOneToReadyMs:
+            lastOne && ready ? ready.localNow - lastOne.localNow : null,
+        };
+      };
 
       async function fetchDetailsOnce(attempt) {
         const requestStartsAt = Date.now();
@@ -103,41 +137,45 @@ async function waitUntilCanTakeActionByWindow({
               /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/,
             );
 
-            // if (!match) {
-            //   return {
-            //     ok: false,
-            //     reason: "unparsed-message",
-            //     message,
-            //     serverDateRaw,
-            //     serverNow,
-            //     localNow,
-            //     totalMsLeft,
-            //     rtt,
-            //   };
-            // }
+            if (!match) {
+              return {
+                ok: false,
+                reason: "unparsed-message",
+                message,
+                serverDateRaw,
+                serverNow,
+                localNow,
+                totalMsLeft,
+                rtt,
+              };
+            }
 
-            const minsLeft = parseInt(match?.[1], 10) || 0;
-            const secsLeft = parseInt(match?.[2], 10) || 0;
+            const minsLeft = parseInt(match[1], 10) || 0;
+            const secsLeft = parseInt(match[2], 10) || 0;
 
             totalMsLeft = minsLeft * 60_000 + secsLeft * 1_000;
+
+            const baseLog = {
+              attempt,
+              requestStartsAt,
+              responseReceivedAt: localNow,
+              serverDateRaw,
+              serverNow,
+              localNow,
+              diff,
+              rtt,
+              gapFromPreviousPollMs,
+              sameServerSecondIndex,
+              totalMsLeft,
+              message,
+            };
 
             if (totalMsLeft === 1000) {
               loopCountWhenSecondIsOne += 1;
 
-              timesWhenOneSecondStartedAndEnded.push({
+              pushPollLog({
                 phase: "one",
-                attempt,
-                requestStartsAt,
-                responseReceivedAt: localNow,
-                serverDateRaw,
-                serverNow,
-                localNow,
-                diff,
-                rtt,
-                gapFromPreviousPollMs,
-                sameServerSecondIndex,
-                totalMsLeft,
-                message,
+                ...baseLog,
               });
             }
 
@@ -147,20 +185,9 @@ async function waitUntilCanTakeActionByWindow({
               zeroSeenAt = serverNow || localNow;
 
               if (loopCountWhenSecondIsOne) {
-                timesWhenOneSecondStartedAndEnded.push({
+                pushPollLog({
                   phase: "actual-zero",
-                  attempt,
-                  requestStartsAt,
-                  responseReceivedAt: localNow,
-                  serverDateRaw,
-                  serverNow,
-                  localNow,
-                  diff,
-                  rtt,
-                  gapFromPreviousPollMs,
-                  sameServerSecondIndex,
-                  totalMsLeft,
-                  message,
+                  ...baseLog,
                 });
               }
             }
@@ -177,7 +204,7 @@ async function waitUntilCanTakeActionByWindow({
             }
 
             if (loopCountWhenSecondIsOne) {
-              timesWhenOneSecondStartedAndEnded.push({
+              pushPollLog({
                 phase: "ready",
                 attempt,
                 requestStartsAt,
@@ -190,7 +217,7 @@ async function waitUntilCanTakeActionByWindow({
                 gapFromPreviousPollMs,
                 sameServerSecondIndex,
                 totalMsLeft,
-                message: message || null,
+                message: null,
               });
             }
 
@@ -253,7 +280,8 @@ async function waitUntilCanTakeActionByWindow({
             readySeenAtLocalMs,
             leftTimeWhenLastSecondsCalled,
             loopCountWhenSecondIsOne,
-            timesWhenOneSecondStartedAndEnded,
+            timingSummary: getDerivedTiming(),
+            timesWhenOneSecondStartedAndEnded: pollLogs,
           };
         }
 
