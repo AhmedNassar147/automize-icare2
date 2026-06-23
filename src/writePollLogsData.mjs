@@ -8,10 +8,37 @@ import { writeFile } from "node:fs/promises";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import { pollLogsFolderPath } from "./constants.mjs";
 
+const getDerivedTiming = (pollLogs) => {
+  const oneEntries = pollLogs.filter((x) => x.phase === "one");
+  const actualZero = pollLogs.find((x) => x.phase === "actual-zero");
+  const ready = pollLogs.find((x) => x.phase === "ready");
+  const lastOne = oneEntries.at(-1);
+
+  return {
+    firstOneLocalNow: oneEntries[0]?.localNow ?? null,
+    lastOneLocalNow: lastOne?.localNow ?? null,
+    actualZeroLocalNow: actualZero?.localNow ?? null,
+    readyLocalNow: ready?.localNow ?? null,
+
+    firstOneDiff: oneEntries[0]?.diff ?? null,
+    lastOneDiff: lastOne?.diff ?? null,
+    actualZeroDiff: actualZero?.diff ?? null,
+    readyDiff: ready?.diff ?? null,
+
+    lastOneToActualZeroMs:
+      lastOne && actualZero ? actualZero.localNow - lastOne.localNow : null,
+
+    actualZeroToReadyMs:
+      actualZero && ready ? ready.localNow - actualZero.localNow : null,
+
+    lastOneToReadyMs:
+      lastOne && ready ? ready.localNow - lastOne.localNow : null,
+  };
+};
+
 const writePollLogsData = async ({
   timesWhenOneSecondStartedAndEnded = [],
   loopCountWhenSecondIsOne,
-  timingSummary,
   referralId,
   actionType,
   waitTime,
@@ -21,6 +48,8 @@ const writePollLogsData = async ({
   readySeenAtLocalMs,
   rtt,
 }) => {
+  const timingSummary = getDerivedTiming(timesWhenOneSecondStartedAndEnded);
+
   const nonReadyEntries = timesWhenOneSecondStartedAndEnded.filter(
     (item) => item?.phase !== "ready",
   );

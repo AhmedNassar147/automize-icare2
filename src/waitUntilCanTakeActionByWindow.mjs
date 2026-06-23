@@ -47,36 +47,6 @@ async function waitUntilCanTakeActionByWindow({
         pollLogs.push(entry);
       };
 
-      const getDerivedTiming = () => {
-        const oneEntries = pollLogs.filter((x) => x.phase === "one");
-        const actualZero = pollLogs.find((x) => x.phase === "actual-zero");
-        const ready = pollLogs.find((x) => x.phase === "ready");
-        const lastOne = oneEntries.at(-1);
-
-        return {
-          firstOneLocalNow: oneEntries[0]?.localNow ?? null,
-          lastOneLocalNow: lastOne?.localNow ?? null,
-          actualZeroLocalNow: actualZero?.localNow ?? null,
-          readyLocalNow: ready?.localNow ?? null,
-
-          firstOneDiff: oneEntries[0]?.diff ?? null,
-          lastOneDiff: lastOne?.diff ?? null,
-          actualZeroDiff: actualZero?.diff ?? null,
-          readyDiff: ready?.diff ?? null,
-
-          lastOneToActualZeroMs:
-            lastOne && actualZero
-              ? actualZero.localNow - lastOne.localNow
-              : null,
-
-          actualZeroToReadyMs:
-            actualZero && ready ? ready.localNow - actualZero.localNow : null,
-
-          lastOneToReadyMs:
-            lastOne && ready ? ready.localNow - lastOne.localNow : null,
-        };
-      };
-
       async function fetchDetailsOnce(attempt) {
         const requestStartsAt = Date.now();
 
@@ -280,7 +250,6 @@ async function waitUntilCanTakeActionByWindow({
             readySeenAtLocalMs,
             leftTimeWhenLastSecondsCalled,
             loopCountWhenSecondIsOne,
-            timingSummary: getDerivedTiming(),
             timesWhenOneSecondStartedAndEnded: pollLogs,
           };
         }

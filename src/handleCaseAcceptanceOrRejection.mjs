@@ -214,7 +214,6 @@ const handleCaseAcceptanceOrRejection =
         rtt,
         timesWhenOneSecondStartedAndEnded,
         loopCountWhenSecondIsOne,
-        timingSummary,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
@@ -251,13 +250,7 @@ const handleCaseAcceptanceOrRejection =
         );
       }
       const waitTime = baseWaitingTime + extraWait;
-      const approvalMessage = [
-        `*${actionType} ${referralId}* \`waitTime: ${waitTime / 1000}s\``,
-        "",
-        `loopCountWhenSecondIsOne=${loopCountWhenSecondIsOne}`,
-        "",
-        `times=${JSON.stringify(timesWhenOneSecondStartedAndEnded)}`,
-      ].join("\n\n");
+      const approvalMessage = `*${actionType} ${referralId}*  waitTime: ${waitTime / 1000}s`;
 
       const notificationResults = await Promise.allSettled([
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
@@ -320,7 +313,6 @@ const handleCaseAcceptanceOrRejection =
         waitTime,
         zeroSeenAt,
         timesWhenOneSecondStartedAndEnded,
-        timingSummary,
       });
 
       if (extraBotMessages.length) {
