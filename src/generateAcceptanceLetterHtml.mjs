@@ -23,7 +23,7 @@ const ehalaFileUrl = toBase64(ehalaLogo);
 const providerFileUrl = toBase64(providerLogo);
 
 const htmlLayouts = {
-  TADAWI: ({
+  PRIMARY: ({
     nationalId,
     nationality,
     patientName,
@@ -280,7 +280,7 @@ const htmlLayouts = {
   </html>
   `;
   },
-  DEFAULT: ({
+  SECONDARY: ({
     nationalId,
     nationality,
     patientName,
@@ -571,7 +571,7 @@ const generateAcceptanceLetterHtml = ({
   clientInPdf,
   clientMangerName,
   clientManagerPhone,
-  clientId,
+  letterType,
   __reasonName__,
 }) => {
   const [date] = _requestDate.split("T");
@@ -580,8 +580,8 @@ const generateAcceptanceLetterHtml = ({
 
   const showLetterFinalFooter = !!(clientMangerName || clientManagerPhone);
 
-  const _clientId = clientId === "TADAWI" ? "TADAWI" : "DEFAULT";
-  const htmlCreator = htmlLayouts[_clientId];
+  const _letterType = letterType || "SECONDARY";
+  const htmlCreator = htmlLayouts[_letterType];
 
   return htmlCreator({
     nationalId,

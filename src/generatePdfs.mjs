@@ -19,13 +19,14 @@ const { ACCEPT, REJECT } = USER_ACTION_TYPES;
 const generateAcceptancePdfLetters = async (
   browser,
   patientsArray,
-  isAcceptance
+  isAcceptance,
 ) => {
   const {
     CLIENT_IN_PDF_NAME,
     CLIENT_MANAGER_NAME,
     CLIENT_MANAGER_PHONE,
     CLIENT_ID,
+    LETTER_TYPE,
   } = process.env;
 
   const cpuCount = os.cpus().length; // Get the number of CPU cores
@@ -41,7 +42,7 @@ const generateAcceptancePdfLetters = async (
         clientInPdf: CLIENT_IN_PDF_NAME || "",
         clientMangerName: CLIENT_MANAGER_NAME || "",
         clientManagerPhone: CLIENT_MANAGER_PHONE || "",
-        clientId: CLIENT_ID || "",
+        letterType: LETTER_TYPE,
       }); // Assume you already have this
       await page.setContent(html, { waitUntil: "domcontentloaded" });
 
@@ -77,7 +78,7 @@ const generateAcceptancePdfLetters = async (
       // 2. Compress the PDF
       await compressPdf(rawPdfPath, finalPdfPath);
       await unlink(rawPdfPath);
-    })
+    }),
   );
 
   await Promise.all(tasks);

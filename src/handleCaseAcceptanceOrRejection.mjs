@@ -80,6 +80,9 @@ export const navigateToNewDetailsPage = async ({
   );
 };
 
+const FILE_NAMES = ["Letter", "Form", "File", "Acceptance"];
+const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
+
 const handleCaseAcceptanceOrRejection =
   ({
     actionType,
@@ -96,6 +99,7 @@ const handleCaseAcceptanceOrRejection =
       providerName,
       endDateBasedServerDateMs,
       referralEndDate,
+      patientName,
     } = patient;
 
     try {
@@ -105,39 +109,28 @@ const handleCaseAcceptanceOrRejection =
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
       const isFakeReject = actionType === FAKE_REJECT_PROBE;
 
-      const { fileName, fileData: filebase64 } =
-        await getCurrentActionLetterFile(
-          referralId,
-          isFakeReject ? USER_ACTION_TYPES.REJECT : actionType,
-        );
+      const { fileData: filebase64 } = await getCurrentActionLetterFile(
+        referralId,
+        isFakeReject ? USER_ACTION_TYPES.REJECT : actionType,
+      );
 
       const routerKey = Math.random().toString(36).slice(2, 8);
 
-      // const files = isAcceptanceAction
-      //   ? JSON.stringify([
-      //       {
-      //         fileName,
-      //         fileData: filebase64,
-      //         fileExtension: 0,
-      //         userCode: CLIENT_NAME,
-      //         idAttachmentType: 14,
-      //         languageCode: 1,
-      //       },
-      //     ])
-      //   : "";
+      const patientFileName =
+        (patientName || "").trim().split(/\s+/)[0] || "Patient";
 
-      const files = isAcceptanceAction
-        ? [
+      const files = !isAcceptanceAction
+        ? undefined
+        : [
             {
-              fileName,
+              fileName: `${patientFileName} ${randomItem(FILE_NAMES)} ${referralId}.pdf`,
               fileData: filebase64,
               fileExtension: 0,
               userCode: CLIENT_NAME,
               idAttachmentType: 14,
               languageCode: 1,
             },
-          ]
-        : undefined;
+          ];
 
       const onZeroSecond = async () => {
         if (isFakeReject) return;
