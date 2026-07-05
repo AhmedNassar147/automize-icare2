@@ -645,7 +645,8 @@ const getExtraTimeBasedLogs = async ({
         : getNegativeCountBeforeCurrent(todayCases, diff);
 
     // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
-    let maxNewWait = currentWait;
+    let maxNewWait = currentWait + waitBasedDiff;
+    // let maxNewWait = currentWait;
 
     if (isLastTodayDiffNegative) {
       if (negativeDiffCount >= 3 && !isHotCluster) {
@@ -688,6 +689,14 @@ const getExtraTimeBasedLogs = async ({
 
   if (!isCurrentDiffNegative) {
     let value = currentWait;
+
+    if (
+      lastCaseDiff < 0 &&
+      value < 4 &&
+      timeDiffFromLastCase <= NEAR_CLUSTER_MS
+    ) {
+      value = Math.max(4, value);
+    }
 
     if (isCurrentNeedsReductionAfterNormalDanger) {
       // this for case like 378745 where it shouldn't add more wait

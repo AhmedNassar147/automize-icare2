@@ -80,7 +80,54 @@ export const navigateToNewDetailsPage = async ({
   );
 };
 
-const FILE_NAMES = ["Letter", "Form", "File", "Acceptance"];
+const FILE_NAMES = [
+  "Letter",
+  "Form",
+  "File",
+  "Acceptance",
+  "ViewAcc",
+  "Document",
+  "Letter Form",
+  "Letter Acc",
+  "Letter File",
+  "DocFile",
+  "ReportAcc",
+  "patientAcc",
+  "CaseLetter",
+  "ItemFile",
+  "Case Acceptance",
+
+  "Approval",
+  "Approval Letter",
+  "Approval Form",
+  "Approval File",
+  "Acceptance Form",
+  "Acceptance Letter",
+  "Acceptance Report",
+  "Acceptance Document",
+  "Acceptance File",
+  "Referral Letter",
+  "Referral Form",
+  "Referral File",
+  "Referral Document",
+  "Medical Letter",
+  "Patient Letter",
+  "Case File",
+  "Case Approval",
+  "Referral Approval",
+  "Confirmation",
+  "Confirmation Letter",
+  "Confirmation Form",
+  "Confirmation File",
+  "Referral Acc",
+  "Patient Report",
+
+  "Acquire Document",
+  "Acquire Letter",
+  "Acquire Form",
+  "Acquire Report",
+];
+
 const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
 
 const handleCaseAcceptanceOrRejection =
