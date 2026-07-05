@@ -522,9 +522,11 @@ const getExtraTimeBasedLogs = async ({
     gapMinLastCase >= 12 &&
     !isCurrentDiffNegative;
 
-  const willReductAfterDanger =
-    isCurrentNeedsReductionAfterNormalDanger ||
-    isCurrentCaseNeedsDangerReduction;
+  // const willReductAfterDanger =
+  //   isCurrentNeedsReductionAfterNormalDanger ||
+  //   isCurrentCaseNeedsDangerReduction;
+
+  const willReductAfterDanger = false;
 
   const shouldIgnorePositiveRtt = isPositiveRtt && willReductAfterDanger;
 
@@ -611,13 +613,13 @@ const getExtraTimeBasedLogs = async ({
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
 
     if (isLastCaseWasLowWaiting) {
-      const value = -Math.max(0, 4 - positiveLastDelta);
+      const value = -Math.max(0, 6 - positiveLastDelta);
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-after-low-waiting wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     } else if (isLastCaseModerateWaiting) {
-      const value = -Math.max(0, 4 - (positiveLastDelta || 1));
+      const value = -Math.max(0, 5 - (positiveLastDelta || 1));
       currentWait = value;
 
       extraBotMessages.push(
@@ -645,7 +647,7 @@ const getExtraTimeBasedLogs = async ({
         : getNegativeCountBeforeCurrent(todayCases, diff);
 
     // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
-    let maxNewWait = currentWait + waitBasedDiff;
+    let maxNewWait = currentWait + Math.abs((waitBasedDiff || 0) - 1);
     // let maxNewWait = currentWait;
 
     if (isLastTodayDiffNegative) {
