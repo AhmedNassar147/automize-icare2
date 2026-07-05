@@ -698,19 +698,19 @@ const getExtraTimeBasedLogs = async ({
       value = Math.max(4, value);
     }
 
-    if (isCurrentNeedsReductionAfterNormalDanger) {
-      // this for case like 378745 where it shouldn't add more wait
-      // last case normal dangerous and current with large time gap and positive diff
-      const reduction = getAfterDangerReduction(
-        lastCasePreviousDelta,
-        lastCaseOutcome,
-        DANGER_ZONE_PHASES.normal,
-      );
-      // reduction < 0 ? -reduction is for:  we were late on previous case and the outcome handler
-      // reduced the global wait by it's delta, so we need to re-add the excluded delta so we don't
-      // reduce twice
-      value = -reduction;
-    }
+    // if (isCurrentNeedsReductionAfterNormalDanger) {
+    //   // this for case like 378745 where it shouldn't add more wait
+    //   // last case normal dangerous and current with large time gap and positive diff
+    //   const reduction = getAfterDangerReduction(
+    //     lastCasePreviousDelta,
+    //     lastCaseOutcome,
+    //     DANGER_ZONE_PHASES.normal,
+    //   );
+    //   // reduction < 0 ? -reduction is for:  we were late on previous case and the outcome handler
+    //   // reduced the global wait by it's delta, so we need to re-add the excluded delta so we don't
+    //   // reduce twice
+    //   value = -reduction;
+    // }
 
     let prefixText = isFirstCaseToday
       ? "🌅 first-day-stable"
@@ -718,9 +718,9 @@ const getExtraTimeBasedLogs = async ({
         ? "↔️ far-stable"
         : "✅ stable";
 
-    if (isCurrentNeedsReductionAfterNormalDanger) {
-      prefixText += "-after-normal-danger";
-    }
+    // if (isCurrentNeedsReductionAfterNormalDanger) {
+    //   prefixText += "-after-normal-danger";
+    // }
 
     extraWait += value;
 
@@ -737,25 +737,25 @@ const getExtraTimeBasedLogs = async ({
 
   let afterDangerReduction = 0;
 
-  if (isCurrentCaseNeedsDangerReduction) {
-    afterDangerReduction = getAfterDangerReduction(
-      lastCasePreviousDelta,
-      lastCaseOutcome,
-      DANGER_ZONE_PHASES.far,
-    );
+  // if (isCurrentCaseNeedsDangerReduction) {
+  //   afterDangerReduction = getAfterDangerReduction(
+  //     lastCasePreviousDelta,
+  //     lastCaseOutcome,
+  //     DANGER_ZONE_PHASES.far,
+  //   );
 
-    extraWait -= afterDangerReduction;
+  //   extraWait -= afterDangerReduction;
 
-    extraBotMessages.push(
-      `🌉 first-case-after-far-danger previousDelta=${lastCasePreviousDelta} previousOutcome=${lastCaseOutcome}_${lastCaseOutcomeElapsedMs || ""} wait=-${afterDangerReduction}ms`,
-    );
+  //   extraBotMessages.push(
+  //     `🌉 first-case-after-far-danger previousDelta=${lastCasePreviousDelta} previousOutcome=${lastCaseOutcome}_${lastCaseOutcomeElapsedMs || ""} wait=-${afterDangerReduction}ms`,
+  //   );
 
-    if (shouldIgnorePositiveRtt) {
-      extraBotMessages.push(
-        `🚫 rtt-ignored-after-far-danger rtt=${rtt} rawWait=+${rawExtraBasedRtt}ms`,
-      );
-    }
-  }
+  //   if (shouldIgnorePositiveRtt) {
+  //     extraBotMessages.push(
+  //       `🚫 rtt-ignored-after-far-danger rtt=${rtt} rawWait=+${rawExtraBasedRtt}ms`,
+  //     );
+  //   }
+  // }
 
   if (isZeroBackendDelay) {
     // 1-  we need to reduce if previous was danger check case 378589
