@@ -7,11 +7,10 @@ import { OUTCOME_MAP } from "./constants.mjs";
 import getOutcomeDelta from "./getOutcomeDelta.mjs";
 import { readLogsAsArray } from "./summarizeLogsAfterAcceptance.mjs";
 
-const FAR_CASE_MIN = 90; // 1.5 hours
-const FAR_CASE_MS = FAR_CASE_MIN * 60 * 1000;
-const ULTRA_HOT_CLUSTER_MS = 30 * 1000;
 const HOT_CLUSTER_MS = 3 * 60 * 1000;
+const ULTRA_HOT_CLUSTER_MS = 30 * 1000;
 const NEAR_CLUSTER_MS = 23 * 60 * 1000;
+const FAR_CASE_MS = 90 * 60 * 1000;
 
 const WAITS_MAP = {
   hot: 0,
@@ -693,9 +692,10 @@ const getExtraTimeBasedLogs = async ({
     let value = currentWait;
 
     if (
-      lastCaseDiff < 0 &&
+      // lastCaseDiff < 0 &&
       value < 4 &&
-      timeDiffFromLastCase <= NEAR_CLUSTER_MS
+      !isHotCluster &&
+      timeDiffFromLastCase <= 50 * 60 * 1000
     ) {
       value = Math.max(4, value);
     }
