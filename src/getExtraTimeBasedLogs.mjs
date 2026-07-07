@@ -594,10 +594,10 @@ const getExtraTimeBasedLogs = async ({
 
   const isTwoHoursOrMoreLeft = timeDiffFromLastCaseHours >= 2;
 
-  const shouldCalculateInitialWait =
+  const shouldDecreaseInitialWait =
     !willReductAfterDanger && isTwoHoursOrMoreLeft;
 
-  if (shouldCalculateInitialWait) {
+  if (shouldDecreaseInitialWait) {
     const isLastCaseWasLowWaiting = [
       OUTCOME_MAP.lowWaiting,
       OUTCOME_MAP.needLessWait,
@@ -771,7 +771,7 @@ const getExtraTimeBasedLogs = async ({
     // 1-  we need to reduce if previous was danger check case 378589
     // 2-  we need to reduce if previous was not danger check case 377247
     let value = 1;
-    if (wasLastTodayDangerous && !shouldCalculateInitialWait) {
+    if (wasLastTodayDangerous && !shouldDecreaseInitialWait) {
       value = Math.max(1, 2 - (afterDangerReduction || 1));
     }
 
