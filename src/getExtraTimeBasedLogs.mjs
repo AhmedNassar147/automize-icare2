@@ -611,21 +611,27 @@ const getExtraTimeBasedLogs = async ({
     const isNotPerformedCase =
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
 
-    if (isLastCaseWasLowWaiting) {
-      const value = -Math.max(0, 6 - positiveLastDelta);
+    if (isFirstCaseToday) {
+      const value = -4;
+      currentWait = value;
+      extraBotMessages.push(
+        `🔥 reducing-for-first-case wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
+      );
+    } else if (isLastCaseWasLowWaiting) {
+      const value = -Math.max(3, 6 - positiveLastDelta);
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-after-low-waiting wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     } else if (isLastCaseModerateWaiting) {
-      const value = -Math.max(0, 5 - (positiveLastDelta || 1));
+      const value = -Math.max(2, 5 - (positiveLastDelta || 1));
       currentWait = value;
 
       extraBotMessages.push(
         `🔥 reducing-after-moderate wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     } else if (isNotPerformedCase) {
-      const value = -3;
+      const value = -2;
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-after-not-performed wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
@@ -633,7 +639,9 @@ const getExtraTimeBasedLogs = async ({
     } else {
       const value = -2;
       currentWait = value;
-      extraBotMessages.push(`🔥 reducing-initial-wait wait=${value}ms`);
+      extraBotMessages.push(
+        `🔥 reducing-initial-wait wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
+      );
     }
   }
 
