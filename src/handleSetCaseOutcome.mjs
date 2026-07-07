@@ -64,9 +64,9 @@ const handleSetCaseOutcome = async ({
 
   const outcome = blocked
     ? OUTCOME_MAP.blocked
-    : elapsedMs < 600
+    : elapsedMs <= 600
       ? OUTCOME_MAP.needLessWait
-      : elapsedMs < 650
+      : elapsedMs <= 650
         ? OUTCOME_MAP.lowWaiting
         : elapsedMs < 800
           ? OUTCOME_MAP.moderateWaiting
