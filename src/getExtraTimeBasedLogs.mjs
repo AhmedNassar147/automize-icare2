@@ -398,6 +398,7 @@ const analyzeReferralTimingPatterns = (
     lastTodayPreviousDelta,
     lastTodayRTT,
     wasLastTodayDangerous,
+    wasFarDangerPhase,
     timeDiffFromLastCase,
     lastCaseReferralId,
     lastTodayOutcome,
@@ -444,6 +445,7 @@ const getExtraTimeBasedLogs = async ({
     lastTodayPreviousDelta,
     lastTodayRTT,
     wasLastTodayDangerous,
+    wasFarDangerPhase,
     timeDiffFromLastCase,
     lastCaseDiff,
     lastCaseReferralId,
@@ -589,25 +591,29 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
+  const shouldBoostWaitAfterDanger = !!wasLastTodayDangerous;
+
   const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
   let currentWait = WAITS_MAP[waitBucket] + extrTime;
 
   const isTwoHoursOrMoreLeft = timeDiffFromLastCaseHours >= 2;
 
   const shouldDecreaseInitialWait =
-    !willReductAfterDanger && isTwoHoursOrMoreLeft;
+    !willReductAfterDanger &&
+    isTwoHoursOrMoreLeft &&
+    !shouldBoostWaitAfterDanger;
+
+  const positiveLastDelta = Math.abs(lastCasePreviousDelta || 0);
+
+  const isLastCaseWasLowWaiting = [
+    OUTCOME_MAP.lowWaiting,
+    OUTCOME_MAP.needLessWait,
+  ].includes(lastCaseOutcome);
+
+  const isLastCaseModerateWaiting =
+    lastCaseOutcome === OUTCOME_MAP.moderateWaiting;
 
   if (shouldDecreaseInitialWait) {
-    const isLastCaseWasLowWaiting = [
-      OUTCOME_MAP.lowWaiting,
-      OUTCOME_MAP.needLessWait,
-    ].includes(lastCaseOutcome);
-
-    const isLastCaseModerateWaiting =
-      lastCaseOutcome === OUTCOME_MAP.moderateWaiting;
-
-    const positiveLastDelta = Math.abs(lastCasePreviousDelta || 0);
-
     const isNotPerformedCase =
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
 
@@ -640,6 +646,14 @@ const getExtraTimeBasedLogs = async ({
         `🔥 reducing-wait wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     }
+  }
+
+  if (shouldBoostWaitAfterDanger) {
+    const value = wasFarDangerPhase ? 2 : 1;
+    currentWait += value;
+    extraBotMessages.push(
+      `🔥 boost-wait-after-danger wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
+    );
   }
 
   if (isCurrentDiffNegative) {
