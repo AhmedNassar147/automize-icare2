@@ -612,32 +612,34 @@ const getExtraTimeBasedLogs = async ({
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
 
     if (isFirstCaseToday) {
-      const value = timeDiffFromLastCaseHours > 4 ? -5 : -4;
+      const value = timeDiffFromLastCaseHours > 3 ? -5 : -4;
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-for-first-case wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     } else if (isLastCaseWasLowWaiting) {
-      const value = -Math.max(3, 6 - positiveLastDelta);
+      const maxStart = timeDiffFromLastCaseHours >= 3 ? 4 : 3;
+      const value = -Math.max(maxStart, 6 - (positiveLastDelta || 1));
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-after-low-waiting wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     } else if (isLastCaseModerateWaiting) {
-      const value = -Math.max(2, 5 - (positiveLastDelta || 1));
+      const maxStart = timeDiffFromLastCaseHours >= 3 ? 4 : 2;
+      const value = -Math.max(maxStart, 5 - (positiveLastDelta || 1));
       currentWait = value;
 
       extraBotMessages.push(
         `🔥 reducing-after-moderate wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     } else if (isNotPerformedCase) {
-      const value = -2;
+      const value = timeDiffFromLastCaseHours >= 3 ? -4 : -2;
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-after-not-performed wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     } else {
-      const value = -2;
+      const value = timeDiffFromLastCaseHours >= 3 ? -4 : -2;
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-initial-wait wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
@@ -706,6 +708,9 @@ const getExtraTimeBasedLogs = async ({
       timeDiffFromLastCase <= 50 * 60 * 1000
     ) {
       value = Math.max(4, value);
+      extraBotMessages.push(
+        `🔥 boot-stable-wait-4 waitWas=${currentWait}ms to wait=${value}ms`,
+      );
     }
 
     // if (isCurrentNeedsReductionAfterNormalDanger) {
