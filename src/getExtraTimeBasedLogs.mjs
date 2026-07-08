@@ -28,6 +28,7 @@ const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
   // if (rtt >= 150) return +2;
   if (rtt >= 97) return +1;
+  if (rtt >= 140) return +2;
 
   // extremely responsive session
   // if (rtt < 75) return -1;
@@ -625,24 +626,19 @@ const getExtraTimeBasedLogs = async ({
         `🔥 reducing-after-low-waiting wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     } else if (isLastCaseModerateWaiting) {
-      const maxStart = timeDiffFromLastCaseHours >= 3 ? 4 : 2;
-      const value = -Math.max(maxStart, 5 - (positiveLastDelta || 1));
+      const maxStart =
+        timeDiffFromLastCaseHours >= 3 && positiveLastDelta > 2 ? 6 : 5;
+      const value = -Math.max(2, maxStart - (positiveLastDelta || 1));
       currentWait = value;
 
       extraBotMessages.push(
         `🔥 reducing-after-moderate wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
-    } else if (isNotPerformedCase) {
-      const value = timeDiffFromLastCaseHours >= 3 ? -4 : -2;
-      currentWait = value;
-      extraBotMessages.push(
-        `🔥 reducing-after-not-performed wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
-      );
     } else {
-      const value = timeDiffFromLastCaseHours >= 3 ? -4 : -2;
+      const value = timeDiffFromLastCaseHours >= 3 ? -3 : -2;
       currentWait = value;
       extraBotMessages.push(
-        `🔥 reducing-initial-wait wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
+        `🔥 reducing-wait wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     }
   }
