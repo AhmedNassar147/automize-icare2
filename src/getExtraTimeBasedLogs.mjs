@@ -485,6 +485,8 @@ const getExtraTimeBasedLogs = async ({
 
   const currentHours = new Date().getHours();
 
+  const isLargeRtt = (rtt || 0) > 100;
+
   // const isMediumGap =
   //   diffFromLastToday > NEAR_CLUSTER_MS && diffFromLastToday < FAR_CASE_MS;
 
@@ -591,7 +593,8 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
-  const shouldBoostWaitAfterDanger = !!wasLastTodayDangerous;
+  const shouldBoostWaitAfterDanger =
+    !!wasLastTodayDangerous && isCurrentDiffNegative && isLargeRtt;
 
   const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
   let currentWait = WAITS_MAP[waitBucket] + extrTime;
@@ -648,14 +651,6 @@ const getExtraTimeBasedLogs = async ({
     }
   }
 
-  if (shouldBoostWaitAfterDanger) {
-    const value = wasFarDangerPhase ? 2 : 1;
-    currentWait += value;
-    extraBotMessages.push(
-      `🔥 boost-wait-after-danger wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
-    );
-  }
-
   if (isCurrentDiffNegative) {
     const waitBasedDiff = Math.abs(diff) / 1000;
 
@@ -704,6 +699,14 @@ const getExtraTimeBasedLogs = async ({
       if (rttMessage) {
         extraBotMessages.push(rttMessage);
       }
+    }
+
+    if (shouldBoostWaitAfterDanger) {
+      const value = wasFarDangerPhase ? 2 : 1;
+      extraWait += value;
+      extraBotMessages.push(
+        `🔥 boost-wait-after-danger wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
+      );
     }
   }
 
