@@ -651,13 +651,13 @@ const getExtraTimeBasedLogs = async ({
     }
   }
 
+  const negativeDiffCount =
+    isFirstCaseToday || !isLastTodayDiffNegative
+      ? 0
+      : getNegativeCountBeforeCurrent(todayCases, diff);
+
   if (isCurrentDiffNegative) {
     const waitBasedDiff = Math.abs(diff) / 1000;
-
-    const negativeDiffCount =
-      isFirstCaseToday || !isLastTodayDiffNegative
-        ? 0
-        : getNegativeCountBeforeCurrent(todayCases, diff);
 
     // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
     let maxNewWait = currentWait + Math.abs((waitBasedDiff || 0) - 1);
@@ -717,11 +717,11 @@ const getExtraTimeBasedLogs = async ({
       // lastCaseDiff < 0 &&
       value < 4 &&
       !isHotCluster &&
-      timeDiffFromLastCase <= 50 * 60 * 1000
+      (timeDiffFromLastCase <= 50 * 60 * 1000 || negativeDiffCount >= 2)
     ) {
       value = Math.max(4, value);
       extraBotMessages.push(
-        `🔥 boot-stable-wait-4 waitWas=${currentWait}ms to wait=${value}ms`,
+        `🔥 boot-stable-wait-4 waitWas=${currentWait}ms to wait=${value}ms negativeDiffCount=${negativeDiffCount}`,
       );
     }
 
