@@ -798,6 +798,14 @@ const getExtraTimeBasedLogs = async ({
   //   extraBotMessages.push(`✅ backend-delay delay=0ms  wait=-${value}ms`);
   // }
 
+  if (isZeroBackendDelay && isCurrentDiffNegative) {
+    let value = 1;
+    extraWait += value;
+    extraBotMessages.push(
+      `✅ backend-delay-with-negative-diff delay=0ms  wait=+${value}ms`,
+    );
+  }
+
   if (extraBackendDelayMs >= 2000) {
     extraWait += 1;
     // we need check if we should reduce or not like case 378526
