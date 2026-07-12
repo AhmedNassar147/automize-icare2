@@ -798,7 +798,7 @@ const getExtraTimeBasedLogs = async ({
   //   extraBotMessages.push(`✅ backend-delay delay=0ms  wait=-${value}ms`);
   // }
 
-  if (isZeroBackendDelay && isCurrentDiffNegative) {
+  if (isZeroBackendDelay && isCurrentDiffNegative && !isCurrentCaseDangerZone) {
     let value = 1;
     extraWait += value;
     extraBotMessages.push(
