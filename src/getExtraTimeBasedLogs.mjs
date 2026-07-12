@@ -719,11 +719,12 @@ const getExtraTimeBasedLogs = async ({
 
     if (
       // isLastCaseNegative &&
+      !isFirstCaseToday &&
       value < 4 &&
       !isHotCluster &&
       (timeDiffFromLastCase <= 50 * 60 * 1000 || negativeDiffCount >= 2)
     ) {
-      value = Math.max(isFirstCaseToday ? 2 : 4, value);
+      value = Math.max(4, value);
       extraBotMessages.push(
         `🔥 boot-stable-wait-4 waitWas=${currentWait}ms to wait=${value}ms negativeDiffCount=${negativeDiffCount}`,
       );
