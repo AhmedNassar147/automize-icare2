@@ -616,6 +616,11 @@ const getExtraTimeBasedLogs = async ({
   const isLastCaseModerateWaiting =
     lastCaseOutcome === OUTCOME_MAP.moderateWaiting;
 
+  const negativeDiffCount =
+    isFirstCaseToday || !isLastTodayDiffNegative
+      ? 0
+      : getNegativeCountBeforeCurrent(todayCases, diff);
+
   if (shouldDecreaseInitialWait) {
     const isNotPerformedCase =
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
@@ -652,11 +657,6 @@ const getExtraTimeBasedLogs = async ({
     }
   }
 
-  const negativeDiffCount =
-    isFirstCaseToday || !isLastTodayDiffNegative
-      ? 0
-      : getNegativeCountBeforeCurrent(todayCases, diff);
-
   if (isCurrentDiffNegative) {
     const waitBasedDiff = Math.abs(diff) / 1000;
 
@@ -666,7 +666,7 @@ const getExtraTimeBasedLogs = async ({
 
     if (isLastTodayDiffNegative) {
       if (negativeDiffCount >= 3 && !isHotCluster) {
-        const value = maxNewWait;
+        const value = maxNewWait + (shouldDecreaseInitialWait ? 1 : 0);
         extraWait += value;
 
         extraBotMessages.push(
