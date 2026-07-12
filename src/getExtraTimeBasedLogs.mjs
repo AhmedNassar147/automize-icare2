@@ -661,7 +661,7 @@ const getExtraTimeBasedLogs = async ({
     const waitBasedDiff = Math.abs(diff) / 1000;
 
     // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
-    let maxNewWait = currentWait + (waitBasedDiff > 1 ? waitBasedDiff : 0);
+    let maxNewWait = currentWait + (waitBasedDiff || 1) - 1;
     // let maxNewWait = currentWait;
 
     if (isLastTodayDiffNegative) {
