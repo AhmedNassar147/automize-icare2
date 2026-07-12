@@ -661,7 +661,7 @@ const getExtraTimeBasedLogs = async ({
     const waitBasedDiff = Math.abs(diff) / 1000;
 
     // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
-    let maxNewWait = currentWait + Math.abs((waitBasedDiff || 0) - 1);
+    let maxNewWait = currentWait + (waitBasedDiff > 1 ? waitBasedDiff : 0);
     // let maxNewWait = currentWait;
 
     if (isLastTodayDiffNegative) {
@@ -785,20 +785,21 @@ const getExtraTimeBasedLogs = async ({
   //   }
   // }
 
-  if (isZeroBackendDelay) {
-    // 1-  we need to reduce if previous was danger check case 378589
-    // 2-  we need to reduce if previous was not danger check case 377247
-    let value = 1;
-    if (wasLastTodayDangerous && !shouldDecreaseInitialWait) {
-      value = Math.max(1, 2 - (afterDangerReduction || 1));
-    }
+  // if (isZeroBackendDelay) {
+  //   // 1-  we need to reduce if previous was danger check case 378589
+  //   // 2-  we need to reduce if previous was not danger check case 377247
+  //   let value = 1;
+  //   if (wasLastTodayDangerous && !shouldDecreaseInitialWait) {
+  //     value = Math.max(1, 2 - (afterDangerReduction || 1));
+  //   }
 
-    extraWait -= value;
+  //   extraWait -= value;
 
-    extraBotMessages.push(`✅ backend-delay delay=0ms  wait=-${value}ms`);
-  }
+  //   extraBotMessages.push(`✅ backend-delay delay=0ms  wait=-${value}ms`);
+  // }
 
   if (extraBackendDelayMs >= 2000) {
+    extraWait += 1;
     // we need check if we should reduce or not like case 378526
     extraBotMessages.push(
       `⚠️ backend-delay Ahmed should check if we need to reduce or not when delay=${extraBackendDelayMs}ms\n\nWe have a similar case (378526) with ${extraBackendDelayMs}ms delay`,
