@@ -464,6 +464,8 @@ const getExtraTimeBasedLogs = async ({
     lastCasePreviousDelta,
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
+  const isLastCaseNegative = lastCaseDiff && lastCaseDiff < 0;
+
   const isFirstCaseToday = !todayCases?.length;
 
   const timeGapHours = diffFromLastToday / (60 * 60 * 1000);
@@ -616,18 +618,16 @@ const getExtraTimeBasedLogs = async ({
   const isLastCaseModerateWaiting =
     lastCaseOutcome === OUTCOME_MAP.moderateWaiting;
 
-  const negativeDiffCount =
-    isFirstCaseToday || !isLastTodayDiffNegative
-      ? 0
-      : getNegativeCountBeforeCurrent(todayCases, diff);
+  const negativeDiffCount = !isLastCaseNegative
+    ? 0
+    : getNegativeCountBeforeCurrent(logsData.slice(-4), diff);
 
   if (shouldDecreaseInitialWait) {
     const isNotPerformedCase =
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
 
     if (isFirstCaseToday) {
-      // const value = timeDiffFromLastCaseHours > 3 ? -5 : -4;
-      const value = -4;
+      const value = timeDiffFromLastCaseHours > 4 ? -5 : -4;
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-for-first-case wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
@@ -659,43 +659,46 @@ const getExtraTimeBasedLogs = async ({
 
   if (isCurrentDiffNegative) {
     const waitBasedDiff = Math.abs(diff) / 1000;
+    const valueFromNegative = (waitBasedDiff || 1) - 1;
 
     // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
-    let maxNewWait = currentWait + (waitBasedDiff || 1) - 1;
+    let maxNewWait = currentWait + valueFromNegative;
     // let maxNewWait = currentWait;
 
     if (isLastTodayDiffNegative) {
-      if (negativeDiffCount >= 3 && !isHotCluster) {
-        const value = maxNewWait + (shouldDecreaseInitialWait ? 1 : 0);
-        extraWait += value;
+      const waitValue = maxNewWait;
+      extraWait += waitValue;
 
-        extraBotMessages.push(
-          `🔥 negative-chain count=${negativeDiffCount} wait=${value}ms`,
-        );
+      extraBotMessages.push(
+        isFarFromLastToday
+          ? `↔️ far-negative ${logCtx} wait=${waitValue}ms`
+          : `🔁 consecutive-negative ${logCtx} wait=${waitValue}ms`,
+      );
 
-        if (rttMessage) {
-          extraBotMessages.push(rttMessage);
-        }
-      } else {
-        const waitValue = maxNewWait;
-        extraWait += waitValue;
-
-        extraBotMessages.push(
-          isFarFromLastToday
-            ? `↔️ far-negative ${logCtx} wait=${waitValue}ms`
-            : `🔁 consecutive-negative ${logCtx} wait=${waitValue}ms`,
-        );
-
-        if (rttMessage) {
-          extraBotMessages.push(rttMessage);
-        }
+      if (rttMessage) {
+        extraBotMessages.push(rttMessage);
       }
     } else {
       extraWait += maxNewWait;
       const negativeText = isFirstCaseToday
         ? "🌅 first-day-negative"
         : "✅ first-negative";
-      extraBotMessages.push(`${negativeText} ${logCtx} wait=${maxNewWait}ms`);
+      extraBotMessages.push(
+        `${negativeText} ${logCtx} wait=+${valueFromNegative}ms`,
+      );
+
+      if (rttMessage) {
+        extraBotMessages.push(rttMessage);
+      }
+    }
+
+    if (negativeDiffCount >= 3 && !isHotCluster) {
+      const value = shouldDecreaseInitialWait ? 1 : 0;
+      extraWait += value;
+
+      extraBotMessages.push(
+        `🔥 negative-chain count=${negativeDiffCount} wait=${value}ms`,
+      );
 
       if (rttMessage) {
         extraBotMessages.push(rttMessage);
@@ -715,7 +718,7 @@ const getExtraTimeBasedLogs = async ({
     let value = currentWait;
 
     if (
-      // lastCaseDiff < 0 &&
+      // isLastCaseNegative &&
       value < 4 &&
       !isHotCluster &&
       (timeDiffFromLastCase <= 50 * 60 * 1000 || negativeDiffCount >= 2)
