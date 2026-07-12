@@ -636,7 +636,7 @@ const getExtraTimeBasedLogs = async ({
       );
     } else if (isLastCaseModerateWaiting) {
       const maxStart =
-        timeDiffFromLastCaseHours >= 3 && positiveLastDelta > 2 ? 6 : 5;
+        timeDiffFromLastCaseHours >= 3 && positiveLastDelta > 2 ? 5 : 4;
       const value = -Math.max(2, maxStart - (positiveLastDelta || 1));
       currentWait = value;
 
