@@ -621,7 +621,8 @@ const getExtraTimeBasedLogs = async ({
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
 
     if (isFirstCaseToday) {
-      const value = timeDiffFromLastCaseHours > 3 ? -5 : -4;
+      // const value = timeDiffFromLastCaseHours > 3 ? -5 : -4;
+      const value = -4;
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-for-first-case wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
