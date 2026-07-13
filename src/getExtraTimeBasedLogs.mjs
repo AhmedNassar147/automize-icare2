@@ -692,8 +692,8 @@ const getExtraTimeBasedLogs = async ({
       }
     }
 
-    if (negativeDiffCount >= 3 && !isHotCluster) {
-      const value = shouldDecreaseInitialWait ? 1 : 0;
+    if (negativeDiffCount >= 2) {
+      const value = shouldDecreaseInitialWait || isHotCluster ? 1 : 2;
       extraWait += value;
 
       extraBotMessages.push(
@@ -724,9 +724,10 @@ const getExtraTimeBasedLogs = async ({
       !isHotCluster &&
       (timeDiffFromLastCase <= 50 * 60 * 1000 || negativeDiffCount >= 2)
     ) {
-      value = Math.max(4, value);
+      value = Math.max(negativeDiffCount ? 5 : 4, value);
+      const tag = `boot-stable-wait-${negativeDiffCount ? 5 : 4}`;
       extraBotMessages.push(
-        `🔥 boot-stable-wait-4 waitWas=${currentWait}ms to wait=${value}ms negativeDiffCount=${negativeDiffCount}`,
+        `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms negativeDiffCount=${negativeDiffCount}`,
       );
     }
 
