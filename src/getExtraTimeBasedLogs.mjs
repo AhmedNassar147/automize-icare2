@@ -693,7 +693,12 @@ const getExtraTimeBasedLogs = async ({
     }
 
     if (negativeDiffCount >= 2) {
-      const value = shouldDecreaseInitialWait || isHotCluster ? 1 : 2;
+      const value =
+        shouldDecreaseInitialWait || isHotCluster
+          ? 1
+          : negativeDiffCount >= 3
+            ? 0
+            : 2;
       extraWait += value;
 
       extraBotMessages.push(
