@@ -144,13 +144,14 @@ const getDangerZoneExtraWait = (
   isTooFarCase,
   extraBackendDelayMs,
   lastTodayPreviousDelta,
+  gapMin,
 ) => {
   const previousReduction = Math.max(0, -lastTodayPreviousDelta);
 
   // far 10 case 378585
   // not far case  378569 and this needed 7 becouse the previous one needed to be accepted at 2502
   // not far case  378337 and this needed 5 becouse if we applied rule of delay == 0  we would claim it
-  const baseDangerWait = shouldUseFullWait ? 10 : 7;
+  const baseDangerWait = shouldUseFullWait ? 10 : gapMin < 15 ? 6 : 7;
   const zeroDelayWait = extraBackendDelayMs === 0 ? -2 : 0;
 
   // we use the too far for case like 378994
@@ -416,6 +417,10 @@ const analyzeReferralTimingPatterns = (
   };
 };
 
+// this is a danger zone case
+// 15/07/2026 09:23:45 am| -2000 - (<) |380964| 2435_14
+// that should reduce all day cases
+
 const getExtraTimeBasedLogs = async ({
   referralId,
   referralEndTimestamp,
@@ -466,6 +471,12 @@ const getExtraTimeBasedLogs = async ({
   } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
 
   const isLastCaseNegative = lastCaseDiff && lastCaseDiff < 0;
+
+  const isLastCaseTodayNegative = lastTodayDiff && lastTodayDiff < 0;
+
+  const lastTodayCaseNegativeDiffValue = isLastCaseNegative
+    ? Math.abs(lastTodayDiff) / 1000
+    : 0;
 
   const isFirstCaseToday = !todayCases?.length;
 
@@ -573,6 +584,7 @@ const getExtraTimeBasedLogs = async ({
       isTooFarCase,
       extraBackendDelayMs,
       lastTodayPreviousDelta,
+      gapMin,
     );
 
     extraWait += dangerWait;
@@ -605,9 +617,10 @@ const getExtraTimeBasedLogs = async ({
   const isTwoHoursOrMoreLeft = timeDiffFromLastCaseHours >= 2;
 
   const shouldDecreaseInitialWait =
-    !willReductAfterDanger &&
-    isTwoHoursOrMoreLeft &&
-    !shouldBoostWaitAfterDanger;
+    (isFirstCaseToday && gapMinLastCase >= 15) ||
+    (!willReductAfterDanger &&
+      isTwoHoursOrMoreLeft &&
+      !shouldBoostWaitAfterDanger);
 
   const positiveLastDelta = Math.abs(lastCasePreviousDelta || 0);
 
@@ -628,7 +641,12 @@ const getExtraTimeBasedLogs = async ({
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
 
     if (isFirstCaseToday) {
-      const value = timeDiffFromLastCaseHours > 4 ? -5 : -4;
+      const value =
+        timeDiffFromLastCaseHours <= 1
+          ? -2
+          : timeDiffFromLastCaseHours > 4
+            ? -5
+            : -4;
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-for-first-case wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
@@ -694,12 +712,16 @@ const getExtraTimeBasedLogs = async ({
     }
 
     if (negativeDiffCount >= 2) {
+      const isCount3OrMore = negativeDiffCount >= 3;
+      // 381020 isCount3OrMore && isFarFromLastToday
+      // 380825 isCount3OrMore && !isFarFromLastToday
       const value =
-        shouldDecreaseInitialWait || isHotCluster
-          ? 1
-          : negativeDiffCount >= 3
+        (isCount3OrMore && !isFarFromLastToday) ||
+        lastTodayCaseNegativeDiffValue > 1
+          ? shouldDecreaseInitialWait
             ? 0
-            : 2;
+            : -1
+          : 1 + (isCount3OrMore ? 1 : 0);
       extraWait += value;
 
       extraBotMessages.push(
@@ -711,30 +733,45 @@ const getExtraTimeBasedLogs = async ({
       }
     }
 
-    if (shouldBoostWaitAfterDanger) {
-      const value = wasFarDangerPhase ? 2 : 1;
-      extraWait += value;
-      extraBotMessages.push(
-        `🔥 boost-wait-after-danger wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
-      );
-    }
+    // if (shouldBoostWaitAfterDanger) {
+    //   const value = wasFarDangerPhase ? 2 : 1;
+    //   extraWait += value;
+    //   extraBotMessages.push(
+    //     `🔥 boost-wait-after-danger wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
+    //   );
+    // }
   }
 
   if (!isCurrentDiffNegative) {
     let value = currentWait;
 
-    if (
-      // isLastCaseNegative &&
-      !isFirstCaseToday &&
-      value < 4 &&
-      !isHotCluster &&
-      (timeDiffFromLastCase <= 50 * 60 * 1000 || negativeDiffCount >= 2)
-    ) {
-      value = Math.max(negativeDiffCount ? 5 : 4, value);
-      const tag = `boot-stable-wait-${negativeDiffCount ? 5 : 4}`;
-      extraBotMessages.push(
-        `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms negativeDiffCount=${negativeDiffCount}`,
-      );
+    if (!isFirstCaseToday && value < 4 && !isHotCluster) {
+      const isExceedingTime = timeDiffFromLastCase <= 80 * 60 * 1000;
+      const isExceedingPreviousNegative = negativeDiffCount >= 2;
+
+      let bootMessage = "";
+
+      if (isExceedingTime) {
+        value = 4;
+        const tag = `boot-stable-wait-4`;
+        bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase}`;
+      }
+
+      if (isExceedingPreviousNegative) {
+        value = isFarFromLastToday ? 5 : 4;
+        const tag = `boot-stable-wait-${value}`;
+        bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
+      }
+
+      if (lastTodayCaseNegativeDiffValue > 1) {
+        value += lastTodayCaseNegativeDiffValue;
+        const tag = `boot-stable-wait-${lastTodayCaseNegativeDiffValue}`;
+        bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
+      }
+
+      if (bootMessage) {
+        extraBotMessages.push(bootMessage);
+      }
     }
 
     // if (isCurrentNeedsReductionAfterNormalDanger) {
@@ -819,7 +856,7 @@ const getExtraTimeBasedLogs = async ({
 
   if (extraBackendDelayMs >= 2000) {
     extraWait += 1;
-    // we need check if we should reduce or not like case 378526
+    // we need check if we should reduce or not like case 378526 and 380464
     extraBotMessages.push(
       `⚠️ backend-delay Ahmed should check if we need to reduce or not when delay=${extraBackendDelayMs}ms\n\nWe have a similar case (378526) with ${extraBackendDelayMs}ms delay`,
     );
