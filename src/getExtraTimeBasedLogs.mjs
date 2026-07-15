@@ -155,7 +155,8 @@ const getDangerZoneExtraWait = (
 
   // we use the too far for case like 378994
   // it was too far gap more than 8 hours
-  const extraBoost = isTooFarCase ? 1 : 0;
+  // const extraBoost = isTooFarCase ? 1 : 0;
+  const extraBoost = 0;
 
   const dangerWait =
     baseDangerWait +
