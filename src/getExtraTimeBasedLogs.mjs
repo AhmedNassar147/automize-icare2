@@ -616,11 +616,20 @@ const getExtraTimeBasedLogs = async ({
 
   const isTwoHoursOrMoreLeft = timeDiffFromLastCaseHours >= 2;
 
-  const shouldDecreaseInitialWait =
-    (isFirstCaseToday && gapMinLastCase >= 15) ||
+  const isCurrentAndPreviousDiffZero =
+    !isCurrentDiffNegative && !isLastCaseTodayNegative;
+
+  const shouldReduceIfFirstCase = isFirstCaseToday && gapMinLastCase >= 15;
+
+  let shouldDecreaseInitialWait =
+    shouldReduceIfFirstCase ||
     (!willReductAfterDanger &&
       isTwoHoursOrMoreLeft &&
       !shouldBoostWaitAfterDanger);
+
+  if (isCurrentAndPreviousDiffZero && !shouldReduceIfFirstCase) {
+    shouldDecreaseInitialWait = false;
+  }
 
   const positiveLastDelta = Math.abs(lastCasePreviousDelta || 0);
 
@@ -745,7 +754,12 @@ const getExtraTimeBasedLogs = async ({
   if (!isCurrentDiffNegative) {
     let value = currentWait;
 
-    if (!isFirstCaseToday && value < 4 && !isHotCluster) {
+    if (
+      !isCurrentAndPreviousDiffZero &&
+      !isFirstCaseToday &&
+      value < 4 &&
+      !isHotCluster
+    ) {
       const isExceedingTime = timeDiffFromLastCase <= 80 * 60 * 1000;
       const isExceedingPreviousNegative = negativeDiffCount >= 2;
 
