@@ -16,7 +16,7 @@ const WAITS_MAP = {
   hot: 0,
   nearHot: 1,
   medium: 2,
-  far: 3,
+  far: 2,
 };
 
 const DANGER_ZONE_PHASES = {

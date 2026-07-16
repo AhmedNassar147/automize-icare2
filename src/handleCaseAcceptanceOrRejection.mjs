@@ -80,6 +80,18 @@ export const navigateToNewDetailsPage = async ({
   );
 };
 
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+};
+
 const FILE_NAMES = [
   "Letter",
   "Form",
@@ -170,7 +182,14 @@ const handleCaseAcceptanceOrRejection =
         ? undefined
         : [
             {
-              fileName: `${patientFileName} ${randomItem(FILE_NAMES)} ${referralId}.pdf`,
+              fileName: `${shuffleArray([
+                patientFileName,
+                `(${routerKey})`,
+                randomItem(FILE_NAMES),
+                referralId,
+              ])
+                .filter(Boolean)
+                .join(" ")}.pdf`,
               fileData: filebase64,
               fileExtension: 0,
               userCode: CLIENT_NAME,
