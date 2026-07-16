@@ -720,7 +720,7 @@ const getExtraTimeBasedLogs = async ({
       }
     }
 
-    if (negativeDiffCount >= 2) {
+    if (!isFirstCaseToday && negativeDiffCount >= 2) {
       const isCount3OrMore = negativeDiffCount >= 3;
       // 381020 isCount3OrMore && isFarFromLastToday
       // 380825 isCount3OrMore && !isFarFromLastToday
@@ -730,7 +730,7 @@ const getExtraTimeBasedLogs = async ({
           ? shouldDecreaseInitialWait
             ? 0
             : -1
-          : (extraBasedRtt ? 0 : 1) + (isCount3OrMore ? 1 : 0);
+          : 1 + (isCount3OrMore ? 1 : 0);
       extraWait += value;
 
       extraBotMessages.push(
