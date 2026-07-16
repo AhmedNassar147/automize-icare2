@@ -730,7 +730,7 @@ const getExtraTimeBasedLogs = async ({
           ? shouldDecreaseInitialWait
             ? 0
             : -1
-          : 1 + (isCount3OrMore ? 1 : 0);
+          : (extraBasedRtt ? 0 : 1) + (isCount3OrMore ? 1 : 0);
       extraWait += value;
 
       extraBotMessages.push(
