@@ -652,7 +652,7 @@ const getExtraTimeBasedLogs = async ({
     if (isFirstCaseToday) {
       const value =
         timeDiffFromLastCaseHours <= 1
-          ? -2
+          ? -1
           : timeDiffFromLastCaseHours > 4
             ? -5
             : -4;
