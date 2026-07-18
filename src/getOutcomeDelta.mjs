@@ -21,7 +21,8 @@ const getOutcomeDelta = (outcome, elapsedMs) => {
       [OUTCOME_MAP.goodWaiting]:
         elapsedMs <= 830 ? -1 : elapsedMs >= 870 ? +1 : 0,
       [OUTCOME_MAP.needMoreWait]:
-        elapsedMs <= 925 ? 0 : elapsedMs < 980 ? +2 : +2,
+        // elapsedMs <= 925 ? 0 : elapsedMs < 980 ? +2 : +2,
+        elapsedMs <= 935 ? -1 : +1,
       [OUTCOME_MAP.nearToBlock]: elapsedMs >= 1500 ? +2 : 1,
       [OUTCOME_MAP.blocked]: 0,
     }[outcome] ?? 0

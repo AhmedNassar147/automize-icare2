@@ -15,8 +15,10 @@ const FAR_CASE_MS = 90 * 60 * 1000;
 const WAITS_MAP = {
   hot: 0,
   nearHot: 1,
-  medium: 2,
+  medium: 1,
+  // medium: 2,
   far: 2,
+  // far: 3,
 };
 
 const DANGER_ZONE_PHASES = {
@@ -628,7 +630,8 @@ const getExtraTimeBasedLogs = async ({
       !shouldBoostWaitAfterDanger);
 
   if (isCurrentAndPreviousDiffZero && !shouldReduceIfFirstCase) {
-    shouldDecreaseInitialWait = false;
+    shouldDecreaseInitialWait =
+      timeDiffFromLastCaseHours < 4 ? false : shouldDecreaseInitialWait;
   }
 
   const positiveLastDelta = Math.abs(lastCasePreviousDelta || 0);
@@ -643,7 +646,7 @@ const getExtraTimeBasedLogs = async ({
 
   const negativeDiffCount = !isLastCaseNegative
     ? 0
-    : getNegativeCountBeforeCurrent(logsData.slice(-4), diff);
+    : getNegativeCountBeforeCurrent(todayCases.slice(-4), diff);
 
   if (shouldDecreaseInitialWait) {
     const isNotPerformedCase =
@@ -690,7 +693,7 @@ const getExtraTimeBasedLogs = async ({
     const valueFromNegative = (waitBasedDiff || 1) - 1;
 
     // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
-    let maxNewWait = currentWait + valueFromNegative;
+    let maxNewWait = currentWait + isFirstCaseToday ? 0 : valueFromNegative;
     // let maxNewWait = currentWait;
 
     if (isLastTodayDiffNegative) {
@@ -742,6 +745,14 @@ const getExtraTimeBasedLogs = async ({
       }
     }
 
+    if (isZeroBackendDelay) {
+      let value = 1;
+      extraWait += value;
+      extraBotMessages.push(
+        `✅ backend-delay-with-negative-diff delay=0ms  wait=+${value}ms`,
+      );
+    }
+
     // if (shouldBoostWaitAfterDanger) {
     //   const value = wasFarDangerPhase ? 2 : 1;
     //   extraWait += value;
@@ -778,8 +789,8 @@ const getExtraTimeBasedLogs = async ({
       }
 
       if (lastTodayCaseNegativeDiffValue > 1) {
-        value += lastTodayCaseNegativeDiffValue;
-        const tag = `boot-stable-wait-${lastTodayCaseNegativeDiffValue}`;
+        value += lastTodayCaseNegativeDiffValue - 1;
+        const tag = `boot-stable-wait-${lastTodayCaseNegativeDiffValue - 1}`;
         bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
       }
 
@@ -859,14 +870,6 @@ const getExtraTimeBasedLogs = async ({
 
   //   extraBotMessages.push(`✅ backend-delay delay=0ms  wait=-${value}ms`);
   // }
-
-  if (isZeroBackendDelay && isCurrentDiffNegative && !isCurrentCaseDangerZone) {
-    let value = 1;
-    extraWait += value;
-    extraBotMessages.push(
-      `✅ backend-delay-with-negative-diff delay=0ms  wait=+${value}ms`,
-    );
-  }
 
   if (extraBackendDelayMs >= 2000) {
     extraWait += 1;
