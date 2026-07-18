@@ -656,9 +656,11 @@ const getExtraTimeBasedLogs = async ({
       const value =
         timeDiffFromLastCaseHours <= 1
           ? -1
-          : timeDiffFromLastCaseHours > 4
-            ? -5
-            : -4;
+          : timeDiffFromLastCaseHours >= 8
+            ? -6
+            : timeDiffFromLastCaseHours > 4
+              ? -5
+              : -4;
       currentWait = value;
       extraBotMessages.push(
         `🔥 reducing-for-first-case wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
