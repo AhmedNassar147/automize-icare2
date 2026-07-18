@@ -622,5 +622,5 @@ import modifyGlobMedSourceCode from "./modifyGlobMedSourceCode.mjs";
 //   },
 // ];
 
-// await generateAcceptancePdfLetters(browser, patientsArray, true);
-// await generateAcceptancePdfLetters(browser, patientsArray, false);
+// await generateAcceptancePdfLetters(browser, patientsArray, true, letterType);
+// await generateAcceptancePdfLetters(browser, patientsArray, false, letterType);

@@ -14,12 +14,28 @@ import {
   HOME_PAGE_URL,
   USER_ACTION_TYPES,
   APP_URL,
+  LETTER_LAYOUT_ABBREVIATIONS,
 } from "./constants.mjs";
 import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
+import shuffleArray from "./shuffleArray.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
 import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
+import randomArrayItem from "./randomArrayItem.mjs";
 import writePollLogsData from "./writePollLogsData.mjs";
+
+const createRandomAttachmentKey = (minLength = 3, maxLength = 7) => {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  const length =
+    Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
+
+  return Array.from(
+    { length },
+    () => chars[Math.floor(Math.random() * chars.length)],
+  ).join("");
+};
 
 export const navigateToNewDetailsPage = async ({
   page,
@@ -80,18 +96,6 @@ export const navigateToNewDetailsPage = async ({
   );
 };
 
-const shuffleArray = (array) => {
-  const shuffled = [...array];
-
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-
-  return shuffled;
-};
-
 const FILE_NAMES = [
   "Letter",
   "Form",
@@ -140,8 +144,6 @@ const FILE_NAMES = [
   "Acquire Report",
 ];
 
-const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
-
 const handleCaseAcceptanceOrRejection =
   ({
     actionType,
@@ -159,6 +161,7 @@ const handleCaseAcceptanceOrRejection =
       endDateBasedServerDateMs,
       referralEndDate,
       patientName,
+      letterType,
     } = patient;
 
     try {
@@ -178,25 +181,44 @@ const handleCaseAcceptanceOrRejection =
       const patientFileName =
         (patientName || "").trim().split(/\s+/)[0] || "Patient";
 
-      const files = !isAcceptanceAction
-        ? undefined
-        : [
-            {
-              fileName: `${shuffleArray([
-                patientFileName,
-                `(${routerKey})`,
-                randomItem(FILE_NAMES),
-                referralId,
-              ])
-                .filter(Boolean)
-                .join(" ")}.pdf`,
-              fileData: filebase64,
-              fileExtension: 0,
-              userCode: CLIENT_NAME,
-              idAttachmentType: 14,
-              languageCode: 1,
-            },
-          ];
+      let files;
+
+      if (isAcceptanceAction) {
+        const attachmentKey = createRandomAttachmentKey();
+
+        const formattedAttachmentKey = randomArrayItem([
+          attachmentKey,
+          `(${attachmentKey})`,
+          `Copy-${attachmentKey}`,
+          `${attachmentKey}-Copy`,
+          `Final-${attachmentKey}`,
+          `${attachmentKey}-01`,
+          `${attachmentKey}-A`,
+          `${attachmentKey}-New`,
+          `${attachmentKey}-Rev`,
+        ]);
+
+        const fileNameParts = [
+          patientFileName,
+          Math.random() < 0.6 ? formattedAttachmentKey : undefined,
+          randomArrayItem(FILE_NAMES),
+          Math.random() < 0.8
+            ? LETTER_LAYOUT_ABBREVIATIONS[letterType]
+            : undefined,
+          referralId,
+        ].filter(Boolean);
+
+        files = [
+          {
+            fileName: `${shuffleArray(fileNameParts).join(" ")}.pdf`,
+            fileData: filebase64,
+            fileExtension: 0,
+            userCode: CLIENT_NAME,
+            idAttachmentType: 14,
+            languageCode: 1,
+          },
+        ];
+      }
 
       const onZeroSecond = async () => {
         if (isFakeReject) return;

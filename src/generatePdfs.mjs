@@ -20,6 +20,7 @@ const generateAcceptancePdfLetters = async (
   browser,
   patientsArray,
   isAcceptance,
+  letterType,
 ) => {
   const {
     CLIENT_IN_PDF_NAME,
@@ -42,7 +43,7 @@ const generateAcceptancePdfLetters = async (
         clientInPdf: CLIENT_IN_PDF_NAME || "",
         clientMangerName: CLIENT_MANAGER_NAME || "",
         clientManagerPhone: CLIENT_MANAGER_PHONE || "",
-        letterType: LETTER_TYPE,
+        letterType: LETTER_TYPE || letterType,
       }); // Assume you already have this
       await page.setContent(html, { waitUntil: "domcontentloaded" });
 

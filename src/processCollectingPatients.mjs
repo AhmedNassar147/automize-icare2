@@ -5,12 +5,13 @@
  */
 import generateAcceptancePdfLetters from "./generatePdfs.mjs";
 import getPatientReferralDataFromAPI from "./getPatientReferralDataFromAPI.mjs";
-import { cutoffTimeMs } from "./constants.mjs";
 import sleep from "./sleep.mjs";
 import insureFetchedPatientData from "./insureFetchedPatientData.mjs";
 import formateDateToString from "./formateDateToString.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import uploadToTransferIt from "./uploadToTransferIt.mjs";
+import randomArrayItem from "./randomArrayItem.mjs";
+import { cutoffTimeMs, LETTER_LAYOUT_NAMES } from "./constants.mjs";
 
 const getLeftMsBasedCaseMessage = (caseAlertMessage) => {
   const match = caseAlertMessage.match(
@@ -107,6 +108,8 @@ const processCollectingPatients = async ({
   page,
   patients,
 }) => {
+  const { USE_NTFY_AS_CASE_PROVIDER, LETTER_TYPE } = process.env;
+
   let newPatientAdded = false;
 
   try {
@@ -178,8 +181,6 @@ const processCollectingPatients = async ({
 
       let transferUrl;
 
-      const { USE_NTFY_AS_CASE_PROVIDER } = process.env;
-
       if (USE_NTFY_AS_CASE_PROVIDER === "Y") {
         const uploadResult = await uploadToTransferIt({
           browser,
@@ -196,6 +197,8 @@ const processCollectingPatients = async ({
         }
       }
 
+      const letterType = LETTER_TYPE || randomArrayItem(LETTER_LAYOUT_NAMES);
+
       const finalData = {
         referralId,
         transferUrl,
@@ -209,14 +212,15 @@ const processCollectingPatients = async ({
           serverNow,
         }),
         ...patientData,
+        letterType,
       };
 
       await patientsStore.addPatients(finalData);
 
       // Generate acceptance PDFs concurrently
       await Promise.allSettled([
-        generateAcceptancePdfLetters(browser, [finalData], true),
-        generateAcceptancePdfLetters(browser, [finalData], false),
+        generateAcceptancePdfLetters(browser, [finalData], true, letterType),
+        generateAcceptancePdfLetters(browser, [finalData], false, letterType),
       ]);
 
       await sleep(2000 + Math.random() * 2000);
