@@ -692,9 +692,7 @@ const getExtraTimeBasedLogs = async ({
     const waitBasedDiff = Math.abs(diff) / 1000;
     const valueFromNegative = (waitBasedDiff || 1) - 1;
 
-    // let maxNewWait = currentWait + (waitBasedDiff >= 2000 ? -1 : 0);
-    let maxNewWait = currentWait + isFirstCaseToday ? 0 : valueFromNegative;
-    // let maxNewWait = currentWait;
+    let maxNewWait = currentWait + valueFromNegative;
 
     if (isLastTodayDiffNegative) {
       const waitValue = maxNewWait;
@@ -706,43 +704,28 @@ const getExtraTimeBasedLogs = async ({
           : `🔁 consecutive-negative ${logCtx} wait=${waitValue}ms`,
       );
 
-      if (rttMessage) {
-        extraBotMessages.push(rttMessage);
+      if (negativeDiffCount >= 2) {
+        const isCount3OrMore = negativeDiffCount >= 3;
+        // 381020 isCount3OrMore && isFarFromLastToday
+        // 380825 isCount3OrMore && !isFarFromLastToday
+        const value =
+          (isCount3OrMore && !isFarFromLastToday) ||
+          lastTodayCaseNegativeDiffValue > 1
+            ? shouldDecreaseInitialWait
+              ? 0
+              : -1
+            : 1 + (isCount3OrMore ? 1 : 0);
+        extraWait += value;
+
+        extraBotMessages.push(
+          `🔥 negative-chain count=${negativeDiffCount} wait=${value}ms`,
+        );
       }
     } else {
-      extraWait += maxNewWait;
-      const negativeText = isFirstCaseToday
-        ? "🌅 first-day-negative"
-        : "✅ first-negative";
+      extraWait += currentWait;
       extraBotMessages.push(
-        `${negativeText} ${logCtx} wait=+${valueFromNegative}ms`,
+        `✅ first-day-negative ${logCtx} wait=${currentWait}ms`,
       );
-
-      if (rttMessage) {
-        extraBotMessages.push(rttMessage);
-      }
-    }
-
-    if (!isFirstCaseToday && negativeDiffCount >= 2) {
-      const isCount3OrMore = negativeDiffCount >= 3;
-      // 381020 isCount3OrMore && isFarFromLastToday
-      // 380825 isCount3OrMore && !isFarFromLastToday
-      const value =
-        (isCount3OrMore && !isFarFromLastToday) ||
-        lastTodayCaseNegativeDiffValue > 1
-          ? shouldDecreaseInitialWait
-            ? 0
-            : -1
-          : 1 + (isCount3OrMore ? 1 : 0);
-      extraWait += value;
-
-      extraBotMessages.push(
-        `🔥 negative-chain count=${negativeDiffCount} wait=${value}ms`,
-      );
-
-      if (rttMessage) {
-        extraBotMessages.push(rttMessage);
-      }
     }
 
     if (isZeroBackendDelay) {
@@ -760,6 +743,10 @@ const getExtraTimeBasedLogs = async ({
     //     `🔥 boost-wait-after-danger wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
     //   );
     // }
+
+    if (rttMessage) {
+      extraBotMessages.push(rttMessage);
+    }
   }
 
   if (!isCurrentDiffNegative) {
