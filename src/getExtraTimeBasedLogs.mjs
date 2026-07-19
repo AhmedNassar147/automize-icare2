@@ -32,7 +32,7 @@ const getRttExtraWait = (rtt) => {
   if (rtt >= 97) return +1;
 
   // extremely responsive session
-  // if (rtt < 75) return -1;
+  if (rtt < 70) return -1;
 
   return 0;
 };
@@ -571,11 +571,12 @@ const getExtraTimeBasedLogs = async ({
 
   let rttMessage = "";
 
-  const shouldUsePositiveRtt = isPositiveRtt && !shouldIgnorePositiveRtt;
+  const shouldUseRtt = !willReductAfterDanger;
+  // extraBasedRtt < 0 || (isPositiveRtt && !shouldIgnorePositiveRtt);
 
-  if (shouldUsePositiveRtt) {
+  if (shouldUseRtt) {
     extraWait += extraBasedRtt;
-    const sign = extraBasedRtt > 0 ? "+" : "";
+    const sign = extraBasedRtt > 0 ? "+" : "-";
     rttMessage = `✅ rtt wait=${sign}${extraBasedRtt}ms`;
   }
 
@@ -768,14 +769,14 @@ const getExtraTimeBasedLogs = async ({
       let bootMessage = "";
 
       if (isExceedingTime) {
-        value = extraBasedRtt ? 3 : 4;
+        value = extraBasedRtt > 0 ? 3 : 4;
         const tag = `boot-stable-wait-${value}`;
         bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin}`;
       }
 
       if (isExceedingPreviousNegative) {
         const maxValue = isFarFromLastToday ? 5 : 4;
-        value = maxValue - (extraBasedRtt ? 1 : 0);
+        value = maxValue - (extraBasedRtt > 0 ? 1 : 0);
         const tag = `boot-stable-wait-${value}`;
         bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
       }
