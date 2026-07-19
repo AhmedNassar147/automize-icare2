@@ -768,13 +768,14 @@ const getExtraTimeBasedLogs = async ({
       let bootMessage = "";
 
       if (isExceedingTime) {
-        value = 4;
+        value = extraBasedRtt ? 3 : 4;
         const tag = `boot-stable-wait-${value}`;
         bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase}`;
       }
 
       if (isExceedingPreviousNegative) {
-        value = isFarFromLastToday ? 5 : 4;
+        const maxValue = isFarFromLastToday ? 5 : 4;
+        value = maxValue - (extraBasedRtt ? 1 : 0);
         const tag = `boot-stable-wait-${value}`;
         bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
       }
