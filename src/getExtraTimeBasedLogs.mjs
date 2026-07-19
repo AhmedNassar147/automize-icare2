@@ -28,7 +28,7 @@ const DANGER_ZONE_PHASES = {
 
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
-  if (rtt >= 145) return +2;
+  if (rtt >= 135) return +2;
   if (rtt >= 97) return +1;
 
   // extremely responsive session
