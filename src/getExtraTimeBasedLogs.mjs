@@ -569,9 +569,9 @@ const getExtraTimeBasedLogs = async ({
 
   let rttMessage = "";
 
-  const canUsePositiveRtt = isPositiveRtt && !shouldIgnorePositiveRtt;
+  const shouldUsePositiveRtt = isPositiveRtt && !shouldIgnorePositiveRtt;
 
-  if (canUsePositiveRtt) {
+  if (shouldUsePositiveRtt) {
     extraWait += extraBasedRtt;
     const sign = extraBasedRtt > 0 ? "+" : "";
     rttMessage = `✅ rtt wait=${sign}${extraBasedRtt}ms`;
@@ -745,10 +745,6 @@ const getExtraTimeBasedLogs = async ({
     //     `🔥 boost-wait-after-danger wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
     //   );
     // }
-
-    if (rttMessage) {
-      extraBotMessages.push(rttMessage);
-    }
   }
 
   if (!isCurrentDiffNegative) {
@@ -766,13 +762,13 @@ const getExtraTimeBasedLogs = async ({
       let bootMessage = "";
 
       if (isExceedingTime) {
-        value = 4;
-        const tag = `boot-stable-wait-4`;
+        value = shouldUsePositiveRtt ? 3 : 4;
+        const tag = `boot-stable-wait-${value}`;
         bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase}`;
       }
 
       if (isExceedingPreviousNegative) {
-        value = isFarFromLastToday ? 5 : 4;
+        value = (isFarFromLastToday ? 5 : 4) - (shouldUsePositiveRtt ? 1 : 0);
         const tag = `boot-stable-wait-${value}`;
         bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
       }
@@ -819,10 +815,6 @@ const getExtraTimeBasedLogs = async ({
     extraBotMessages.push(
       `${prefixText} ${logCtx} wait=${sign}${Math.abs(value)}ms`,
     );
-
-    if (rttMessage) {
-      extraBotMessages.push(rttMessage);
-    }
   }
 
   let afterDangerReduction = 0;
@@ -866,6 +858,10 @@ const getExtraTimeBasedLogs = async ({
     extraBotMessages.push(
       `⚠️ backend-delay Ahmed should check if we need to reduce or not when delay=${extraBackendDelayMs}ms\n\nWe have a similar case (378526) with ${extraBackendDelayMs}ms delay`,
     );
+  }
+
+  if (rttMessage) {
+    extraBotMessages.push(rttMessage);
   }
 
   return {
