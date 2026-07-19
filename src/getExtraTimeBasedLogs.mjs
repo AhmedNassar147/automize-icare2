@@ -37,8 +37,10 @@ const getRttExtraWait = (rtt) => {
   return 0;
 };
 
-const getNegativeCountBeforeCurrent = (todayCases, diff) => {
-  let count = diff < 0 ? 1 : 0;
+const getDiffCountBeforeCurrent = (checkNegative, todayCases, diff) => {
+  const check = (diff) => (checkNegative ? diff < 0 : (diff || 0) >= 0);
+
+  let count = check(diff) ? 1 : 0;
 
   for (let i = todayCases.length - 1; i >= 0; i--) {
     const item = todayCases[i];
@@ -47,7 +49,7 @@ const getNegativeCountBeforeCurrent = (todayCases, diff) => {
       break;
     }
 
-    if (item.diff < 0) {
+    if (check(item.diff)) {
       count++;
       continue;
     }
@@ -646,7 +648,11 @@ const getExtraTimeBasedLogs = async ({
 
   const negativeDiffCount = !isLastCaseNegative
     ? 0
-    : getNegativeCountBeforeCurrent(todayCases.slice(-4), diff);
+    : getDiffCountBeforeCurrent(true, todayCases.slice(-4), diff);
+
+  const positiveDiffCount = isLastCaseNegative
+    ? 0
+    : getDiffCountBeforeCurrent(false, todayCases.slice(-6), diff);
 
   if (shouldDecreaseInitialWait) {
     const isNotPerformedCase =
@@ -756,7 +762,7 @@ const getExtraTimeBasedLogs = async ({
       value < 4 &&
       !isHotCluster
     ) {
-      const isExceedingTime = timeDiffFromLastCase <= 80 * 60 * 1000;
+      const isExceedingTime = timeDiffFromLastCase <= 85 * 60 * 1000;
       const isExceedingPreviousNegative = negativeDiffCount >= 2;
 
       let bootMessage = "";
@@ -782,6 +788,13 @@ const getExtraTimeBasedLogs = async ({
       if (bootMessage) {
         extraBotMessages.push(bootMessage);
       }
+    }
+
+    if (positiveDiffCount > 1 && !shouldDecreaseInitialWait) {
+      value = timeDiffFromLastCaseHours < 1 ? 2 : 1;
+      const tag = `repeated-stable-count-${positiveDiffCount}`;
+      const bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase} timeDiffFromLastCaseHours=${timeDiffFromLastCaseHours}`;
+      extraBotMessages.push(bootMessage);
     }
 
     // if (isCurrentNeedsReductionAfterNormalDanger) {
