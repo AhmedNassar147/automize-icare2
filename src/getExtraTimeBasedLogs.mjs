@@ -652,7 +652,7 @@ const getExtraTimeBasedLogs = async ({
 
   const positiveDiffCount = isLastCaseNegative
     ? 0
-    : getDiffCountBeforeCurrent(false, todayCases.slice(-6), diff);
+    : getDiffCountBeforeCurrent(false, todayCases.slice(-8), diff);
 
   if (shouldDecreaseInitialWait) {
     const isNotPerformedCase =
@@ -768,13 +768,13 @@ const getExtraTimeBasedLogs = async ({
       let bootMessage = "";
 
       if (isExceedingTime) {
-        value = shouldUsePositiveRtt ? 3 : 4;
+        value = 4;
         const tag = `boot-stable-wait-${value}`;
         bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase}`;
       }
 
       if (isExceedingPreviousNegative) {
-        value = (isFarFromLastToday ? 5 : 4) - (shouldUsePositiveRtt ? 1 : 0);
+        value = isFarFromLastToday ? 5 : 4;
         const tag = `boot-stable-wait-${value}`;
         bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
       }
@@ -791,7 +791,8 @@ const getExtraTimeBasedLogs = async ({
     }
 
     if (positiveDiffCount > 1 && !shouldDecreaseInitialWait) {
-      value = timeDiffFromLastCaseHours < 1 ? 2 : 1;
+      // value = !isFarFromLastToday ? 2 : 1;
+      value = 2;
       const tag = `repeated-stable-count-${positiveDiffCount}`;
       const bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMinLastCase=${gapMinLastCase} timeDiffFromLastCaseHours=${timeDiffFromLastCaseHours}`;
       extraBotMessages.push(bootMessage);
