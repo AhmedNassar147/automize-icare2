@@ -15,8 +15,8 @@ const FAR_CASE_MS = 90 * 60 * 1000;
 const WAITS_MAP = {
   hot: 0,
   nearHot: 1,
-  medium: 1,
-  // medium: 2,
+  // medium: 1,
+  medium: 2,
   far: 2,
   // far: 3,
 };
