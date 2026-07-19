@@ -186,25 +186,38 @@ const handleCaseAcceptanceOrRejection =
       if (isAcceptanceAction) {
         const attachmentKey = createRandomAttachmentKey();
 
-        const formattedAttachmentKey = randomArrayItem([
-          attachmentKey,
-          `(${attachmentKey})`,
-          `Copy-${attachmentKey}`,
-          `${attachmentKey}-Copy`,
-          `Final-${attachmentKey}`,
-          `${attachmentKey}-01`,
-          `${attachmentKey}-A`,
-          `${attachmentKey}-New`,
-          `${attachmentKey}-Rev`,
-        ]);
+        const abbreviation =
+          Math.random() < 0.8
+            ? LETTER_LAYOUT_ABBREVIATIONS[letterType]
+            : undefined;
+
+        const formattedKey =
+          Math.random() < 0.67 ? `(${attachmentKey})` : attachmentKey;
+
+        const attachmentSeparator = Math.random() < 0.52 ? "-" : " ";
+
+        const formattedAttachmentKey = shuffleArray(
+          [formattedKey, abbreviation].filter(Boolean),
+        ).join(attachmentSeparator);
+
+        const randomKey =
+          Math.random() < 0.6 ? formattedAttachmentKey : abbreviation;
+
+        const shouldUseRandomKeyAsSeparatePart = Math.random() < 0.7;
+
+        const documentName = randomArrayItem(FILE_NAMES);
+
+        const formattedDocumentName = [
+          documentName,
+          shouldUseRandomKeyAsSeparatePart ? undefined : randomKey,
+        ]
+          .filter(Boolean)
+          .join(" ");
 
         const fileNameParts = [
           patientFileName,
-          Math.random() < 0.6 ? formattedAttachmentKey : undefined,
-          randomArrayItem(FILE_NAMES),
-          Math.random() < 0.8
-            ? LETTER_LAYOUT_ABBREVIATIONS[letterType]
-            : undefined,
+          shouldUseRandomKeyAsSeparatePart ? randomKey : undefined,
+          formattedDocumentName,
           referralId,
         ].filter(Boolean);
 
