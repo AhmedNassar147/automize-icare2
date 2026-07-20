@@ -17,7 +17,7 @@ const WAITS_MAP = {
   nearHot: 1,
   // medium: 1,
   medium: 2,
-  far: 2,
+  far: 3,
   // far: 3,
 };
 
