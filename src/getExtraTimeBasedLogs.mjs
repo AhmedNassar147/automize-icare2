@@ -223,6 +223,7 @@ const analyzeReferralTimingPatterns = (
   logsData,
   referralEndTimestamp,
   diff,
+  doesSystemReducingWait,
 ) => {
   const length = logsData?.length ?? 0;
   const isCurrentDiffNegative = diff < 0;
@@ -362,7 +363,8 @@ const analyzeReferralTimingPatterns = (
   const wasLastTodayDangerous = _messageFromLastToday.includes("danger-zone");
   const wasFarDangerPhase = _messageFromLastToday.includes("phase=far");
 
-  const isCurrentCaseDangerZone = isDoubleZeroDangerZone || isRecoveryThenDrop;
+  const isCurrentCaseDangerZone =
+    !doesSystemReducingWait && (isDoubleZeroDangerZone || isRecoveryThenDrop);
 
   const lastTodayRTT = _lastTodayRTT || 0;
 
@@ -433,13 +435,15 @@ const getExtraTimeBasedLogs = async ({
   rtt,
   baseWaitingTime,
 }) => {
-  const { IS_STABLE_WAITING_BRANCH /* DOES_SYSTEM_REDUCE_WAIT */ } =
-    process.env;
+  const { IS_STABLE_WAITING_BRANCH, DOES_SYSTEM_REDUCE_WAIT } = process.env;
 
   const isStableWaitingBranch = IS_STABLE_WAITING_BRANCH === "Y";
-  // const doesSystemReducingWait = DOES_SYSTEM_REDUCE_WAIT === "Y";
+  const doesSystemReducingWait = DOES_SYSTEM_REDUCE_WAIT === "Y";
 
-  const extraBotMessages = [];
+  const extraBotMessages = [
+    doesSystemReducingWait ? "⚠️ system-reducing-wait" : "",
+  ].filter(Boolean);
+
   const logsData = await readLogsAsArray();
 
   const {
@@ -472,7 +476,12 @@ const getExtraTimeBasedLogs = async ({
     lastCaseOutcomeElapsedMs,
     gapMinLastCase,
     lastCasePreviousDelta,
-  } = analyzeReferralTimingPatterns(logsData, referralEndTimestamp, diff);
+  } = analyzeReferralTimingPatterns(
+    logsData,
+    referralEndTimestamp,
+    diff,
+    doesSystemReducingWait,
+  );
 
   const isLastCaseNegative = lastCaseDiff && lastCaseDiff < 0;
 
@@ -617,7 +626,10 @@ const getExtraTimeBasedLogs = async ({
     !!wasLastTodayDangerous && isCurrentDiffNegative && isLargeRtt;
 
   const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
-  let currentWait = WAITS_MAP[waitBucket] + extrTime;
+  let currentWait =
+    doesSystemReducingWait && isFirstCaseToday
+      ? 0
+      : WAITS_MAP[waitBucket] + extrTime;
 
   const isTwoHoursOrMoreLeft = timeDiffFromLastCaseHours >= 2;
 
@@ -632,7 +644,11 @@ const getExtraTimeBasedLogs = async ({
       isTwoHoursOrMoreLeft &&
       !shouldBoostWaitAfterDanger);
 
-  if (isCurrentAndPreviousDiffZero && !shouldReduceIfFirstCase) {
+  if (
+    !doesSystemReducingWait &&
+    isCurrentAndPreviousDiffZero &&
+    !shouldReduceIfFirstCase
+  ) {
     shouldDecreaseInitialWait =
       timeDiffFromLastCaseHours < 4 ? false : shouldDecreaseInitialWait;
   }
@@ -659,6 +675,8 @@ const getExtraTimeBasedLogs = async ({
     const isNotPerformedCase =
       !lastCaseOutcome || lastCaseOutcome === "not-clicked";
 
+    let newWait = 0;
+
     if (isFirstCaseToday) {
       const value =
         timeDiffFromLastCaseHours <= 1
@@ -668,14 +686,14 @@ const getExtraTimeBasedLogs = async ({
             : timeDiffFromLastCaseHours > 4
               ? -5
               : -4;
-      currentWait = value;
+      newWait = value;
       extraBotMessages.push(
         `🔥 reducing-for-first-case wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta} timeDiffFromLastCaseHours=${timeDiffFromLastCaseHours}`,
       );
     } else if (isLastCaseWasLowWaiting) {
       const maxStart = timeDiffFromLastCaseHours >= 3 ? 4 : 3;
       const value = -Math.max(maxStart, 6 - (positiveLastDelta || 1));
-      currentWait = value;
+      newWait = value;
       extraBotMessages.push(
         `🔥 reducing-after-low-waiting wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
@@ -683,18 +701,20 @@ const getExtraTimeBasedLogs = async ({
       const maxStart =
         timeDiffFromLastCaseHours >= 3 && positiveLastDelta > 2 ? 5 : 4;
       const value = -Math.max(2, maxStart - (positiveLastDelta || 1));
-      currentWait = value;
+      newWait = value;
 
       extraBotMessages.push(
         `🔥 reducing-after-moderate wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     } else {
       const value = timeDiffFromLastCaseHours >= 3 ? -3 : -2;
-      currentWait = value;
+      newWait = value;
       extraBotMessages.push(
         `🔥 reducing-wait wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
       );
     }
+
+    currentWait = doesSystemReducingWait ? -currentWait + newWait : newWait;
   }
 
   if (isCurrentDiffNegative) {
@@ -713,7 +733,7 @@ const getExtraTimeBasedLogs = async ({
           : `🔁 consecutive-negative ${logCtx} wait=${waitValue}ms`,
       );
 
-      if (negativeDiffCount >= 2 && timeDiffFromLastCaseHours < 2) {
+      if (negativeDiffCount >= 2 && !doesSystemReducingWait) {
         const isCount3OrMore = negativeDiffCount >= 3;
         // 381020 isCount3OrMore && isFarFromLastToday
         // 380825 isCount3OrMore && !isFarFromLastToday
@@ -757,56 +777,53 @@ const getExtraTimeBasedLogs = async ({
   if (!isCurrentDiffNegative) {
     let value = currentWait;
 
-    if (
-      !isCurrentAndPreviousDiffZero &&
-      !isFirstCaseToday &&
-      value < 4 &&
-      !isHotCluster
-    ) {
-      const isExceedingTime = timeDiffFromLastCase <= 85 * 60 * 1000;
-      const isExceedingPreviousNegative = negativeDiffCount >= 2;
+    if (!doesSystemReducingWait) {
+      if (!isFirstCaseToday && value < 4 && !isHotCluster) {
+        const isExceedingTime = timeDiffFromLastCase <= 85 * 60 * 1000;
+        const isExceedingPreviousNegative = negativeDiffCount >= 2;
 
-      let bootMessage = "";
+        let bootMessage = "";
 
-      if (isExceedingTime) {
-        value = extraBasedRtt > 0 ? 3 : 4;
-        const tag = `boot-stable-wait-${value}`;
-        bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin}`;
+        if (isExceedingTime) {
+          value = extraBasedRtt > 0 ? 3 : 4;
+          const tag = `boot-stable-wait-${value}`;
+          bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin}`;
+        }
+
+        if (isExceedingPreviousNegative && timeDiffFromLastCaseHours < 2) {
+          const maxValue = isFarFromLastToday ? 5 : 4;
+          value = maxValue - (extraBasedRtt > 0 ? 1 : 0);
+          const tag = `boot-stable-wait-${value}`;
+          bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
+        }
+
+        if (lastTodayCaseNegativeDiffValue > 1) {
+          value += lastTodayCaseNegativeDiffValue - 1;
+          const tag = `boot-stable-wait-${lastTodayCaseNegativeDiffValue - 1}`;
+          bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
+        }
+
+        if (bootMessage) {
+          extraBotMessages.push(bootMessage);
+        }
       }
 
-      if (isExceedingPreviousNegative && timeDiffFromLastCaseHours < 2) {
-        const maxValue = isFarFromLastToday ? 5 : 4;
-        value = maxValue - (extraBasedRtt > 0 ? 1 : 0);
-        const tag = `boot-stable-wait-${value}`;
-        bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
-      }
-
-      if (lastTodayCaseNegativeDiffValue > 1) {
-        value += lastTodayCaseNegativeDiffValue - 1;
-        const tag = `boot-stable-wait-${lastTodayCaseNegativeDiffValue - 1}`;
-        bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin} isFarFromLastToday=${isFarFromLastToday} negativeDiffCount=${negativeDiffCount}`;
-      }
-
-      if (bootMessage) {
+      if (positiveDiffCount > 1 && !shouldDecreaseInitialWait) {
+        // 1784440529000|1784440529000|1784440528000|1784440529000|     0     |1000 |19/07/2026 08:55:29 am|   0 - (=)   |381240| 2484_5(83+4)  |1784440528903|1784440532219| 832  |  No   | 117  |   good-waiting_850   |     |🔥 boot-stable-wait-4 waitWas=1ms to wait=4ms gapMinLastCase=33.9_AND_✅ stable referralId=381240 diffPath=-1000→0 gap=33.9min waitBucket=medium wait=+4ms_AND_✅ rtt wait=+1ms
+        // 1784440840000|1784440840000|1784440839000|1784440840000|     0     |1000 |19/07/2026 09:00:40 am|   0 - (=)   |381242| 2485_1(87 + 4)  |1784440839845|             |      |  No   |  78  |   near-to-block_1463 |  2  |✅ stable referralId=381242 diffPath=0→0 gap=5.2min waitBucket=nearHot wait=+1ms
+        // 1784444953000|1784444953000|1784444952000|1784444953000|     0     |1000 |19/07/2026 10:09:13 am|   0 - (=)   |381249| 2489_2(88 + 1)  |1784444952824|1784444956346| 1033 |  No   |  85  |   good-waiting_829   |     |✅ stable referralId=381249 diffPath=0→0 gap=68.5min waitBucket=medium wait=+2ms
+        // 1784445157000|1784445157000|1784445156000|1784445157000|     0     |1000 |19/07/2026 10:12:37 am|   0 - (=)   |381147| 2490_1(92 + 4)  |1784445156870|             |      |  No   |  96  |     not-clicked      |     |✅ stable referralId=381147 diffPath=0→0 gap=3.4min waitBucket=nearHot wait=+1ms
+        // 1784447800000|1784447800000|1784447799000|1784447800000|     0     |1000 |19/07/2026 10:56:40 am|   0 - (=)   |381256| 2492_2(95 + 3)  |1784447799839|             |      |  No   |  88  |     not-clicked      |     |✅ stable referralId=381256 diffPath=0→0 gap=44min waitBucket=medium wait=+2ms
+        // 1784454276000|1784454276000|1784454275000|1784454276000|     0     |1000 |19/07/2026 12:44:36 pm|   0 - (=)   |381264| 2494_1(96 + 1)  |1784454275788|             |      |  No   |  89  |     not-clicked      |     |🔥 repeated-stable-count-6 waitWas=2ms to wait=1ms gapMinLastCase=107.9 timeDiffFromLastCaseHours=1.798888888888889_AND_↔️ far-stable referralId=381264 diffPath=0→0 gap=107.9min waitBucket=far wait=+1ms
+        // 1784454554000|1784454554000|1784454553000|1784454554000|     0     |1000 |19/07/2026 12:49:14 pm|   0 - (=)   |381265| 2496_2(2501 + 4)  |1784454553744|             |      |  No   |  83  |     not-clicked      |     |🔥 repeated-stable-count-7 waitWas=1ms to wait=2ms gapMinLastCase=4.6 timeDiffFromLastCaseHours=0.07722222222222222_AND_✅ stable referralId=381265 diffPath=0→0 gap=4.6min waitBucket=nearHot wait=+2ms
+        // 1784458255000|1784458255000|1784458254000|1784458255000|     0     |1000 |19/07/2026 01:50:55 pm|   0 - (=)   |381267| 2498_2(2502 + 1)  |1784458254737|1784458258952| 1717 |  No   |  97  |  near-to-block_2167  |  2  |🔥 repeated-stable-count-7 waitWas=2ms to wait=1ms gapMinLastCase=61.7 timeDiffFromLastCaseHours=1.0280555555555555_AND_✅ stable referralId=381267 diffPath=0→0 gap=61.7min waitBucket=medium wait=+1ms_AND_✅ rtt wait=+1ms
+        // 1784461943000|1784461943000|1784461942000|1784461943000|     0     |1000 |19/07/2026 02:52:23 pm|   0 - (=)   |381273| 2504_4(2505 + 1 + 2)  |1784461942795|             |      |  No   | 156  |  near-to-block_1463  |  2  |🔥 repeated-stable-count-9 waitWas=2ms to wait=2ms gapMinLastCase=61.5 timeDiffFromLastCaseHours=1.0244444444444445_AND_✅ stable referralId=381273 diffPath=0→0 gap=61.5min waitBucket=medium wait=+2ms_AND_✅ rtt wait=+2ms
+        // 1784462808000|1784462809000|1784462808000|1784462808000|     0     |1000 |19/07/2026 03:06:48 pm| -1000 - (<) |381274| 2512_6  |1784462808714|1784462812488| 1262 |  No   |  80  | moderate-waiting_763 | -2  |⚠️ danger-zone referralId=381274 diffPath=0→-1000 gap=14.4min waitBucket=nearHot type=double-zero wait=+6ms_AND_base=6 phase=normal lastTodayPreviousDelta=0
+        value = gapMin < 37 ? 4 : gapMin <= 55 ? 3 : 2;
+        const tag = `repeated-stable-count-${positiveDiffCount}`;
+        const bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin} timeDiffFromLastCaseHours=${timeDiffFromLastCaseHours}`;
         extraBotMessages.push(bootMessage);
       }
-    }
-
-    if (positiveDiffCount > 1 && !shouldDecreaseInitialWait) {
-      // 1784440529000|1784440529000|1784440528000|1784440529000|     0     |1000 |19/07/2026 08:55:29 am|   0 - (=)   |381240| 2484_5(83+4)  |1784440528903|1784440532219| 832  |  No   | 117  |   good-waiting_850   |     |🔥 boot-stable-wait-4 waitWas=1ms to wait=4ms gapMinLastCase=33.9_AND_✅ stable referralId=381240 diffPath=-1000→0 gap=33.9min waitBucket=medium wait=+4ms_AND_✅ rtt wait=+1ms
-      // 1784440840000|1784440840000|1784440839000|1784440840000|     0     |1000 |19/07/2026 09:00:40 am|   0 - (=)   |381242| 2485_1(87 + 4)  |1784440839845|             |      |  No   |  78  |   near-to-block_1463 |  2  |✅ stable referralId=381242 diffPath=0→0 gap=5.2min waitBucket=nearHot wait=+1ms
-      // 1784444953000|1784444953000|1784444952000|1784444953000|     0     |1000 |19/07/2026 10:09:13 am|   0 - (=)   |381249| 2489_2(88 + 1)  |1784444952824|1784444956346| 1033 |  No   |  85  |   good-waiting_829   |     |✅ stable referralId=381249 diffPath=0→0 gap=68.5min waitBucket=medium wait=+2ms
-      // 1784445157000|1784445157000|1784445156000|1784445157000|     0     |1000 |19/07/2026 10:12:37 am|   0 - (=)   |381147| 2490_1(92 + 4)  |1784445156870|             |      |  No   |  96  |     not-clicked      |     |✅ stable referralId=381147 diffPath=0→0 gap=3.4min waitBucket=nearHot wait=+1ms
-      // 1784447800000|1784447800000|1784447799000|1784447800000|     0     |1000 |19/07/2026 10:56:40 am|   0 - (=)   |381256| 2492_2(95 + 3)  |1784447799839|             |      |  No   |  88  |     not-clicked      |     |✅ stable referralId=381256 diffPath=0→0 gap=44min waitBucket=medium wait=+2ms
-      // 1784454276000|1784454276000|1784454275000|1784454276000|     0     |1000 |19/07/2026 12:44:36 pm|   0 - (=)   |381264| 2494_1(96 + 1)  |1784454275788|             |      |  No   |  89  |     not-clicked      |     |🔥 repeated-stable-count-6 waitWas=2ms to wait=1ms gapMinLastCase=107.9 timeDiffFromLastCaseHours=1.798888888888889_AND_↔️ far-stable referralId=381264 diffPath=0→0 gap=107.9min waitBucket=far wait=+1ms
-      // 1784454554000|1784454554000|1784454553000|1784454554000|     0     |1000 |19/07/2026 12:49:14 pm|   0 - (=)   |381265| 2496_2(2501 + 4)  |1784454553744|             |      |  No   |  83  |     not-clicked      |     |🔥 repeated-stable-count-7 waitWas=1ms to wait=2ms gapMinLastCase=4.6 timeDiffFromLastCaseHours=0.07722222222222222_AND_✅ stable referralId=381265 diffPath=0→0 gap=4.6min waitBucket=nearHot wait=+2ms
-      // 1784458255000|1784458255000|1784458254000|1784458255000|     0     |1000 |19/07/2026 01:50:55 pm|   0 - (=)   |381267| 2498_2(2502 + 1)  |1784458254737|1784458258952| 1717 |  No   |  97  |  near-to-block_2167  |  2  |🔥 repeated-stable-count-7 waitWas=2ms to wait=1ms gapMinLastCase=61.7 timeDiffFromLastCaseHours=1.0280555555555555_AND_✅ stable referralId=381267 diffPath=0→0 gap=61.7min waitBucket=medium wait=+1ms_AND_✅ rtt wait=+1ms
-      // 1784461943000|1784461943000|1784461942000|1784461943000|     0     |1000 |19/07/2026 02:52:23 pm|   0 - (=)   |381273| 2504_4(2505 + 1 + 2)  |1784461942795|             |      |  No   | 156  |  near-to-block_1463  |  2  |🔥 repeated-stable-count-9 waitWas=2ms to wait=2ms gapMinLastCase=61.5 timeDiffFromLastCaseHours=1.0244444444444445_AND_✅ stable referralId=381273 diffPath=0→0 gap=61.5min waitBucket=medium wait=+2ms_AND_✅ rtt wait=+2ms
-      // 1784462808000|1784462809000|1784462808000|1784462808000|     0     |1000 |19/07/2026 03:06:48 pm| -1000 - (<) |381274| 2512_6  |1784462808714|1784462812488| 1262 |  No   |  80  | moderate-waiting_763 | -2  |⚠️ danger-zone referralId=381274 diffPath=0→-1000 gap=14.4min waitBucket=nearHot type=double-zero wait=+6ms_AND_base=6 phase=normal lastTodayPreviousDelta=0
-      value = gapMin < 37 ? 4 : gapMin <= 55 ? 3 : 2;
-      const tag = `repeated-stable-count-${positiveDiffCount}`;
-      const bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin} timeDiffFromLastCaseHours=${timeDiffFromLastCaseHours}`;
-      extraBotMessages.push(bootMessage);
     }
 
     // if (isCurrentNeedsReductionAfterNormalDanger) {
