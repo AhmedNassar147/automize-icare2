@@ -631,6 +631,10 @@ const getExtraTimeBasedLogs = async ({
       ? 0
       : WAITS_MAP[waitBucket] + extrTime;
 
+  if (currentWait && doesSystemReducingWait) {
+    currentWait = -currentWait;
+  }
+
   const isTwoHoursOrMoreLeft = timeDiffFromLastCaseHours >= 2;
 
   const isCurrentAndPreviousDiffZero =
@@ -714,7 +718,7 @@ const getExtraTimeBasedLogs = async ({
       );
     }
 
-    currentWait = doesSystemReducingWait ? -currentWait + newWait : newWait;
+    currentWait = doesSystemReducingWait ? currentWait + newWait : newWait;
   }
 
   if (isCurrentDiffNegative) {
