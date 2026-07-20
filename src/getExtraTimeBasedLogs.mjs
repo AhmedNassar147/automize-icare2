@@ -571,7 +571,7 @@ const getExtraTimeBasedLogs = async ({
 
   let rttMessage = "";
 
-  const shouldUseRtt = !willReductAfterDanger;
+  const shouldUseRtt = !willReductAfterDanger && !!extraBasedRtt;
   // extraBasedRtt < 0 || (isPositiveRtt && !shouldIgnorePositiveRtt);
 
   if (shouldUseRtt) {
@@ -713,7 +713,7 @@ const getExtraTimeBasedLogs = async ({
           : `🔁 consecutive-negative ${logCtx} wait=${waitValue}ms`,
       );
 
-      if (negativeDiffCount >= 2) {
+      if (negativeDiffCount >= 2 && timeDiffFromLastCaseHours < 3) {
         const isCount3OrMore = negativeDiffCount >= 3;
         // 381020 isCount3OrMore && isFarFromLastToday
         // 380825 isCount3OrMore && !isFarFromLastToday
