@@ -713,7 +713,7 @@ const getExtraTimeBasedLogs = async ({
           : `🔁 consecutive-negative ${logCtx} wait=${waitValue}ms`,
       );
 
-      if (negativeDiffCount >= 2 && timeDiffFromLastCaseHours < 3) {
+      if (negativeDiffCount >= 2 && timeDiffFromLastCaseHours < 2) {
         const isCount3OrMore = negativeDiffCount >= 3;
         // 381020 isCount3OrMore && isFarFromLastToday
         // 380825 isCount3OrMore && !isFarFromLastToday
@@ -774,7 +774,7 @@ const getExtraTimeBasedLogs = async ({
         bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin}`;
       }
 
-      if (isExceedingPreviousNegative) {
+      if (isExceedingPreviousNegative && timeDiffFromLastCaseHours < 2) {
         const maxValue = isFarFromLastToday ? 5 : 4;
         value = maxValue - (extraBasedRtt > 0 ? 1 : 0);
         const tag = `boot-stable-wait-${value}`;
