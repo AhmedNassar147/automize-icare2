@@ -301,8 +301,6 @@ const handleCaseAcceptanceOrRejection =
         );
       }
 
-      const isReducingWait = DOES_SYSTEM_REDUCE_WAIT === "Y";
-
       extraBotMessages.push(
         `Time remaining before loop: ${referralEndTimestamp - Date.now()}`,
       );
@@ -396,12 +394,14 @@ const handleCaseAcceptanceOrRejection =
 
         updateEnvFile({
           WAIT_FOR_ACCEPT_MS: waitTime,
-          DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded ? "Y" : "N",
+          // DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded ? "Y" : "N",
+          recaptchaQuotaExceeded: recaptchaQuotaExceeded ? "Y" : "N",
           // COMPUTED_EXTRA_WAIT: computedExtraWait,
         });
       } else {
         updateEnvFile({
-          DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded ? "Y" : "N",
+          // DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded ? "Y" : "N",
+          recaptchaQuotaExceeded: recaptchaQuotaExceeded ? "Y" : "N",
         });
       }
 
