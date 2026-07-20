@@ -434,11 +434,13 @@ const getExtraTimeBasedLogs = async ({
   extraBackendDelayMs,
   rtt,
   baseWaitingTime,
+  foceReduceWait,
 }) => {
   const { IS_STABLE_WAITING_BRANCH, DOES_SYSTEM_REDUCE_WAIT } = process.env;
 
   const isStableWaitingBranch = IS_STABLE_WAITING_BRANCH === "Y";
-  const doesSystemReducingWait = DOES_SYSTEM_REDUCE_WAIT === "Y";
+  const doesSystemReducingWait =
+    foceReduceWait || DOES_SYSTEM_REDUCE_WAIT === "Y";
 
   const extraBotMessages = [
     doesSystemReducingWait ? "⚠️ system-reducing-wait" : "",
@@ -640,7 +642,9 @@ const getExtraTimeBasedLogs = async ({
   const isCurrentAndPreviousDiffZero =
     !isCurrentDiffNegative && !isLastCaseTodayNegative;
 
-  const shouldReduceIfFirstCase = isFirstCaseToday && gapMinLastCase >= 15;
+  // const shouldReduceIfFirstCase = isFirstCaseToday && gapMinLastCase >= 15; ( when !doesSystemReducingWait)
+  // const shouldReduceIfFirstCase = isFirstCaseToday && gapMinLastCase >= 4;
+  const shouldReduceIfFirstCase = isFirstCaseToday;
 
   let shouldDecreaseInitialWait =
     shouldReduceIfFirstCase ||
@@ -684,7 +688,7 @@ const getExtraTimeBasedLogs = async ({
     if (isFirstCaseToday) {
       const value =
         timeDiffFromLastCaseHours <= 1
-          ? -1
+          ? -2
           : timeDiffFromLastCaseHours >= 10
             ? -6
             : timeDiffFromLastCaseHours > 4
@@ -755,9 +759,9 @@ const getExtraTimeBasedLogs = async ({
         );
       }
     } else {
-      extraWait += currentWait;
+      extraWait += maxNewWait;
       extraBotMessages.push(
-        `✅ first-day-negative ${logCtx} wait=${currentWait}ms`,
+        `✅ first-day-negative ${logCtx} wait=${maxNewWait}ms`,
       );
     }
 

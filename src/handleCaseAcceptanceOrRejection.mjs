@@ -9,6 +9,7 @@ import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
 import summarizeLogsAfterAcceptance from "./summarizeLogsAfterAcceptance.mjs";
+import isRecaptchaQuotaExceeded from "./isRecaptchaQuotaExceeded.mjs";
 import {
   FAKE_REJECT_PROBE,
   HOME_PAGE_URL,
@@ -165,8 +166,12 @@ const handleCaseAcceptanceOrRejection =
     } = patient;
 
     try {
-      const { CLIENT_NAME, WAIT_FOR_ACCEPT_MS, ENABLE_AUTO_WAITING } =
-        process.env;
+      const {
+        CLIENT_NAME,
+        WAIT_FOR_ACCEPT_MS,
+        ENABLE_AUTO_WAITING,
+        DOES_SYSTEM_REDUCE_WAIT,
+      } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
       const isFakeReject = actionType === FAKE_REJECT_PROBE;
@@ -254,11 +259,11 @@ const handleCaseAcceptanceOrRejection =
         noBundleCheck: true,
       });
 
-      // await navigateToNewDetailsPage({
-      //   page,
-      //   referralId,
-      //   _routerKey: routerKey,
-      // });
+      await navigateToNewDetailsPage({
+        page,
+        referralId,
+        _routerKey: routerKey,
+      });
 
       const currentUrl = page.url().toLowerCase();
 
@@ -296,9 +301,13 @@ const handleCaseAcceptanceOrRejection =
         );
       }
 
+      const isReducingWait = DOES_SYSTEM_REDUCE_WAIT === "Y";
+
       extraBotMessages.push(
         `Time remaining before loop: ${referralEndTimestamp - Date.now()}`,
       );
+
+      const recaptchaQuotaExceeded = await isRecaptchaQuotaExceeded(page);
 
       const {
         zeroSeenAt,
@@ -326,6 +335,7 @@ const handleCaseAcceptanceOrRejection =
           extraBackendDelayMs,
           rtt,
           baseWaitingTime,
+          foceReduceWait: recaptchaQuotaExceeded,
         });
 
       if (ENABLE_AUTO_WAITING === "1") {
@@ -386,7 +396,12 @@ const handleCaseAcceptanceOrRejection =
 
         updateEnvFile({
           WAIT_FOR_ACCEPT_MS: waitTime,
+          DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded ? "Y" : "N",
           // COMPUTED_EXTRA_WAIT: computedExtraWait,
+        });
+      } else {
+        updateEnvFile({
+          DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded ? "Y" : "N",
         });
       }
 
@@ -408,6 +423,10 @@ const handleCaseAcceptanceOrRejection =
         zeroSeenAt,
         timesWhenOneSecondStartedAndEnded,
       });
+
+      extraBotMessages.push(
+        `<b>recaptchaQuotaExceeded:</b> ${recaptchaQuotaExceeded}<br><b>Where it was:</b> ${DOES_SYSTEM_REDUCE_WAIT === "Y"}`,
+      );
 
       if (extraBotMessages.length) {
         await sleep(250);

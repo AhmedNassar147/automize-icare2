@@ -1351,11 +1351,15 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
             diff,
             waitTime,
             extraWait,
+            referralEndDate,
           } = item;
 
           return [
             `#${index + 1}`,
             `🆔 Case: \`${referralId}\``,
+            referralEndDate !== undefined
+              ? `📊 date: \`${referralEndDate}\``
+              : null,
             diff !== undefined ? `📊 Diff: \`${diff}\`` : null,
             `📊 Delay: \`${extraBackendDelayMs || 0}\``,
             rtt !== undefined ? `📶 RTT (ms): \`${rtt}\`` : null,
