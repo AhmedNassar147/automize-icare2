@@ -9,7 +9,7 @@ import closePageSafely from "./closePageSafely.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import sleep from "./sleep.mjs";
 import summarizeLogsAfterAcceptance from "./summarizeLogsAfterAcceptance.mjs";
-import isRecaptchaQuotaExceeded from "./isRecaptchaQuotaExceeded.mjs";
+import checkRecaptchaQuota from "./checkRecaptchaQuota.mjs";
 import {
   FAKE_REJECT_PROBE,
   HOME_PAGE_URL,
@@ -305,7 +305,17 @@ const handleCaseAcceptanceOrRejection =
         `Time remaining before loop: ${referralEndTimestamp - Date.now()}`,
       );
 
-      const recaptchaQuotaExceeded = await isRecaptchaQuotaExceeded(page);
+      let recaptchaQuotaCheck = {
+        frameFound: false,
+        quotaExceeded: false,
+        frameUrl: null,
+      };
+
+      try {
+        recaptchaQuotaCheck = await checkRecaptchaQuota(page);
+      } catch (error) {
+        createConsoleMessage("Failed to check recaptcha quota", "error", error);
+      }
 
       const {
         zeroSeenAt,
@@ -333,7 +343,7 @@ const handleCaseAcceptanceOrRejection =
           extraBackendDelayMs,
           rtt,
           baseWaitingTime,
-          foceReduceWait: recaptchaQuotaExceeded,
+          forceReduceWait: !!recaptchaQuotaCheck?.quotaExceeded,
         });
 
       if (ENABLE_AUTO_WAITING === "1") {
@@ -387,23 +397,20 @@ const handleCaseAcceptanceOrRejection =
 
       const isTimeChanged = waitTime !== baseWaitingTime;
 
+      const envUpdates = {
+        recaptchaQuotaCheck: recaptchaQuotaCheck.quotaExceeded ? "Y" : "N",
+        // DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded ? "Y" : "N",
+      };
+
       if (isTimeChanged) {
+        envUpdates.WAIT_FOR_ACCEPT_MS = waitTime;
+
         extraBotMessages.push(
           `⚠️ waitTime auto-updated from \`${baseWaitingTime}\` to \`${waitTime}\` where referralId=\`${referralId}\``,
         );
-
-        updateEnvFile({
-          WAIT_FOR_ACCEPT_MS: waitTime,
-          // DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded ? "Y" : "N",
-          recaptchaQuotaExceeded: recaptchaQuotaExceeded ? "Y" : "N",
-          // COMPUTED_EXTRA_WAIT: computedExtraWait,
-        });
-      } else {
-        updateEnvFile({
-          // DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded ? "Y" : "N",
-          recaptchaQuotaExceeded: recaptchaQuotaExceeded ? "Y" : "N",
-        });
       }
+
+      await updateEnvFile(envUpdates);
 
       await closePageSafely(page);
 
@@ -425,7 +432,9 @@ const handleCaseAcceptanceOrRejection =
       });
 
       extraBotMessages.push(
-        `<b>recaptchaQuotaExceeded:</b> ${recaptchaQuotaExceeded}<br><b>Where it was:</b> ${DOES_SYSTEM_REDUCE_WAIT === "Y"}`,
+        `<b>reCAPTCHA frame found:</b> ${recaptchaQuotaCheck.frameFound}\n` +
+          `<b>reCAPTCHA quota exceeded:</b> ${recaptchaQuotaCheck.quotaExceeded}\n` +
+          `<b>Frame URL:</b> ${recaptchaQuotaCheck.frameUrl || "Not found"}`,
       );
 
       if (extraBotMessages.length) {

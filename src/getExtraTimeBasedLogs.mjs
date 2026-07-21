@@ -434,13 +434,13 @@ const getExtraTimeBasedLogs = async ({
   extraBackendDelayMs,
   rtt,
   baseWaitingTime,
-  foceReduceWait,
+  forceReduceWait,
 }) => {
   const { IS_STABLE_WAITING_BRANCH, DOES_SYSTEM_REDUCE_WAIT } = process.env;
 
   const isStableWaitingBranch = IS_STABLE_WAITING_BRANCH === "Y";
   const doesSystemReducingWait =
-    foceReduceWait || DOES_SYSTEM_REDUCE_WAIT === "Y";
+    forceReduceWait || DOES_SYSTEM_REDUCE_WAIT === "Y";
 
   const extraBotMessages = [
     doesSystemReducingWait ? "⚠️ system-reducing-wait" : "",
