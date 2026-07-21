@@ -638,7 +638,9 @@ const getExtraTimeBasedLogs = async ({
     currentWait = -currentWait;
   }
 
-  const isTwoHoursOrMoreLeft = timeDiffFromLastCaseHours >= 2;
+  const shouldReduceWaitBasedTimeGap = doesSystemReducingWait
+    ? timeDiffFromLastCaseHours >= 1
+    : timeDiffFromLastCaseHours >= 2;
 
   const isCurrentAndPreviousDiffZero =
     !isCurrentDiffNegative && !isLastCaseTodayNegative;
@@ -650,7 +652,7 @@ const getExtraTimeBasedLogs = async ({
   let shouldDecreaseInitialWait =
     shouldReduceIfFirstCase ||
     (!willReductAfterDanger &&
-      isTwoHoursOrMoreLeft &&
+      shouldReduceWaitBasedTimeGap &&
       !shouldBoostWaitAfterDanger);
 
   if (
@@ -761,9 +763,11 @@ const getExtraTimeBasedLogs = async ({
       }
     } else {
       extraWait += maxNewWait;
-      extraBotMessages.push(
-        `✅ first-day-negative ${logCtx} wait=${maxNewWait}ms`,
-      );
+      const tag =
+        doesSystemReducingWait && !isFirstCaseToday
+          ? "reduce-day-negative"
+          : "first-day-negative";
+      extraBotMessages.push(`✅ ${tag} ${logCtx} wait=${maxNewWait}ms`);
     }
 
     if (isZeroBackendDelay) {
