@@ -15,10 +15,11 @@ const FAR_CASE_MS = 90 * 60 * 1000;
 const WAITS_MAP = {
   hot: 0,
   nearHot: 1,
-  // medium: 1,
-  medium: 2,
-  far: 3,
+  // medium: 2,
   // far: 3,
+  // for reduce
+  medium: 3,
+  far: 4,
 };
 
 const DANGER_ZONE_PHASES = {

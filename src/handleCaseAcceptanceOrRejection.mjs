@@ -398,8 +398,7 @@ const handleCaseAcceptanceOrRejection =
       const isTimeChanged = waitTime !== baseWaitingTime;
 
       const envUpdates = {
-        recaptchaQuotaCheck: recaptchaQuotaCheck.quotaExceeded ? "Y" : "N",
-        // DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded ? "Y" : "N",
+        // DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaCheck.quotaExceeded ? "Y" : "N",
       };
 
       if (isTimeChanged) {
@@ -408,9 +407,10 @@ const handleCaseAcceptanceOrRejection =
         extraBotMessages.push(
           `⚠️ waitTime auto-updated from \`${baseWaitingTime}\` to \`${waitTime}\` where referralId=\`${referralId}\``,
         );
+        updateEnvFile(envUpdates);
       }
 
-      await updateEnvFile(envUpdates);
+      // updateEnvFile(envUpdates);
 
       await closePageSafely(page);
 
