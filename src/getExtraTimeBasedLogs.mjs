@@ -640,7 +640,7 @@ const getExtraTimeBasedLogs = async ({
   }
 
   const shouldReduceWaitBasedTimeGap = doesSystemReducingWait
-    ? timeDiffFromLastCaseHours >= 1
+    ? gapMin >= 15
     : timeDiffFromLastCaseHours >= 2;
 
   const isCurrentAndPreviousDiffZero =
@@ -698,6 +698,7 @@ const getExtraTimeBasedLogs = async ({
             : timeDiffFromLastCaseHours > 4
               ? -5
               : -4;
+
       newWait = value;
       extraBotMessages.push(
         `🔥 reducing-for-first-case wait=${value}ms lastCasePreviousDelta=${lastCasePreviousDelta} timeDiffFromLastCaseHours=${timeDiffFromLastCaseHours}`,
@@ -909,12 +910,7 @@ const getExtraTimeBasedLogs = async ({
     );
   }
 
-  if (
-    doesSystemReducingWait &&
-    shouldDecreaseInitialWait &&
-    shouldReduceWaitBasedTimeGap &&
-    !isFirstCaseToday
-  ) {
+  if (doesSystemReducingWait && shouldDecreaseInitialWait) {
     const value = -2;
     extraBotMessages.push(
       `🔥 boost-extra-reduction waitWas=${extraWait}ms by=${value}ms to new wait=${extraWait + value}ms`,
