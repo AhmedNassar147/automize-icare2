@@ -763,12 +763,13 @@ const getExtraTimeBasedLogs = async ({
         );
       }
     } else {
-      extraWait += maxNewWait;
+      const value = maxNewWait + -1;
+      extraWait += value;
       const tag =
         doesSystemReducingWait && !isFirstCaseToday
-          ? "reduce-day-negative"
+          ? "reduce-day-negative-like-danger-zone"
           : "first-day-negative";
-      extraBotMessages.push(`✅ ${tag} ${logCtx} wait=${maxNewWait}ms`);
+      extraBotMessages.push(`✅ ${tag} ${logCtx} wait=${value}ms`);
     }
 
     if (isZeroBackendDelay) {
