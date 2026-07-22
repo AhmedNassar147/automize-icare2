@@ -690,7 +690,7 @@ const getExtraTimeBasedLogs = async ({
     let newWait = 0;
 
     if (isFirstCaseToday) {
-      const value =
+      let value =
         timeDiffFromLastCaseHours <= 1
           ? -2
           : timeDiffFromLastCaseHours >= 10
@@ -698,6 +698,11 @@ const getExtraTimeBasedLogs = async ({
             : timeDiffFromLastCaseHours > 4
               ? -5
               : -4;
+
+      if (doesSystemReducingWait) {
+        value =
+          gapMinLastCase < 20 ? -3 : timeDiffFromLastCaseHours >= 2 ? -6 : -5;
+      }
 
       newWait = value;
       extraBotMessages.push(
