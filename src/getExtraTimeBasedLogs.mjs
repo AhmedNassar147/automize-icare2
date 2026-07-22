@@ -916,7 +916,10 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (doesSystemReducingWait && shouldDecreaseInitialWait) {
-    const value = -2;
+    const value =
+      !isLastTodayDiffNegative && !isCurrentDiffNegative && isFarFromLastToday
+        ? -3
+        : -2;
     extraBotMessages.push(
       `🔥 boost-extra-reduction waitWas=${extraWait}ms by=${value}ms to new wait=${extraWait + value}ms`,
     );
