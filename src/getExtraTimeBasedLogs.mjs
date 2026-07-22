@@ -908,12 +908,25 @@ const getExtraTimeBasedLogs = async ({
   //   extraBotMessages.push(`✅ backend-delay delay=0ms  wait=-${value}ms`);
   // }
 
-  if (extraBackendDelayMs >= 2000) {
+  if (extraBackendDelayMs >= 2000 && !doesSystemReducingWait) {
     extraWait += 1;
     // we need check if we should reduce or not like case 378526 and 380464
     extraBotMessages.push(
       `⚠️ backend-delay Ahmed should check if we need to reduce or not when delay=${extraBackendDelayMs}ms\n\nWe have a similar case (378526) with ${extraBackendDelayMs}ms delay`,
     );
+  }
+
+  if (
+    doesSystemReducingWait &&
+    shouldDecreaseInitialWait &&
+    shouldReduceWaitBasedTimeGap &&
+    !isFirstCaseToday
+  ) {
+    const value = -2;
+    extraBotMessages.push(
+      `🔥 boost-extra-reduction waitWas=${extraWait}ms by=${value}ms to new wait=${extraWait + value}ms`,
+    );
+    extraWait += value;
   }
 
   if (rttMessage) {
