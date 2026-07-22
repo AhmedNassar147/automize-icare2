@@ -928,7 +928,7 @@ const getExtraTimeBasedLogs = async ({
       !isCurrentDiffNegative &&
       shouldReduceWaitBasedTimeGap
     ) {
-      const value = Math.max(extraWait, -5);
+      const value = Math.min(-5, extraWait);
       extraWait = value;
       extraBotMessages.push(`🔥 last-today-negative wait=${value}ms`);
     }
