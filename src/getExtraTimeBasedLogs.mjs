@@ -772,14 +772,6 @@ const getExtraTimeBasedLogs = async ({
       extraBotMessages.push(`✅ ${tag} ${logCtx} wait=${value}ms`);
     }
 
-    if (isZeroBackendDelay) {
-      let value = 1;
-      extraWait += value;
-      extraBotMessages.push(
-        `✅ backend-delay-with-negative-diff delay=0ms  wait=+${value}ms`,
-      );
-    }
-
     // if (shouldBoostWaitAfterDanger) {
     //   const value = wasFarDangerPhase ? 2 : 1;
     //   extraWait += value;
@@ -896,18 +888,18 @@ const getExtraTimeBasedLogs = async ({
   //   }
   // }
 
-  // if (isZeroBackendDelay) {
-  //   // 1-  we need to reduce if previous was danger check case 378589
-  //   // 2-  we need to reduce if previous was not danger check case 377247
-  //   let value = 1;
-  //   if (wasLastTodayDangerous && !shouldDecreaseInitialWait) {
-  //     value = Math.max(1, 2 - (afterDangerReduction || 1));
-  //   }
+  if (isZeroBackendDelay) {
+    // 1-  we need to reduce if previous was danger check case 378589
+    // 2-  we need to reduce if previous was not danger check case 377247
+    let value = 1;
+    if (wasLastTodayDangerous && !shouldDecreaseInitialWait) {
+      value = Math.max(1, 2 - (afterDangerReduction || 1));
+    }
 
-  //   extraWait -= value;
+    extraWait += -value;
 
-  //   extraBotMessages.push(`✅ backend-delay delay=0ms  wait=-${value}ms`);
-  // }
+    extraBotMessages.push(`✅ backend-delay delay=0ms wait=-${value}ms`);
+  }
 
   if (extraBackendDelayMs >= 2000 && !doesSystemReducingWait) {
     extraWait += 1;
@@ -928,6 +920,18 @@ const getExtraTimeBasedLogs = async ({
       `🔥 boost-extra-reduction waitWas=${extraWait}ms by=${value}ms to new wait=${extraWait + value}ms`,
     );
     extraWait += value;
+  }
+
+  if (doesSystemReducingWait) {
+    if (
+      isLastTodayDiffNegative &&
+      !isCurrentDiffNegative &&
+      shouldReduceWaitBasedTimeGap
+    ) {
+      const value = Math.max(extraWait, -5);
+      extraWait = value;
+      extraBotMessages.push(`🔥 last-today-negative wait=${value}ms`);
+    }
   }
 
   if (rttMessage) {
