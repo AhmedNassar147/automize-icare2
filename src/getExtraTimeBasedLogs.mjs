@@ -701,7 +701,7 @@ const getExtraTimeBasedLogs = async ({
 
       if (doesSystemReducingWait) {
         value =
-          gapMinLastCase < 20 ? -4 : timeDiffFromLastCaseHours >= 2 ? -7 : -6;
+          gapMinLastCase < 20 ? -3 : timeDiffFromLastCaseHours >= 1.5 ? -6 : -5;
       }
 
       newWait = value;
