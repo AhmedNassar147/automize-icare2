@@ -782,7 +782,7 @@ const getExtraTimeBasedLogs = async ({
       }
     } else {
       const value = isFirstCaseToday
-        ? maxNewWait
+        ? maxNewWait + (doesSystemReducingWait && extraBasedRtt > 0 ? -1 : 0)
         : doesSystemReducingWait
           ? Math.min(-7, maxNewWait)
           : maxNewWait;
@@ -973,7 +973,7 @@ const getExtraTimeBasedLogs = async ({
   }
 
   // this for case is too near less than 15 min
-  if (doesSystemReducingWait && !shouldReduceWaitBasedTimeGap) {
+  if (doesSystemReducingWait && gapMin < 15) {
     extraWait = Math.min(-4, extraWait);
     extraBotMessages.push(
       `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${extraWait}ms where maxWait=-4ms`,
