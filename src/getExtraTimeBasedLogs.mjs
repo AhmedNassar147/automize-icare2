@@ -772,7 +772,7 @@ const getExtraTimeBasedLogs = async ({
         );
       }
     } else {
-      const value = maxNewWait + -1;
+      const value = maxNewWait;
       extraWait += value;
       const tag =
         doesSystemReducingWait && !isFirstCaseToday
