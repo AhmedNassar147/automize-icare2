@@ -626,6 +626,9 @@ const getExtraTimeBasedLogs = async ({
     };
   }
 
+  const isPreviousAndCurrentTodayCasePositiveDiff =
+    !isLastTodayDiffNegative && !isCurrentDiffNegative;
+
   const shouldBoostWaitAfterDanger =
     !!wasLastTodayDangerous && isCurrentDiffNegative && isLargeRtt;
 
@@ -916,22 +919,42 @@ const getExtraTimeBasedLogs = async ({
   }
 
   if (doesSystemReducingWait && shouldDecreaseInitialWait) {
-    const value =
-      !isLastTodayDiffNegative && !isCurrentDiffNegative && isFarFromLastToday
-        ? -3
-        : -2;
+    let value = -2;
+
+    if (
+      isPreviousAndCurrentTodayCasePositiveDiff &&
+      timeDiffFromLastCaseHours >= 2
+    ) {
+      value = -3;
+    }
+
+    let _extraWait = extraWait;
+
     extraBotMessages.push(
-      `🔥 boost-extra-reduction waitWas=${extraWait}ms by=${value}ms to new wait=${extraWait + value}ms`,
+      `🔥 boost-extra-reduction waitWas=${_extraWait}ms by=${value}ms to new wait=${_extraWait + value}ms`,
     );
+
     extraWait += value;
+
+    if (isPreviousAndCurrentTodayCasePositiveDiff && isFarFromLastToday) {
+      const figuredExtraWait = Math.min(-7, extraWait);
+
+      if (figuredExtraWait !== extraWait) {
+        const _value = figuredExtraWait - extraWait;
+        extraBotMessages.push(
+          `🔥 figured-boost-extra-reduction waitWas=${extraWait}ms by=${_value}ms to new wait=${figuredExtraWait}ms`,
+        );
+
+        extraWait = figuredExtraWait;
+      }
+    }
   }
 
   if (doesSystemReducingWait) {
-    if (
-      isLastTodayDiffNegative &&
-      !isCurrentDiffNegative &&
-      shouldReduceWaitBasedTimeGap
-    ) {
+    const isCurrentPostiveAfterPreviousNegative =
+      isLastTodayDiffNegative && !isCurrentDiffNegative;
+
+    if (isCurrentPostiveAfterPreviousNegative && shouldReduceWaitBasedTimeGap) {
       const value = Math.max(-6, extraWait);
       extraWait = value;
       extraBotMessages.push(`🔥 last-today-negative wait=${value}ms`);
