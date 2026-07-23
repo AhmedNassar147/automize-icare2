@@ -754,25 +754,38 @@ const getExtraTimeBasedLogs = async ({
           : `🔁 consecutive-negative ${logCtx} wait=${waitValue}ms`,
       );
 
-      if (negativeDiffCount >= 2 && !doesSystemReducingWait) {
-        const isCount3OrMore = negativeDiffCount >= 3;
-        // 381020 isCount3OrMore && isFarFromLastToday
-        // 380825 isCount3OrMore && !isFarFromLastToday
-        const value =
-          (isCount3OrMore && !isFarFromLastToday) ||
-          lastTodayCaseNegativeDiffValue > 1
-            ? shouldDecreaseInitialWait
-              ? 0
-              : -1
-            : 1 + (isCount3OrMore ? 1 : 0);
-        extraWait += value;
+      if (negativeDiffCount >= 2) {
+        if (doesSystemReducingWait) {
+          if (shouldReduceWaitBasedTimeGap) {
+            extraWait = Math.max(-6, extraWait);
+            extraBotMessages.push(
+              `🔥 negative-chain count=${negativeDiffCount} waitWas=${waitValue} to wait=${extraWait}ms`,
+            );
+          }
+        } else {
+          const isCount3OrMore = negativeDiffCount >= 3;
+          // 381020 isCount3OrMore && isFarFromLastToday
+          // 380825 isCount3OrMore && !isFarFromLastToday
+          const value =
+            (isCount3OrMore && !isFarFromLastToday) ||
+            lastTodayCaseNegativeDiffValue > 1
+              ? shouldDecreaseInitialWait
+                ? 0
+                : -1
+              : 1 + (isCount3OrMore ? 1 : 0);
+          extraWait += value;
 
-        extraBotMessages.push(
-          `🔥 negative-chain count=${negativeDiffCount} wait=${value}ms`,
-        );
+          extraBotMessages.push(
+            `🔥 negative-chain count=${negativeDiffCount} wait=${value}ms`,
+          );
+        }
       }
     } else {
-      const value = maxNewWait;
+      const value = isFirstCaseToday
+        ? maxNewWait
+        : doesSystemReducingWait
+          ? Math.min(-7, maxNewWait)
+          : maxNewWait;
       extraWait += value;
       const tag =
         doesSystemReducingWait && !isFirstCaseToday
@@ -947,17 +960,19 @@ const getExtraTimeBasedLogs = async ({
     }
   }
 
+  // this for -1000 then current is 0
   if (doesSystemReducingWait && shouldDecreaseInitialWait) {
     const isCurrentPostiveAfterPreviousNegative =
       isLastTodayDiffNegative && !isCurrentDiffNegative;
 
     if (isCurrentPostiveAfterPreviousNegative && shouldReduceWaitBasedTimeGap) {
-      const value = Math.max(-6, extraWait);
+      const value = -4;
       extraWait = value;
       extraBotMessages.push(`🔥 last-today-negative wait=${value}ms`);
     }
   }
 
+  // this for case is too near less than 15 min
   if (doesSystemReducingWait && !shouldReduceWaitBasedTimeGap) {
     extraWait = Math.min(-4, extraWait);
     extraBotMessages.push(
