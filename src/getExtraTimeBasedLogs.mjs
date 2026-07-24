@@ -629,6 +629,9 @@ const getExtraTimeBasedLogs = async ({
   const isPreviousAndCurrentTodayCasePositiveDiff =
     !isLastTodayDiffNegative && !isCurrentDiffNegative;
 
+  const isCurrentPostiveAfterPreviousNegative =
+    isLastTodayDiffNegative && !isCurrentDiffNegative;
+
   const shouldBoostWaitAfterDanger =
     !!wasLastTodayDangerous && isCurrentDiffNegative && isLargeRtt;
 
@@ -643,7 +646,7 @@ const getExtraTimeBasedLogs = async ({
   }
 
   const shouldReduceWaitBasedTimeGap = doesSystemReducingWait
-    ? gapMin >= 15
+    ? gapMin >= 14
     : timeDiffFromLastCaseHours >= 2;
 
   const isCurrentAndPreviousDiffZero =
@@ -678,11 +681,11 @@ const getExtraTimeBasedLogs = async ({
   const isLastCaseModerateWaiting =
     lastCaseOutcome === OUTCOME_MAP.moderateWaiting;
 
-  const negativeDiffCount = !isLastCaseNegative
+  const negativeDiffCount = !isLastCaseTodayNegative
     ? 0
     : getDiffCountBeforeCurrent(true, todayCases.slice(-4), diff);
 
-  const positiveDiffCount = isLastCaseNegative
+  const positiveDiffCount = isLastCaseTodayNegative
     ? 0
     : getDiffCountBeforeCurrent(false, todayCases.slice(-8), diff);
 
@@ -756,8 +759,10 @@ const getExtraTimeBasedLogs = async ({
 
       if (negativeDiffCount >= 2) {
         if (doesSystemReducingWait) {
-          if (shouldReduceWaitBasedTimeGap) {
-            extraWait = Math.max(-6, extraWait);
+          if (gapMin >= 4) {
+            extraWait = shouldDecreaseInitialWait
+              ? Math.max(-6, extraWait)
+              : -7 + (extraBasedRtt > 0 ? -1 : 0);
             extraBotMessages.push(
               `🔥 negative-chain count=${negativeDiffCount} waitWas=${waitValue} to wait=${extraWait}ms`,
             );
@@ -962,9 +967,6 @@ const getExtraTimeBasedLogs = async ({
 
   // this for -1000 then current is 0
   if (doesSystemReducingWait && shouldDecreaseInitialWait) {
-    const isCurrentPostiveAfterPreviousNegative =
-      isLastTodayDiffNegative && !isCurrentDiffNegative;
-
     if (isCurrentPostiveAfterPreviousNegative && shouldReduceWaitBasedTimeGap) {
       const value = -4;
       extraWait = value;
@@ -972,8 +974,13 @@ const getExtraTimeBasedLogs = async ({
     }
   }
 
-  // this for case is too near less than 15 min
-  if (doesSystemReducingWait && gapMin < 15) {
+  // this for case is too near less than 14 min
+  if (
+    doesSystemReducingWait &&
+    gapMin < 14 &&
+    !isCurrentDiffNegative &&
+    !isFirstCaseToday
+  ) {
     extraWait = Math.min(-4, extraWait);
     extraBotMessages.push(
       `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${extraWait}ms where maxWait=-4ms`,
@@ -991,3 +998,10 @@ const getExtraTimeBasedLogs = async ({
 };
 
 export default getExtraTimeBasedLogs;
+
+// const data = (await readLogsAsArray()).slice(-3);
+
+// const negativeDiffCount = getDiffCountBeforeCurrent(true, data, -1000);
+
+// console.log("negativeDiffCount", negativeDiffCount);
+// console.log(JSON.stringify(data, null, 2));
