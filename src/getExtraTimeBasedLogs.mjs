@@ -759,10 +759,9 @@ const getExtraTimeBasedLogs = async ({
 
       if (negativeDiffCount >= 2) {
         if (doesSystemReducingWait) {
-          if (gapMin >= 4) {
-            extraWait = shouldDecreaseInitialWait
-              ? Math.max(-6, extraWait)
-              : -7 + (extraBasedRtt > 0 ? -1 : 0);
+          // if (gapMin >= 4) {
+          if (shouldDecreaseInitialWait) {
+            extraWait = Math.max(-6, extraWait);
             extraBotMessages.push(
               `🔥 negative-chain count=${negativeDiffCount} waitWas=${waitValue} to wait=${extraWait}ms`,
             );
@@ -787,7 +786,7 @@ const getExtraTimeBasedLogs = async ({
       }
     } else {
       const value = isFirstCaseToday
-        ? maxNewWait + (doesSystemReducingWait && extraBasedRtt > 0 ? -1 : 0)
+        ? maxNewWait
         : doesSystemReducingWait
           ? Math.min(-7, maxNewWait)
           : maxNewWait;
@@ -936,41 +935,49 @@ const getExtraTimeBasedLogs = async ({
     );
   }
 
-  if (doesSystemReducingWait && shouldDecreaseInitialWait) {
-    let value = -2;
+  // for first 4 days of reduction
+  // if (doesSystemReducingWait && shouldDecreaseInitialWait) {
+  //   let value = -2;
 
-    if (isPreviousAndCurrentTodayCasePositiveDiff && isFarFromLastToday) {
-      value = -3;
-    }
+  //   if (isPreviousAndCurrentTodayCasePositiveDiff && isFarFromLastToday) {
+  //     value = -3;
+  //   }
 
-    let _extraWait = extraWait;
+  //   let _extraWait = extraWait;
 
-    extraBotMessages.push(
-      `🔥 boost-extra-reduction waitWas=${_extraWait}ms by=${value}ms to new wait=${_extraWait + value}ms`,
-    );
+  //   extraBotMessages.push(
+  //     `🔥 boost-extra-reduction waitWas=${_extraWait}ms by=${value}ms to new wait=${_extraWait + value}ms`,
+  //   );
 
-    extraWait += value;
+  //   extraWait += value;
 
-    if (isPreviousAndCurrentTodayCasePositiveDiff && isFarFromLastToday) {
-      const figuredExtraWait = Math.min(-7, extraWait);
+  //   if (isPreviousAndCurrentTodayCasePositiveDiff && isFarFromLastToday) {
+  //     const figuredExtraWait = Math.min(-7, extraWait);
 
-      if (figuredExtraWait !== extraWait) {
-        const _value = figuredExtraWait - extraWait;
-        extraBotMessages.push(
-          `🔥 figured-boost-extra-reduction waitWas=${extraWait}ms by=${_value}ms to new wait=${figuredExtraWait}ms`,
-        );
+  //     if (figuredExtraWait !== extraWait) {
+  //       const _value = figuredExtraWait - extraWait;
+  //       extraBotMessages.push(
+  //         `🔥 figured-boost-extra-reduction waitWas=${extraWait}ms by=${_value}ms to new wait=${figuredExtraWait}ms`,
+  //       );
 
-        extraWait = figuredExtraWait;
-      }
-    }
-  }
+  //       extraWait = figuredExtraWait;
+  //     }
+  //   }
+  // }
 
   // this for -1000 then current is 0
-  if (doesSystemReducingWait && shouldDecreaseInitialWait) {
+  if (
+    doesSystemReducingWait &&
+    shouldDecreaseInitialWait &&
+    !isFirstCaseToday
+  ) {
     if (isCurrentPostiveAfterPreviousNegative && shouldReduceWaitBasedTimeGap) {
-      const value = -4;
+      // const value = -4 + extraBasedRtt;
+      const value = -3 + extraBasedRtt;
       extraWait = value;
-      extraBotMessages.push(`🔥 last-today-negative wait=${value}ms`);
+      extraBotMessages.push(
+        `🔥 last-today-negative wait=${value}ms extraBasedRtt=${extraBasedRtt}`,
+      );
     }
   }
 
@@ -978,13 +985,15 @@ const getExtraTimeBasedLogs = async ({
   if (
     doesSystemReducingWait &&
     gapMin < 14 &&
-    !isCurrentDiffNegative &&
+    // !isCurrentDiffNegative &&
     !isFirstCaseToday
   ) {
-    extraWait = Math.min(-4, extraWait);
+    // const value = Math.min(-4, extraWait) + extraBasedRtt;
+    const value = Math.min(-3, extraWait) + extraBasedRtt;
     extraBotMessages.push(
-      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${extraWait}ms where maxWait=-4ms`,
+      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms extraBasedRtt=${extraBasedRtt}`,
     );
+    extraWait = value;
   }
 
   if (rttMessage) {
