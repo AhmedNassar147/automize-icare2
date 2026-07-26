@@ -646,7 +646,7 @@ const getExtraTimeBasedLogs = async ({
   }
 
   const shouldReduceWaitBasedTimeGap = doesSystemReducingWait
-    ? gapMin >= 14
+    ? gapMin >= 15
     : timeDiffFromLastCaseHours >= 2;
 
   const isCurrentAndPreviousDiffZero =
@@ -707,7 +707,9 @@ const getExtraTimeBasedLogs = async ({
 
       if (doesSystemReducingWait) {
         value =
-          gapMinLastCase < 30 ? -4 : timeDiffFromLastCaseHours >= 1.5 ? -6 : -5;
+          // gapMinLastCase < 30 ? -4 : timeDiffFromLastCaseHours >= 1.5 ? -6 : -5;
+          // in last reduction days
+          gapMinLastCase < 30 ? -4 : -5;
       }
 
       newWait = value;
@@ -761,7 +763,8 @@ const getExtraTimeBasedLogs = async ({
         if (doesSystemReducingWait) {
           // if (gapMin >= 4) {
           if (shouldDecreaseInitialWait) {
-            extraWait = Math.max(-6, extraWait);
+            // extraWait = Math.max(-6, extraWait); // works with boost-extra-reduction rule
+            extraWait = Math.max(-2, extraWait); // tried at day 27
             extraBotMessages.push(
               `🔥 negative-chain count=${negativeDiffCount} waitWas=${waitValue} to wait=${extraWait}ms`,
             );
@@ -788,7 +791,8 @@ const getExtraTimeBasedLogs = async ({
       const value = isFirstCaseToday
         ? maxNewWait
         : doesSystemReducingWait
-          ? Math.min(-7, maxNewWait)
+          ? // ? Math.min(-7, maxNewWait) // untill day 26
+            Math.min(-7, maxNewWait) // starting from day 27
           : maxNewWait;
       extraWait += value;
       const tag =
@@ -936,6 +940,7 @@ const getExtraTimeBasedLogs = async ({
   }
 
   // for first 4 days of reduction
+  // boost-extra-reduction rule
   // if (doesSystemReducingWait && shouldDecreaseInitialWait) {
   //   let value = -2;
 
@@ -984,7 +989,10 @@ const getExtraTimeBasedLogs = async ({
   // this for case is too near less than 14 min
   if (
     doesSystemReducingWait &&
-    gapMin < 14 &&
+    // for first reduction cases
+    // gapMin < 14 &&
+    gapMin < 15 &&
+    // for first reduction cases
     // !isCurrentDiffNegative &&
     !isFirstCaseToday
   ) {
