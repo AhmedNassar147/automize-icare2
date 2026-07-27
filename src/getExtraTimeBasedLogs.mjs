@@ -1015,11 +1015,13 @@ const getExtraTimeBasedLogs = async ({
     !isFirstCaseToday &&
     !shouldDecreaseInitialWait
   ) {
-    const baseMinValue = (gapMin >= 19 ? -4 : -3) + (rtt >= 100 ? 1 : 0);
+    const hasLargeRTT = rtt >= 100;
+    const baseMinValue =
+      (gapMin >= 19 && !hasLargeRTT ? -4 : -3) + (hasLargeRTT ? 1 : 0);
 
     const value = Math.min(baseMinValue, extraWait) + extraBasedRtt;
     extraBotMessages.push(
-      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms baseMinValue=${baseMinValue} extraBasedRtt=${extraBasedRtt}`,
+      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms hasLargeRTT=${hasLargeRTT} baseMinValue=${baseMinValue} extraBasedRtt=${extraBasedRtt}`,
     );
     extraWait = value;
   }
