@@ -1008,20 +1008,18 @@ const getExtraTimeBasedLogs = async ({
   // }
 
   // lat days of reduction for case like 381883
+  // we used the rtt for cases like 381894
   if (
     doesSystemReducingWait &&
     gapMin >= 13 &&
     !isFirstCaseToday &&
     !shouldDecreaseInitialWait
   ) {
-    // const value = Math.min(gapMin >= 15 ? -4 : -3, extraWait) + extraBasedRtt;
-    const value =
-      Math.min(
-        isCurrentPostiveAfterPreviousNegative && gapMin >= 19 ? -4 : -3,
-        extraWait,
-      ) + extraBasedRtt;
+    const baseMinValue = (gapMin >= 19 ? -4 : -3) + (rtt >= 100 ? 1 : 0);
+
+    const value = Math.min(baseMinValue, extraWait) + extraBasedRtt;
     extraBotMessages.push(
-      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms extraBasedRtt=${extraBasedRtt}`,
+      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms baseMinValue=${baseMinValue} extraBasedRtt=${extraBasedRtt}`,
     );
     extraWait = value;
   }
