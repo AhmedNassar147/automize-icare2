@@ -646,7 +646,7 @@ const getExtraTimeBasedLogs = async ({
 
   const shouldReduceWaitBasedTimeGap = doesSystemReducingWait
     ? // ? gapMin >= 15
-      timeDiffFromLastCaseHours > 1.5
+      timeDiffFromLastCaseHours >= 2
     : timeDiffFromLastCaseHours >= 2;
 
   const isCurrentAndPreviousDiffZero =
