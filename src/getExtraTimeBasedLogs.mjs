@@ -1017,7 +1017,8 @@ const getExtraTimeBasedLogs = async ({
     !shouldDecreaseInitialWait
   ) {
     const baseMinValue =
-      (gapMin >= 30 && !isLargeRtt ? -4 : -3) + (isLargeRtt ? 1 : 0);
+      (gapMin <= 25 ? -2 : gapMin >= 30 && !isLargeRtt ? -4 : -3) +
+      (isLargeRtt ? 1 : 0);
 
     const value = Math.min(baseMinValue, extraWait) + extraBasedRtt;
     extraBotMessages.push(
