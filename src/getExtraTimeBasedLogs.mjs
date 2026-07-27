@@ -15,12 +15,11 @@ const FAR_CASE_MS = 90 * 60 * 1000;
 const WAITS_MAP = {
   hot: 0,
   nearHot: 1,
-  // medium: 2,
-  // far: 3,
-
-  // for reducing
-  medium: 3,
-  far: 4,
+  medium: 2,
+  far: 3,
+  // for initial reducing till day 26
+  // medium: 3,
+  // far: 4,
 };
 
 const DANGER_ZONE_PHASES = {
@@ -646,7 +645,8 @@ const getExtraTimeBasedLogs = async ({
   }
 
   const shouldReduceWaitBasedTimeGap = doesSystemReducingWait
-    ? gapMin >= 15
+    ? // ? gapMin >= 15
+      timeDiffFromLastCaseHours > 1.5
     : timeDiffFromLastCaseHours >= 2;
 
   const isCurrentAndPreviousDiffZero =
@@ -764,9 +764,9 @@ const getExtraTimeBasedLogs = async ({
           // if (gapMin >= 4) {
           if (shouldDecreaseInitialWait) {
             // extraWait = Math.max(-6, extraWait); // works with boost-extra-reduction rule
-            extraWait = Math.max(-3, extraWait); // tried at day 27
+            extraWait = Math.max(-6, extraWait); // tried at day 27
             extraBotMessages.push(
-              `🔥 negative-chain count=${negativeDiffCount} waitWas=${waitValue} to wait=${extraWait}ms`,
+              `🔥 negative-chain count=${negativeDiffCount} waitWas=${waitValue} to wait=${extraWait}ms timeDiffFromLastCaseHours=${timeDiffFromLastCaseHours}`,
             );
           }
         } else {
@@ -792,7 +792,7 @@ const getExtraTimeBasedLogs = async ({
         ? maxNewWait
         : doesSystemReducingWait
           ? // ? Math.min(-7, maxNewWait) // untill day 26
-            Math.min(-5, maxNewWait) // starting from day 27
+            Math.min(-6, maxNewWait) // starting from day 27
           : maxNewWait;
       extraWait += value;
       const tag =
@@ -970,39 +970,39 @@ const getExtraTimeBasedLogs = async ({
   //   }
   // }
 
-  // this for -1000 then current is 0
-  if (
-    doesSystemReducingWait &&
-    shouldDecreaseInitialWait &&
-    !isFirstCaseToday
-  ) {
-    if (isCurrentPostiveAfterPreviousNegative && shouldReduceWaitBasedTimeGap) {
-      // const value = -4 + extraBasedRtt;
-      const value = -3 + extraBasedRtt;
-      extraWait = value;
-      extraBotMessages.push(
-        `🔥 last-today-negative wait=${value}ms extraBasedRtt=${extraBasedRtt}`,
-      );
-    }
-  }
+  // this for -1000 then current is 0 until day 26
+  // if (
+  //   doesSystemReducingWait &&
+  //   shouldDecreaseInitialWait &&
+  //   !isFirstCaseToday
+  // ) {
+  //   if (isCurrentPostiveAfterPreviousNegative && shouldReduceWaitBasedTimeGap) {
+  //     // const value = -4 + extraBasedRtt;
+  //     const value = -3 + extraBasedRtt;
+  //     extraWait = value;
+  //     extraBotMessages.push(
+  //       `🔥 last-today-negative wait=${value}ms extraBasedRtt=${extraBasedRtt}`,
+  //     );
+  //   }
+  // }
 
-  // this for case is too near less than 14 min
-  if (
-    doesSystemReducingWait &&
-    // for first reduction cases
-    // gapMin < 14 &&
-    gapMin < 15 &&
-    // for first reduction cases
-    // !isCurrentDiffNegative &&
-    !isFirstCaseToday
-  ) {
-    // const value = Math.min(-4, extraWait) + extraBasedRtt;
-    const value = Math.min(-3, extraWait) + extraBasedRtt;
-    extraBotMessages.push(
-      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms extraBasedRtt=${extraBasedRtt}`,
-    );
-    extraWait = value;
-  }
+  // this for case is too near less than 14 min until day 26
+  // if (
+  //   doesSystemReducingWait &&
+  //   // for first reduction cases
+  //   // gapMin < 14 &&
+  //   gapMin < 15 &&
+  //   // for first reduction cases
+  //   // !isCurrentDiffNegative &&
+  //   !isFirstCaseToday
+  // ) {
+  //   // const value = Math.min(-4, extraWait) + extraBasedRtt;
+  //   const value = Math.min(-3, extraWait) + extraBasedRtt;
+  //   extraBotMessages.push(
+  //     `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms extraBasedRtt=${extraBasedRtt}`,
+  //   );
+  //   extraWait = value;
+  // }
 
   if (rttMessage) {
     extraBotMessages.push(rttMessage);
