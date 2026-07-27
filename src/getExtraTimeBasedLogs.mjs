@@ -790,9 +790,12 @@ const getExtraTimeBasedLogs = async ({
     } else {
       const value = isFirstCaseToday
         ? maxNewWait
-        : doesSystemReducingWait
-          ? // ? Math.min(-7, maxNewWait) // untill day 26
-            Math.min(-5, maxNewWait) // starting from day 27
+        : // : doesSystemReducingWait
+          //   ? Math.min(-7, maxNewWait) // untill day 26
+          //   : maxNewWait;
+
+          doesSystemReducingWait && shouldDecreaseInitialWait
+          ? Math.min(-7, maxNewWait) // untill day 26
           : maxNewWait;
       extraWait += value;
       const tag =
