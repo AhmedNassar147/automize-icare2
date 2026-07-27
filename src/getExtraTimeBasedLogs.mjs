@@ -490,8 +490,8 @@ const getExtraTimeBasedLogs = async ({
 
   const isLastCaseTodayNegative = lastTodayDiff && lastTodayDiff < 0;
 
-  const lastTodayCaseNegativeDiffValue = isLastCaseNegative
-    ? Math.abs(lastTodayDiff) / 1000
+  const lastTodayCaseNegativeDiffValue = isLastCaseTodayNegative
+    ? Math.min(4, (Math.abs(lastTodayDiff) / 1000 || 1) - 1)
     : 0;
 
   const isFirstCaseToday = !todayCases?.length;
@@ -515,7 +515,7 @@ const getExtraTimeBasedLogs = async ({
 
   const currentHours = new Date().getHours();
 
-  const isLargeRtt = (rtt || 0) > 100;
+  const isLargeRtt = (rtt || 0) >= 100;
 
   // const isMediumGap =
   //   diffFromLastToday > NEAR_CLUSTER_MS && diffFromLastToday < FAR_CASE_MS;
@@ -745,9 +745,10 @@ const getExtraTimeBasedLogs = async ({
 
   if (isCurrentDiffNegative) {
     const waitBasedDiff = Math.abs(diff) / 1000;
-    const valueFromNegative = (waitBasedDiff || 1) - 1;
+    const valueFromNegative = Math.min(4, (waitBasedDiff || 1) - 1);
 
-    let maxNewWait = currentWait + valueFromNegative;
+    let maxNewWait =
+      currentWait + (doesSystemReducingWait ? 0 : valueFromNegative);
 
     if (isLastTodayDiffNegative) {
       const waitValue = maxNewWait;
@@ -1015,13 +1016,12 @@ const getExtraTimeBasedLogs = async ({
     !isFirstCaseToday &&
     !shouldDecreaseInitialWait
   ) {
-    const hasLargeRTT = rtt >= 100;
     const baseMinValue =
-      (gapMin >= 19 && !hasLargeRTT ? -4 : -3) + (hasLargeRTT ? 1 : 0);
+      (gapMin >= 30 && !isLargeRtt ? -4 : -3) + (isLargeRtt ? 1 : 0);
 
     const value = Math.min(baseMinValue, extraWait) + extraBasedRtt;
     extraBotMessages.push(
-      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms hasLargeRTT=${hasLargeRTT} baseMinValue=${baseMinValue} extraBasedRtt=${extraBasedRtt}`,
+      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms isLargeRtt=${isLargeRtt} baseMinValue=${baseMinValue} extraBasedRtt=${extraBasedRtt}`,
     );
     extraWait = value;
   }
