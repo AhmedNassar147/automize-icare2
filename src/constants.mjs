@@ -238,7 +238,7 @@ export const TIMING_LOGS_WIDTHS = {
   serverEnd: 13,
   endVsServer: 11,
   readyAt: 13,
-  diff: 13,
+  diff: 15,
   zeroAt: 13,
   delay: 5,
   clickedAt: 13,
