@@ -1016,8 +1016,10 @@ const getExtraTimeBasedLogs = async ({
   ) {
     // const value = Math.min(gapMin >= 15 ? -4 : -3, extraWait) + extraBasedRtt;
     const value =
-      Math.min(isCurrentPostiveAfterPreviousNegative ? -4 : -3, extraWait) +
-      extraBasedRtt;
+      Math.min(
+        isCurrentPostiveAfterPreviousNegative && gapMin >= 19 ? -4 : -3,
+        extraWait,
+      ) + extraBasedRtt;
     extraBotMessages.push(
       `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms extraBasedRtt=${extraBasedRtt}`,
     );
