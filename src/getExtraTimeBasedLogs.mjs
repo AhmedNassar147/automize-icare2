@@ -1012,17 +1012,22 @@ const getExtraTimeBasedLogs = async ({
   // we used the rtt for cases like 381894
   if (
     doesSystemReducingWait &&
-    gapMin >= 13 &&
+    // gapMin >= 13 &&
     !isFirstCaseToday &&
     !shouldDecreaseInitialWait
   ) {
-    const baseMinValue =
-      (gapMin <= 25 ? -2 : gapMin >= 30 && !isLargeRtt ? -4 : -3) +
-      (isLargeRtt ? 1 : 0);
+    // day 27
+    // const baseMinValue =
+    //   (gapMin <= 25 ? -2 : gapMin >= 30 && !isLargeRtt ? -4 : -3) +
+    //   (isLargeRtt ? 1 : 0);
 
-    const value = Math.min(baseMinValue, extraWait) + extraBasedRtt;
+    // const value = Math.min(baseMinValue, extraWait) + extraBasedRtt;
+
+    // day 28
+    const value = (gapMin <= 25 ? -1 : -2) + (isLargeRtt ? 1 : 0);
+
     extraBotMessages.push(
-      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms isLargeRtt=${isLargeRtt} baseMinValue=${baseMinValue} extraBasedRtt=${extraBasedRtt}`,
+      `🔥 small-reduction-for-near-case waitWas=${extraWait}ms to new wait=${value}ms isLargeRtt=${isLargeRtt} extraBasedRtt=${extraBasedRtt}`,
     );
     extraWait = value;
   }
