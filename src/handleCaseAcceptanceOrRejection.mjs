@@ -347,7 +347,7 @@ const handleCaseAcceptanceOrRejection =
           extraBackendDelayMs,
           rtt,
           baseWaitingTime,
-          forceReduceWait: !!recaptchaQuotaCheck?.quotaExceeded,
+          // forceReduceWait: !!recaptchaQuotaCheck?.quotaExceeded,
         });
 
       if (ENABLE_AUTO_WAITING === "1") {
@@ -403,7 +403,8 @@ const handleCaseAcceptanceOrRejection =
       const isTimeChanged = waitTime !== baseWaitingTime;
 
       const envUpdates = {
-        // DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded,
+        recaptchaQuotaExceeded,
+        // DOES_SYSTEM_REDUCE_WAIT:
       };
 
       if (isTimeChanged) {
@@ -412,12 +413,10 @@ const handleCaseAcceptanceOrRejection =
         extraBotMessages.push(
           `⚠️ waitTime auto-updated from \`${baseWaitingTime}\` to \`${waitTime}\` where referralId=\`${referralId}\``,
         );
-        updateEnvFile(envUpdates);
       }
 
-      // updateEnvFile(envUpdates);
-
       await closePageSafely(page);
+      updateEnvFile(envUpdates);
 
       if (isAcceptanceAction) {
         patientStore.addNonClaimableCase(referralId, referralEndTimestamp);
