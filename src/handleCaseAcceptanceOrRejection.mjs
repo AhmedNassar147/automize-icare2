@@ -317,6 +317,10 @@ const handleCaseAcceptanceOrRejection =
         createConsoleMessage("Failed to check recaptcha quota", "error", error);
       }
 
+      const recaptchaQuotaExceeded = recaptchaQuotaCheck.quotaExceeded
+        ? "Y"
+        : "N";
+
       const {
         zeroSeenAt,
         readySeenAt,
@@ -384,6 +388,7 @@ const handleCaseAcceptanceOrRejection =
           status: isAcceptanceAction ? "" : "not-clicked",
           claimed: isAcceptanceAction ? "" : "No",
           extraWaitMessage: computedExtraBotMessages.join("_AND_"),
+          recaptchaQuotaExceeded,
         }),
       ]);
 
@@ -398,7 +403,7 @@ const handleCaseAcceptanceOrRejection =
       const isTimeChanged = waitTime !== baseWaitingTime;
 
       const envUpdates = {
-        // DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaCheck.quotaExceeded ? "Y" : "N",
+        // DOES_SYSTEM_REDUCE_WAIT: recaptchaQuotaExceeded,
       };
 
       if (isTimeChanged) {

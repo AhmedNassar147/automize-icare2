@@ -40,6 +40,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     extraWaitMessage,
     delta,
     readySeenAtLocalMs,
+    recaptchaQuotaExceeded,
   } = data;
 
   let endToReady = "";
@@ -67,6 +68,7 @@ const summarizeLogsAfterAcceptance = async (data) => {
     rtt: rtt || "",
     extraWaitMessage,
     delta: delta || "",
+    q_excded: recaptchaQuotaExceeded || "N",
     localReadyAt: readySeenAtLocalMs || "",
   };
 
@@ -192,6 +194,7 @@ export async function readLogsAsArray() {
         extraWaitMessage: current.extraWaitMessage || "",
         delta: parseInt(current.delta, 10) || null,
         ...parseOutcomeStatus(current.status),
+        recaptchaQuotaExceeded: current.q_excded || "N",
         readySeenAtLocalMs: parseInt(current.localReadyAt, 10) || null,
       };
     })

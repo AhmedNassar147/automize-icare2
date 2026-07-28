@@ -106,7 +106,6 @@ const handleSetCaseOutcome = async ({
 
     updateEnvFile({
       WAIT_FOR_ACCEPT_MS: nextWaitTime,
-      // COMPUTED_EXTRA_WAIT: 0,
     });
 
     const arrow = delta > 0 ? "⬆️" : "⬇️";
