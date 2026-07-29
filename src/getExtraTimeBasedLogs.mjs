@@ -15,8 +15,12 @@ const FAR_CASE_MS = 90 * 60 * 1000;
 const WAITS_MAP = {
   hot: 0,
   nearHot: 1,
-  medium: 2,
-  far: 3,
+  // medium: 2,
+  // far: 3,
+
+  medium: 3,
+  far: 4,
+
   // for initial reducing till day 26
   // medium: 3,
   // far: 4,
@@ -156,7 +160,7 @@ const getDangerZoneExtraWait = (
   // far 10 case 378585
   // not far case  378569 and this needed 7 becouse the previous one needed to be accepted at 2502
   // not far case  378337 and this needed 5 becouse if we applied rule of delay == 0  we would claim it
-  const baseDangerWait = shouldUseFullWait ? 10 : gapMin < 15 ? 6 : 7;
+  const baseDangerWait = shouldUseFullWait ? 10 : gapMin <= 35 ? 6 : 7;
   const zeroDelayWait = extraBackendDelayMs === 0 ? -2 : 0;
 
   // we use the too far for case like 378994
@@ -491,7 +495,7 @@ const getExtraTimeBasedLogs = async ({
   const isLastCaseTodayNegative = lastTodayDiff && lastTodayDiff < 0;
 
   const lastTodayCaseNegativeDiffValue = isLastCaseTodayNegative
-    ? Math.min(5, (Math.abs(lastTodayDiff) / 1000 || 1) - 1)
+    ? Math.min(7, (Math.abs(lastTodayDiff) / 1000 || 1) - 1)
     : 0;
 
   const isFirstCaseToday = !todayCases?.length;
@@ -660,19 +664,25 @@ const getExtraTimeBasedLogs = async ({
   // const shouldReduceIfFirstCase = isFirstCaseToday && gapMinLastCase >= 4;
   const shouldReduceIfFirstCase = isFirstCaseToday;
 
-  let shouldDecreaseInitialWait =
-    shouldReduceIfFirstCase ||
-    (!willReductAfterDanger &&
-      shouldReduceWaitBasedTimeGap &&
-      !shouldBoostWaitAfterDanger);
+  let shouldDecreaseInitialWait = false;
+  // shouldReduceIfFirstCase ||
+  // (!willReductAfterDanger &&
+  // shouldReduceWaitBasedTimeGap &&
+  // !shouldBoostWaitAfterDanger);
+
+  // let shouldDecreaseInitialWait =
+  //   shouldReduceIfFirstCase ||
+  //   (!willReductAfterDanger &&
+  //     shouldReduceWaitBasedTimeGap &&
+  //     !shouldBoostWaitAfterDanger);
 
   if (
     !doesSystemReducingWait &&
     isCurrentAndPreviousDiffZero &&
     !shouldReduceIfFirstCase
   ) {
-    shouldDecreaseInitialWait =
-      timeDiffFromLastCaseHours < 4 ? false : shouldDecreaseInitialWait;
+    // shouldDecreaseInitialWait =
+    //   timeDiffFromLastCaseHours < 4 ? false : shouldDecreaseInitialWait;
   }
 
   const positiveLastDelta = Math.abs(lastCasePreviousDelta || 0);
@@ -749,7 +759,7 @@ const getExtraTimeBasedLogs = async ({
 
   if (isCurrentDiffNegative) {
     const waitBasedDiff = Math.abs(diff) / 1000;
-    const valueFromNegative = Math.min(3, (waitBasedDiff || 1) - 1);
+    const valueFromNegative = Math.min(5, (waitBasedDiff || 1) - 1);
 
     let maxNewWait =
       currentWait + (doesSystemReducingWait ? 0 : valueFromNegative);
@@ -775,17 +785,17 @@ const getExtraTimeBasedLogs = async ({
             );
           }
         } else {
-          const isCount3OrMore = negativeDiffCount >= 3;
+          // const isCount3OrMore = negativeDiffCount >= 3;
           // 381020 isCount3OrMore && isFarFromLastToday
           // 380825 isCount3OrMore && !isFarFromLastToday
-          const value =
-            (isCount3OrMore && !isFarFromLastToday) ||
-            lastTodayCaseNegativeDiffValue > 1
-              ? shouldDecreaseInitialWait
-                ? 0
-                : -1
-              : 1 + (isCount3OrMore ? 1 : 0);
-          extraWait += value;
+          // const value =
+          //   (isCount3OrMore && !isFarFromLastToday) ||
+          //   lastTodayCaseNegativeDiffValue > 1
+          //     ? shouldDecreaseInitialWait
+          //       ? 0
+          //       : -1
+          //     : 1 + (isCount3OrMore ? 1 : 0);
+          extraWait += 2;
 
           extraBotMessages.push(
             `🔥 negative-chain count=${negativeDiffCount} wait=${value}ms`,
@@ -825,23 +835,24 @@ const getExtraTimeBasedLogs = async ({
     if (!doesSystemReducingWait) {
       if (
         !isFirstCaseToday &&
-        value < 4 &&
-        (!isHotCluster || lastTodayCaseNegativeDiffValue > 1)
+        value < 6
+        // && (!isHotCluster || lastTodayCaseNegativeDiffValue > 1)
       ) {
-        const isExceedingTime = timeDiffFromLastCase <= 85 * 60 * 1000;
+        // const isExceedingTime = timeDiffFromLastCase <= 85 * 60 * 1000;
+        const isExceedingTime = timeDiffFromLastCase <= 120 * 60 * 1000;
         const isExceedingPreviousNegative = negativeDiffCount >= 2;
 
         let bootMessage = "";
 
         if (isExceedingTime) {
           // value = extraBasedRtt > 0 ? 3 : 4;
-          value = timeDiffFromLastCaseHours >= 1 ? 5 : 4;
+          value = timeDiffFromLastCaseHours >= 1 ? 6 : 5;
           const tag = `boot-stable-wait-${value}`;
           bootMessage = `🔥 ${tag} waitWas=${currentWait}ms to wait=${value}ms gapMin=${gapMin}`;
         }
 
         if (isExceedingPreviousNegative && timeDiffFromLastCaseHours < 2) {
-          const maxValue = timeDiffFromLastCaseHours >= 1 ? 5 : 4;
+          const maxValue = timeDiffFromLastCaseHours >= 1 ? 6 : 5;
           // value = maxValue - (extraBasedRtt > 0 ? 1 : 0);
           value = maxValue - (extraBasedRtt > 0 ? 0 : 0);
           const tag = `boot-stable-wait-${value}`;
