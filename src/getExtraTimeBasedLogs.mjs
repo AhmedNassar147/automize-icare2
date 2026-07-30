@@ -432,7 +432,10 @@ const analyzeReferralTimingPatterns = (
 // 15/07/2026 09:23:45 am| -2000 - (<) |380964| 2435_14
 // that should reduce all day cases
 
-const maxValue = 8;
+const INCREASE_BY_MAP = {
+  medium: 8,
+  large: 10,
+};
 
 const getExtraTimeBasedLogs = async ({
   referralId,
@@ -761,6 +764,9 @@ const getExtraTimeBasedLogs = async ({
     currentWait = doesSystemReducingWait ? currentWait + newWait : newWait;
   }
 
+  const maxIncreasingValue =
+    waitBucket === "far" ? INCREASE_BY_MAP.large : INCREASE_BY_MAP.medium;
+
   if (isCurrentDiffNegative) {
     const waitBasedDiff = Math.abs(diff) / 1000;
     const valueFromNegative = Math.min(5, (waitBasedDiff || 1) - 1);
@@ -824,12 +830,12 @@ const getExtraTimeBasedLogs = async ({
       extraBotMessages.push(`✅ ${tag} ${logCtx} wait=${value}ms`);
     }
 
-    if (extraWait < maxValue) {
+    if (extraWait < maxIncreasingValue) {
       extraBotMessages.push(
-        `🔥 boost-wait-after-negative wait=${extraWait}ms boost=${maxValue - extraWait} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
+        `🔥 boost-wait-after-negative wait=${extraWait}ms maxIncreasingValue=${maxIncreasingValue} boost=${maxIncreasingValue - extraWait} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
       );
 
-      extraWait += maxValue - extraWait;
+      extraWait += maxIncreasingValue - extraWait;
     }
 
     // if (shouldBoostWaitAfterDanger) {
@@ -914,12 +920,12 @@ const getExtraTimeBasedLogs = async ({
     //   value = -reduction;
     // }
 
-    if (value < maxValue) {
+    if (value < maxIncreasingValue) {
       extraBotMessages.push(
-        `🔥 boost-wait-stable wait=${value}ms boost=${maxValue - value} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
+        `🔥 boost-wait-stable wait=${value}ms maxIncreasingValue=${maxIncreasingValue} boost=${maxIncreasingValue - value} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
       );
 
-      value = maxValue;
+      value = maxIncreasingValue;
     }
 
     let prefixText = isFirstCaseToday
