@@ -917,7 +917,7 @@ const getExtraTimeBasedLogs = async ({
         `🔥 boost-wait-stable wait=${value}ms boost=${10 - value} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
       );
 
-      value = 10 - value;
+      value = 10;
     }
 
     let prefixText = isFirstCaseToday
