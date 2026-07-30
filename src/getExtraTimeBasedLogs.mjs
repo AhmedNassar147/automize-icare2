@@ -432,6 +432,8 @@ const analyzeReferralTimingPatterns = (
 // 15/07/2026 09:23:45 am| -2000 - (<) |380964| 2435_14
 // that should reduce all day cases
 
+const maxValue = 8;
+
 const getExtraTimeBasedLogs = async ({
   referralId,
   referralEndTimestamp,
@@ -800,7 +802,7 @@ const getExtraTimeBasedLogs = async ({
           extraWait += 2;
 
           extraBotMessages.push(
-            `🔥 negative-chain count=${negativeDiffCount} wait=${value}ms`,
+            `🔥 negative-chain count=${negativeDiffCount} extraWait=${extraWait}`,
           );
         }
       }
@@ -822,12 +824,12 @@ const getExtraTimeBasedLogs = async ({
       extraBotMessages.push(`✅ ${tag} ${logCtx} wait=${value}ms`);
     }
 
-    if (extraWait < 10) {
+    if (extraWait < maxValue) {
       extraBotMessages.push(
-        `🔥 boost-wait-after-negative wait=${extraWait}ms boost=${10 - extraWait} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
+        `🔥 boost-wait-after-negative wait=${extraWait}ms boost=${maxValue - extraWait} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
       );
 
-      extraWait = 10;
+      extraWait = maxValue;
     }
 
     // if (shouldBoostWaitAfterDanger) {
@@ -912,12 +914,12 @@ const getExtraTimeBasedLogs = async ({
     //   value = -reduction;
     // }
 
-    if (value < 10) {
+    if (value < maxValue) {
       extraBotMessages.push(
-        `🔥 boost-wait-stable wait=${value}ms boost=${10 - value} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
+        `🔥 boost-wait-stable wait=${value}ms boost=${maxValue - value} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
       );
 
-      value = 10;
+      value = maxValue;
     }
 
     let prefixText = isFirstCaseToday
