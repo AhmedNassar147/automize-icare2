@@ -829,7 +829,7 @@ const getExtraTimeBasedLogs = async ({
         `🔥 boost-wait-after-negative wait=${extraWait}ms boost=${maxValue - extraWait} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
       );
 
-      extraWait = maxValue;
+      extraWait += maxValue - extraWait;
     }
 
     // if (shouldBoostWaitAfterDanger) {
