@@ -160,8 +160,14 @@ const getDangerZoneExtraWait = (
   // far 10 case 378585
   // not far case  378569 and this needed 7 becouse the previous one needed to be accepted at 2502
   // not far case  378337 and this needed 5 becouse if we applied rule of delay == 0  we would claim it
-  // const baseDangerWait = shouldUseFullWait ? 10 : gapMin <= 10 ? 4 : gapMin <= 35 ? 5 : 7;
-  const baseDangerWait = shouldUseFullWait ? 10 : gapMin <= 35 ? 5 : 7;
+  const baseDangerWait = shouldUseFullWait
+    ? 10
+    : gapMin <= 15
+      ? 4
+      : gapMin <= 50
+        ? 5
+        : 7;
+  // const baseDangerWait = shouldUseFullWait ? 10 : gapMin <= 35 ? 5 : 7;
   const zeroDelayWait = extraBackendDelayMs === 0 ? -2 : 0;
 
   // we use the too far for case like 378994
@@ -436,7 +442,7 @@ const analyzeReferralTimingPatterns = (
 const INCREASE_BY_MAP = {
   hot: 3,
   near: 4,
-  medium: 7,
+  medium: 6,
   large: 8,
 };
 
@@ -445,7 +451,7 @@ const getGapBasedWait = (gapMinLastCase, timeDiffFromLastCaseHours) => {
     return INCREASE_BY_MAP.hot; // 3
   }
 
-  if (gapMinLastCase <= 10) {
+  if (gapMinLastCase <= 15) {
     return INCREASE_BY_MAP.near; // 4
   }
 
@@ -453,7 +459,7 @@ const getGapBasedWait = (gapMinLastCase, timeDiffFromLastCaseHours) => {
     return INCREASE_BY_MAP.large; // 8
   }
 
-  return INCREASE_BY_MAP.medium; // 7
+  return INCREASE_BY_MAP.medium; // 6
 };
 
 const getAdaptiveIncreasingWait = (
@@ -463,9 +469,12 @@ const getAdaptiveIncreasingWait = (
 ) => {
   const baseWait = getGapBasedWait(gapMinLastCase, timeDiffFromLastCaseHours);
 
-  const deltaAdjustment = Math.max(-1, Math.min(2, lastCasePreviousDelta || 0));
+  const deltaAdjustment = Math.max(-2, Math.min(2, lastCasePreviousDelta || 0));
 
-  return Math.max(3, Math.min(9, baseWait + deltaAdjustment));
+  return Math.max(
+    3,
+    Math.min(INCREASE_BY_MAP.large, baseWait + deltaAdjustment),
+  );
 };
 
 const getExtraTimeBasedLogs = async ({
