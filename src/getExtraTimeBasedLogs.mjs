@@ -645,7 +645,10 @@ const getExtraTimeBasedLogs = async ({
 
   let rttMessage = "";
 
+  const isRTT_USAGE_ACTIVE = false;
+
   const shouldUseRtt =
+    isRTT_USAGE_ACTIVE &&
     !willReductAfterDanger &&
     !!extraBasedRtt &&
     ((!isCurrentCaseDangerZone && minimumAdaptiveWait < 8) ||
