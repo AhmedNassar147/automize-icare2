@@ -444,7 +444,7 @@ const INCREASE_BY_MAP = {
   large: 5,
 };
 
-const isRTT_USAGE_ACTIVE = true;
+const isRTT_USAGE_ACTIVE = false;
 const IS_NORMAL_REDUCTION_ACTIVE = false;
 
 const getGapBasedWait = (gapMinLastCase, timeDiffFromLastCaseHours) => {
