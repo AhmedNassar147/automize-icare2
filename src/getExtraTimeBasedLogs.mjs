@@ -463,7 +463,7 @@ const getAdaptiveIncreasingWait = (
 ) => {
   const baseWait = getGapBasedWait(gapMinLastCase, timeDiffFromLastCaseHours);
 
-  const deltaAdjustment = Math.max(-2, Math.min(2, lastCasePreviousDelta || 0));
+  const deltaAdjustment = Math.max(-1, Math.min(2, lastCasePreviousDelta || 0));
 
   return Math.max(3, Math.min(9, baseWait + deltaAdjustment));
 };
