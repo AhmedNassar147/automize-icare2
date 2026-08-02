@@ -160,7 +160,8 @@ const getDangerZoneExtraWait = (
   // far 10 case 378585
   // not far case  378569 and this needed 7 becouse the previous one needed to be accepted at 2502
   // not far case  378337 and this needed 5 becouse if we applied rule of delay == 0  we would claim it
-  const baseDangerWait = shouldUseFullWait ? 10 : gapMin <= 35 ? 6 : 7;
+  // const baseDangerWait = shouldUseFullWait ? 10 : gapMin <= 10 ? 4 : gapMin <= 35 ? 5 : 7;
+  const baseDangerWait = shouldUseFullWait ? 10 : gapMin <= 35 ? 5 : 7;
   const zeroDelayWait = extraBackendDelayMs === 0 ? -2 : 0;
 
   // we use the too far for case like 378994
@@ -433,8 +434,38 @@ const analyzeReferralTimingPatterns = (
 // that should reduce all day cases
 
 const INCREASE_BY_MAP = {
-  medium: 8,
-  large: 10,
+  hot: 3,
+  near: 4,
+  medium: 7,
+  large: 8,
+};
+
+const getGapBasedWait = (gapMinLastCase, timeDiffFromLastCaseHours) => {
+  if (gapMinLastCase <= 3) {
+    return INCREASE_BY_MAP.hot; // 3
+  }
+
+  if (gapMinLastCase <= 10) {
+    return INCREASE_BY_MAP.near; // 4
+  }
+
+  if (timeDiffFromLastCaseHours >= 1.5) {
+    return INCREASE_BY_MAP.large; // 8
+  }
+
+  return INCREASE_BY_MAP.medium; // 7
+};
+
+const getAdaptiveIncreasingWait = (
+  gapMinLastCase,
+  timeDiffFromLastCaseHours,
+  lastCasePreviousDelta,
+) => {
+  const baseWait = getGapBasedWait(gapMinLastCase, timeDiffFromLastCaseHours);
+
+  const deltaAdjustment = Math.max(-2, Math.min(2, lastCasePreviousDelta || 0));
+
+  return Math.max(3, Math.min(9, baseWait + deltaAdjustment));
 };
 
 const getExtraTimeBasedLogs = async ({
@@ -530,7 +561,7 @@ const getExtraTimeBasedLogs = async ({
   //   diffFromLastToday > NEAR_CLUSTER_MS && diffFromLastToday < FAR_CASE_MS;
 
   // for these case  378546,378768
-  const isActive = false;
+  const isActive = true;
   if (
     isActive &&
     isUltraHotCluster &&
@@ -594,17 +625,37 @@ const getExtraTimeBasedLogs = async ({
         ? "nearHot"
         : "medium";
 
+  // const previousIncreasedDelta =
+  //   lastTodayPreviousDelta > 0 ? lastTodayPreviousDelta : 0;
+
+  // const minimumAdaptiveWait =
+  //   gapMinLastCase <= 10
+  //     ? INCREASE_BY_MAP.near - previousIncreasedDelta
+  //     : timeDiffFromLastCaseHours >= 1.5
+  //       ? INCREASE_BY_MAP.large
+  //       : INCREASE_BY_MAP.medium;
+
+  const minimumAdaptiveWait = getAdaptiveIncreasingWait(
+    gapMinLastCase,
+    timeDiffFromLastCaseHours,
+    lastCasePreviousDelta,
+  );
+
   let extraWait = 0;
 
   let rttMessage = "";
 
-  const shouldUseRtt = !willReductAfterDanger && !!extraBasedRtt;
+  const shouldUseRtt =
+    !willReductAfterDanger &&
+    !!extraBasedRtt &&
+    ((!isCurrentCaseDangerZone && minimumAdaptiveWait < 8) ||
+      (isCurrentCaseDangerZone && gapMinLastCase > 20));
   // extraBasedRtt < 0 || (isPositiveRtt && !shouldIgnorePositiveRtt);
 
   if (shouldUseRtt) {
     extraWait += extraBasedRtt;
     const sign = extraBasedRtt > 0 ? "+" : "-";
-    rttMessage = `✅ rtt wait=${sign}${extraBasedRtt}ms`;
+    rttMessage = `✅ rtt rtt=${rtt} wait=${sign}${extraBasedRtt}ms`;
   }
 
   const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} gap=${gapMinLastCase}min waitBucket=${waitBucket}`;
@@ -764,8 +815,7 @@ const getExtraTimeBasedLogs = async ({
     currentWait = doesSystemReducingWait ? currentWait + newWait : newWait;
   }
 
-  const maxIncreasingValue =
-    waitBucket === "far" ? INCREASE_BY_MAP.large : INCREASE_BY_MAP.medium;
+  // timeDiffFromLastCaseHours >= 1.8 ? INCREASE_BY_MAP.large : INCREASE_BY_MAP.medium;
 
   if (isCurrentDiffNegative) {
     const waitBasedDiff = Math.abs(diff) / 1000;
@@ -805,7 +855,7 @@ const getExtraTimeBasedLogs = async ({
           //       ? 0
           //       : -1
           //     : 1 + (isCount3OrMore ? 1 : 0);
-          extraWait += 2;
+          // extraWait += 2;
 
           extraBotMessages.push(
             `🔥 negative-chain count=${negativeDiffCount} extraWait=${extraWait}`,
@@ -830,12 +880,17 @@ const getExtraTimeBasedLogs = async ({
       extraBotMessages.push(`✅ ${tag} ${logCtx} wait=${value}ms`);
     }
 
-    if (extraWait < maxIncreasingValue) {
+    if (extraWait < minimumAdaptiveWait) {
       extraBotMessages.push(
-        `🔥 boost-wait-after-negative wait=${extraWait}ms maxIncreasingValue=${maxIncreasingValue} boost=${maxIncreasingValue - extraWait} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
+        `🔥 boost-wait-after-negative wait=${extraWait}ms ` +
+          `minimumAdaptiveWait=${minimumAdaptiveWait} ` +
+          `boost=${minimumAdaptiveWait - extraWait} ` +
+          `lastCaseOutcome=${lastCaseOutcome} ` +
+          `lastCasePreviousDelta=${lastCasePreviousDelta} ` +
+          `gapMin=${gapMinLastCase}`,
       );
 
-      extraWait += maxIncreasingValue - extraWait;
+      extraWait = minimumAdaptiveWait;
     }
 
     // if (shouldBoostWaitAfterDanger) {
@@ -920,12 +975,17 @@ const getExtraTimeBasedLogs = async ({
     //   value = -reduction;
     // }
 
-    if (value < maxIncreasingValue) {
+    if (value < minimumAdaptiveWait) {
       extraBotMessages.push(
-        `🔥 boost-wait-stable wait=${value}ms maxIncreasingValue=${maxIncreasingValue} boost=${maxIncreasingValue - value} lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta} gapMin=${gapMin}`,
+        `🔥 boost-wait-stable wait=${value}ms ` +
+          `minimumAdaptiveWait=${minimumAdaptiveWait} ` +
+          `boost=${minimumAdaptiveWait - value} ` +
+          `lastCaseOutcome=${lastCaseOutcome} ` +
+          `lastCasePreviousDelta=${lastCasePreviousDelta} ` +
+          `gapMin=${gapMinLastCase}`,
       );
 
-      value = maxIncreasingValue;
+      value = minimumAdaptiveWait;
     }
 
     let prefixText = isFirstCaseToday
