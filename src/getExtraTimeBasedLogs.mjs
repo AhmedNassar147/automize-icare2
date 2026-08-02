@@ -731,12 +731,6 @@ const getExtraTimeBasedLogs = async ({
   // const shouldReduceIfFirstCase = isFirstCaseToday;
   const shouldReduceIfFirstCase = isFirstCaseToday && gapMinLastCase >= 15; // ( when !doesSystemReducingWait)
 
-  let shouldDecreaseInitialWait = false;
-  shouldReduceIfFirstCase ||
-    (!willReductAfterDanger &&
-      shouldReduceWaitBasedTimeGap &&
-      !shouldBoostWaitAfterDanger);
-
   let shouldDecreaseInitialWait =
     shouldReduceIfFirstCase ||
     (!willReductAfterDanger &&
