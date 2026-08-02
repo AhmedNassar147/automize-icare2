@@ -158,11 +158,13 @@ const getDangerZoneExtraWait = (
   // not far case  378337 and this needed 5 becouse if we applied rule of delay == 0  we would claim it
   const baseDangerWait = shouldUseFullWait
     ? 10
-    : gapMin <= 15
-      ? 4
-      : gapMin <= 50
-        ? 5
-        : 7;
+    : gapMin <= 4
+      ? 2
+      : gapMin <= 15
+        ? 4
+        : gapMin <= 50
+          ? 5
+          : 7;
   // const baseDangerWait = shouldUseFullWait ? 10 : gapMin <= 35 ? 5 : 7;
   const zeroDelayWait = extraBackendDelayMs === 0 ? -2 : 0;
 
@@ -462,6 +464,7 @@ const getGapBasedWait = (gapMinLastCase, timeDiffFromLastCaseHours) => {
 };
 
 const getAdaptiveIncreasingWait = (
+  referralId,
   gapMinLastCase,
   timeDiffFromLastCaseHours,
   lastCasePreviousDelta,
@@ -470,10 +473,16 @@ const getAdaptiveIncreasingWait = (
 
   const deltaAdjustment = Math.max(-2, Math.min(2, lastCasePreviousDelta || 0));
 
-  return Math.max(
+  const value = Math.max(
     INCREASE_BY_MAP.hot,
     Math.min(INCREASE_BY_MAP.large, baseWait + deltaAdjustment),
   );
+
+  console.log(
+    `referralId=${referralId} baseWait=${baseWait} deltaAdjustment=${deltaAdjustment} value=${value}`,
+  );
+
+  return value;
 };
 
 const getExtraTimeBasedLogs = async ({
@@ -644,6 +653,7 @@ const getExtraTimeBasedLogs = async ({
   //       : INCREASE_BY_MAP.medium;
 
   const minimumAdaptiveWait = getAdaptiveIncreasingWait(
+    referralId,
     gapMinLastCase,
     timeDiffFromLastCaseHours,
     lastCasePreviousDelta,
