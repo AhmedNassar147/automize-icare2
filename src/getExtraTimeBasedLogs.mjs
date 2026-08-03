@@ -615,6 +615,20 @@ const getExtraTimeBasedLogs = async ({
 
   if (currentWait && isReducingWaitActive) {
     currentWait = -currentWait;
+
+    if (IS_FIRST_MONTH_REDUCTION_ACTIVE) {
+      if (timeDiffFromLastCaseHours < 2) {
+        currentWait = -2;
+      }
+
+      if (waitBucket === "nearHot" || waitBucket === "hot") {
+        currentWait = extraBasedRtt > 0 ? -4 : -5;
+      }
+
+      if (timeDiffFromLastCaseHours >= 2) {
+        currentWait = -5;
+      }
+    }
   }
 
   const shouldReduceWaitBasedTimeGap = doesSystemReducingWait
