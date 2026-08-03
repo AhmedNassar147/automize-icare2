@@ -622,10 +622,14 @@ const getExtraTimeBasedLogs = async ({
       }
 
       if (waitBucket === "nearHot" || waitBucket === "hot") {
-        currentWait = extraBasedRtt > 0 ? -4 : -5;
+        currentWait = -5;
       }
 
-      if (timeDiffFromLastCaseHours >= 2) {
+      if (timeDiffFromLastCaseHours >= 3) {
+        currentWait = -4;
+      }
+
+      if (timeDiffFromLastCaseHours >= 3.7) {
         currentWait = -5;
       }
     }
