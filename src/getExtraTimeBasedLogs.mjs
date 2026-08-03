@@ -22,6 +22,13 @@ const WAITS_MAP = {
   // far: 4,
 };
 
+const FIRST_MONTH_DAYS_WAITS_MAP = {
+  hot: -2,
+  nearHot: -2,
+  medium: -2,
+  far: -3,
+};
+
 const DANGER_ZONE_PHASES = {
   far: "far",
   normal: "normal",
@@ -87,61 +94,6 @@ const getTodayCases = (logsData, currentDayKey) => {
   return logsData.filter(({ referralEndTimestamp: e }) =>
     isSameDay(e, currentDayKey),
   );
-};
-
-// we need to dig when current case after normal danger wait
-// if u check the 378745 case the previous one was normal danger and it should be
-// accepted on 2547 not 2549 and it was accepted on 2547 we need to not increase/decrease
-// the next one wait time which is 378745 case id
-
-const getAfterDangerReduction = (
-  lastTodayPreviousDelta,
-  previousOutcome = "",
-  dangerZonePhase,
-) => {
-  lastTodayPreviousDelta = lastTodayPreviousDelta || 0;
-
-  const deltaMagnitude = Math.abs(lastTodayPreviousDelta);
-
-  const wasNormalDangerZone = dangerZonePhase === DANGER_ZONE_PHASES.normal;
-
-  if (
-    previousOutcome.includes(OUTCOME_MAP.needLessWait) ||
-    previousOutcome.includes(OUTCOME_MAP.lowWaiting) ||
-    previousOutcome.includes(OUTCOME_MAP.moderateWaiting)
-  ) {
-    if (wasNormalDangerZone) {
-      return deltaMagnitude >= 2 ? -Math.max(1, deltaMagnitude - 2) : 0;
-    }
-
-    return deltaMagnitude >= 3 ? 1 : 2;
-  }
-
-  if (previousOutcome.includes(OUTCOME_MAP.goodWaiting)) {
-    // this only needs 1 if outcome is good waiting without increasing
-    // so if delta increased by 1 we need to reduce by 2 to get to original wait
-    // for mormal danger zone case like (378745) we need to reduce by 1
-    return deltaMagnitude > 0
-      ? wasNormalDangerZone
-        ? 1
-        : 2
-      : wasNormalDangerZone
-        ? 0
-        : 2;
-  }
-
-  if (
-    previousOutcome.includes(OUTCOME_MAP.needMoreWait) ||
-    previousOutcome.includes(OUTCOME_MAP.nearToBlock)
-  ) {
-    // theses always sets global wait by postive value
-    // and since we need to reduce we need to go to original wait then reduce 2
-    // for mormal danger zone case like (378745) we need to reduce by 1
-    return deltaMagnitude + (wasNormalDangerZone ? 1 : 2);
-  }
-
-  // for mormal danger zone case like (378745) we don't need to reduce
-  return wasNormalDangerZone ? 0 : 2;
 };
 
 const getDangerZoneExtraWait = (
@@ -444,47 +396,6 @@ const INCREASE_BY_MAP = {
   large: 5,
 };
 
-const isRTT_USAGE_ACTIVE = false;
-const IS_NORMAL_REDUCTION_ACTIVE = false;
-
-const getGapBasedWait = (gapMinLastCase, timeDiffFromLastCaseHours) => {
-  if (gapMinLastCase <= 3) {
-    return INCREASE_BY_MAP.hot; // 2
-  }
-
-  if (gapMinLastCase <= 15) {
-    return INCREASE_BY_MAP.near; // 3
-  }
-
-  if (timeDiffFromLastCaseHours >= 1.5) {
-    return INCREASE_BY_MAP.large; // 5
-  }
-
-  return INCREASE_BY_MAP.medium; // 4
-};
-
-const getAdaptiveIncreasingWait = (
-  referralId,
-  gapMinLastCase,
-  timeDiffFromLastCaseHours,
-  lastCasePreviousDelta,
-) => {
-  const baseWait = getGapBasedWait(gapMinLastCase, timeDiffFromLastCaseHours);
-
-  const deltaAdjustment = Math.max(-2, Math.min(2, lastCasePreviousDelta || 0));
-
-  const value = Math.max(
-    INCREASE_BY_MAP.hot,
-    Math.min(INCREASE_BY_MAP.large, baseWait + deltaAdjustment),
-  );
-
-  console.log(
-    `referralId=${referralId} baseWait=${baseWait} deltaAdjustment=${deltaAdjustment} value=${value}`,
-  );
-
-  return value;
-};
-
 const getExtraTimeBasedLogs = async ({
   referralId,
   referralEndTimestamp,
@@ -500,9 +411,20 @@ const getExtraTimeBasedLogs = async ({
   const doesSystemReducingWait =
     forceReduceWait || DOES_SYSTEM_REDUCE_WAIT === "Y";
 
+  const currentHours = new Date().getHours();
+
+  const currentDay = new Date(referralEndTimestamp).getDate();
+  const IS_FIRST_MONTH_REDUCTION_ACTIVE =
+    !doesSystemReducingWait && currentDay > 1 && currentDay < 6;
+  const IS_NORMAL_REDUCTION_ACTIVE = currentDay >= 6 && currentDay < 21;
+
   const extraBotMessages = [
     doesSystemReducingWait ? "⚠️ system-reducing-wait" : "",
+    IS_FIRST_MONTH_REDUCTION_ACTIVE ? "⚠️ first-month-reduction-active" : "",
   ].filter(Boolean);
+
+  const isReducingWaitActive =
+    doesSystemReducingWait || IS_FIRST_MONTH_REDUCTION_ACTIVE;
 
   const logsData = await readLogsAsArray();
 
@@ -540,7 +462,7 @@ const getExtraTimeBasedLogs = async ({
     logsData,
     referralEndTimestamp,
     diff,
-    doesSystemReducingWait,
+    isReducingWaitActive,
   );
 
   const isLastCaseNegative = lastCaseDiff && lastCaseDiff < 0;
@@ -570,21 +492,13 @@ const getExtraTimeBasedLogs = async ({
 
   const isFarOrFirstDayCase = isFirstCaseToday || isFarFromLastToday;
 
-  const currentHours = new Date().getHours();
-
   const isLargeRtt = (rtt || 0) >= 100;
 
   // const isMediumGap =
   //   diffFromLastToday > NEAR_CLUSTER_MS && diffFromLastToday < FAR_CASE_MS;
 
   // for these case  378546,378768
-  const isActive = true;
-  if (
-    isActive &&
-    isUltraHotCluster &&
-    !isCurrentCaseDangerZone &&
-    lastTodayCaseNegativeDiffValue < 1
-  ) {
+  if (isUltraHotCluster) {
     const wait =
       lastExtraWait > 6
         ? Math.max(3, Math.floor(lastExtraWait / 2))
@@ -613,26 +527,9 @@ const getExtraTimeBasedLogs = async ({
   const rawExtraBasedRtt = getRttExtraWait(rtt);
   const isPositiveRtt = rawExtraBasedRtt > 0;
 
-  const isCurrentNeedsReductionAfterNormalDanger =
-    wasLastCaseNormalDangerous &&
-    gapMinLastCase >= 12 &&
-    !isCurrentDiffNegative;
-
-  // const willReductAfterDanger =
-  //   isCurrentNeedsReductionAfterNormalDanger ||
-  //   isCurrentCaseNeedsDangerReduction;
-
-  const willReductAfterDanger = false;
-
-  const shouldIgnorePositiveRtt = isPositiveRtt && willReductAfterDanger;
-
-  const extraBasedRtt = shouldIgnorePositiveRtt ? 0 : rawExtraBasedRtt;
+  const extraBasedRtt = rawExtraBasedRtt;
 
   const isZeroBackendDelay = extraBackendDelayMs === 0;
-
-  const referralIdGap = lastCaseReferralId
-    ? Number(referralId) - lastCaseReferralId
-    : undefined;
 
   const waitBucket = isFarOrFirstDayCase
     ? "far"
@@ -652,20 +549,11 @@ const getExtraTimeBasedLogs = async ({
   //       ? INCREASE_BY_MAP.large
   //       : INCREASE_BY_MAP.medium;
 
-  const minimumAdaptiveWait = getAdaptiveIncreasingWait(
-    referralId,
-    gapMinLastCase,
-    timeDiffFromLastCaseHours,
-    lastCasePreviousDelta,
-  );
-
   let extraWait = 0;
 
   let rttMessage = "";
 
-  const shouldUseRtt =
-    isRTT_USAGE_ACTIVE && !willReductAfterDanger && !!extraBasedRtt;
-  // extraBasedRtt < 0 || (isPositiveRtt && !shouldIgnorePositiveRtt);
+  const shouldUseRtt = !!extraBasedRtt;
 
   if (shouldUseRtt) {
     extraWait += extraBasedRtt;
@@ -673,7 +561,7 @@ const getExtraTimeBasedLogs = async ({
     rttMessage = `✅ rtt rtt=${rtt} wait=${sign}${extraBasedRtt}ms`;
   }
 
-  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} gap=${gapMinLastCase}min waitBucket=${waitBucket}`;
+  const logCtx = `referralId=${referralId} diffPath=${lastTodayDiff ?? "none"}→${diff} waitBucket=${waitBucket} gap=${gapMinLastCase}min gapHours=${timeDiffFromLastCaseHours}`;
 
   if (isCurrentCaseDangerZone) {
     const { dangerWait, dangerMessage } = getDangerZoneExtraWait(
@@ -717,19 +605,18 @@ const getExtraTimeBasedLogs = async ({
 
   const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
   let currentWait =
-    doesSystemReducingWait && isFirstCaseToday
+    isReducingWaitActive && isFirstCaseToday
       ? 0
       : WAITS_MAP[waitBucket] + extrTime;
 
-  if (currentWait && doesSystemReducingWait) {
+  if (currentWait && isReducingWaitActive) {
     currentWait = -currentWait;
   }
 
   const shouldReduceWaitBasedTimeGap = doesSystemReducingWait
     ? // ? gapMin >= 15
       timeDiffFromLastCaseHours >= 2
-    : // : timeDiffFromLastCaseHours >= 2;
-      timeDiffFromLastCaseHours < 1.5;
+    : timeDiffFromLastCaseHours >= 2;
 
   const isCurrentAndPreviousDiffZero =
     !isCurrentDiffNegative && !isLastCaseTodayNegative;
@@ -741,9 +628,7 @@ const getExtraTimeBasedLogs = async ({
   let shouldDecreaseInitialWait =
     IS_NORMAL_REDUCTION_ACTIVE &&
     (shouldReduceIfFirstCase ||
-      (!willReductAfterDanger &&
-        shouldReduceWaitBasedTimeGap &&
-        !shouldBoostWaitAfterDanger));
+      (shouldReduceWaitBasedTimeGap && !shouldBoostWaitAfterDanger));
 
   if (
     !doesSystemReducingWait &&
@@ -888,31 +773,23 @@ const getExtraTimeBasedLogs = async ({
           : maxNewWait;
       extraWait += value;
       const tag =
-        doesSystemReducingWait && !isFirstCaseToday
+        isReducingWaitActive && !isFirstCaseToday
           ? "reduce-day-negative-like-danger-zone"
           : "first-day-negative";
       extraBotMessages.push(`✅ ${tag} ${logCtx} wait=${value}ms`);
     }
 
-    if (!IS_NORMAL_REDUCTION_ACTIVE && extraWait < minimumAdaptiveWait) {
-      extraBotMessages.push(
-        `🔥 boost-wait-after-negative wait=${extraWait}ms ` +
-          `minimumAdaptiveWait=${minimumAdaptiveWait} ` +
-          `boost=${minimumAdaptiveWait - extraWait} ` +
-          `lastCaseOutcome=${lastCaseOutcome} ` +
-          `lastCasePreviousDelta=${lastCasePreviousDelta} ` +
-          `gapMin=${gapMinLastCase}`,
-      );
-
-      extraWait = minimumAdaptiveWait;
-    }
-
-    // if (shouldBoostWaitAfterDanger) {
-    //   const value = wasFarDangerPhase ? 2 : 1;
-    //   extraWait += value;
+    // if (!IS_NORMAL_REDUCTION_ACTIVE && extraWait < minimumAdaptiveWait) {
     //   extraBotMessages.push(
-    //     `🔥 boost-wait-after-danger wait=${value}ms lastCaseOutcome=${lastCaseOutcome} lastCasePreviousDelta=${lastCasePreviousDelta}`,
+    //     `🔥 boost-wait-after-negative wait=${extraWait}ms ` +
+    //       `minimumAdaptiveWait=${minimumAdaptiveWait} ` +
+    //       `boost=${minimumAdaptiveWait - extraWait} ` +
+    //       `lastCaseOutcome=${lastCaseOutcome} ` +
+    //       `lastCasePreviousDelta=${lastCasePreviousDelta} ` +
+    //       `gapMin=${gapMinLastCase}`,
     //   );
+
+    //   extraWait = minimumAdaptiveWait;
     // }
   }
 
@@ -970,42 +847,24 @@ const getExtraTimeBasedLogs = async ({
       //   }
     }
 
-    // if (isCurrentNeedsReductionAfterNormalDanger) {
-    //   // this for case like 378745 where it shouldn't add more wait
-    //   // last case normal dangerous and current with large time gap and positive diff
-    //   const reduction = getAfterDangerReduction(
-    //     lastCasePreviousDelta,
-    //     lastCaseOutcome,
-    //     DANGER_ZONE_PHASES.normal,
+    // if (!IS_NORMAL_REDUCTION_ACTIVE && value < minimumAdaptiveWait) {
+    //   extraBotMessages.push(
+    //     `🔥 boost-wait-stable wait=${value}ms ` +
+    //       `minimumAdaptiveWait=${minimumAdaptiveWait} ` +
+    //       `boost=${minimumAdaptiveWait - value} ` +
+    //       `lastCaseOutcome=${lastCaseOutcome} ` +
+    //       `lastCasePreviousDelta=${lastCasePreviousDelta} ` +
+    //       `gapMin=${gapMinLastCase}`,
     //   );
-    //   // reduction < 0 ? -reduction is for:  we were late on previous case and the outcome handler
-    //   // reduced the global wait by it's delta, so we need to re-add the excluded delta so we don't
-    //   // reduce twice
-    //   value = -reduction;
+
+    //   value = minimumAdaptiveWait;
     // }
-
-    if (!IS_NORMAL_REDUCTION_ACTIVE && value < minimumAdaptiveWait) {
-      extraBotMessages.push(
-        `🔥 boost-wait-stable wait=${value}ms ` +
-          `minimumAdaptiveWait=${minimumAdaptiveWait} ` +
-          `boost=${minimumAdaptiveWait - value} ` +
-          `lastCaseOutcome=${lastCaseOutcome} ` +
-          `lastCasePreviousDelta=${lastCasePreviousDelta} ` +
-          `gapMin=${gapMinLastCase}`,
-      );
-
-      value = minimumAdaptiveWait;
-    }
 
     let prefixText = isFirstCaseToday
       ? "🌅 first-day-stable"
       : isFarFromLastToday
         ? "↔️ far-stable"
         : "✅ stable";
-
-    // if (isCurrentNeedsReductionAfterNormalDanger) {
-    //   prefixText += "-after-normal-danger";
-    // }
 
     extraWait += value;
 
@@ -1018,35 +877,11 @@ const getExtraTimeBasedLogs = async ({
 
   let afterDangerReduction = 0;
 
-  // if (isCurrentCaseNeedsDangerReduction) {
-  //   afterDangerReduction = getAfterDangerReduction(
-  //     lastCasePreviousDelta,
-  //     lastCaseOutcome,
-  //     DANGER_ZONE_PHASES.far,
-  //   );
-
-  //   extraWait -= afterDangerReduction;
-
-  //   extraBotMessages.push(
-  //     `🌉 first-case-after-far-danger previousDelta=${lastCasePreviousDelta} previousOutcome=${lastCaseOutcome}_${lastCaseOutcomeElapsedMs || ""} wait=-${afterDangerReduction}ms`,
-  //   );
-
-  //   if (shouldIgnorePositiveRtt) {
-  //     extraBotMessages.push(
-  //       `🚫 rtt-ignored-after-far-danger rtt=${rtt} rawWait=+${rawExtraBasedRtt}ms`,
-  //     );
-  //   }
-  // }
-
   if (IS_NORMAL_REDUCTION_ACTIVE) {
     if (isZeroBackendDelay) {
       // 1-  we need to reduce if previous was danger check case 378589
       // 2-  we need to reduce if previous was not danger check case 377247
       let value = 1;
-      if (wasLastTodayDangerous && !shouldDecreaseInitialWait) {
-        value = Math.max(1, 2 - (afterDangerReduction || 1));
-      }
-
       extraWait += -value;
 
       extraBotMessages.push(`✅ backend-delay delay=0ms wait=-${value}ms`);
