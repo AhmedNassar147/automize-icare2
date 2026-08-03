@@ -414,8 +414,10 @@ const getExtraTimeBasedLogs = async ({
   const currentHours = new Date().getHours();
 
   const currentDay = new Date(referralEndTimestamp).getDate();
+
   const IS_FIRST_MONTH_REDUCTION_ACTIVE =
     !doesSystemReducingWait && currentDay > 1 && currentDay < 6;
+
   const IS_NORMAL_REDUCTION_ACTIVE = currentDay >= 6 && currentDay < 21;
 
   const extraBotMessages = [
@@ -553,7 +555,9 @@ const getExtraTimeBasedLogs = async ({
 
   let rttMessage = "";
 
-  const shouldUseRtt = !!extraBasedRtt;
+  const shouldUseRtt = IS_FIRST_MONTH_REDUCTION_ACTIVE
+    ? extraBasedRtt < 0
+    : !!extraBasedRtt;
 
   if (shouldUseRtt) {
     extraWait += extraBasedRtt;
