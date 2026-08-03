@@ -22,13 +22,6 @@ const WAITS_MAP = {
   // far: 4,
 };
 
-const FIRST_MONTH_DAYS_WAITS_MAP = {
-  hot: -2,
-  nearHot: -2,
-  medium: -2,
-  far: -3,
-};
-
 const DANGER_ZONE_PHASES = {
   far: "far",
   normal: "normal",
@@ -418,11 +411,12 @@ const getExtraTimeBasedLogs = async ({
   const IS_FIRST_MONTH_REDUCTION_ACTIVE =
     !doesSystemReducingWait && currentDay > 1 && currentDay < 6;
 
-  const IS_NORMAL_REDUCTION_ACTIVE = currentDay >= 6 && currentDay < 21;
+  const IS_NORMAL_REDUCTION_ACTIVE = currentDay >= 6 && currentDay <= 21;
 
   const extraBotMessages = [
     doesSystemReducingWait ? "⚠️ system-reducing-wait" : "",
     IS_FIRST_MONTH_REDUCTION_ACTIVE ? "⚠️ first-month-reduction-active" : "",
+    IS_NORMAL_REDUCTION_ACTIVE ? "⚠️ normal-reduction-active" : "",
   ].filter(Boolean);
 
   const isReducingWaitActive =
@@ -608,31 +602,55 @@ const getExtraTimeBasedLogs = async ({
     !!wasLastTodayDangerous && isCurrentDiffNegative && isLargeRtt;
 
   const extrTime = isStableWaitingBranch ? (isFirstCaseToday ? 2 : 1) : 0;
+
   let currentWait =
-    isReducingWaitActive && isFirstCaseToday
+    doesSystemReducingWait && isFirstCaseToday
       ? 0
       : WAITS_MAP[waitBucket] + extrTime;
 
-  if (currentWait && isReducingWaitActive) {
+  if (isReducingWaitActive && !isFirstCaseToday) {
     currentWait = -currentWait;
 
     if (IS_FIRST_MONTH_REDUCTION_ACTIVE) {
-      if (timeDiffFromLastCaseHours < 2) {
+      if (timeDiffFromLastCaseHours < 3) {
+        // 382374 => -1000 (second with 1.5hours gap)
         currentWait = -2;
       }
 
-      if (waitBucket === "nearHot" || waitBucket === "hot") {
-        currentWait = -5;
+      if (["nearHot", "hot", "medium"].includes(waitBucket)) {
+        // 382376 => 0 (first after negative with 13.8m gap)
+        currentWait = isCurrentPostiveAfterPreviousNegative
+          ? -1
+          : // 382360 => -1000 (first with 4m gap)
+            // 382377 => 0 (second after postive with 3.5m gap)
+            // 382418 => -1000 (second after negative with 14.4m gap)
+            -5;
+
+        if (gapMin > 14) {
+          currentWait += -1;
+        }
       }
 
       if (timeDiffFromLastCaseHours >= 3) {
-        currentWait = -4;
+        currentWait = isCurrentPostiveAfterPreviousNegative
+          ? -1
+          : isCurrentDiffNegative
+            ? -5
+            : -4;
       }
 
-      if (timeDiffFromLastCaseHours >= 3.7) {
-        currentWait = -5;
+      if (timeDiffFromLastCaseHours >= 3.8) {
+        // 382380 -1000 (first gapHours=3.94)
+        currentWait = isCurrentDiffNegative ? -6 : -5;
       }
     }
+  }
+
+  if (isFirstCaseToday && IS_FIRST_MONTH_REDUCTION_ACTIVE) {
+    currentWait = 4;
+    extraBotMessages.push(
+      `🔥 increasing-for-first-case wait=${currentWait}ms `,
+    );
   }
 
   const shouldReduceWaitBasedTimeGap = doesSystemReducingWait

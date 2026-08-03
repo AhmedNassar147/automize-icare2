@@ -20,8 +20,8 @@ const getOutcomeDelta = (outcome, elapsedMs) => {
         // elapsedMs <= 710 ? -3 : elapsedMs <= 750 ? -2 : -1,
         elapsedMs <= 760 ? -3 : elapsedMs <= 790 ? -2 : -1,
       [OUTCOME_MAP.goodWaiting]:
-        // elapsedMs <= 855 ? -1 : elapsedMs >= 870 ? +1 : 0,
-        elapsedMs <= 855 ? -1 : 0,
+        // elapsedMs <= 865 ? -1 : elapsedMs >= 870 ? +1 : 0,
+        elapsedMs <= 865 ? -1 : 0,
       // elapsedMs <= 825 ? -2 : 0,
       [OUTCOME_MAP.needMoreWait]:
         // elapsedMs <= 925 ? 0 : elapsedMs < 980 ? +2 : +2,
