@@ -598,6 +598,8 @@ const getExtraTimeBasedLogs = async ({
   const isCurrentPostiveAfterPreviousNegative =
     isLastTodayDiffNegative && !isCurrentDiffNegative;
 
+  const isLikeDangerZone = !isLastTodayDiffNegative && isCurrentDiffNegative;
+
   const shouldBoostWaitAfterDanger =
     !!wasLastTodayDangerous && isCurrentDiffNegative && isLargeRtt;
 
@@ -611,43 +613,68 @@ const getExtraTimeBasedLogs = async ({
   if (isReducingWaitActive && !isFirstCaseToday) {
     currentWait = -currentWait;
 
+    const pervDeltaIfNegative = Math.abs(lastCasePreviousDelta || 0) || 1;
+
     if (IS_FIRST_MONTH_REDUCTION_ACTIVE) {
       if (timeDiffFromLastCaseHours < 3) {
         // 382374 => -1000 (second with 1.5hours gap)
+        // 382399 => -1000 (like danger zone gap=91.9min)
         currentWait = -2;
       }
 
       if (["nearHot", "hot", "medium"].includes(waitBucket)) {
         // 382376 => 0 (first after negative with 13.8m gap)
         currentWait = isCurrentPostiveAfterPreviousNegative
-          ? -1
-          : // 382360 => -1000 (first with 4m gap)
-            // 382377 => 0 (second after postive with 3.5m gap)
-            // 382418 => -1000 (second after negative with 14.4m gap)
-            -5;
+          ? gapMin > 10
+            ? -1
+            : 0
+          : // 382377 => 0 (second after postive with 3.5m gap)
+            // 382414 => 0 (second after postive with gap=19.5min)
+            isPreviousAndCurrentTodayCasePositiveDiff
+            ? // case like 382377
+              gapMin <= 5
+              ? -6
+              : timeDiffFromLastCaseHours > 1
+                ? // case like 382462 (needs revision)
+                  -7
+                : // case like 382414
+                  -5
+            : // 382360 => -1000 (first with 4m gap)
+              // 382418 => -1000 (second after negative with 14.4m gap)
+              -5;
 
-        if (gapMin > 14) {
-          currentWait += -1;
-        }
+        // if (gapMin > 8 && !isPreviousAndCurrentTodayCasePositiveDiff) {
+        //   currentWait += -1;
+        // }
+      }
+
+      // 382360| 2688_4 gap gap=3.7min so this can't get less
+      // also for case like 382399 gap=91.9min so this can't get less
+      if (isLikeDangerZone && gapMin > 10 && gapMin < 80) {
+        currentWait += -2;
       }
 
       if (timeDiffFromLastCaseHours >= 3) {
+        // 08:48:51 pm|    0 - (=)    |382451
+        //382412 => 0 => (first after danger)  gap=212.8min gapHours=3.5469444444444442
+        // -1
         currentWait = isCurrentPostiveAfterPreviousNegative
           ? -1
-          : isCurrentDiffNegative
-            ? -5
-            : -4;
+          : isPreviousAndCurrentTodayCasePositiveDiff
+            ? // 10:02:55 am|    0 - (=)    |382391 (needs revision)
+              -Math.max(8, 10 - pervDeltaIfNegative)
+            : -5;
       }
 
       if (timeDiffFromLastCaseHours >= 3.8) {
         // 382380 -1000 (first gapHours=3.94)
-        currentWait = isCurrentDiffNegative ? -6 : -5;
+        currentWait = isLikeDangerZone ? -7 : -5;
       }
     }
   }
 
   if (isFirstCaseToday && IS_FIRST_MONTH_REDUCTION_ACTIVE) {
-    currentWait = 4;
+    currentWait = 2;
     extraBotMessages.push(
       `🔥 increasing-for-first-case wait=${currentWait}ms `,
     );
