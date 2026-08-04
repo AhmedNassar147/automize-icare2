@@ -662,13 +662,19 @@ const getExtraTimeBasedLogs = async ({
           ? -1
           : isPreviousAndCurrentTodayCasePositiveDiff
             ? // 10:02:55 am|    0 - (=)    |382391 (needs revision)
-              -Math.max(8, 10 - pervDeltaIfNegative)
+              // -Math.max(8, 10 - pervDeltaIfNegative)
+              -8
             : -5;
       }
 
       if (timeDiffFromLastCaseHours >= 3.8) {
         // 382380 -1000 (first gapHours=3.94)
-        currentWait = isLikeDangerZone ? -7 : -5;
+        currentWait = isLikeDangerZone
+          ? -7
+          : isPreviousAndCurrentTodayCasePositiveDiff
+            ? // 10:02:55 am|    0 - (=)    |382391 (needs revision)
+              -8
+            : -5;
       }
     }
   }
