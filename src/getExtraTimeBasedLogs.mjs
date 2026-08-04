@@ -620,6 +620,10 @@ const getExtraTimeBasedLogs = async ({
         // 382374 => -1000 (second with 1.5hours gap)
         // 382399 => -1000 (like danger zone gap=91.9min)
         currentWait = -2;
+
+        if (waitBucket === "far") {
+          currentWait += -2;
+        }
       }
 
       if (["nearHot", "hot", "medium"].includes(waitBucket)) {
@@ -627,7 +631,9 @@ const getExtraTimeBasedLogs = async ({
         currentWait = isCurrentPostiveAfterPreviousNegative
           ? gapMin > 10
             ? -1
-            : 0
+            : timeDiffFromLastCaseHours > 1
+              ? -4
+              : 0
           : // 382377 => 0 (second after postive with 3.5m gap)
             // 382414 => 0 (second after postive with gap=19.5min)
             isPreviousAndCurrentTodayCasePositiveDiff
@@ -636,7 +642,7 @@ const getExtraTimeBasedLogs = async ({
               ? -6
               : timeDiffFromLastCaseHours > 1
                 ? // case like 382462 (needs revision)
-                  -7
+                  9
                 : // case like 382414
                   -5
             : // 382360 => -1000 (first with 4m gap)
@@ -659,11 +665,12 @@ const getExtraTimeBasedLogs = async ({
         //382412 => 0 => (first after danger)  gap=212.8min gapHours=3.5469444444444442
         // -1
         currentWait = isCurrentPostiveAfterPreviousNegative
-          ? -1
+          ? // ? -1
+            -4
           : isPreviousAndCurrentTodayCasePositiveDiff
             ? // 10:02:55 am|    0 - (=)    |382391 (needs revision)
               // -Math.max(8, 10 - pervDeltaIfNegative)
-              -8
+              -9
             : -5;
       }
 
@@ -673,7 +680,7 @@ const getExtraTimeBasedLogs = async ({
           ? -7
           : isPreviousAndCurrentTodayCasePositiveDiff
             ? // 10:02:55 am|    0 - (=)    |382391 (needs revision)
-              -8
+              -9
             : -5;
       }
     }
