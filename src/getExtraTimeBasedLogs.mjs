@@ -622,7 +622,7 @@ const getExtraTimeBasedLogs = async ({
         currentWait = -2;
 
         if (waitBucket === "far") {
-          currentWait += isLikeDangerZone ? -4 : -2;
+          currentWait += isLikeDangerZone ? -3 : -2;
         }
       }
 
