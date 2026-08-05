@@ -549,9 +549,7 @@ const getExtraTimeBasedLogs = async ({
 
   let rttMessage = "";
 
-  const shouldUseRtt = IS_FIRST_MONTH_REDUCTION_ACTIVE
-    ? extraBasedRtt < 0
-    : !!extraBasedRtt;
+  const shouldUseRtt = !IS_FIRST_MONTH_REDUCTION_ACTIVE && !!extraBasedRtt;
 
   if (shouldUseRtt) {
     extraWait += extraBasedRtt;
@@ -622,10 +620,6 @@ const getExtraTimeBasedLogs = async ({
       currentWait = -3;
 
       if (waitBucket === "far") {
-        if (isLikeDangerZone) {
-          currentWait += timeDiffFromLastCaseHours >= 2 ? -6 : -4;
-        }
-
         if (isCurrentPostiveAfterPreviousNegative) {
           // 1.5 hors
           currentWait += -4;
@@ -633,37 +627,51 @@ const getExtraTimeBasedLogs = async ({
 
         if (isPreviousAndCurrentTodayCasePositiveDiff) {
           // 1.07 hors
+          currentWait += -6;
+        }
+
+        if (isPreviousAndCurrentTodayCaseNegativeDiff) {
           currentWait += -5;
+        }
+
+        if (isLikeDangerZone) {
+          currentWait += timeDiffFromLastCaseHours >= 2 ? -6 : -4;
+        }
+      }
+
+      if (waitBucket === "medium") {
+        if (isPreviousAndCurrentTodayCaseNegativeDiff) {
+          currentWait += timeDiffFromLastCaseHours < 30 ? -3 : -4;
+        }
+
+        if (isCurrentPostiveAfterPreviousNegative) {
+          currentWait += timeDiffFromLastCaseHours < 30 ? -3 : -5;
+        }
+
+        if (isPreviousAndCurrentTodayCasePositiveDiff) {
+          currentWait += timeDiffFromLastCaseHours < 30 ? -3 : -6;
+        }
+
+        if (isLikeDangerZone) {
+          currentWait += timeDiffFromLastCaseHours < 30 ? -3 : -4;
+        }
+      }
+
+      if (["nearHot", "hot"].includes(waitBucket)) {
+        if (isLikeDangerZone) {
+          currentWait += -3;
+        }
+
+        if (isCurrentPostiveAfterPreviousNegative) {
+          currentWait += gapMin > 6 ? -4 : -3;
+        }
+
+        if (isPreviousAndCurrentTodayCasePositiveDiff) {
+          currentWait += -4;
         }
 
         if (isPreviousAndCurrentTodayCaseNegativeDiff) {
           currentWait += -3;
-        }
-      }
-
-      if (["nearHot", "hot", "medium"].includes(waitBucket)) {
-        // 382376 => 0 (first after negative with 13.8m gap)
-        currentWait = isCurrentPostiveAfterPreviousNegative
-          ? gapMin > 6
-            ? -8
-            : -5
-          : // 382377 => 0 (second after postive with 3.5m gap)
-            // 382414 => 0 (second after postive with gap=19.5min)
-            isPreviousAndCurrentTodayCasePositiveDiff
-            ? // case like 382377
-              gapMin <= 20
-              ? -7
-              : timeDiffFromLastCaseHours >= 1
-                ? // case like 382462 (needs revision)
-                  9
-                : // case like 382414
-                  -5
-            : // 382360 => -1000 (first with 4m gap)
-              // 382418 => -1000 (second after negative with 14.4m gap)
-              -6;
-
-        if (isLikeDangerZone && ["medium", "nearHot"].includes(waitBucket)) {
-          currentWait += 1;
         }
       }
 
