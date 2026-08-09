@@ -374,6 +374,72 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   return sourceCode;
 };
 
+const addTokenFromLocalStorage = (sourceCode, acceptButtonObject) => {
+  const handlerName = extractOnClickHandler(acceptButtonObject.text);
+  if (!handlerName) return sourceCode;
+
+  const handlerStartRegex = new RegExp(
+    handlerName + "\\s*=\\s*async\\s*\\(\\s*\\)\\s*=>\\s*{",
+  );
+  const startMatch = sourceCode.match(handlerStartRegex);
+  if (!startMatch) {
+    console.warn("[GM] addTokenFromLocalStorage: handler start not found");
+    return sourceCode;
+  }
+
+  const startIndex = startMatch.index;
+  if (startIndex == null || startIndex < 0) return sourceCode;
+
+  const WINDOW_SIZE = 4000;
+  const windowStart = startIndex;
+  const windowEnd = Math.min(sourceCode.length, windowStart + WINDOW_SIZE);
+  let segment = sourceCode.slice(windowStart, windowEnd);
+
+  const referralIdVarMatch = segment.match(
+    /referralId:\s*([A-Za-z_$][\w$]*)\s*,/,
+  );
+  if (!referralIdVarMatch) {
+    console.warn("[GM] addTokenFromLocalStorage: referralId var not found");
+    return sourceCode;
+  }
+  const referralIdVar = referralIdVarMatch[1];
+
+  const tokenCallRegex =
+    /const\s+([A-Za-z_$][\w$]*)\s*=\s*await\s+([A-Za-z_$][\w$]*)\(\)\s*;/;
+  const tokenMatch = segment.match(tokenCallRegex);
+  if (!tokenMatch) {
+    console.warn("[GM] addTokenFromLocalStorage: token call not found");
+    return sourceCode;
+  }
+  const [fullMatch, resultVarName, triggerFnName] = tokenMatch;
+
+  // The check happens at RUNTIME, in the browser, every time this handler
+  // fires — reading whatever the userscript most recently set.
+  const replacement =
+    `const ${resultVarName}=await(async()=>{` +
+    `if(localStorage.getItem("usesCachedTokenFlow")==="1"){` +
+    `try{` +
+    `const raw=localStorage.getItem("GM__CPTCHA_TKN_"+${referralIdVar});` +
+    `if(raw){` +
+    `const parsed=JSON.parse(raw);` +
+    `if(Date.now()-parsed.generatedAt<=100000){` +
+    `localStorage.removeItem("GM__CPTCHA_TKN_"+${referralIdVar});` +
+    `return{success:true,token:parsed.token,message:"cached"};` +
+    `}` +
+    `}` +
+    `}catch(e){}` +
+    `}` +
+    `return await ${triggerFnName}();` +
+    `})();`;
+
+  segment = segment.replace(fullMatch, replacement);
+
+  sourceCode =
+    sourceCode.slice(0, windowStart) + segment + sourceCode.slice(windowEnd);
+
+  return sourceCode;
+};
+
 const addPrepareButton = (sectionText, acceptButtonObject) => {
   const injectedOnClick =
     "onClick:async(e)=>{" +
@@ -736,14 +802,15 @@ function modifyGlobMedSourceCode(code) {
     sourceCode.slice(section.end);
 
   sourceCode = addFilesFromLocalStorage(sourceCode, acceptText);
+  sourceCode = addTokenFromLocalStorage(sourceCode, accept);
 
   return addAcceptClickLogger(sourceCode);
 }
 
-// const filePath = process.cwd() + "/original-gm-index.js";
-// const sourceCode = await readFile(filePath, "utf8");
-// const modifiedCode = modifyGlobMedSourceCode(sourceCode);
-// const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
-// await writeFile(mdsFilePath, modifiedCode);
+const filePath = process.cwd() + "/original-gm-index.js";
+const sourceCode = await readFile(filePath, "utf8");
+const modifiedCode = modifyGlobMedSourceCode(sourceCode);
+const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
+await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;

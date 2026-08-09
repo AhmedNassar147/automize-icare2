@@ -171,7 +171,10 @@ const handleCaseAcceptanceOrRejection =
         WAIT_FOR_ACCEPT_MS,
         ENABLE_AUTO_WAITING,
         DOES_SYSTEM_REDUCE_WAIT,
+        USES_CACHED_TOKEN_FLOW,
       } = process.env;
+
+      const usesCachedTokenFlow = USES_CACHED_TOKEN_FLOW || "0";
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
       const isFakeReject = actionType === FAKE_REJECT_PROBE;
@@ -239,7 +242,7 @@ const handleCaseAcceptanceOrRejection =
       }
 
       const onZeroSecond = async () => {
-        if (isFakeReject) return;
+        if (isFakeReject || !isAcceptanceAction) return;
 
         broadcast({
           type: "case-acceptance-or-rejection",
@@ -248,6 +251,7 @@ const handleCaseAcceptanceOrRejection =
             actionType,
             routerKey,
             files,
+            usesCachedTokenFlow,
           },
         });
       };
@@ -333,6 +337,7 @@ const handleCaseAcceptanceOrRejection =
         page,
         referralId,
         onZeroSecond,
+        usesCachedTokenFlow: usesCachedTokenFlow === "1",
       });
 
       const diff = referralEndTimestamp - readySeenAt;
