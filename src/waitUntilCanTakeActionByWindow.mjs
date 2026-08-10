@@ -8,7 +8,6 @@ async function waitUntilCanTakeActionByWindow({
   referralId,
   onZeroSecond,
   onLastSeconds,
-  usesCachedTokenFlow,
 }) {
   const now = Date.now();
   let fnName = null;
@@ -26,13 +25,7 @@ async function waitUntilCanTakeActionByWindow({
   }
 
   return await page.evaluate(
-    async ({
-      globMedHeaders,
-      referralId,
-      fnName,
-      onLastSecondsFnName,
-      usesCachedTokenFlow,
-    }) => {
+    async ({ globMedHeaders, referralId, fnName, onLastSecondsFnName }) => {
       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
       const pollLogs = [];
@@ -109,7 +102,7 @@ async function waitUntilCanTakeActionByWindow({
 
           let totalMsLeft = -1;
 
-          if (message && !usesCachedTokenFlow) {
+          if (message) {
             const match = message.match(
               /(\d+)\s*(?:minute(?:\(s\))?|mins?|min)\s+and\s+(\d+)\s*(?:second(?:\(s\))?|secs?|sec)/,
             );
@@ -273,7 +266,6 @@ async function waitUntilCanTakeActionByWindow({
       referralId,
       fnName,
       onLastSecondsFnName,
-      usesCachedTokenFlow,
     },
   );
 }

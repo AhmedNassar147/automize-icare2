@@ -325,6 +325,8 @@ const handleCaseAcceptanceOrRejection =
         ? "Y"
         : "N";
 
+      const useCachedTokenFlow = usesCachedTokenFlow === "1";
+
       const {
         zeroSeenAt,
         readySeenAt,
@@ -336,9 +338,12 @@ const handleCaseAcceptanceOrRejection =
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
-        onZeroSecond,
-        usesCachedTokenFlow: usesCachedTokenFlow === "1",
+        onZeroSecond: useCachedTokenFlow ? () => null : onZeroSecond,
       });
+
+      if (useCachedTokenFlow) {
+        await onZeroSecond();
+      }
 
       const diff = referralEndTimestamp - readySeenAt;
 
