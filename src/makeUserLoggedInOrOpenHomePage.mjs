@@ -12,6 +12,8 @@ import shouldCloseAppWhenLogin from "./shouldCloseAppWhenLogin.mjs";
 import { homePageTableSelector } from "./constants.mjs";
 import createConsoleMessage from "./createConsoleMessage.mjs";
 import patchBundleFromPage from "./patchBundleFromPage.mjs";
+import getIdProviderFromSession from "./getIdProviderFromSession.mjs";
+import updateEnvFile from "./updateEnvFile.mjs";
 
 const MAX_RETRIES = 3;
 const loginButtonSelector = 'button[name="Input.Button"][value="login"]';
@@ -171,6 +173,18 @@ const makeUserLoggedInOrOpenHomePage = async ({
         if (!noBundleCheck) {
           createConsoleMessage(`✅ User ${userName} is in home page.`, "info");
           await patchBundleFromPage(page);
+        }
+
+        if (!process.env.ID_PROVIDER) {
+          const idProvider = await getIdProviderFromSession(page);
+
+          if (idProvider) {
+            updateEnvFile({ ID_PROVIDER: idProvider });
+            createConsoleMessage(
+              `✅ Cached ID_PROVIDER=${idProvider} from session.`,
+              "info",
+            );
+          }
         }
 
         return {

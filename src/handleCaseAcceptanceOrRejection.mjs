@@ -172,6 +172,7 @@ const handleCaseAcceptanceOrRejection =
         ENABLE_AUTO_WAITING,
         DOES_SYSTEM_REDUCE_WAIT,
         USES_CACHED_TOKEN_FLOW,
+        ID_PROVIDER,
       } = process.env;
 
       const usesCachedTokenFlow = USES_CACHED_TOKEN_FLOW || "0";
@@ -241,19 +242,24 @@ const handleCaseAcceptanceOrRejection =
         ];
       }
 
+      const idProvider = ID_PROVIDER || CLIENT_NAME.split("-")[0];
+
+      const broadcastData = {
+        type: "case-acceptance-or-rejection",
+        data: {
+          referralId,
+          actionType,
+          routerKey,
+          files,
+          idProvider,
+          providerName,
+          usesCachedTokenFlow,
+        },
+      };
+
       const onZeroSecond = async () => {
         if (isFakeReject || !isAcceptanceAction) return;
-
-        broadcast({
-          type: "case-acceptance-or-rejection",
-          data: {
-            referralId,
-            actionType,
-            routerKey,
-            files,
-            usesCachedTokenFlow,
-          },
-        });
+        broadcast(broadcastData);
       };
 
       const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
