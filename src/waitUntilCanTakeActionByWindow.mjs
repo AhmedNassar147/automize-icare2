@@ -158,7 +158,7 @@ async function waitUntilCanTakeActionByWindow({
               if (
                 !onZeroSecondCalled &&
                 fnName &&
-                (useCachedTokenFlow ? loopCountWhenSecondIsOne >= 6 : false)
+                (useCachedTokenFlow ? loopCountWhenSecondIsOne >= 8 : false)
               ) {
                 await window[fnName]?.();
                 onZeroSecondCalled = true;
