@@ -417,19 +417,17 @@ const addTokenFromLocalStorage = (sourceCode, acceptButtonObject) => {
   // fires — reading whatever the userscript most recently set.
   const replacement =
     `const ${resultVarName}=await(async()=>{` +
-    `if(localStorage.getItem("usesCachedTokenFlow")==="1"){` +
-    `try{` +
     `const raw=localStorage.getItem("GM__CPTCHA_TKN_"+${referralIdVar});` +
+    `try{` +
     `if(raw){` +
     `const parsed=JSON.parse(raw);` +
-    `if(Date.now()-parsed.generatedAt<=100000){` +
     `localStorage.removeItem("GM__CPTCHA_TKN_"+${referralIdVar});` +
     `return{success:true,token:parsed.token,message:"cached"};` +
-    `}` +
-    `}` +
-    `}catch(e){}` +
-    `}` +
+    `}else{` +
+    `console.log("[GM] Not USING CACHED TOKEN 1");` +
     `return await ${triggerFnName}();` +
+    `}` +
+    `}catch(e){console.log("[GM] Not USING CACHED TOKEN 2"); return await ${triggerFnName}();}` +
     `})();`;
 
   segment = segment.replace(fullMatch, replacement);
