@@ -166,7 +166,7 @@ async function waitUntilCanTakeActionByWindow({
               !onZeroSecondCalled &&
               fnName
             ) {
-              await sleep(500);
+              await sleep(600);
               await window[fnName]?.();
               onZeroSecondCalled = true;
               zeroSeenAt = serverNow || localNow;
