@@ -8,6 +8,8 @@ async function waitUntilCanTakeActionByWindow({
   referralId,
   onZeroSecond,
   onLastSeconds,
+  useCachedTokenFlow,
+  referralEndTimestamp,
 }) {
   const now = Date.now();
   let fnName = null;
@@ -25,7 +27,14 @@ async function waitUntilCanTakeActionByWindow({
   }
 
   return await page.evaluate(
-    async ({ globMedHeaders, referralId, fnName, onLastSecondsFnName }) => {
+    async ({
+      globMedHeaders,
+      referralId,
+      fnName,
+      onLastSecondsFnName,
+      useCachedTokenFlow,
+      referralEndTimestamp,
+    }) => {
       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
       const pollLogs = [];
@@ -42,6 +51,8 @@ async function waitUntilCanTakeActionByWindow({
       let lastPollLocalNow = 0;
       let lastServerNow = null;
       let sameServerSecondIndex = 0;
+
+      let newWorkFlowZeroProps = {};
 
       const pushPollLog = (entry) => {
         pollLogs.push(entry);
@@ -149,6 +160,19 @@ async function waitUntilCanTakeActionByWindow({
               });
             }
 
+            if (
+              totalMsLeft === 1000 &&
+              useCachedTokenFlow &&
+              !onZeroSecondCalled &&
+              fnName
+            ) {
+              await sleep(500);
+              await window[fnName]?.();
+              onZeroSecondCalled = true;
+              zeroSeenAt = serverNow || localNow;
+              newWorkFlowZeroProps = baseLog;
+            }
+
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
               await window[fnName]?.();
               onZeroSecondCalled = true;
@@ -251,6 +275,7 @@ async function waitUntilCanTakeActionByWindow({
             leftTimeWhenLastSecondsCalled,
             loopCountWhenSecondIsOne,
             timesWhenOneSecondStartedAndEnded: pollLogs,
+            newWorkFlowZeroProps,
           };
         }
 
@@ -266,6 +291,8 @@ async function waitUntilCanTakeActionByWindow({
       referralId,
       fnName,
       onLastSecondsFnName,
+      useCachedTokenFlow,
+      referralEndTimestamp,
     },
   );
 }

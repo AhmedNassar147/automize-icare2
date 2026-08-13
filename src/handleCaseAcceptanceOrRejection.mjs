@@ -341,15 +341,19 @@ const handleCaseAcceptanceOrRejection =
         rtt,
         timesWhenOneSecondStartedAndEnded,
         loopCountWhenSecondIsOne,
+        newWorkFlowZeroProps,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
-        onZeroSecond: useCachedTokenFlow ? () => null : onZeroSecond,
+        onZeroSecond,
+        useCachedTokenFlow,
+        referralEndTimestamp,
+        // onZeroSecond: useCachedTokenFlow ? () => null : onZeroSecond,
       });
 
-      if (useCachedTokenFlow) {
-        await onZeroSecond();
-      }
+      // if (useCachedTokenFlow) {
+      //   await onZeroSecond();
+      // }
 
       const diff = referralEndTimestamp - readySeenAt;
 
@@ -456,6 +460,17 @@ const handleCaseAcceptanceOrRejection =
           `<b>reCAPTCHA quota exceeded:</b> ${recaptchaQuotaCheck.quotaExceeded}\n` +
           `<b>Frame URL:</b> ${recaptchaQuotaCheck.frameUrl || "Not found"}`,
       );
+
+      if (newWorkFlowZeroProps) {
+        extraBotMessages.push(
+          `<b>newWorkFlowZeroProps:</b> ${JSON.stringify(newWorkFlowZeroProps)}`,
+        );
+
+        createConsoleMessage(
+          `patient=${referralId}, newWorkFlowZeroProps=${JSON.stringify(newWorkFlowZeroProps, null, 2)}`,
+          "warn",
+        );
+      }
 
       if (extraBotMessages.length) {
         await sleep(250);
