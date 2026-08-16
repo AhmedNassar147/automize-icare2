@@ -351,9 +351,15 @@ const handleCaseAcceptanceOrRejection =
         // onZeroSecond: useCachedTokenFlow ? () => null : onZeroSecond,
       });
 
-      // if (useCachedTokenFlow) {
-      //   await onZeroSecond();
-      // }
+      if (useCachedTokenFlow && isAcceptanceAction) {
+        // await onZeroSecond();
+        // broadcast({
+        //   type: "ready-accept",
+        //   data: {
+        //     referralId,
+        //   },
+        // });
+      }
 
       const diff = referralEndTimestamp - readySeenAt;
 

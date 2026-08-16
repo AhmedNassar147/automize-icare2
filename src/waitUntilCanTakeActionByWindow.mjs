@@ -160,18 +160,18 @@ async function waitUntilCanTakeActionByWindow({
               });
             }
 
-            if (
-              totalMsLeft === 1000 &&
-              useCachedTokenFlow &&
-              !onZeroSecondCalled &&
-              fnName
-            ) {
-              await sleep(600);
-              await window[fnName]?.();
-              onZeroSecondCalled = true;
-              zeroSeenAt = serverNow || localNow;
-              newWorkFlowZeroProps = baseLog;
-            }
+            // if (
+            //   totalMsLeft === 1000 &&
+            //   useCachedTokenFlow &&
+            //   !onZeroSecondCalled &&
+            //   fnName
+            // ) {
+            //   await sleep(600);
+            //   await window[fnName]?.();
+            //   onZeroSecondCalled = true;
+            //   zeroSeenAt = serverNow || localNow;
+            //   newWorkFlowZeroProps = baseLog;
+            // }
 
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
               await window[fnName]?.();
