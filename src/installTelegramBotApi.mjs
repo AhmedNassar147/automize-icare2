@@ -531,6 +531,25 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   };
 
+  const safeOnText = (regex, handler) => {
+    bot.onText(regex, async (msg, match) => {
+      try {
+        await handler(msg, match);
+      } catch (error) {
+        createConsoleMessage(
+          error,
+          "error",
+          `❌ command handler failed for "${msg.text}":`,
+        );
+
+        await sendBotMessage(
+          String(msg.chat.id),
+          `⛔ Something went wrong handling this command: ${error?.message || error}`,
+        ).catch(() => null);
+      }
+    });
+  };
+
   async function setupCommands() {
     const commands = Object.values(COMMANDS)
       .filter((item) => item.command !== "add")
@@ -553,7 +572,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     createConsoleMessage(`commandsSet`, "info");
   }
 
-  bot.onText(COMMANDS.me.value, async (msg) => {
+  safeOnText(COMMANDS.me.value, async (msg) => {
     const { chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
 
@@ -615,7 +634,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.activate.value, async (msg, match) => {
+  safeOnText(COMMANDS.activate.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName, allowedList } =
       getIfNotAuthorizedMessage(msg, true);
 
@@ -671,7 +690,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.who.value, async (msg) => {
+  safeOnText(COMMANDS.who.value, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
@@ -695,49 +714,53 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
   });
 
   bot.on("contact", async (msg) => {
-    const chatId = String(msg.chat.id);
-    const pending = pendingContactRequests.get(chatId);
+    try {
+      const chatId = String(msg.chat.id);
+      const pending = pendingContactRequests.get(chatId);
 
-    if (!pending) return;
+      if (!pending) return;
 
-    const phoneNumber = msg.contact?.phone_number;
+      const phoneNumber = msg.contact?.phone_number;
 
-    if (!phoneNumber) {
-      await sendBotMessage(chatId, "❌ No phone number received.");
-      return;
-    }
+      if (!phoneNumber) {
+        await sendBotMessage(chatId, "❌ No phone number received.");
+        return;
+      }
 
-    // Optional but recommended: make sure user shared HIS OWN phone
-    if (msg.contact.user_id && msg.contact.user_id !== msg.from.id) {
-      await sendBotMessage(chatId, "❌ Please share your own phone number.");
-      return;
-    }
+      // Optional but recommended: make sure user shared HIS OWN phone
+      if (msg.contact.user_id && msg.contact.user_id !== msg.from.id) {
+        await sendBotMessage(chatId, "❌ Please share your own phone number.");
+        return;
+      }
 
-    pendingContactRequests.delete(chatId);
+      pendingContactRequests.delete(chatId);
 
-    const { allowedList, fromName } = pending;
+      const { allowedList, fromName } = pending;
 
-    updateEnvFile({
-      TG_CHAT_IDS: [...new Set([...allowedList, chatId].filter(Boolean))].join(
-        ",",
-      ),
-      [`TG_PHONE_NUMBER_${chatId}`]: phoneNumber,
-    });
-    await setupCommands();
-    await sleep(1000);
+      updateEnvFile({
+        TG_CHAT_IDS: [
+          ...new Set([...allowedList, chatId].filter(Boolean)),
+        ].join(","),
+        [`TG_PHONE_NUMBER_${chatId}`]: phoneNumber,
+      });
+      await setupCommands();
+      await sleep(1000);
 
-    await sendBotMessage(
-      chatId,
-      `✅ Hi, \`${fromName}\` you are added now, Please send /me to get activated, Chat ID \`${chatId}\` has been saved automatically. Phone: \`${phoneNumber}\``,
-      {
-        reply_markup: {
-          remove_keyboard: true,
+      await sendBotMessage(
+        chatId,
+        `✅ Hi, \`${fromName}\` you are added now, Please send /me to get activated, Chat ID \`${chatId}\` has been saved automatically. Phone: \`${phoneNumber}\``,
+        {
+          reply_markup: {
+            remove_keyboard: true,
+          },
         },
-      },
-    );
+      );
+    } catch (error) {
+      createConsoleMessage(error, "error", `❌ "contact" handler failed:`);
+    }
   });
 
-  bot.onText(COMMANDS.add.value, async (msg) => {
+  safeOnText(COMMANDS.add.value, async (msg) => {
     const { allowedList, chatId, fromName, unAuthorizedMessage } =
       getIfNotAuthorizedMessage(msg);
 
@@ -770,7 +793,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     });
   });
 
-  bot.onText(COMMANDS.getUsers.value, async (msg) => {
+  safeOnText(COMMANDS.getUsers.value, async (msg) => {
     const { unAuthorizedMessage, chatId, allowedList } =
       getIfNotAuthorizedMessage(msg, true);
 
@@ -803,7 +826,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     );
   });
 
-  bot.onText(COMMANDS.wait.value, async (msg, match) => {
+  safeOnText(COMMANDS.wait.value, async (msg, match) => {
     const { chatId, unAuthorizedMessage, fromName } =
       getIfNotAuthorizedMessage(msg);
 
@@ -860,7 +883,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.auto_wait.value, async (msg, match) => {
+  safeOnText(COMMANDS.auto_wait.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName } =
       getIfNotAuthorizedMessage(msg);
 
@@ -914,7 +937,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.f_accept.value, async (msg, match) => {
+  safeOnText(COMMANDS.f_accept.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName, msgId } =
       getIfNotAuthorizedMessage(msg);
 
@@ -948,7 +971,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     );
   });
 
-  bot.onText(COMMANDS.getReferralLetter.value, async (msg, match) => {
+  safeOnText(COMMANDS.getReferralLetter.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, fromName, msgId } =
       getIfNotAuthorizedMessage(msg);
 
@@ -1123,7 +1146,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     );
   });
 
-  bot.onText(COMMANDS.testNextCaseExtraTime.value, async (msg) => {
+  safeOnText(COMMANDS.testNextCaseExtraTime.value, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
@@ -1236,7 +1259,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     );
   });
 
-  bot.onText(COMMANDS.getInvoiceFile.value, async (msg, match) => {
+  safeOnText(COMMANDS.getInvoiceFile.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, msgId } = getIfNotAuthorizedMessage(
       msg,
       true,
@@ -1300,7 +1323,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.getCasesStatus.value, async (msg, match) => {
+  safeOnText(COMMANDS.getCasesStatus.value, async (msg, match) => {
     const { unAuthorizedMessage, chatId, msgId } =
       getIfNotAuthorizedMessage(msg);
 
@@ -1393,7 +1416,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.migrateLogs.value, async (msg) => {
+  safeOnText(COMMANDS.migrateLogs.value, async (msg) => {
     const { unAuthorizedMessage, chatId, msgId } =
       getIfNotAuthorizedMessage(msg);
 
@@ -1414,7 +1437,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.updateCode.value, async (msg) => {
+  safeOnText(COMMANDS.updateCode.value, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
@@ -1494,7 +1517,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     }
   });
 
-  bot.onText(COMMANDS.clearCmds.value, async (msg) => {
+  safeOnText(COMMANDS.clearCmds.value, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
 
     if (unAuthorizedMessage) {
@@ -1522,7 +1545,7 @@ const installTelegramBotApi = async (TG_TOKEN, patientsStore, browser) => {
     );
   });
 
-  bot.onText(COMMANDS.updateCmds.value, async (msg) => {
+  safeOnText(COMMANDS.updateCmds.value, async (msg) => {
     const { unAuthorizedMessage, chatId } = getIfNotAuthorizedMessage(msg);
     if (unAuthorizedMessage) {
       await sendBotMessage(chatId, unAuthorizedMessage);
