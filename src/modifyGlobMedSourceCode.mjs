@@ -415,20 +415,31 @@ const addTokenFromLocalStorage = (sourceCode, acceptButtonObject) => {
 
   // The check happens at RUNTIME, in the browser, every time this handler
   // fires — reading whatever the userscript most recently set.
+  // const replacement =
+  //   `const ${resultVarName}=await(async()=>{` +
+  //   `const storeKey = "GM__CPTCHA_TKN_"+${referralIdVar};` +
+  //   `const raw=localStorage.getItem(storeKey);` +
+  //   `try{` +
+  //   `if(raw){` +
+  //   `const parsed=JSON.parse(raw);` +
+  //   `localStorage.removeItem(storeKey);` +
+  //   `return{success:true,token:parsed.token,message:"cached"};` +
+  //   `}else{` +
+  //   `localStorage.setItem("Not_USING_CACHED_TOKEN_1",${referralIdVar},raw);` +
+  //   `return await ${triggerFnName}();` +
+  //   `}` +
+  //   `}catch(e){localStorage.setItem("Not_USING_CACHED_TOKEN_2",${referralIdVar},raw); return await ${triggerFnName}();}` +
+  //   `})();`;
+
   const replacement =
     `const ${resultVarName}=await(async()=>{` +
-    `const storeKey = "GM__CPTCHA_TKN_"+${referralIdVar};` +
-    `const raw=localStorage.getItem(storeKey);` +
-    `try{` +
-    `if(raw){` +
-    `const parsed=JSON.parse(raw);` +
-    `localStorage.removeItem(storeKey);` +
-    `return{success:true,token:parsed.token,message:"cached"};` +
-    `}else{` +
-    `localStorage.setItem("Not_USING_CACHED_TOKEN_1",${referralIdVar},raw);` +
-    `return await ${triggerFnName}();` +
-    `}` +
-    `}catch(e){localStorage.setItem("Not_USING_CACHED_TOKEN_2",${referralIdVar},raw); return await ${triggerFnName}();}` +
+    `const t1=performance.now();` +
+    `const result=await ${triggerFnName}();` +
+    `const t2=performance.now();` +
+    `const logName="GM__TOKEN_TIME_"+${referralIdVar};const tokenTime=String(t2-t1);` +
+    `localStorage.setItem(logName,tokenTime);` +
+    `console.log(logName,tokenTime);` +
+    `return result;` +
     `})();`;
 
   segment = segment.replace(fullMatch, replacement);
@@ -806,10 +817,10 @@ function modifyGlobMedSourceCode(code) {
   return addAcceptClickLogger(sourceCode);
 }
 
-// const filePath = process.cwd() + "/original-gm-index.js";
-// const sourceCode = await readFile(filePath, "utf8");
-// const modifiedCode = modifyGlobMedSourceCode(sourceCode);
-// const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
-// await writeFile(mdsFilePath, modifiedCode);
+const filePath = process.cwd() + "/original-gm-index.js";
+const sourceCode = await readFile(filePath, "utf8");
+const modifiedCode = modifyGlobMedSourceCode(sourceCode);
+const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
+await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;
