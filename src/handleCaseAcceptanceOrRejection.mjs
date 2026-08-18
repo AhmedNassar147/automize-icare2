@@ -388,7 +388,7 @@ const handleCaseAcceptanceOrRejection =
       // we use zeroSeenLocalAt as at that time we open the details page on real browser
       // const msSinceDetailsOpened = Date.now() - zeroSeenLocalAt;
       // const _remainingDelay = Math.max(0, 2100 - msSinceDetailsOpened);
-      const remainingDelay = 2015;
+      const remainingDelay = 2100;
 
       const notificationResults = await Promise.allSettled([
         sleep(remainingDelay).then(handleFinalSignal),
