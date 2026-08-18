@@ -9,7 +9,6 @@ async function waitUntilCanTakeActionByWindow({
   onZeroSecond,
   onLastSeconds,
   useCachedTokenFlow,
-  referralEndTimestamp,
 }) {
   const now = Date.now();
   let fnName = null;
@@ -33,7 +32,6 @@ async function waitUntilCanTakeActionByWindow({
       fnName,
       onLastSecondsFnName,
       useCachedTokenFlow,
-      referralEndTimestamp,
     }) => {
       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -42,6 +40,7 @@ async function waitUntilCanTakeActionByWindow({
       let loopCountWhenSecondIsOne = 0;
       let onZeroSecondCalled = false;
 
+      let zeroSeenLocalAt = 0;
       let zeroSeenAt = 0;
       let readySeenAt = 0;
       let readySeenAtLocalMs = 0;
@@ -170,6 +169,7 @@ async function waitUntilCanTakeActionByWindow({
             //   await window[fnName]?.();
             //   onZeroSecondCalled = true;
             //   zeroSeenAt = serverNow || localNow;
+            //   zeroSeenLocalAt = localNow;
             //   newWorkFlowZeroProps = baseLog;
             // }
 
@@ -177,6 +177,7 @@ async function waitUntilCanTakeActionByWindow({
               await window[fnName]?.();
               onZeroSecondCalled = true;
               zeroSeenAt = serverNow || localNow;
+              zeroSeenLocalAt = localNow;
 
               if (loopCountWhenSecondIsOne) {
                 pushPollLog({
@@ -195,6 +196,7 @@ async function waitUntilCanTakeActionByWindow({
               await window[fnName]?.();
               onZeroSecondCalled = true;
               zeroSeenAt = serverNow || localNow;
+              zeroSeenLocalAt = localNow;
             }
 
             if (loopCountWhenSecondIsOne) {
@@ -267,6 +269,7 @@ async function waitUntilCanTakeActionByWindow({
             attempts,
             claimableLocalTime: localNow,
             zeroSeenAt,
+            zeroSeenLocalAt,
             readySeenAt,
             rtt,
             extraBackendDelayMs:
@@ -292,7 +295,6 @@ async function waitUntilCanTakeActionByWindow({
       fnName,
       onLastSecondsFnName,
       useCachedTokenFlow,
-      referralEndTimestamp,
     },
   );
 }

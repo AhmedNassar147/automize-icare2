@@ -176,6 +176,7 @@ const handleCaseAcceptanceOrRejection =
       } = process.env;
 
       const usesCachedTokenFlow = USES_CACHED_TOKEN_FLOW || "0";
+      const useCachedTokenFlow = usesCachedTokenFlow === "1";
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
       const isFakeReject = actionType === FAKE_REJECT_PROBE;
@@ -262,6 +263,17 @@ const handleCaseAcceptanceOrRejection =
         broadcast(broadcastData);
       };
 
+      const handleFinalSignal = async () => {
+        if (useCachedTokenFlow && isAcceptanceAction) {
+          broadcast({
+            type: "ready-case",
+            data: {
+              referralId,
+            },
+          });
+        }
+      };
+
       const { newPage: page } = await makeUserLoggedInOrOpenHomePage({
         browser,
         startingPageUrl: HOME_PAGE_URL,
@@ -331,10 +343,9 @@ const handleCaseAcceptanceOrRejection =
         ? "Y"
         : "N";
 
-      const useCachedTokenFlow = usesCachedTokenFlow === "1";
-
       const {
         zeroSeenAt,
+        zeroSeenLocalAt,
         readySeenAt,
         extraBackendDelayMs,
         readySeenAtLocalMs,
@@ -350,16 +361,6 @@ const handleCaseAcceptanceOrRejection =
         referralEndTimestamp,
         // onZeroSecond: useCachedTokenFlow ? () => null : onZeroSecond,
       });
-
-      if (useCachedTokenFlow && isAcceptanceAction) {
-        // await onZeroSecond();
-        // broadcast({
-        //   type: "ready-accept",
-        //   data: {
-        //     referralId,
-        //   },
-        // });
-      }
 
       const diff = referralEndTimestamp - readySeenAt;
 
@@ -381,20 +382,16 @@ const handleCaseAcceptanceOrRejection =
         extraBotMessages = extraBotMessages.concat(computedExtraBotMessages);
       }
 
-      if (
-        !readySeenAt ||
-        !zeroSeenAt ||
-        !readySeenAtLocalMs ||
-        typeof extraBackendDelayMs !== "number"
-      ) {
-        extraBotMessages.push(
-          `Missing readySeenAt=${readySeenAt} zeroSeenAt=${zeroSeenAt} readySeenAtLocalMs=${readySeenAtLocalMs} extraBackendDelayMs=${extraBackendDelayMs} for referralId=${referralId}`,
-        );
-      }
       const waitTime = baseWaitingTime + extraWait;
       const approvalMessage = `*${actionType} ${referralId}*  waitTime: ${waitTime / 1000}s`;
 
+      // we use zeroSeenLocalAt as at that time we open the details page on real browser
+      // const msSinceDetailsOpened = Date.now() - zeroSeenLocalAt;
+      // const _remainingDelay = Math.max(0, 2100 - msSinceDetailsOpened);
+      const remainingDelay = 2010;
+
       const notificationResults = await Promise.allSettled([
+        sleep(remainingDelay).then(handleFinalSignal),
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
         sleep(Math.max(0, waitTime - 37)).then(() =>
           sendNtfyMessage(approvalMessage),
@@ -465,6 +462,18 @@ const handleCaseAcceptanceOrRejection =
         `<b>reCAPTCHA frame found:</b> ${recaptchaQuotaCheck.frameFound}\n` +
           `<b>reCAPTCHA quota exceeded:</b> ${recaptchaQuotaCheck.quotaExceeded}\n` +
           `<b>Frame URL:</b> ${recaptchaQuotaCheck.frameUrl || "Not found"}`,
+      );
+
+      const nowTime = Date.now();
+      const msSinceDetailsOpened = nowTime - zeroSeenLocalAt;
+      const _remainingDelay = Math.max(0, 2001 - msSinceDetailsOpened);
+
+      extraBotMessages.push(
+        `<b>nowTime:</b> ${nowTime}\n` +
+          `<b>zeroSeenLocalAt:</b> ${zeroSeenLocalAt}\n` +
+          `<b>msSinceDetailsOpened:</b> ${msSinceDetailsOpened}\n` +
+          `<b>_remainingDelay:</b> ${_remainingDelay}\n`,
+        `<b>remainingDelay:</b> ${remainingDelay}\n`,
       );
 
       if (newWorkFlowZeroProps) {
