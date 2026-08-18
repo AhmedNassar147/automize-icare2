@@ -817,10 +817,10 @@ function modifyGlobMedSourceCode(code) {
   return addAcceptClickLogger(sourceCode);
 }
 
-const filePath = process.cwd() + "/original-gm-index.js";
-const sourceCode = await readFile(filePath, "utf8");
-const modifiedCode = modifyGlobMedSourceCode(sourceCode);
-const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
-await writeFile(mdsFilePath, modifiedCode);
+// const filePath = process.cwd() + "/original-gm-index.js";
+// const sourceCode = await readFile(filePath, "utf8");
+// const modifiedCode = modifyGlobMedSourceCode(sourceCode);
+// const mdsFilePath = process.cwd() + "/original-gm-index-modfs.js";
+// await writeFile(mdsFilePath, modifiedCode);
 
 export default modifyGlobMedSourceCode;
