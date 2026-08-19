@@ -269,7 +269,7 @@ const handleCaseAcceptanceOrRejection =
           idProvider,
           providerName,
           usesCachedTokenFlow: useCachedTokenFlow ? "1" : "0",
-          autoAcceptAfterMs,
+          autoAcceptAfterMs: useCachedTokenFlow ? autoAcceptAfterMs : 0,
         },
       };
 
