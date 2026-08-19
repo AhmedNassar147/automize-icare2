@@ -264,23 +264,29 @@ const handleCaseAcceptanceOrRejection =
       const onZeroSecond = async () => {
         if (isFakeReject || !isAcceptanceAction) return;
         broadcast(broadcastData);
-        // after details page loaded in real browser we fire prepare-rcpt
-        const prepareButtonWillBeClickableWhen = randomDelayInRange(1050, 1400);
-        console.log(
-          "prepareButtonWillBeClickableWhen",
-          prepareButtonWillBeClickableWhen,
-        );
 
-        setTimeout(
-          () =>
-            broadcast({
-              type: "prepare-rcpt",
-              data: {
-                referralId,
-              },
-            }),
-          prepareButtonWillBeClickableWhen,
-        );
+        if (useCachedTokenFlow) {
+          // after details page loaded in real browser we fire prepare-rcpt
+          const prepareButtonWillBeClickableWhen = randomDelayInRange(
+            1050,
+            1400,
+          );
+          console.log(
+            "prepareButtonWillBeClickableWhen",
+            prepareButtonWillBeClickableWhen,
+          );
+
+          setTimeout(
+            () =>
+              broadcast({
+                type: "prepare-rcpt",
+                data: {
+                  referralId,
+                },
+              }),
+            prepareButtonWillBeClickableWhen,
+          );
+        }
       };
 
       const handleFinalSignal = async () => {
