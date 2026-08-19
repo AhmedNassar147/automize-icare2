@@ -252,7 +252,7 @@ const handleCaseAcceptanceOrRejection =
 
       const prepareButtonWillBeClickableWhen =
         useCachedTokenFlow && isAcceptanceAction
-          ? randomDelayInRange(1080, 1300)
+          ? randomDelayInRange(1090, 1300)
           : 0;
 
       const autoAcceptAfterMs =
