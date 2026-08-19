@@ -176,10 +176,12 @@ const handleCaseAcceptanceOrRejection =
         DOES_SYSTEM_REDUCE_WAIT,
         USES_CACHED_TOKEN_FLOW,
         ID_PROVIDER,
+        REMAINING_DELAY,
       } = process.env;
 
       const usesCachedTokenFlow = USES_CACHED_TOKEN_FLOW || "0";
       const useCachedTokenFlow = usesCachedTokenFlow === "1";
+      const totalRemainingDelay = Number(REMAINING_DELAY || 2755);
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
       const isFakeReject = actionType === FAKE_REJECT_PROBE;
@@ -248,6 +250,14 @@ const handleCaseAcceptanceOrRejection =
 
       const idProvider = ID_PROVIDER || CLIENT_NAME.split("-")[0];
 
+      const prepareButtonWillBeClickableWhen =
+        useCachedTokenFlow && isAcceptanceAction
+          ? randomDelayInRange(1080, 1300)
+          : 0;
+
+      const autoAcceptAfterMs =
+        totalRemainingDelay - prepareButtonWillBeClickableWhen;
+
       const broadcastData = {
         type: "case-acceptance-or-rejection",
         data: {
@@ -258,6 +268,7 @@ const handleCaseAcceptanceOrRejection =
           idProvider,
           providerName,
           usesCachedTokenFlow,
+          autoAcceptAfterMs,
         },
       };
 
@@ -265,17 +276,8 @@ const handleCaseAcceptanceOrRejection =
         if (isFakeReject || !isAcceptanceAction) return;
         broadcast(broadcastData);
 
-        if (useCachedTokenFlow) {
+        if (prepareButtonWillBeClickableWhen) {
           // after details page loaded in real browser we fire prepare-rcpt
-          const prepareButtonWillBeClickableWhen = randomDelayInRange(
-            1050,
-            1400,
-          );
-          console.log(
-            "prepareButtonWillBeClickableWhen",
-            prepareButtonWillBeClickableWhen,
-          );
-
           setTimeout(
             () =>
               broadcast({
@@ -411,13 +413,8 @@ const handleCaseAcceptanceOrRejection =
       const waitTime = baseWaitingTime + extraWait;
       const approvalMessage = `*${actionType} ${referralId}*  waitTime: ${waitTime / 1000}s`;
 
-      // we use zeroSeenLocalAt as at that time we open the details page on real browser
-      // const msSinceDetailsOpened = Date.now() - zeroSeenLocalAt;
-      // const _remainingDelay = Math.max(0, 2100 - msSinceDetailsOpened);
-      const remainingDelay = Number(process.env.REMAINING_DELAY || 2650);
-
       const notificationResults = await Promise.allSettled([
-        sleep(remainingDelay).then(handleFinalSignal),
+        // sleep(remainingDelay).then(handleFinalSignal),
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
         sleep(Math.max(0, waitTime - 37)).then(() =>
           sendNtfyMessage(approvalMessage),
@@ -490,16 +487,11 @@ const handleCaseAcceptanceOrRejection =
           `<b>Frame URL:</b> ${recaptchaQuotaCheck.frameUrl || "Not found"}`,
       );
 
-      const nowTime = Date.now();
-      const msSinceDetailsOpened = nowTime - zeroSeenLocalAt;
-      const _remainingDelay = Math.max(0, 2001 - msSinceDetailsOpened);
-
       extraBotMessages.push(
-        `<b>nowTime:</b> ${nowTime}\n` +
-          `<b>zeroSeenLocalAt:</b> ${zeroSeenLocalAt}\n` +
-          `<b>msSinceDetailsOpened:</b> ${msSinceDetailsOpened}\n` +
-          `<b>_remainingDelay:</b> ${_remainingDelay}\n`,
-        `<b>remainingDelay:</b> ${remainingDelay}\n`,
+        `<b>zeroSeenLocalAt:</b> ${zeroSeenLocalAt}\n` +
+          `<b>totalRemainingDelay:</b> ${totalRemainingDelay} MS\n` +
+          `<b>prepareButtonWillBeClickableWhen:</b> ${prepareButtonWillBeClickableWhen} MS\n` +
+          `<b>autoAcceptAfterMs:</b> ${autoAcceptAfterMs} MS\n`,
       );
 
       if (newWorkFlowZeroProps) {

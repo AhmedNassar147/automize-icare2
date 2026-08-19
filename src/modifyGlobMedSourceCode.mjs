@@ -302,14 +302,14 @@ function moveAcceptButtonToTopLevelChildren(
   return next;
 }
 
-const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
-  const handlerName = extractOnClickHandler(acceptButton);
-  if (!handlerName) return sourceCode; // safely skip this patch
+const addFilesFromLocalStorage = (sourceCode, acceptHandlerName) => {
+  if (!acceptHandlerName) return sourceCode; // safely skip this patch
 
   // 2) Find where that handler starts: "Rt = async (...) => {"
   const handlerStartRegex = new RegExp(
-    handlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{",
+    acceptHandlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{",
   );
+
   const startMatch = sourceCode.match(handlerStartRegex);
 
   if (!startMatch) {
@@ -358,7 +358,7 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   );
 
   // const handlerWithBraceRegex = new RegExp(
-  //   "(" + handlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{)",
+  //   "(" + acceptHandlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{)",
   // );
 
   // const injectedCode =
@@ -374,13 +374,17 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   return sourceCode;
 };
 
-function extractRecaptchaHandlerInfo(sourceCode, acceptText) {
-  const handlerName = extractOnClickHandler(acceptText);
-  if (!handlerName) return null;
+function extractRecaptchaHandlerInfo(sourceCode, acceptHandlerName) {
+  if (!acceptHandlerName) return null;
+
+  // const handlerStartRegex = new RegExp(
+  //   acceptHandlerName + "\\s*=\\s*async\\s*\\(\\s*\\)\\s*=>\\s*{",
+  // );
 
   const handlerStartRegex = new RegExp(
-    handlerName + "\\s*=\\s*async\\s*\\(\\s*\\)\\s*=>\\s*{",
+    acceptHandlerName + "\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*{",
   );
+
   const startMatch = sourceCode.match(handlerStartRegex);
   if (!startMatch) return null;
 
@@ -409,12 +413,11 @@ function extractRecaptchaHandlerInfo(sourceCode, acceptText) {
 
 const addTokenFromLocalStorage = (
   sourceCode,
-  acceptButtonObject,
+  acceptHandlerName,
   recaptchaInfo,
 ) => {
   const info =
-    recaptchaInfo ||
-    extractRecaptchaHandlerInfo(sourceCode, acceptButtonObject.text);
+    recaptchaInfo || extractRecaptchaHandlerInfo(sourceCode, acceptHandlerName);
 
   if (!info) {
     console.warn(
@@ -464,31 +467,37 @@ const addTokenFromLocalStorage = (
 const addPrepareButton = (
   sectionText,
   acceptButtonObject,
+  acceptHandlerName,
   recaptchaTriggerFnName,
 ) => {
   const injectedOnClick =
-    "onClick:async(e)=>{" +
-    `const btn=e.currentTarget;` +
-    `if(btn.disabled)return;` +
-    `btn.disabled=true;` +
-    `try{` +
+    "onClick:async (e) => {" +
+    "const btn=e.currentTarget;" +
+    "if (btn.disabled)return;" +
+    "btn.disabled=true;" +
+    "try{" +
     `if(localStorage.getItem("usesCachedTokenFlow")==="1"){` +
-    `const stateReferralId=window.history.state?.usr?.idReferral;` +
-    `const t1=performance.now();` +
+    "const t1=performance.now();" +
     `const result=await ${recaptchaTriggerFnName}();` +
-    `const t2=performance.now();` +
-    `const storeKey="GM__CPTCHA_TKN_"+stateReferralId;` +
-    `localStorage.setItem(storeKey,JSON.stringify(result));` +
-    `const logName="GM__TOKEN_TIME_"+stateReferralId;` +
-    `const tokenTime=String(t2-t1);` +
-    `localStorage.setItem(logName,tokenTime);` +
-    `console.log(logName,tokenTime);` +
-    `}` +
-    `}catch(err){` +
-    `console.log("[GM] Prepare failed:",err);` +
-    `}finally{` +
-    `btn.disabled=false;` +
-    `}` +
+    "const t2=performance.now();" +
+    `const stateReferralId=window.history.state?.usr?.idReferral;` +
+    `const storeKey="GM__CPTCHA_TKN_" + stateReferralId;` +
+    "localStorage.setItem(storeKey, JSON.stringify(result));" +
+    `const logName="GM__TOKEN_TIME_" + stateReferralId;` +
+    "const tokenTime=String(t2 - t1);" +
+    "localStorage.setItem(logName,tokenTime);" +
+    "console.log(logName, tokenTime);" +
+    `const autoAcceptAfterMs=Number(localStorage.getItem("autoAcceptAfterMs") || 0);` +
+    "if(autoAcceptAfterMs>0){" +
+    `setTimeout(async ()=>await ${acceptHandlerName}(),autoAcceptAfterMs);` +
+    "}" +
+    "}" +
+    "}catch(err){" +
+    `console.log("[GM] Prepare failed:", err);` +
+    "}finally{" +
+    "btn.disabled=false;" +
+    `btn.style.backgroundColor="yellow";` +
+    "}" +
     "}";
   const { start, text } = acceptButtonObject;
 
@@ -758,7 +767,13 @@ function modifyGlobMedSourceCode(code) {
 
   const acceptText = accept.text;
 
-  const recaptchaInfo = extractRecaptchaHandlerInfo(sourceCode, acceptText);
+  const acceptHandlerName = extractOnClickHandler(acceptText);
+
+  const recaptchaInfo = extractRecaptchaHandlerInfo(
+    sourceCode,
+    acceptHandlerName,
+  );
+
   if (!recaptchaInfo) {
     console.warn("[GM] Could not extract recaptcha handler info");
   }
@@ -766,6 +781,7 @@ function modifyGlobMedSourceCode(code) {
   sectionText = addPrepareButton(
     sectionText,
     accept,
+    acceptHandlerName,
     recaptchaInfo?.triggerFnName,
   );
 
@@ -774,8 +790,12 @@ function modifyGlobMedSourceCode(code) {
     sectionText +
     sourceCode.slice(section.end);
 
-  sourceCode = addFilesFromLocalStorage(sourceCode, acceptText);
-  sourceCode = addTokenFromLocalStorage(sourceCode, accept, recaptchaInfo);
+  sourceCode = addFilesFromLocalStorage(sourceCode, acceptHandlerName);
+  sourceCode = addTokenFromLocalStorage(
+    sourceCode,
+    acceptHandlerName,
+    recaptchaInfo,
+  );
 
   return addAcceptClickLogger(sourceCode);
 }
