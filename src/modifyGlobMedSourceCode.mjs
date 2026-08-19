@@ -441,6 +441,23 @@ const addTokenFromLocalStorage = (
     return sourceCode;
   }
 
+  // const replacement =
+  //   `const ${resultVarName}=await(async()=>{` +
+  //   `const storeKey="GM__CPTCHA_TKN_"+${referralIdVar};` +
+  //   `const raw=localStorage.getItem(storeKey);` +
+  //   `try{` +
+  //   `if(raw){` +
+  //   `const parsed=JSON.parse(raw);` +
+  //   `localStorage.removeItem(storeKey);` +
+  //   `return{success:true,token:parsed.token,message:"cached"};` +
+  //   `}else{` +
+  //   `console.log("[GM] Not using cached token for",${referralIdVar});` +
+  //   `alert("[GM] Fix: Couldn't find the cached token for "+${referralIdVar}+" in localStorage");` +
+  //   `return {};` +
+  //   `}` +
+  //   `}catch(e){alert("[GM] Cached token parse failed for",${referralIdVar},e);return {}}` +
+  //   `})();`;
+
   const replacement =
     `const ${resultVarName}=await(async()=>{` +
     `const storeKey="GM__CPTCHA_TKN_"+${referralIdVar};` +
@@ -452,9 +469,11 @@ const addTokenFromLocalStorage = (
     `return{success:true,token:parsed.token,message:"cached"};` +
     `}else{` +
     `console.log("[GM] Not using cached token for",${referralIdVar});` +
-    `return await ${triggerFnName}();` +
+    `alert("[GM] Fix: Couldn't find the cached token for "+${referralIdVar}+" in localStorage");` +
+    // `return await ${triggerFnName}();` +
+    `return {};` +
     `}` +
-    `}catch(e){console.log("[GM] Cached token parse failed for",${referralIdVar},e);return await ${triggerFnName}();}` +
+    `}catch(e){alert("[GM] Cached token parse failed for "+${referralIdVar}+": "+e);return {};}` +
     `})();`;
 
   return (
@@ -489,12 +508,13 @@ const addPrepareButton = (
     `const autoAcceptAfterMs=Number(localStorage.getItem("autoAcceptAfterMs") || 0);` +
     `if(autoAcceptAfterMs>0){` +
     `const waitMs=Math.max(0,autoAcceptAfterMs-elapsedMs);` +
+    `console.log(logName+"__autoAcceptAfterMs",autoAcceptAfterMs,"__waitMs__", waitMs);` +
     `setTimeout(()=>{` +
     `const acceptBtn=document.querySelector(".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])");` +
     `if(acceptBtn){` +
     `acceptBtn.click();` +
     `}` +
-    `},waitMs);` +
+    `},autoAcceptAfterMs);` +
     `}` +
     `}` +
     "}catch(err){" +
