@@ -25,6 +25,9 @@ import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
 import randomArrayItem from "./randomArrayItem.mjs";
 import writePollLogsData from "./writePollLogsData.mjs";
 
+const randomDelayInRange = (minMs, maxMs) =>
+  Math.floor(minMs + Math.random() * (maxMs - minMs));
+
 const createRandomAttachmentKey = (minLength = 3, maxLength = 7) => {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -261,6 +264,23 @@ const handleCaseAcceptanceOrRejection =
       const onZeroSecond = async () => {
         if (isFakeReject || !isAcceptanceAction) return;
         broadcast(broadcastData);
+        // after details page loaded in real browser we fire prepare-rcpt
+        const prepareButtonWillBeClickableWhen = randomDelayInRange(1050, 1400);
+        console.log(
+          "prepareButtonWillBeClickableWhen",
+          prepareButtonWillBeClickableWhen,
+        );
+
+        setTimeout(
+          () =>
+            broadcast({
+              type: "prepare-rcpt",
+              data: {
+                referralId,
+              },
+            }),
+          prepareButtonWillBeClickableWhen,
+        );
       };
 
       const handleFinalSignal = async () => {

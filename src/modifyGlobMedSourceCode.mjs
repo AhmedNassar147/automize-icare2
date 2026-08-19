@@ -374,168 +374,122 @@ const addFilesFromLocalStorage = (sourceCode, acceptButton) => {
   return sourceCode;
 };
 
-const addTokenFromLocalStorage = (sourceCode, acceptButtonObject) => {
-  const handlerName = extractOnClickHandler(acceptButtonObject.text);
-  if (!handlerName) return sourceCode;
+function extractRecaptchaHandlerInfo(sourceCode, acceptText) {
+  const handlerName = extractOnClickHandler(acceptText);
+  if (!handlerName) return null;
 
   const handlerStartRegex = new RegExp(
     handlerName + "\\s*=\\s*async\\s*\\(\\s*\\)\\s*=>\\s*{",
   );
   const startMatch = sourceCode.match(handlerStartRegex);
-  if (!startMatch) {
-    console.warn("[GM] addTokenFromLocalStorage: handler start not found");
-    return sourceCode;
-  }
+  if (!startMatch) return null;
 
-  const startIndex = startMatch.index;
-  if (startIndex == null || startIndex < 0) return sourceCode;
-
-  const WINDOW_SIZE = 4000;
-  const windowStart = startIndex;
-  const windowEnd = Math.min(sourceCode.length, windowStart + WINDOW_SIZE);
-  let segment = sourceCode.slice(windowStart, windowEnd);
+  const windowStart = startMatch.index;
+  const windowEnd = Math.min(sourceCode.length, windowStart + 4000);
+  const segment = sourceCode.slice(windowStart, windowEnd);
 
   const referralIdVarMatch = segment.match(
     /referralId:\s*([A-Za-z_$][\w$]*)\s*,/,
   );
-  if (!referralIdVarMatch) {
-    console.warn("[GM] addTokenFromLocalStorage: referralId var not found");
+  const tokenCallMatch = segment.match(
+    /const\s+([A-Za-z_$][\w$]*)\s*=\s*await\s+([A-Za-z_$][\w$]*)\(\)\s*;/,
+  );
+
+  if (!referralIdVarMatch || !tokenCallMatch) return null;
+
+  return {
+    windowStart,
+    windowEnd,
+    referralIdVar: referralIdVarMatch[1],
+    resultVarName: tokenCallMatch[1],
+    triggerFnName: tokenCallMatch[2],
+    fullTokenCallMatch: tokenCallMatch[0],
+  };
+}
+
+const addTokenFromLocalStorage = (
+  sourceCode,
+  acceptButtonObject,
+  recaptchaInfo,
+) => {
+  const info =
+    recaptchaInfo ||
+    extractRecaptchaHandlerInfo(sourceCode, acceptButtonObject.text);
+
+  if (!info) {
+    console.warn(
+      "[GM] addTokenFromLocalStorage: could not resolve recaptcha handler info",
+    );
     return sourceCode;
   }
-  const referralIdVar = referralIdVarMatch[1];
 
-  const tokenCallRegex =
-    /const\s+([A-Za-z_$][\w$]*)\s*=\s*await\s+([A-Za-z_$][\w$]*)\(\)\s*;/;
-  const tokenMatch = segment.match(tokenCallRegex);
-  if (!tokenMatch) {
-    console.warn("[GM] addTokenFromLocalStorage: token call not found");
+  const { referralIdVar, resultVarName, triggerFnName, fullTokenCallMatch } =
+    info;
+
+  // Re-locate the match fresh in whatever sourceCode we're actually given —
+  // don't trust cached windowStart/windowEnd offsets, since earlier patches
+  // (e.g. addPrepareButton) may have shifted everything after their
+  // insertion point.
+  const matchIndex = sourceCode.indexOf(fullTokenCallMatch);
+  if (matchIndex === -1) {
+    console.warn(
+      "[GM] addTokenFromLocalStorage: fullTokenCallMatch not found in current sourceCode",
+    );
     return sourceCode;
   }
-  const [fullMatch, resultVarName, triggerFnName] = tokenMatch;
-
-  // The check happens at RUNTIME, in the browser, every time this handler
-  // fires — reading whatever the userscript most recently set.
-  // const replacement =
-  //   `const ${resultVarName}=await(async()=>{` +
-  //   `const storeKey = "GM__CPTCHA_TKN_"+${referralIdVar};` +
-  //   `const raw=localStorage.getItem(storeKey);` +
-  //   `try{` +
-  //   `if(raw){` +
-  //   `const parsed=JSON.parse(raw);` +
-  //   `localStorage.removeItem(storeKey);` +
-  //   `return{success:true,token:parsed.token,message:"cached"};` +
-  //   `}else{` +
-  //   `localStorage.setItem("Not_USING_CACHED_TOKEN_1",${referralIdVar},raw);` +
-  //   `return await ${triggerFnName}();` +
-  //   `}` +
-  //   `}catch(e){localStorage.setItem("Not_USING_CACHED_TOKEN_2",${referralIdVar},raw); return await ${triggerFnName}();}` +
-  //   `})();`;
 
   const replacement =
     `const ${resultVarName}=await(async()=>{` +
-    `const t1=performance.now();` +
-    `const result=await ${triggerFnName}();` +
-    `const t2=performance.now();` +
-    `const logName="GM__TOKEN_TIME_"+${referralIdVar};const tokenTime=String(t2-t1);` +
-    `localStorage.setItem(logName,tokenTime);` +
-    `console.log(logName,tokenTime);` +
-    `return result;` +
+    `const storeKey="GM__CPTCHA_TKN_"+${referralIdVar};` +
+    `const raw=localStorage.getItem(storeKey);` +
+    `try{` +
+    `if(raw){` +
+    `const parsed=JSON.parse(raw);` +
+    `localStorage.removeItem(storeKey);` +
+    `return{success:true,token:parsed.token,message:"cached"};` +
+    `}else{` +
+    `console.log("[GM] Not using cached token for",${referralIdVar});` +
+    `return await ${triggerFnName}();` +
+    `}` +
+    `}catch(e){console.log("[GM] Cached token parse failed for",${referralIdVar},e);return await ${triggerFnName}();}` +
     `})();`;
 
-  segment = segment.replace(fullMatch, replacement);
-
-  sourceCode =
-    sourceCode.slice(0, windowStart) + segment + sourceCode.slice(windowEnd);
-
-  return sourceCode;
+  return (
+    sourceCode.slice(0, matchIndex) +
+    replacement +
+    sourceCode.slice(matchIndex + fullTokenCallMatch.length)
+  );
 };
 
-const addPrepareButton = (sectionText, acceptButtonObject) => {
+const addPrepareButton = (
+  sectionText,
+  acceptButtonObject,
+  recaptchaTriggerFnName,
+) => {
   const injectedOnClick =
     "onClick:async(e)=>{" +
-    "const btn=e.currentTarget;" +
-    'if(btn.dataset.phase==="ready"){return;}' +
-    "btn.disabled=true;" +
-    "if(!btn.dataset.startTime){btn.dataset.startTime=String(Date.now());}" +
-    "const _startTime=Number(btn.dataset.startTime);" +
-    'const phase=btn.dataset.phase||"";' +
-    "console.log('[GM] prepare clicked, phase='+phase+' started at '+new Date(_startTime).toISOString());" +
-    'btn.style.fontWeight="bold";' +
-    'btn.style.fontSize="15px";' +
-    'const waitTime=Number(localStorage.getItem("GM__TIME")||0);' +
-    'const extraWaitTime=Number(localStorage.getItem("GM__EXTRA_TIME")||0);' +
-    // Shared fetch logic - returns true if ready
-    "const doFetch=async()=>{" +
-    'btn.innerText="Fetching...";' +
-    "let resultDATA=await refetchReferralDetails();" +
-    "const msg=resultDATA?.data?.message||'';" +
-    "if(!msg){" +
-    "console.log('[GM] ready, no message',resultDATA);" +
-    "await fetch(location.href);" +
-    "await refetchPatientInfo();" +
-    "resultDATA=await refetchReferralDetails();" +
-    "const _readyTime=Date.now();" +
-    "console.log('[GM] ready at '+new Date(_readyTime).toISOString()+' took '+((_readyTime-_startTime)/1000).toFixed(3)+'s');" +
-    'btn.innerText="Ready";' +
-    "btn.style.backgroundColor='#56c75d';" +
-    'btn.dataset.phase="ready";' +
-    "btn.disabled=true;" +
-    "return true;" +
-    "}else{" +
-    "const match=msg.match(/(\\d+)\\s*(?:minute(?:\\(s\\))?|mins?|min)\\s+and\\s+(\\d+)\\s*(?:second(?:\\(s\\))?|secs?|sec)/);" +
-    "const minsLeft=parseInt(match?.[1],10)||0;" +
-    "const secsLeft=parseInt(match?.[2],10)||0;" +
-    "console.log('[GM] not ready, message='+msg+' mins='+minsLeft+' secs='+secsLeft);" +
-    'btn.innerText="Click again: "+minsLeft+"m "+secsLeft+"s";' +
-    'btn.style.backgroundColor="#ff3d57";' +
-    'btn.dataset.phase="countdown_done";' +
-    "btn.disabled=false;" +
-    "return false;" +
-    "}" +
-    "};" +
-    // Phase: countdown already done, skip straight to fetch
-    'if(phase==="countdown_done"){' +
-    "try{await doFetch();}" +
-    "catch(e){console.log('Error',e)}" +
-    "return;" +
-    "}" +
-    // Phase: first click — full countdown using while loop
-    'if(!waitTime||waitTime<=0){btn.innerText="No time set";btn.disabled=false;return;}' +
-    "const start=Date.now();" +
-    "while(true){" +
-    "const elapsed=Date.now()-start;" +
-    "const left=Math.max(0,waitTime-elapsed);" +
-    "const progress=Math.min(1,elapsed/waitTime);" +
-    'btn.innerText=" "+(elapsed/1000).toFixed(2)+"s / "+(waitTime/1000).toFixed(2)+"s";' +
-    "if(left<=110&&!!extraWaitTime){" +
-    "let isReady=false;" +
-    "try{isReady=await doFetch();}" +
-    "catch(e){console.log('Error',e)}" +
-    "const remaining=Math.max(0,(waitTime-(Date.now()-start))+extraWaitTime);" +
-    "if(isReady&&remaining>0)await new Promise(r=>setTimeout(r,remaining));" +
-    "break;" +
-    "}" +
-    "if(left<=0){break;}" +
-    "let delay;" +
-    "if(progress<0.3){delay=40+Math.random()*20;}" +
-    "else if(progress<0.8){delay=120+Math.random()*80;}" +
-    "else{delay=30+Math.random()*20;}" +
-    "delay=Math.min(left,delay);" +
-    "await new Promise(r=>setTimeout(r,delay));" +
-    "}" +
-    // After countdown completes
-    'if(btn.dataset.phase!=="ready"){' +
-    'btn.dataset.phase="countdown_done";' +
-    'btn.innerText="Click again";' +
-    'btn.style.backgroundColor="#ff3d57";' +
-    "btn.disabled=false;" +
-    "}else{" +
-    'btn.innerText="Ready";' +
-    "btn.style.backgroundColor='#56c75d';" +
-    "btn.disabled=true;" +
-    "}" +
+    `const btn=e.currentTarget;` +
+    `if(btn.disabled)return;` +
+    `btn.disabled=true;` +
+    `try{` +
+    `if(localStorage.getItem("usesCachedTokenFlow")==="1"){` +
+    `const stateReferralId=window.history.state?.usr?.idReferral;` +
+    `const t1=performance.now();` +
+    `const result=await ${recaptchaTriggerFnName}();` +
+    `const t2=performance.now();` +
+    `const storeKey="GM__CPTCHA_TKN_"+stateReferralId;` +
+    `localStorage.setItem(storeKey,JSON.stringify(result));` +
+    `const logName="GM__TOKEN_TIME_"+stateReferralId;` +
+    `const tokenTime=String(t2-t1);` +
+    `localStorage.setItem(logName,tokenTime);` +
+    `console.log(logName,tokenTime);` +
+    `}` +
+    `}catch(err){` +
+    `console.log("[GM] Prepare failed:",err);` +
+    `}finally{` +
+    `btn.disabled=false;` +
+    `}` +
     "}";
-
   const { start, text } = acceptButtonObject;
 
   const prepareButton = text
@@ -804,7 +758,16 @@ function modifyGlobMedSourceCode(code) {
 
   const acceptText = accept.text;
 
-  sectionText = addPrepareButton(sectionText, accept);
+  const recaptchaInfo = extractRecaptchaHandlerInfo(sourceCode, acceptText);
+  if (!recaptchaInfo) {
+    console.warn("[GM] Could not extract recaptcha handler info");
+  }
+
+  sectionText = addPrepareButton(
+    sectionText,
+    accept,
+    recaptchaInfo?.triggerFnName,
+  );
 
   sourceCode =
     sourceCode.slice(0, section.start) +
@@ -812,7 +775,7 @@ function modifyGlobMedSourceCode(code) {
     sourceCode.slice(section.end);
 
   sourceCode = addFilesFromLocalStorage(sourceCode, acceptText);
-  sourceCode = addTokenFromLocalStorage(sourceCode, accept);
+  sourceCode = addTokenFromLocalStorage(sourceCode, accept, recaptchaInfo);
 
   return addAcceptClickLogger(sourceCode);
 }
