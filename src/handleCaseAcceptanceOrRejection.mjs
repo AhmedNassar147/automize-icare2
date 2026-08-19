@@ -179,12 +179,14 @@ const handleCaseAcceptanceOrRejection =
         REMAINING_DELAY,
       } = process.env;
 
-      const usesCachedTokenFlow = USES_CACHED_TOKEN_FLOW || "0";
-      const useCachedTokenFlow = usesCachedTokenFlow === "1";
-      const totalRemainingDelay = Number(REMAINING_DELAY || 2755);
-
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
       const isFakeReject = actionType === FAKE_REJECT_PROBE;
+
+      const usesCachedTokenFlow = USES_CACHED_TOKEN_FLOW || "0";
+      const useCachedTokenFlow =
+        usesCachedTokenFlow === "1" && isAcceptanceAction;
+
+      const totalRemainingDelay = Number(REMAINING_DELAY || 2755);
 
       const { fileData: filebase64 } = await getCurrentActionLetterFile(
         referralId,
@@ -250,10 +252,9 @@ const handleCaseAcceptanceOrRejection =
 
       const idProvider = ID_PROVIDER || CLIENT_NAME.split("-")[0];
 
-      const prepareButtonWillBeClickableWhen =
-        useCachedTokenFlow && isAcceptanceAction
-          ? randomDelayInRange(1090, 1300)
-          : 0;
+      const prepareButtonWillBeClickableWhen = useCachedTokenFlow
+        ? randomDelayInRange(1090, 1300)
+        : 0;
 
       const autoAcceptAfterMs =
         totalRemainingDelay - prepareButtonWillBeClickableWhen;
@@ -267,7 +268,7 @@ const handleCaseAcceptanceOrRejection =
           files,
           idProvider,
           providerName,
-          usesCachedTokenFlow,
+          usesCachedTokenFlow: useCachedTokenFlow ? "1" : "0",
           autoAcceptAfterMs,
         },
       };
@@ -292,7 +293,7 @@ const handleCaseAcceptanceOrRejection =
       };
 
       const handleFinalSignal = async () => {
-        if (useCachedTokenFlow && isAcceptanceAction) {
+        if (useCachedTokenFlow) {
           broadcast({
             type: "ready-case",
             data: {

@@ -484,14 +484,19 @@ const addPrepareButton = (
     `const storeKey="GM__CPTCHA_TKN_" + stateReferralId;` +
     "localStorage.setItem(storeKey, JSON.stringify(result));" +
     `const logName="GM__TOKEN_TIME_" + stateReferralId;` +
-    "const tokenTime=String(t2 - t1);" +
-    "localStorage.setItem(logName,tokenTime);" +
-    "console.log(logName, tokenTime);" +
+    "const elapsedMs=Math.floor(t2 - t1);" +
+    "console.log(logName, elapsedMs);" +
     `const autoAcceptAfterMs=Number(localStorage.getItem("autoAcceptAfterMs") || 0);` +
-    "if(autoAcceptAfterMs>0){" +
-    `setTimeout(async ()=>await ${acceptHandlerName}(),autoAcceptAfterMs);` +
-    "}" +
-    "}" +
+    `if(autoAcceptAfterMs>0){` +
+    `const waitMs=Math.max(0,autoAcceptAfterMs-elapsedMs);` +
+    `setTimeout(()=>{` +
+    `const acceptBtn=document.querySelector(".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])");` +
+    `if(acceptBtn){` +
+    `acceptBtn.click();` +
+    `}` +
+    `},waitMs);` +
+    `}` +
+    `}` +
     "}catch(err){" +
     `console.log("[GM] Prepare failed:", err);` +
     "}finally{" +
