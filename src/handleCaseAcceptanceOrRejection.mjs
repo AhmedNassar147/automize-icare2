@@ -419,7 +419,7 @@ const handleCaseAcceptanceOrRejection =
       const approvalMessage = `*${actionType} ${referralId}*  waitTime: ${waitTime / 1000}s`;
 
       const notificationResults = await Promise.allSettled([
-        // sleep(remainingDelay).then(handleFinalSignal),
+        sleep(totalRemainingDelay).then(handleFinalSignal),
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
         sleep(Math.max(0, waitTime - 37)).then(() =>
           sendNtfyMessage(approvalMessage),
