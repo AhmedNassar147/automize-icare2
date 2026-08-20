@@ -177,6 +177,7 @@ const handleCaseAcceptanceOrRejection =
         USES_CACHED_TOKEN_FLOW,
         ID_PROVIDER,
         REMAINING_DELAY,
+        AUTO_ACCEPT,
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
@@ -185,6 +186,8 @@ const handleCaseAcceptanceOrRejection =
       const usesCachedTokenFlow = USES_CACHED_TOKEN_FLOW || "0";
       const useCachedTokenFlow =
         usesCachedTokenFlow === "1" && isAcceptanceAction;
+
+      const isUsingAutoAccept = AUTO_ACCEPT === "1";
 
       const totalRemainingDelay = Number(REMAINING_DELAY || 2755);
 
@@ -269,7 +272,8 @@ const handleCaseAcceptanceOrRejection =
           idProvider,
           providerName,
           usesCachedTokenFlow: useCachedTokenFlow ? "1" : "0",
-          autoAcceptAfterMs: useCachedTokenFlow ? autoAcceptAfterMs : 0,
+          autoAcceptAfterMs:
+            useCachedTokenFlow && isUsingAutoAccept ? autoAcceptAfterMs : 0,
         },
       };
 
