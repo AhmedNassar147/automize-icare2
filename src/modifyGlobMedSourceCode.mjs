@@ -496,26 +496,26 @@ const addPrepareButton = (
     "btn.disabled=true;" +
     "try{" +
     `if(localStorage.getItem("usesCachedTokenFlow")==="1"){` +
+    `const stateReferralId=window.history.state?.usr?.idReferral;` +
+    `const storeKey="GM__CPTCHA_TKN_" + stateReferralId;` +
     "const t1=performance.now();" +
     `const result=await ${recaptchaTriggerFnName}();` +
     "const t2=performance.now();" +
-    `const stateReferralId=window.history.state?.usr?.idReferral;` +
-    `const storeKey="GM__CPTCHA_TKN_" + stateReferralId;` +
     "localStorage.setItem(storeKey, JSON.stringify(result));" +
     `const logName="GM__TOKEN_TIME_" + stateReferralId;` +
     "const elapsedMs=Math.floor(t2 - t1);" +
     "console.log(logName, elapsedMs);" +
-    `const autoAcceptAfterMs=Number(localStorage.getItem("autoAcceptAfterMs") || 0);` +
-    `if(autoAcceptAfterMs>0){` +
-    `const waitMs=Math.max(0,autoAcceptAfterMs-elapsedMs);` +
-    `console.log(logName+"__autoAcceptAfterMs",autoAcceptAfterMs,"__waitMs__", waitMs);` +
-    `setTimeout(()=>{` +
-    `const acceptBtn=document.querySelector(".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])");` +
-    `if(acceptBtn){` +
-    `acceptBtn.click();` +
-    `}` +
-    `},autoAcceptAfterMs);` +
-    `}` +
+    // `const autoAcceptAfterMs=Number(localStorage.getItem("autoAcceptAfterMs") || 0);` +
+    // `if(autoAcceptAfterMs>0){` +
+    // `const waitMs=Math.max(0,autoAcceptAfterMs-elapsedMs);` +
+    // `console.log(logName+"__autoAcceptAfterMs",autoAcceptAfterMs,"__waitMs__", waitMs);` +
+    // `setTimeout(()=>{` +
+    // `const acceptBtn=document.querySelector(".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])");` +
+    // `if(acceptBtn){` +
+    // `acceptBtn.click();` +
+    // `}` +
+    // `},autoAcceptAfterMs);` +
+    // `}` +
     `}` +
     "}catch(err){" +
     `console.log("[GM] Prepare failed:", err);` +
