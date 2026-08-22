@@ -507,13 +507,13 @@ const addPrepareButton = (
     "console.log(logName, elapsedMs);" +
     `const autoAcceptAfterMs=Number(localStorage.getItem("autoAcceptAfterMs") || 0);` +
     `if(autoAcceptAfterMs>0){` +
-    `const waitMs=Math.max(0,autoAcceptAfterMs-elapsedMs);` +
+    `const maxWait=Number(localStorage.getItem("maxWait") || 0);` +
+    `const waitMs=Math.max(maxWait,autoAcceptAfterMs-elapsedMs);` +
     `console.log(logName+"__autoAcceptAfterMs",autoAcceptAfterMs,"__waitMs__", waitMs);` +
     `setTimeout(()=>{` +
     `const acceptBtn=document.querySelector(".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])");` +
     `if(acceptBtn){` +
-    // `acceptBtn.click();` +
-    `alert("hello");` +
+    `acceptBtn.click();` +
     `}` +
     `},waitMs);` +
     `}` +

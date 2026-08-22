@@ -256,7 +256,8 @@ const handleCaseAcceptanceOrRejection =
       const idProvider = ID_PROVIDER || CLIENT_NAME.split("-")[0];
 
       const prepareButtonWillBeClickableWhen = useCachedTokenFlow
-        ? randomDelayInRange(1100, 1300)
+        ? // ? randomDelayInRange(1100, 1300)
+          1150
         : 0;
 
       const autoAcceptAfterMs =
