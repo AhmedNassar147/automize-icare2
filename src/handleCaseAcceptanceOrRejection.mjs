@@ -178,6 +178,7 @@ const handleCaseAcceptanceOrRejection =
         ID_PROVIDER,
         REMAINING_DELAY,
         AUTO_ACCEPT,
+        AUTO_ACCEPT_DELAY,
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
@@ -257,11 +258,11 @@ const handleCaseAcceptanceOrRejection =
 
       const prepareButtonWillBeClickableWhen = useCachedTokenFlow
         ? // ? randomDelayInRange(1100, 1300)
-          1150
+          1200
         : 0;
 
-      const autoAcceptAfterMs =
-        totalRemainingDelay - prepareButtonWillBeClickableWhen;
+      const autoAcceptAfterMs = Number(AUTO_ACCEPT_DELAY || 0);
+      // totalRemainingDelay - prepareButtonWillBeClickableWhen;
 
       const broadcastData = {
         type: "case-acceptance-or-rejection",
