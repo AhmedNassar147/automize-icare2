@@ -510,10 +510,10 @@ const addPrepareButton = (
     `const maxWait=Number(localStorage.getItem("maxWait") || 0);` +
     `const waitMs=Math.max(maxWait,autoAcceptAfterMs-elapsedMs);` +
     `console.log(logName+"__autoAcceptAfterMs",autoAcceptAfterMs,"__waitMs__", waitMs);` +
-    `setTimeout(()=>{` +
+    `setTimeout(async ()=>{` +
     `const acceptBtn=document.querySelector(".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])");` +
     `if(acceptBtn){` +
-    `acceptBtn.click();` +
+    `await ${acceptHandlerName}();` +
     `}` +
     `},waitMs);` +
     `}` +
