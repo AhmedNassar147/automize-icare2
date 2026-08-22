@@ -256,7 +256,7 @@ const handleCaseAcceptanceOrRejection =
       const idProvider = ID_PROVIDER || CLIENT_NAME.split("-")[0];
 
       const prepareButtonWillBeClickableWhen = useCachedTokenFlow
-        ? randomDelayInRange(1090, 1300)
+        ? randomDelayInRange(1100, 1300)
         : 0;
 
       const autoAcceptAfterMs =
@@ -419,7 +419,9 @@ const handleCaseAcceptanceOrRejection =
       const approvalMessage = `*${actionType} ${referralId}*  waitTime: ${waitTime / 1000}s`;
 
       const notificationResults = await Promise.allSettled([
-        sleep(totalRemainingDelay).then(handleFinalSignal),
+        isUsingAutoAccept
+          ? Promise.resolve()
+          : sleep(totalRemainingDelay).then(handleFinalSignal),
         sleep(waitTime).then(() => sendTelegramMessage(approvalMessage)),
         sleep(Math.max(0, waitTime - 37)).then(() =>
           sendNtfyMessage(approvalMessage),

@@ -505,17 +505,18 @@ const addPrepareButton = (
     `const logName="GM__TOKEN_TIME_" + stateReferralId;` +
     "const elapsedMs=Math.floor(t2 - t1);" +
     "console.log(logName, elapsedMs);" +
-    // `const autoAcceptAfterMs=Number(localStorage.getItem("autoAcceptAfterMs") || 0);` +
-    // `if(autoAcceptAfterMs>0){` +
-    // `const waitMs=Math.max(0,autoAcceptAfterMs-elapsedMs);` +
-    // `console.log(logName+"__autoAcceptAfterMs",autoAcceptAfterMs,"__waitMs__", waitMs);` +
-    // `setTimeout(()=>{` +
-    // `const acceptBtn=document.querySelector(".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])");` +
-    // `if(acceptBtn){` +
+    `const autoAcceptAfterMs=Number(localStorage.getItem("autoAcceptAfterMs") || 0);` +
+    `if(autoAcceptAfterMs>0){` +
+    `const waitMs=Math.max(0,autoAcceptAfterMs-elapsedMs);` +
+    `console.log(logName+"__autoAcceptAfterMs",autoAcceptAfterMs,"__waitMs__", waitMs);` +
+    `setTimeout(()=>{` +
+    `const acceptBtn=document.querySelector(".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])");` +
+    `if(acceptBtn){` +
     // `acceptBtn.click();` +
-    // `}` +
-    // `},autoAcceptAfterMs);` +
-    // `}` +
+    `alert("hello");` +
+    `}` +
+    `},waitMs);` +
+    `}` +
     `}` +
     "}catch(err){" +
     `console.log("[GM] Prepare failed:", err);` +
