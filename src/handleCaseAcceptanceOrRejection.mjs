@@ -179,6 +179,7 @@ const handleCaseAcceptanceOrRejection =
         REMAINING_DELAY,
         AUTO_ACCEPT,
         AUTO_ACCEPT_DELAY,
+        RECAPTCHA_ACCEPT_DELAY,
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
@@ -258,7 +259,7 @@ const handleCaseAcceptanceOrRejection =
 
       const prepareButtonWillBeClickableWhen = useCachedTokenFlow
         ? // ? randomDelayInRange(1100, 1300)
-          1210
+          Number(RECAPTCHA_ACCEPT_DELAY || 1065)
         : 0;
 
       const autoAcceptAfterMs = Number(AUTO_ACCEPT_DELAY || 0);
