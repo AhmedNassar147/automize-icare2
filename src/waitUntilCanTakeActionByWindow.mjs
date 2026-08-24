@@ -176,7 +176,7 @@ async function waitUntilCanTakeActionByWindow({
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
               const _rtt = rtt || 0;
               const shouldIncreaseWait =
-                serverNow === localNow || (_rtt >= 80 && _rtt >= 120);
+                serverNow === localNow || (_rtt >= 80 && _rtt <= 140);
               await window[fnName]?.(shouldIncreaseWait);
               onZeroSecondCalled = true;
               zeroSeenAt = serverNow || localNow;
