@@ -396,6 +396,7 @@ const handleCaseAcceptanceOrRejection =
         timesWhenOneSecondStartedAndEnded,
         loopCountWhenSecondIsOne,
         newWorkFlowZeroProps,
+        _status,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
@@ -462,6 +463,8 @@ const handleCaseAcceptanceOrRejection =
           extraBotMessages.push(message);
         }
       }
+
+      console.log(JSON.stringify(_status, null, 2));
 
       const isTimeChanged = waitTime !== baseWaitingTime;
 

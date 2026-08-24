@@ -52,6 +52,7 @@ async function waitUntilCanTakeActionByWindow({
       let sameServerSecondIndex = 0;
 
       let newWorkFlowZeroProps = {};
+      let _status = [];
 
       const pushPollLog = (entry) => {
         pollLogs.push(entry);
@@ -152,7 +153,6 @@ async function waitUntilCanTakeActionByWindow({
 
             if (totalMsLeft === 1000) {
               loopCountWhenSecondIsOne += 1;
-
               pushPollLog({
                 phase: "one",
                 ...baseLog,
@@ -181,7 +181,6 @@ async function waitUntilCanTakeActionByWindow({
               onZeroSecondCalled = true;
               zeroSeenAt = serverNow || localNow;
               zeroSeenLocalAt = localNow;
-
               if (loopCountWhenSecondIsOne) {
                 pushPollLog({
                   phase: "actual-zero",
@@ -195,6 +194,12 @@ async function waitUntilCanTakeActionByWindow({
           const ok =
             // Boolean(canTakeAction && canUpdate && status === "P") && !message;
             Boolean(canTakeAction && canUpdate) && !message;
+
+          _status.push({
+            status,
+            totalMsLeft,
+            ok,
+          });
 
           if (ok) {
             if (!onZeroSecondCalled && fnName) {
@@ -284,6 +289,7 @@ async function waitUntilCanTakeActionByWindow({
             loopCountWhenSecondIsOne,
             timesWhenOneSecondStartedAndEnded: pollLogs,
             newWorkFlowZeroProps,
+            _status,
           };
         }
 
