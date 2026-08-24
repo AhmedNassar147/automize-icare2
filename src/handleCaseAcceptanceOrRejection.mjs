@@ -263,11 +263,11 @@ const handleCaseAcceptanceOrRejection =
           Number(RECAPTCHA_ACCEPT_DELAY || 1065)
         : 0;
 
-      const onZeroSecond = async (isServerDateEqualLocal) => {
+      const onZeroSecond = async (shouldIncreaseWait) => {
         if (isFakeReject || !isAcceptanceAction) return;
 
-        autoAcceptAfterMs = isServerDateEqualLocal
-          ? autoAcceptAfterMs + 3
+        autoAcceptAfterMs = shouldIncreaseWait
+          ? autoAcceptAfterMs + 4
           : autoAcceptAfterMs;
 
         const broadcastData = {

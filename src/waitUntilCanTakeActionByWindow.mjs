@@ -174,8 +174,10 @@ async function waitUntilCanTakeActionByWindow({
             // }
 
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
-              const isServerDateEqualLocal = serverNow === localNow;
-              await window[fnName]?.(isServerDateEqualLocal);
+              const _rtt = rtt || 0;
+              const shouldIncreaseWait =
+                serverNow === localNow || (_rtt >= 80 && _rtt >= 120);
+              await window[fnName]?.(shouldIncreaseWait);
               onZeroSecondCalled = true;
               zeroSeenAt = serverNow || localNow;
               zeroSeenLocalAt = localNow;
@@ -184,6 +186,7 @@ async function waitUntilCanTakeActionByWindow({
                 pushPollLog({
                   phase: "actual-zero",
                   ...baseLog,
+                  shouldIncreaseWait,
                 });
               }
             }
