@@ -258,7 +258,7 @@ const handleCaseAcceptanceOrRejection =
 
       let autoAcceptAfterMs = Number(AUTO_ACCEPT_DELAY || 0);
 
-      const prepareButtonWillBeClickableWhen = useCachedTokenFlow
+      let prepareButtonWillBeClickableWhen = useCachedTokenFlow
         ? // ? randomDelayInRange(1100, 1300)
           Number(RECAPTCHA_ACCEPT_DELAY || 1065)
         : 0;
@@ -267,7 +267,7 @@ const handleCaseAcceptanceOrRejection =
         if (isFakeReject || !isAcceptanceAction) return;
 
         autoAcceptAfterMs = shouldIncreaseWait
-          ? autoAcceptAfterMs + 4
+          ? autoAcceptAfterMs + 3
           : autoAcceptAfterMs;
 
         const broadcastData = {
@@ -287,11 +287,11 @@ const handleCaseAcceptanceOrRejection =
 
         broadcast(broadcastData);
 
-        const _prepareButtonWillBeClickableWhen = isServerDateEqualLocal
+        prepareButtonWillBeClickableWhen = shouldIncreaseWait
           ? prepareButtonWillBeClickableWhen + 2
           : prepareButtonWillBeClickableWhen;
 
-        if (prepareButtonWillBeClickableWhen) {
+        if (useCachedTokenFlow) {
           // after details page loaded in real browser we fire prepare-rcpt
           setTimeout(
             () =>
@@ -301,7 +301,7 @@ const handleCaseAcceptanceOrRejection =
                   referralId,
                 },
               }),
-            _prepareButtonWillBeClickableWhen,
+            prepareButtonWillBeClickableWhen,
           );
         }
       };
