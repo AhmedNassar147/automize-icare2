@@ -260,12 +260,23 @@ const handleCaseAcceptanceOrRejection =
           Number(RECAPTCHA_ACCEPT_DELAY || 1065)
         : 0;
 
+      const onLastSeconds = () => {
+        if (isFakeReject || !isAcceptanceAction) return;
+
+        broadcast({
+          type: "prepare-rcpt",
+          data: {
+            referralId,
+          },
+        });
+      };
+
       const onZeroSecond = async (shouldIncreaseWait) => {
         if (isFakeReject || !isAcceptanceAction) return;
 
-        autoAcceptAfterMs = shouldIncreaseWait
-          ? autoAcceptAfterMs + 3
-          : autoAcceptAfterMs;
+        // autoAcceptAfterMs = shouldIncreaseWait
+        //   ? autoAcceptAfterMs + 3
+        //   : autoAcceptAfterMs;
 
         const broadcastData = {
           type: "case-acceptance-or-rejection",
@@ -284,23 +295,23 @@ const handleCaseAcceptanceOrRejection =
 
         broadcast(broadcastData);
 
-        prepareButtonWillBeClickableWhen = shouldIncreaseWait
-          ? prepareButtonWillBeClickableWhen + 2
-          : prepareButtonWillBeClickableWhen;
+        // prepareButtonWillBeClickableWhen = shouldIncreaseWait
+        //   ? prepareButtonWillBeClickableWhen + 2
+        //   : prepareButtonWillBeClickableWhen;
 
-        if (useCachedTokenFlow) {
-          // after details page loaded in real browser we fire prepare-rcpt
-          setTimeout(
-            () =>
-              broadcast({
-                type: "prepare-rcpt",
-                data: {
-                  referralId,
-                },
-              }),
-            prepareButtonWillBeClickableWhen,
-          );
-        }
+        // if (prepareButtonWillBeClickableWhen) {
+        //   // after details page loaded in real browser we fire prepare-rcpt
+        //   setTimeout(
+        //     () =>
+        //       broadcast({
+        //         type: "prepare-rcpt",
+        //         data: {
+        //           referralId,
+        //         },
+        //       }),
+        //     prepareButtonWillBeClickableWhen,
+        //   );
+        // }
       };
 
       const handleFinalSignal = async () => {
@@ -400,6 +411,7 @@ const handleCaseAcceptanceOrRejection =
         onZeroSecond,
         useCachedTokenFlow,
         referralEndTimestamp,
+        onLastSeconds,
         // onZeroSecond: useCachedTokenFlow ? () => null : onZeroSecond,
       });
 

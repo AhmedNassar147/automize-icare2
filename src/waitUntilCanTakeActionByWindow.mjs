@@ -8,7 +8,6 @@ async function waitUntilCanTakeActionByWindow({
   referralId,
   onZeroSecond,
   onLastSeconds,
-  useCachedTokenFlow,
 }) {
   const now = Date.now();
   let fnName = null;
@@ -26,13 +25,7 @@ async function waitUntilCanTakeActionByWindow({
   }
 
   return await page.evaluate(
-    async ({
-      globMedHeaders,
-      referralId,
-      fnName,
-      onLastSecondsFnName,
-      useCachedTokenFlow,
-    }) => {
+    async ({ globMedHeaders, referralId, fnName, onLastSecondsFnName }) => {
       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
       const pollLogs = [];
@@ -53,6 +46,8 @@ async function waitUntilCanTakeActionByWindow({
 
       let newWorkFlowZeroProps = {};
       let _status = [];
+
+      let lastSecondFnFired = false;
 
       const pushPollLog = (entry) => {
         pollLogs.push(entry);
@@ -159,20 +154,6 @@ async function waitUntilCanTakeActionByWindow({
               });
             }
 
-            // if (
-            //   totalMsLeft === 1000 &&
-            //   useCachedTokenFlow &&
-            //   !onZeroSecondCalled &&
-            //   fnName
-            // ) {
-            //   await sleep(600);
-            //   await window[fnName]?.();
-            //   onZeroSecondCalled = true;
-            //   zeroSeenAt = serverNow || localNow;
-            //   zeroSeenLocalAt = localNow;
-            //   newWorkFlowZeroProps = baseLog;
-            // }
-
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
               const _rtt = rtt || 0;
               const shouldIncreaseWait =
@@ -191,9 +172,34 @@ async function waitUntilCanTakeActionByWindow({
             }
           }
 
-          const ok =
-            // Boolean(canTakeAction && canUpdate && status === "P") && !message;
-            Boolean(canTakeAction && canUpdate) && !message;
+          // status === "P"
+          const baseOk = Boolean(canTakeAction && canUpdate && !!status);
+
+          const ok = baseOk && !message;
+          // Boolean(canTakeAction && canUpdate) && !message;
+
+          const timeDiff = localNow - zeroSeenLocalAt;
+
+          const shouldFireOnLastSecond =
+            ok ||
+            (!ok && !!zeroSeenLocalAt && timeDiff >= 1060 && timeDiff < 1090);
+
+          if (
+            shouldFireOnLastSecond &&
+            !lastSecondFnFired &&
+            onLastSecondsFnName
+          ) {
+            lastSecondFnFired = true;
+
+            const remainingUntilOneSecond = zeroSeenLocalAt
+              ? 1000 - timeDiff
+              : 0;
+
+            if (remainingUntilOneSecond > 0) {
+              await sleep(remainingUntilOneSecond);
+            }
+            await window[onLastSecondsFnName]?.();
+          }
 
           _status.push({
             status,
@@ -305,7 +311,6 @@ async function waitUntilCanTakeActionByWindow({
       referralId,
       fnName,
       onLastSecondsFnName,
-      useCachedTokenFlow,
     },
   );
 }
