@@ -173,7 +173,6 @@ const handleCaseAcceptanceOrRejection =
         CLIENT_NAME,
         WAIT_FOR_ACCEPT_MS,
         ENABLE_AUTO_WAITING,
-        DOES_SYSTEM_REDUCE_WAIT,
         USES_CACHED_TOKEN_FLOW,
         ID_PROVIDER,
         REMAINING_DELAY,
@@ -257,32 +256,40 @@ const handleCaseAcceptanceOrRejection =
 
       const idProvider = ID_PROVIDER || CLIENT_NAME.split("-")[0];
 
+      let autoAcceptAfterMs = Number(AUTO_ACCEPT_DELAY || 0);
+
       const prepareButtonWillBeClickableWhen = useCachedTokenFlow
         ? // ? randomDelayInRange(1100, 1300)
           Number(RECAPTCHA_ACCEPT_DELAY || 1065)
         : 0;
 
-      const autoAcceptAfterMs = Number(AUTO_ACCEPT_DELAY || 0);
-      // totalRemainingDelay - prepareButtonWillBeClickableWhen;
-
-      const broadcastData = {
-        type: "case-acceptance-or-rejection",
-        data: {
-          referralId,
-          actionType,
-          routerKey,
-          files,
-          idProvider,
-          providerName,
-          usesCachedTokenFlow: useCachedTokenFlow ? "1" : "0",
-          autoAcceptAfterMs:
-            useCachedTokenFlow && isUsingAutoAccept ? autoAcceptAfterMs : 0,
-        },
-      };
-
-      const onZeroSecond = async () => {
+      const onZeroSecond = async (isServerDateEqualLocal) => {
         if (isFakeReject || !isAcceptanceAction) return;
+
+        autoAcceptAfterMs = isServerDateEqualLocal
+          ? autoAcceptAfterMs + 3
+          : autoAcceptAfterMs;
+
+        const broadcastData = {
+          type: "case-acceptance-or-rejection",
+          data: {
+            referralId,
+            actionType,
+            routerKey,
+            files,
+            idProvider,
+            providerName,
+            usesCachedTokenFlow: useCachedTokenFlow ? "1" : "0",
+            autoAcceptAfterMs:
+              useCachedTokenFlow && isUsingAutoAccept ? autoAcceptAfterMs : 0,
+          },
+        };
+
         broadcast(broadcastData);
+
+        const _prepareButtonWillBeClickableWhen = isServerDateEqualLocal
+          ? prepareButtonWillBeClickableWhen + 2
+          : prepareButtonWillBeClickableWhen;
 
         if (prepareButtonWillBeClickableWhen) {
           // after details page loaded in real browser we fire prepare-rcpt
@@ -294,7 +301,7 @@ const handleCaseAcceptanceOrRejection =
                   referralId,
                 },
               }),
-            prepareButtonWillBeClickableWhen,
+            _prepareButtonWillBeClickableWhen,
           );
         }
       };

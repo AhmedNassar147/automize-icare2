@@ -174,7 +174,8 @@ async function waitUntilCanTakeActionByWindow({
             // }
 
             if (totalMsLeft === 0 && !onZeroSecondCalled && fnName) {
-              await window[fnName]?.();
+              const isServerDateEqualLocal = serverNow === localNow;
+              await window[fnName]?.(isServerDateEqualLocal);
               onZeroSecondCalled = true;
               zeroSeenAt = serverNow || localNow;
               zeroSeenLocalAt = localNow;
