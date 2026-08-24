@@ -193,7 +193,8 @@ async function waitUntilCanTakeActionByWindow({
           }
 
           const ok =
-            Boolean(canTakeAction && canUpdate && status === "P") && !message;
+            // Boolean(canTakeAction && canUpdate && status === "P") && !message;
+            Boolean(canTakeAction && canUpdate) && !message;
 
           if (ok) {
             if (!onZeroSecondCalled && fnName) {
@@ -304,3 +305,113 @@ async function waitUntilCanTakeActionByWindow({
 }
 
 export default waitUntilCanTakeActionByWindow;
+
+// {
+//     "data": {
+//         "requestDate": "2026-08-24T22:14:06",
+//         "creationDate": "2026-08-24T19:16:04",
+//         "ihalatyReference": "32902843",
+//         "providerName": "TADAWI MEDICALhospital- khamis Mushayt",
+//         "longitude": null,
+//         "latitude": null,
+//         "providerCode": "H523753",
+//         "providerZoneCode": "15",
+//         "providerCityCode": null,
+//         "providerRegionCode": null,
+//         "providerZone": "Asir",
+//         "referralCause": "Bed Unavailable",
+//         "requestedBedType": "Neonatal Intensive Care Unit (NICU)",
+//         "claimType": null,
+//         "doctor": null,
+//         "estimationCost": 0,
+//         "category": "HP",
+//         "sourceProvider": "Al-Khamis Maternity and Children Hospital",
+//         "referralTypeCode": "2",
+//         "refType": "Emergency",
+//         "requiredSpecialtyCode": "630",
+//         "er": false,
+//         "specialtyCode": "630",
+//         "specialty": "Neonatology",
+//         "mobileNumber": null,
+//         "claimReference": null,
+//         "lengthOfStay": 0,
+//         "referralCauseDetails": {
+//             "id": 35750,
+//             "note": "NICU",
+//             "isPublic": true,
+//             "isActive": true,
+//             "owner": null,
+//             "canDelete": null,
+//             "creationDate": null
+//         },
+//         "referralAdditionalInformation": null,
+//         "status": "A",
+//         "canUpdate": true,
+//         "requiredSpecialty": "Neonatology",
+//         "message": "",
+//         "isPrivate": false,
+//         "canTakeAction": true,
+//         "quotaExceededMessage": "",
+//         "assigningUser": "",
+//         "creationUser": "",
+//         "runQuotaAutomation": null,
+//         "runPriorityAutomation": null
+//     },
+//     "statusCode": "Success",
+//     "errorMessage": null
+// }
+
+// {
+//     "data": {
+//         "requestDate": "2026-08-24T22:14:06",
+//         "creationDate": "2026-08-24T19:16:04",
+//         "ihalatyReference": "32902843",
+//         "providerName": "TADAWI MEDICALhospital- khamis Mushayt",
+//         "longitude": null,
+//         "latitude": null,
+//         "providerCode": "H523753",
+//         "providerZoneCode": "15",
+//         "providerCityCode": null,
+//         "providerRegionCode": null,
+//         "providerZone": "Asir",
+//         "referralCause": "Bed Unavailable",
+//         "requestedBedType": "Neonatal Intensive Care Unit (NICU)",
+//         "claimType": null,
+//         "doctor": null,
+//         "estimationCost": 0,
+//         "category": "HP",
+//         "sourceProvider": "Al-Khamis Maternity and Children Hospital",
+//         "referralTypeCode": "2",
+//         "refType": "Emergency",
+//         "requiredSpecialtyCode": "630",
+//         "er": false,
+//         "specialtyCode": "630",
+//         "specialty": "Neonatology",
+//         "mobileNumber": null,
+//         "claimReference": null,
+//         "lengthOfStay": 0,
+//         "referralCauseDetails": {
+//             "id": 35750,
+//             "note": "NICU",
+//             "isPublic": true,
+//             "isActive": true,
+//             "owner": null,
+//             "canDelete": null,
+//             "creationDate": null
+//         },
+//         "referralAdditionalInformation": null,
+//         "status": "A",
+//         "canUpdate": true,
+//         "requiredSpecialty": "Neonatology",
+//         "message": "",
+//         "isPrivate": false,
+//         "canTakeAction": true,
+//         "quotaExceededMessage": "",
+//         "assigningUser": "",
+//         "creationUser": "",
+//         "runQuotaAutomation": null,
+//         "runPriorityAutomation": null
+//     },
+//     "statusCode": "Success",
+//     "errorMessage": null
+// }
