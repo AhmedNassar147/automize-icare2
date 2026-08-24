@@ -175,7 +175,6 @@ const handleCaseAcceptanceOrRejection =
         ENABLE_AUTO_WAITING,
         USES_CACHED_TOKEN_FLOW,
         ID_PROVIDER,
-        REMAINING_DELAY,
         AUTO_ACCEPT,
         AUTO_ACCEPT_DELAY,
         RECAPTCHA_ACCEPT_DELAY,
@@ -189,8 +188,6 @@ const handleCaseAcceptanceOrRejection =
         usesCachedTokenFlow === "1" && isAcceptanceAction;
 
       const isUsingAutoAccept = AUTO_ACCEPT === "1";
-
-      const totalRemainingDelay = Number(REMAINING_DELAY || 2755);
 
       const { fileData: filebase64 } = await getCurrentActionLetterFile(
         referralId,
@@ -406,6 +403,9 @@ const handleCaseAcceptanceOrRejection =
         // onZeroSecond: useCachedTokenFlow ? () => null : onZeroSecond,
       });
 
+      const totalRemainingDelay =
+        prepareButtonWillBeClickableWhen + autoAcceptAfterMs;
+
       const diff = referralEndTimestamp - readySeenAt;
 
       let extraWait = 0;
@@ -464,7 +464,7 @@ const handleCaseAcceptanceOrRejection =
         }
       }
 
-      console.log(JSON.stringify(_status, null, 2));
+      // console.log(JSON.stringify(_status, null, 2));
 
       const isTimeChanged = waitTime !== baseWaitingTime;
 
