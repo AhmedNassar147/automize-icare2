@@ -29,8 +29,8 @@ import writePollLogsData from "./writePollLogsData.mjs";
 
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
-  if (rtt >= 87 && rtt <= 150) return +2;
-  if (rtt >= 76) return +1;
+  if (rtt >= 88 && rtt <= 150) return +2;
+  if (rtt >= 85) return +1;
   // extremely responsive session
   if (rtt < 70) return -1;
 
@@ -442,17 +442,17 @@ const handleCaseAcceptanceOrRejection =
         let prepareWaitTime = 0;
 
         prepareButtonWillBeClickableWhen =
-          diffBetweenZeroAndReadyLocals <= 1020
+          diffBetweenZeroAndReadyLocals <= 1025
             ? 1066
-            : Math.max(1070, prepareButtonWillBeClickableWhen);
+            : Math.max(1069, prepareButtonWillBeClickableWhen);
 
         if (diffBetweenZeroAndReadyLocals < prepareButtonWillBeClickableWhen) {
           prepareWaitTime =
             prepareButtonWillBeClickableWhen - diffBetweenZeroAndReadyLocals;
         }
 
-        if (diffBetweenZeroAndReadyLocals > 1020) {
-          autoAcceptAfterMs += 3;
+        if (diffBetweenZeroAndReadyLocals > 1025) {
+          autoAcceptAfterMs += 1;
         }
 
         const { isCurrentCaseDangerZone } = await analyzeReferralTimingPatterns(
