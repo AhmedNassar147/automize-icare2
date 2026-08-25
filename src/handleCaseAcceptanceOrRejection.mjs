@@ -438,7 +438,7 @@ const handleCaseAcceptanceOrRejection =
       const diff = referralEndTimestamp - readySeenAt;
 
       if (isAcceptanceAction && !useOldFlow) {
-        autoAcceptAfterMs = 2002 + getRttExtraWait(rtt);
+        autoAcceptAfterMs = 2001 + getRttExtraWait(rtt);
         let prepareWaitTime = 0;
 
         prepareButtonWillBeClickableWhen =
