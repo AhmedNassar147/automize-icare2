@@ -179,9 +179,14 @@ async function waitUntilCanTakeActionByWindow({
           const ok = baseOk && !message;
           // Boolean(canTakeAction && canUpdate) && !message;
 
+          diffBetweenZeroAndReadyLocals = localNow - zeroSeenLocalAt;
+
           // const shouldFireOnLastSecond =
           //   ok ||
-          //   (!ok && !!zeroSeenLocalAt && timeDiff >= 1064 && timeDiff <= 1100);
+          //   (!ok &&
+          //     !!zeroSeenLocalAt &&
+          //     diffBetweenZeroAndReadyLocals >= 1060 &&
+          //     diffBetweenZeroAndReadyLocals <= 1080);
 
           // if (
           //   shouldFireOnLastSecond &&
@@ -193,9 +198,9 @@ async function waitUntilCanTakeActionByWindow({
 
           //   const remainingUntilOneSecond = ok
           //     ? 0
-          //     : timeDiff < 1000
+          //     : diffBetweenZeroAndReadyLocals < 1000
           //       ? 15
-          //       : 1070 - timeDiff;
+          //       : 1070 - diffBetweenZeroAndReadyLocals;
 
           //   if (remainingUntilOneSecond > 0) {
           //     await sleep(remainingUntilOneSecond);

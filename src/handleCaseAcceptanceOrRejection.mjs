@@ -438,32 +438,41 @@ const handleCaseAcceptanceOrRejection =
       const diff = referralEndTimestamp - readySeenAt;
 
       if (isAcceptanceAction && !useOldFlow) {
-        autoAcceptAfterMs += getRttExtraWait(rtt);
+        autoAcceptAfterMs = getRttExtraWait(rtt) || 0;
         let prepareWaitTime = 0;
 
-        prepareButtonWillBeClickableWhen =
-          diffBetweenZeroAndReadyLocals <= 1025
-            ? 1066
-            : diffBetweenZeroAndReadyLocals <= 1045
-              ? 1068
-              : Math.max(1070, prepareButtonWillBeClickableWhen);
+        // prepareButtonWillBeClickableWhen =
+        //   diffBetweenZeroAndReadyLocals <= 1025
+        //     ? 1066
+        //     : diffBetweenZeroAndReadyLocals <= 1045
+        //       ? 1068
+        //       : Math.max(1070, prepareButtonWillBeClickableWhen);
 
-        if (diffBetweenZeroAndReadyLocals < prepareButtonWillBeClickableWhen) {
-          prepareWaitTime =
-            prepareButtonWillBeClickableWhen - diffBetweenZeroAndReadyLocals;
-        }
+        // if (diffBetweenZeroAndReadyLocals < prepareButtonWillBeClickableWhen) {
+        //   prepareWaitTime =
+        //     prepareButtonWillBeClickableWhen - diffBetweenZeroAndReadyLocals;
+        // }
+
+        // if (diffBetweenZeroAndReadyLocals < 1000) {
+        //   prepareWaitTime = 1000 - diffBetweenZeroAndReadyLocals;
+        // }
 
         const { isCurrentCaseDangerZone } = await analyzeReferralTimingPatterns(
           referralEndTimestamp,
           diff,
         );
 
-        if (diffBetweenZeroAndReadyLocals > 1025) {
-          autoAcceptAfterMs += isCurrentCaseDangerZone ? 2 : 1;
-        }
+        // if (diffBetweenZeroAndReadyLocals > 1025) {
+        //   autoAcceptAfterMs = isCurrentCaseDangerZone ? 2 : 1;
+        // }
+
+        autoAcceptAfterMs += Math.max(
+          1100,
+          3090 - diffBetweenZeroAndReadyLocals,
+        );
 
         if (isCurrentCaseDangerZone) {
-          autoAcceptAfterMs += 6;
+          autoAcceptAfterMs += 7;
         }
 
         if (prepareWaitTime) {
@@ -547,12 +556,12 @@ const handleCaseAcceptanceOrRejection =
 
       const envUpdates = {
         recaptchaQuotaExceeded,
-        ...(useOldFlow
-          ? null
-          : {
-              AUTO_ACCEPT_DELAY: autoAcceptAfterMs,
-              RECAPTCHA_ACCEPT_DELAY: prepareButtonWillBeClickableWhen,
-            }),
+        // ...(useOldFlow
+        //   ? null
+        //   : {
+        //       AUTO_ACCEPT_DELAY: autoAcceptAfterMs,
+        //       RECAPTCHA_ACCEPT_DELAY: prepareButtonWillBeClickableWhen,
+        //     }),
         // DOES_SYSTEM_REDUCE_WAIT:
       };
 
