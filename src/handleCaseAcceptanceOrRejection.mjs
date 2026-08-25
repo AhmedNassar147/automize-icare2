@@ -27,18 +27,34 @@ import getExtraTimeBasedLogs, {
 import randomArrayItem from "./randomArrayItem.mjs";
 import writePollLogsData from "./writePollLogsData.mjs";
 
+// Target ms from "zero" for the prepare button to become clickable, and the
+// deliberate humanizing window before we auto-fire acceptance when no manual
+// click happened. These are fixed rather than rtt-scaled: across the three
+// confirmed-good reference cases we have (referralId 384041 rtt=67,
+// 384034 rtt=74, 384006 rtt=516 - all claimed=yes), the real recorded values
+// cluster tightly (prepare 1063/1063/1065, auto 1989/1989/1990) despite rtt
+// varying by 7x. An earlier version of this scaled both with rtt, but that
+// was fit to a single data point and contradicted by the other two once we
+// had them - rtt doesn't appear to move these numbers in practice.
+// (A fourth case, 383905, showed very different values (1222/1496) but was
+// flagged as likely non-competitive/unrepresentative and excluded from this.)
+const PREPARE_BUTTON_TARGET_MS = 1065;
+const AUTO_ACCEPT_TARGET_MS = 1990;
+
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
-  if (rtt >= 88 && rtt <= 150) return +2;
-  if (rtt >= 85) return +1;
+  // referralId 384006 (rtt=516, a trusted claimed=yes case) shows no bonus
+  // at high rtt - matches its real autoAcceptAfterMs of 1990 exactly.
+  if (rtt > 170) return 0;
+  if (rtt >= 90 && rtt <= 170) return +2;
+  if (rtt >= 84) return +1;
   // extremely responsive session
   if (rtt < 70) return -1;
 
   return 0;
 };
 
-const randomDelayInRange = (minMs, maxMs) =>
-  Math.floor(minMs + Math.random() * (maxMs - minMs));
+const getRttHalf = (rtt) => (Number.isFinite(rtt) ? Math.round(rtt / 2) : 0);
 
 const createRandomAttachmentKey = (minLength = 3, maxLength = 7) => {
   const chars =
@@ -274,16 +290,16 @@ const handleCaseAcceptanceOrRejection =
           Number(RECAPTCHA_ACCEPT_DELAY || 1065)
         : 0;
 
-      const onLastSeconds = () => {
-        if (isFakeReject || !isAcceptanceAction) return;
+      // const onLastSeconds = () => {
+      //   if (isFakeReject || !isAcceptanceAction) return;
 
-        broadcast({
-          type: "prepare-rcpt",
-          data: {
-            referralId,
-          },
-        });
-      };
+      //   broadcast({
+      //     type: "prepare-rcpt",
+      //     data: {
+      //       referralId,
+      //     },
+      //   });
+      // };
 
       const onZeroSecond = async (shouldIncreaseWait) => {
         if (isFakeReject || !isAcceptanceAction) return;
@@ -314,10 +330,6 @@ const handleCaseAcceptanceOrRejection =
         };
 
         broadcast(broadcastData);
-
-        // prepareButtonWillBeClickableWhen = shouldIncreaseWait
-        //   ? prepareButtonWillBeClickableWhen + 2
-        //   : prepareButtonWillBeClickableWhen;
 
         if (useOldFlow && prepareButtonWillBeClickableWhen) {
           // after details page loaded in real browser we fire prepare-rcpt
@@ -414,6 +426,8 @@ const handleCaseAcceptanceOrRejection =
         ? "Y"
         : "N";
 
+      let clockSkewAnomalyMessage = undefined;
+
       const {
         zeroSeenAt,
         zeroSeenLocalAt,
@@ -423,51 +437,82 @@ const handleCaseAcceptanceOrRejection =
         rtt,
         timesWhenOneSecondStartedAndEnded,
         loopCountWhenSecondIsOne,
-        newWorkFlowZeroProps,
-        _status,
+        // newWorkFlowZeroProps,
+        // _status,
         diffBetweenZeroAndReadyLocals,
         lastSecondFnFiredWhenDiffWas,
+        readyDiff,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
         onZeroSecond,
         useCachedTokenFlow,
         referralEndTimestamp,
-        onLastSeconds,
+        // onLastSeconds,
       });
 
       const diff = referralEndTimestamp - readySeenAt;
+      let waitingTimeDiff = 0;
 
       if (isAcceptanceAction && !useOldFlow) {
-        autoAcceptAfterMs = getRttExtraWait(rtt) || 0;
+        // Post-"ready" sleep before sending prepare-rcpt, driven by
+        // readyDiff (localNow - server's reported whole second at "ready").
+        // Low readyDiff means our reading landed early relative to the
+        // server's second, so there's more of PREPARE_BUTTON_TARGET_MS left
+        // to wait out; high readyDiff means we're already past it, so no
+        // extra wait is needed. readyDiff can swing very negative when
+        // polling straddles a server-second boundary unexpectedly (e.g.
+        // referralId 384179: readyDiff=-1523) - WAIT_CAP_MS keeps that from
+        // turning into a multi-second sleep that would blow the deadline.
+        const WAIT_CAP_MS = 50;
+        waitingTimeDiff = Math.max(
+          18,
+          Math.min(WAIT_CAP_MS, PREPARE_BUTTON_TARGET_MS - (readyDiff ?? 0)),
+        );
+
+        autoAcceptAfterMs = AUTO_ACCEPT_TARGET_MS + getRttExtraWait(rtt);
 
         const { isCurrentCaseDangerZone } = await analyzeReferralTimingPatterns(
           referralEndTimestamp,
           diff,
         );
 
-        if (diffBetweenZeroAndReadyLocals > 1025) {
-          autoAcceptAfterMs = isCurrentCaseDangerZone ? 2 : 1;
-        }
-
-        autoAcceptAfterMs += Math.max(
-          1050,
-          3250 - diffBetweenZeroAndReadyLocals,
-        );
-
         if (isCurrentCaseDangerZone) {
-          autoAcceptAfterMs += 7;
+          autoAcceptAfterMs += 8;
         }
 
         autoAcceptAfterMs =
           useCachedTokenFlow && isUsingAutoAccept ? autoAcceptAfterMs : 0;
 
-        await sleep(autoAcceptAfterMs);
+        prepareButtonWillBeClickableWhen = PREPARE_BUTTON_TARGET_MS;
+
+        // readyDiff should track diffBetweenZeroAndReadyLocals + rtt/2
+        // within normal polling noise (both describe roughly the same
+        // elapsed time, just against different clocks). A large gap between
+        // them means readyDiff landed in one of its anomalous swings for
+        // this case - WAIT_CAP_MS above already contains the fallout on the
+        // sleep, but it's worth flagging for manual review regardless.
+        const clockSkewAnomalyMs = Number.isFinite(readyDiff)
+          ? readyDiff - ((diffBetweenZeroAndReadyLocals || 0) + getRttHalf(rtt))
+          : null;
+
+        if (clockSkewAnomalyMs !== null && Math.abs(clockSkewAnomalyMs) > 300) {
+          createConsoleMessage(
+            `referralId=${referralId} clockSkewAnomalyMs=${clockSkewAnomalyMs} ` +
+              `(readyDiff=${readyDiff}, diffBetweenZeroAndReadyLocals=${diffBetweenZeroAndReadyLocals}, rtt=${rtt})`,
+            "warn",
+          );
+
+          clockSkewAnomalyMessage = `clockSkewAnomalyMs=${clockSkewAnomalyMs} (readyDiff=${readyDiff}, diffBetweenZeroAndReadyLocals=${diffBetweenZeroAndReadyLocals}, rtt=${rtt})`;
+        }
+
+        await sleep(waitingTimeDiff);
 
         broadcast({
-          type: "auto-accept",
+          type: "prepare-rcpt",
           data: {
             referralId,
+            autoAcceptAfterMs,
           },
         });
       }
@@ -575,6 +620,8 @@ const handleCaseAcceptanceOrRejection =
         autoAcceptAfterMs,
         prepareButtonWillBeClickableWhen,
         lastSecondFnFiredWhenDiffWas,
+        clockSkewAnomalyMessage,
+        waitingTimeDiff,
       });
 
       extraBotMessages.push(
@@ -584,24 +631,16 @@ const handleCaseAcceptanceOrRejection =
       );
 
       extraBotMessages.push(
-        `<b>zeroSeenLocalAt:</b> ${zeroSeenLocalAt}\n` +
+        `<b>referralId:</b> ${referralId}\n` +
+          `<b>zeroSeenLocalAt:</b> ${zeroSeenLocalAt}\n` +
           `<b>totalRemainingDelay:</b> ${totalRemainingDelay} MS\n` +
+          `<b>readyDiff:</b> ${readyDiff} MS\n` +
           `<b>diffBetweenZeroAndReadyLocals:</b> ${diffBetweenZeroAndReadyLocals} MS\n` +
           `<b>lastSecondFnFiredWhenDiffWas:</b> ${lastSecondFnFiredWhenDiffWas} MS\n` +
           `<b>prepareButtonWillBeClickableWhen:</b> ${prepareButtonWillBeClickableWhen} MS\n` +
+          `<b>waitingTimeDiff:</b> ${waitingTimeDiff} MS\n` +
           `<b>autoAcceptAfterMs:</b> ${autoAcceptAfterMs} MS\n`,
       );
-
-      if (newWorkFlowZeroProps) {
-        extraBotMessages.push(
-          `<b>newWorkFlowZeroProps:</b> ${JSON.stringify(newWorkFlowZeroProps)}`,
-        );
-
-        createConsoleMessage(
-          `patient=${referralId}, newWorkFlowZeroProps=${JSON.stringify(newWorkFlowZeroProps, null, 2)}`,
-          "warn",
-        );
-      }
 
       if (extraBotMessages.length) {
         await sleep(250);

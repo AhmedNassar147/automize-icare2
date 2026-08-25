@@ -50,6 +50,8 @@ const writePollLogsData = async ({
   autoAcceptAfterMs,
   prepareButtonWillBeClickableWhen,
   lastSecondFnFiredWhenDiffWas,
+  clockSkewAnomalyMessage,
+  waitingTimeDiff,
 }) => {
   const timingSummary = getDerivedTiming(timesWhenOneSecondStartedAndEnded);
 
@@ -83,6 +85,8 @@ const writePollLogsData = async ({
     autoAcceptAfterMs,
     prepareButtonWillBeClickableWhen,
     lastSecondFnFiredWhenDiffWas,
+    clockSkewAnomalyMessage,
+    waitingTimeDiff,
   };
 
   const key = createdAt.replace(/[:.]/g, "-");

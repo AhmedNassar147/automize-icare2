@@ -50,6 +50,7 @@ async function waitUntilCanTakeActionByWindow({
 
       let lastSecondFnFired = false;
       let lastSecondFnFiredWhenDiffWas = 0;
+      let readyDiff = 0;
 
       const pushPollLog = (entry) => {
         pollLogs.push(entry);
@@ -182,23 +183,23 @@ async function waitUntilCanTakeActionByWindow({
 
           diffBetweenZeroAndReadyLocals = localNow - zeroSeenLocalAt;
 
-          const shouldFireOnLastSecond =
-            ok ||
-            (!ok &&
-              !!zeroSeenLocalAt &&
-              diffBetweenZeroAndReadyLocals >= 1000 &&
-              diffBetweenZeroAndReadyLocals <= 1070);
+          // const shouldFireOnLastSecond =
+          //   ok ||
+          //   (!ok &&
+          //     !!zeroSeenLocalAt &&
+          //     diffBetweenZeroAndReadyLocals >= 1000 &&
+          //     diffBetweenZeroAndReadyLocals <= 1070);
 
-          if (
-            shouldFireOnLastSecond &&
-            !lastSecondFnFired &&
-            onLastSecondsFnName &&
-            zeroSeenLocalAt
-          ) {
-            lastSecondFnFired = true;
-            lastSecondFnFiredWhenDiffWas = diffBetweenZeroAndReadyLocals;
-            await window[onLastSecondsFnName]?.();
-          }
+          // if (
+          //   shouldFireOnLastSecond &&
+          //   !lastSecondFnFired &&
+          //   onLastSecondsFnName &&
+          //   zeroSeenLocalAt
+          // ) {
+          //   lastSecondFnFired = true;
+          //   lastSecondFnFiredWhenDiffWas = diffBetweenZeroAndReadyLocals;
+          //   await window[onLastSecondsFnName]?.();
+          // }
 
           _status.push({
             status,
@@ -233,6 +234,8 @@ async function waitUntilCanTakeActionByWindow({
                 diffBetweenZeroAndReadyLocals,
                 message: null,
               });
+
+              readyDiff = diff;
             }
 
             readySeenAt = serverNow || localNow;
@@ -300,6 +303,7 @@ async function waitUntilCanTakeActionByWindow({
             _status,
             diffBetweenZeroAndReadyLocals,
             lastSecondFnFiredWhenDiffWas,
+            readyDiff,
           };
         }
 
