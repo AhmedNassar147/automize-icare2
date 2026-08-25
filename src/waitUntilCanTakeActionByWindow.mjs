@@ -49,6 +49,7 @@ async function waitUntilCanTakeActionByWindow({
       let diffBetweenZeroAndReadyLocals = 0;
 
       let lastSecondFnFired = false;
+      let lastSecondFnFiredWhenDiffWas = 0;
 
       const pushPollLog = (entry) => {
         pollLogs.push(entry);
@@ -181,32 +182,23 @@ async function waitUntilCanTakeActionByWindow({
 
           diffBetweenZeroAndReadyLocals = localNow - zeroSeenLocalAt;
 
-          // const shouldFireOnLastSecond =
-          //   ok ||
-          //   (!ok &&
-          //     !!zeroSeenLocalAt &&
-          //     diffBetweenZeroAndReadyLocals >= 1060 &&
-          //     diffBetweenZeroAndReadyLocals <= 1080);
+          const shouldFireOnLastSecond =
+            ok ||
+            (!ok &&
+              !!zeroSeenLocalAt &&
+              diffBetweenZeroAndReadyLocals >= 1000 &&
+              diffBetweenZeroAndReadyLocals <= 1070);
 
-          // if (
-          //   shouldFireOnLastSecond &&
-          //   !lastSecondFnFired &&
-          //   onLastSecondsFnName &&
-          //   zeroSeenLocalAt
-          // ) {
-          //   lastSecondFnFired = true;
-
-          //   const remainingUntilOneSecond = ok
-          //     ? 0
-          //     : diffBetweenZeroAndReadyLocals < 1000
-          //       ? 15
-          //       : 1070 - diffBetweenZeroAndReadyLocals;
-
-          //   if (remainingUntilOneSecond > 0) {
-          //     await sleep(remainingUntilOneSecond);
-          //   }
-          //   await window[onLastSecondsFnName]?.();
-          // }
+          if (
+            shouldFireOnLastSecond &&
+            !lastSecondFnFired &&
+            onLastSecondsFnName &&
+            zeroSeenLocalAt
+          ) {
+            lastSecondFnFired = true;
+            lastSecondFnFiredWhenDiffWas = diffBetweenZeroAndReadyLocals;
+            await window[onLastSecondsFnName]?.();
+          }
 
           _status.push({
             status,
@@ -307,6 +299,7 @@ async function waitUntilCanTakeActionByWindow({
             newWorkFlowZeroProps,
             _status,
             diffBetweenZeroAndReadyLocals,
+            lastSecondFnFiredWhenDiffWas,
           };
         }
 

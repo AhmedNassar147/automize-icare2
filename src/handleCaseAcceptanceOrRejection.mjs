@@ -274,16 +274,16 @@ const handleCaseAcceptanceOrRejection =
           Number(RECAPTCHA_ACCEPT_DELAY || 1065)
         : 0;
 
-      // const onLastSeconds = () => {
-      //   if (isFakeReject || !isAcceptanceAction) return;
+      const onLastSeconds = () => {
+        if (isFakeReject || !isAcceptanceAction) return;
 
-      //   broadcast({
-      //     type: "prepare-rcpt",
-      //     data: {
-      //       referralId,
-      //     },
-      //   });
-      // };
+        broadcast({
+          type: "prepare-rcpt",
+          data: {
+            referralId,
+          },
+        });
+      };
 
       const onZeroSecond = async (shouldIncreaseWait) => {
         if (isFakeReject || !isAcceptanceAction) return;
@@ -426,67 +426,48 @@ const handleCaseAcceptanceOrRejection =
         newWorkFlowZeroProps,
         _status,
         diffBetweenZeroAndReadyLocals,
+        lastSecondFnFiredWhenDiffWas,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
         onZeroSecond,
         useCachedTokenFlow,
         referralEndTimestamp,
-        // onLastSeconds,
+        onLastSeconds,
       });
 
       const diff = referralEndTimestamp - readySeenAt;
 
       if (isAcceptanceAction && !useOldFlow) {
         autoAcceptAfterMs = getRttExtraWait(rtt) || 0;
-        let prepareWaitTime = 0;
-
-        // prepareButtonWillBeClickableWhen =
-        //   diffBetweenZeroAndReadyLocals <= 1025
-        //     ? 1066
-        //     : diffBetweenZeroAndReadyLocals <= 1045
-        //       ? 1068
-        //       : Math.max(1070, prepareButtonWillBeClickableWhen);
-
-        // if (diffBetweenZeroAndReadyLocals < prepareButtonWillBeClickableWhen) {
-        //   prepareWaitTime =
-        //     prepareButtonWillBeClickableWhen - diffBetweenZeroAndReadyLocals;
-        // }
-
-        // if (diffBetweenZeroAndReadyLocals < 1000) {
-        //   prepareWaitTime = 1000 - diffBetweenZeroAndReadyLocals;
-        // }
 
         const { isCurrentCaseDangerZone } = await analyzeReferralTimingPatterns(
           referralEndTimestamp,
           diff,
         );
 
-        // if (diffBetweenZeroAndReadyLocals > 1025) {
-        //   autoAcceptAfterMs = isCurrentCaseDangerZone ? 2 : 1;
-        // }
+        if (diffBetweenZeroAndReadyLocals > 1025) {
+          autoAcceptAfterMs = isCurrentCaseDangerZone ? 2 : 1;
+        }
 
         autoAcceptAfterMs += Math.max(
-          1100,
-          3090 - diffBetweenZeroAndReadyLocals,
+          1000,
+          3100 - diffBetweenZeroAndReadyLocals,
         );
 
         if (isCurrentCaseDangerZone) {
           autoAcceptAfterMs += 7;
         }
 
-        if (prepareWaitTime) {
-          await sleep(prepareWaitTime);
-        }
-
         autoAcceptAfterMs =
           useCachedTokenFlow && isUsingAutoAccept ? autoAcceptAfterMs : 0;
 
+        await sleep(autoAcceptAfterMs);
+
         broadcast({
-          type: "prepare-rcpt",
+          type: "auto-accept",
           data: {
             referralId,
-            autoAcceptAfterMs,
           },
         });
       }
@@ -593,6 +574,7 @@ const handleCaseAcceptanceOrRejection =
         timesWhenOneSecondStartedAndEnded,
         autoAcceptAfterMs,
         prepareButtonWillBeClickableWhen,
+        lastSecondFnFiredWhenDiffWas,
       });
 
       extraBotMessages.push(
@@ -605,6 +587,7 @@ const handleCaseAcceptanceOrRejection =
         `<b>zeroSeenLocalAt:</b> ${zeroSeenLocalAt}\n` +
           `<b>totalRemainingDelay:</b> ${totalRemainingDelay} MS\n` +
           `<b>diffBetweenZeroAndReadyLocals:</b> ${diffBetweenZeroAndReadyLocals} MS\n` +
+          `<b>lastSecondFnFiredWhenDiffWas:</b> ${lastSecondFnFiredWhenDiffWas} MS\n` +
           `<b>prepareButtonWillBeClickableWhen:</b> ${prepareButtonWillBeClickableWhen} MS\n` +
           `<b>autoAcceptAfterMs:</b> ${autoAcceptAfterMs} MS\n`,
       );

@@ -49,6 +49,7 @@ const writePollLogsData = async ({
   rtt,
   autoAcceptAfterMs,
   prepareButtonWillBeClickableWhen,
+  lastSecondFnFiredWhenDiffWas,
 }) => {
   const timingSummary = getDerivedTiming(timesWhenOneSecondStartedAndEnded);
 
@@ -81,6 +82,7 @@ const writePollLogsData = async ({
     timesWhenOneSecondStartedAndEnded,
     autoAcceptAfterMs,
     prepareButtonWillBeClickableWhen,
+    lastSecondFnFiredWhenDiffWas,
   };
 
   const key = createdAt.replace(/[:.]/g, "-");
