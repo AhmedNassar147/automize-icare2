@@ -466,7 +466,7 @@ const handleCaseAcceptanceOrRejection =
         // turning into a multi-second sleep that would blow the deadline.
         const WAIT_CAP_MS = 64;
         waitingTimeBeforeSendPrepareSignal = Math.max(
-          17,
+          20,
           Math.min(WAIT_CAP_MS, PREPARE_BUTTON_TARGET_MS - (readyDiff ?? 0)),
         );
 
