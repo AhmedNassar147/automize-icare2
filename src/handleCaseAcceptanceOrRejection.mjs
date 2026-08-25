@@ -452,7 +452,7 @@ const handleCaseAcceptanceOrRejection =
 
         autoAcceptAfterMs += Math.max(
           1000,
-          3100 - diffBetweenZeroAndReadyLocals,
+          3300 - diffBetweenZeroAndReadyLocals,
         );
 
         if (isCurrentCaseDangerZone) {
