@@ -174,12 +174,13 @@ const getCaseDelta = (initialValue, outcome, elapsedMs) => {
   return Number.isFinite(delta) ? delta : 0;
 };
 
-const analyzeReferralTimingPatterns = (
-  logsData,
+export const analyzeReferralTimingPatterns = async (
   referralEndTimestamp,
   diff,
   doesSystemReducingWait,
 ) => {
+  const logsData = await readLogsAsArray();
+
   const length = logsData?.length ?? 0;
   const isCurrentDiffNegative = diff < 0;
 
@@ -422,8 +423,6 @@ const getExtraTimeBasedLogs = async ({
   const isReducingWaitActive =
     doesSystemReducingWait || IS_FIRST_MONTH_REDUCTION_ACTIVE;
 
-  const logsData = await readLogsAsArray();
-
   const {
     isDoubleZeroDangerZone,
     isRecoveryThenDrop,
@@ -454,8 +453,7 @@ const getExtraTimeBasedLogs = async ({
     lastCaseOutcomeElapsedMs,
     gapMinLastCase,
     lastCasePreviousDelta,
-  } = analyzeReferralTimingPatterns(
-    logsData,
+  } = await analyzeReferralTimingPatterns(
     referralEndTimestamp,
     diff,
     isReducingWaitActive,

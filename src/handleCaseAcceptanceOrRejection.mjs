@@ -21,9 +21,21 @@ import sendNtfyMessage from "./sendNtfyMessage.mjs";
 import updateEnvFile from "./updateEnvFile.mjs";
 import shuffleArray from "./shuffleArray.mjs";
 import getCurrentActionLetterFile from "./getCurrentActionLetterFile.mjs";
-import getExtraTimeBasedLogs from "./getExtraTimeBasedLogs.mjs";
+import getExtraTimeBasedLogs, {
+  analyzeReferralTimingPatterns,
+} from "./getExtraTimeBasedLogs.mjs";
 import randomArrayItem from "./randomArrayItem.mjs";
 import writePollLogsData from "./writePollLogsData.mjs";
+
+const getRttExtraWait = (rtt) => {
+  if (!Number.isFinite(rtt)) return 0;
+  if (rtt >= 87 && rtt <= 110) return +2;
+  if (rtt >= 76) return +1;
+  // extremely responsive session
+  if (rtt < 70) return -1;
+
+  return 0;
+};
 
 const randomDelayInRange = (minMs, maxMs) =>
   Math.floor(minMs + Math.random() * (maxMs - minMs));
@@ -178,6 +190,7 @@ const handleCaseAcceptanceOrRejection =
         AUTO_ACCEPT,
         AUTO_ACCEPT_DELAY,
         RECAPTCHA_ACCEPT_DELAY,
+        USE_OLD_FLOW,
       } = process.env;
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
@@ -188,6 +201,7 @@ const handleCaseAcceptanceOrRejection =
         usesCachedTokenFlow === "1" && isAcceptanceAction;
 
       const isUsingAutoAccept = AUTO_ACCEPT === "1";
+      const useOldFlow = USE_OLD_FLOW === "1";
 
       const { fileData: filebase64 } = await getCurrentActionLetterFile(
         referralId,
@@ -260,16 +274,16 @@ const handleCaseAcceptanceOrRejection =
           Number(RECAPTCHA_ACCEPT_DELAY || 1065)
         : 0;
 
-      const onLastSeconds = () => {
-        if (isFakeReject || !isAcceptanceAction) return;
+      // const onLastSeconds = () => {
+      //   if (isFakeReject || !isAcceptanceAction) return;
 
-        broadcast({
-          type: "prepare-rcpt",
-          data: {
-            referralId,
-          },
-        });
-      };
+      //   broadcast({
+      //     type: "prepare-rcpt",
+      //     data: {
+      //       referralId,
+      //     },
+      //   });
+      // };
 
       const onZeroSecond = async (shouldIncreaseWait) => {
         if (isFakeReject || !isAcceptanceAction) return;
@@ -288,8 +302,14 @@ const handleCaseAcceptanceOrRejection =
             idProvider,
             providerName,
             usesCachedTokenFlow: useCachedTokenFlow ? "1" : "0",
-            autoAcceptAfterMs:
-              useCachedTokenFlow && isUsingAutoAccept ? autoAcceptAfterMs : 0,
+            ...(useOldFlow
+              ? {
+                  autoAcceptAfterMs:
+                    useCachedTokenFlow && isUsingAutoAccept
+                      ? autoAcceptAfterMs
+                      : 0,
+                }
+              : null),
           },
         };
 
@@ -299,19 +319,19 @@ const handleCaseAcceptanceOrRejection =
         //   ? prepareButtonWillBeClickableWhen + 2
         //   : prepareButtonWillBeClickableWhen;
 
-        // if (prepareButtonWillBeClickableWhen) {
-        //   // after details page loaded in real browser we fire prepare-rcpt
-        //   setTimeout(
-        //     () =>
-        //       broadcast({
-        //         type: "prepare-rcpt",
-        //         data: {
-        //           referralId,
-        //         },
-        //       }),
-        //     prepareButtonWillBeClickableWhen,
-        //   );
-        // }
+        if (useOldFlow && prepareButtonWillBeClickableWhen) {
+          // after details page loaded in real browser we fire prepare-rcpt
+          setTimeout(
+            () =>
+              broadcast({
+                type: "prepare-rcpt",
+                data: {
+                  referralId,
+                },
+              }),
+            prepareButtonWillBeClickableWhen,
+          );
+        }
       };
 
       const handleFinalSignal = async () => {
@@ -405,20 +425,61 @@ const handleCaseAcceptanceOrRejection =
         loopCountWhenSecondIsOne,
         newWorkFlowZeroProps,
         _status,
+        diffBetweenZeroAndReadyLocals,
       } = await waitUntilCanTakeActionByWindow({
         page,
         referralId,
         onZeroSecond,
         useCachedTokenFlow,
         referralEndTimestamp,
-        onLastSeconds,
-        // onZeroSecond: useCachedTokenFlow ? () => null : onZeroSecond,
+        // onLastSeconds,
       });
+
+      const diff = referralEndTimestamp - readySeenAt;
+
+      if (isAcceptanceAction && !useOldFlow) {
+        autoAcceptAfterMs = 2002 + getRttExtraWait(rtt);
+        let prepareWaitTime = 0;
+
+        prepareButtonWillBeClickableWhen =
+          diffBetweenZeroAndReadyLocals <= 1020 ? 1063 : 1066;
+
+        if (diffBetweenZeroAndReadyLocals < prepareButtonWillBeClickableWhen) {
+          prepareWaitTime =
+            prepareButtonWillBeClickableWhen - diffBetweenZeroAndReadyLocals;
+        }
+
+        if (diffBetweenZeroAndReadyLocals > 1020) {
+          autoAcceptAfterMs += 2;
+        }
+
+        const { isCurrentCaseDangerZone } = await analyzeReferralTimingPatterns(
+          referralEndTimestamp,
+          diff,
+        );
+
+        if (isCurrentCaseDangerZone) {
+          autoAcceptAfterMs += 6;
+        }
+
+        if (prepareWaitTime) {
+          await sleep(prepareWaitTime);
+        }
+
+        autoAcceptAfterMs =
+          useCachedTokenFlow && isUsingAutoAccept ? autoAcceptAfterMs : 0;
+
+        broadcast({
+          type: "prepare-rcpt",
+          data: {
+            referralId,
+            autoAcceptAfterMs,
+          },
+        });
+      }
 
       const totalRemainingDelay =
         prepareButtonWillBeClickableWhen + autoAcceptAfterMs;
-
-      const diff = referralEndTimestamp - readySeenAt;
 
       let extraWait = 0;
 
@@ -522,6 +583,7 @@ const handleCaseAcceptanceOrRejection =
       extraBotMessages.push(
         `<b>zeroSeenLocalAt:</b> ${zeroSeenLocalAt}\n` +
           `<b>totalRemainingDelay:</b> ${totalRemainingDelay} MS\n` +
+          `<b>diffBetweenZeroAndReadyLocals:</b> ${diffBetweenZeroAndReadyLocals} MS\n` +
           `<b>prepareButtonWillBeClickableWhen:</b> ${prepareButtonWillBeClickableWhen} MS\n` +
           `<b>autoAcceptAfterMs:</b> ${autoAcceptAfterMs} MS\n`,
       );

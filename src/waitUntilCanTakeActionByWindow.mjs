@@ -46,6 +46,7 @@ async function waitUntilCanTakeActionByWindow({
 
       let newWorkFlowZeroProps = {};
       let _status = [];
+      let diffBetweenZeroAndReadyLocals = 0;
 
       let lastSecondFnFired = false;
 
@@ -178,28 +179,29 @@ async function waitUntilCanTakeActionByWindow({
           const ok = baseOk && !message;
           // Boolean(canTakeAction && canUpdate) && !message;
 
-          const timeDiff = localNow - zeroSeenLocalAt;
+          // const shouldFireOnLastSecond =
+          //   ok ||
+          //   (!ok && !!zeroSeenLocalAt && timeDiff >= 1064 && timeDiff <= 1100);
 
-          const shouldFireOnLastSecond =
-            ok ||
-            (!ok && !!zeroSeenLocalAt && timeDiff >= 1060 && timeDiff < 1090);
+          // if (
+          //   shouldFireOnLastSecond &&
+          //   !lastSecondFnFired &&
+          //   onLastSecondsFnName &&
+          //   zeroSeenLocalAt
+          // ) {
+          //   lastSecondFnFired = true;
 
-          if (
-            shouldFireOnLastSecond &&
-            !lastSecondFnFired &&
-            onLastSecondsFnName
-          ) {
-            lastSecondFnFired = true;
+          //   const remainingUntilOneSecond = ok
+          //     ? 0
+          //     : timeDiff < 1000
+          //       ? 15
+          //       : 1070 - timeDiff;
 
-            const remainingUntilOneSecond = zeroSeenLocalAt
-              ? 1000 - timeDiff
-              : 0;
-
-            if (remainingUntilOneSecond > 0) {
-              await sleep(remainingUntilOneSecond);
-            }
-            await window[onLastSecondsFnName]?.();
-          }
+          //   if (remainingUntilOneSecond > 0) {
+          //     await sleep(remainingUntilOneSecond);
+          //   }
+          //   await window[onLastSecondsFnName]?.();
+          // }
 
           _status.push({
             status,
@@ -215,6 +217,8 @@ async function waitUntilCanTakeActionByWindow({
               zeroSeenLocalAt = localNow;
             }
 
+            diffBetweenZeroAndReadyLocals = localNow - zeroSeenLocalAt;
+
             if (loopCountWhenSecondIsOne) {
               pushPollLog({
                 phase: "ready",
@@ -229,6 +233,7 @@ async function waitUntilCanTakeActionByWindow({
                 gapFromPreviousPollMs,
                 sameServerSecondIndex,
                 totalMsLeft,
+                diffBetweenZeroAndReadyLocals,
                 message: null,
               });
             }
@@ -296,6 +301,7 @@ async function waitUntilCanTakeActionByWindow({
             timesWhenOneSecondStartedAndEnded: pollLogs,
             newWorkFlowZeroProps,
             _status,
+            diffBetweenZeroAndReadyLocals,
           };
         }
 
