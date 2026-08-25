@@ -442,7 +442,9 @@ const handleCaseAcceptanceOrRejection =
         let prepareWaitTime = 0;
 
         prepareButtonWillBeClickableWhen =
-          diffBetweenZeroAndReadyLocals <= 1020 ? 1066 : 1069;
+          diffBetweenZeroAndReadyLocals <= 1020
+            ? 1066
+            : Math.max(1070, prepareButtonWillBeClickableWhen);
 
         if (diffBetweenZeroAndReadyLocals < prepareButtonWillBeClickableWhen) {
           prepareWaitTime =
