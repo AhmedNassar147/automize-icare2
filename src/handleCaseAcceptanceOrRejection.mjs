@@ -39,7 +39,7 @@ import writePollLogsData from "./writePollLogsData.mjs";
 // (A fourth case, 383905, showed very different values (1222/1496) but was
 // flagged as likely non-competitive/unrepresentative and excluded from this.)
 const PREPARE_BUTTON_TARGET_MS = 1065;
-const AUTO_ACCEPT_TARGET_MS = 1990;
+const AUTO_ACCEPT_TARGET_MS = 1991;
 
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
@@ -452,7 +452,7 @@ const handleCaseAcceptanceOrRejection =
       });
 
       const diff = referralEndTimestamp - readySeenAt;
-      let waitingTimeDiff = 0;
+      let waitingTimeBeforeSendPrepareSignal = 0;
 
       if (isAcceptanceAction && !useOldFlow) {
         // Post-"ready" sleep before sending prepare-rcpt, driven by
@@ -464,9 +464,9 @@ const handleCaseAcceptanceOrRejection =
         // polling straddles a server-second boundary unexpectedly (e.g.
         // referralId 384179: readyDiff=-1523) - WAIT_CAP_MS keeps that from
         // turning into a multi-second sleep that would blow the deadline.
-        const WAIT_CAP_MS = 50;
-        waitingTimeDiff = Math.max(
-          18,
+        const WAIT_CAP_MS = 64;
+        waitingTimeBeforeSendPrepareSignal = Math.max(
+          17,
           Math.min(WAIT_CAP_MS, PREPARE_BUTTON_TARGET_MS - (readyDiff ?? 0)),
         );
 
@@ -506,7 +506,7 @@ const handleCaseAcceptanceOrRejection =
           clockSkewAnomalyMessage = `clockSkewAnomalyMs=${clockSkewAnomalyMs} (readyDiff=${readyDiff}, diffBetweenZeroAndReadyLocals=${diffBetweenZeroAndReadyLocals}, rtt=${rtt})`;
         }
 
-        await sleep(waitingTimeDiff);
+        await sleep(waitingTimeBeforeSendPrepareSignal);
 
         broadcast({
           type: "prepare-rcpt",
@@ -621,7 +621,7 @@ const handleCaseAcceptanceOrRejection =
         prepareButtonWillBeClickableWhen,
         lastSecondFnFiredWhenDiffWas,
         clockSkewAnomalyMessage,
-        waitingTimeDiff,
+        waitingTimeBeforeSendPrepareSignal,
       });
 
       extraBotMessages.push(
@@ -637,8 +637,7 @@ const handleCaseAcceptanceOrRejection =
           `<b>readyDiff:</b> ${readyDiff} MS\n` +
           `<b>diffBetweenZeroAndReadyLocals:</b> ${diffBetweenZeroAndReadyLocals} MS\n` +
           `<b>lastSecondFnFiredWhenDiffWas:</b> ${lastSecondFnFiredWhenDiffWas} MS\n` +
-          `<b>prepareButtonWillBeClickableWhen:</b> ${prepareButtonWillBeClickableWhen} MS\n` +
-          `<b>waitingTimeDiff:</b> ${waitingTimeDiff} MS\n` +
+          `<b>waitingTimeBeforeSendPrepareSignal:</b> ${waitingTimeBeforeSendPrepareSignal} MS\n` +
           `<b>autoAcceptAfterMs:</b> ${autoAcceptAfterMs} MS\n`,
       );
 
