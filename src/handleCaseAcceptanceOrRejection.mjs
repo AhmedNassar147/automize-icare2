@@ -459,7 +459,7 @@ const handleCaseAcceptanceOrRejection =
         );
 
         if (isCurrentCaseDangerZone) {
-          autoAcceptAfterMs += 6;
+          autoAcceptAfterMs += 5;
         }
 
         if (prepareWaitTime) {
