@@ -453,14 +453,14 @@ const handleCaseAcceptanceOrRejection =
             prepareButtonWillBeClickableWhen - diffBetweenZeroAndReadyLocals;
         }
 
-        if (diffBetweenZeroAndReadyLocals > 1025) {
-          autoAcceptAfterMs += 1;
-        }
-
         const { isCurrentCaseDangerZone } = await analyzeReferralTimingPatterns(
           referralEndTimestamp,
           diff,
         );
+
+        if (diffBetweenZeroAndReadyLocals > 1025) {
+          autoAcceptAfterMs += isCurrentCaseDangerZone ? 2 : 1;
+        }
 
         if (isCurrentCaseDangerZone) {
           autoAcceptAfterMs += 6;
