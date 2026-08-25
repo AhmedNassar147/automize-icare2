@@ -29,7 +29,7 @@ import writePollLogsData from "./writePollLogsData.mjs";
 
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
-  if (rtt >= 87 && rtt <= 110) return +2;
+  if (rtt >= 87 && rtt <= 150) return +2;
   if (rtt >= 76) return +1;
   // extremely responsive session
   if (rtt < 70) return -1;
@@ -438,11 +438,11 @@ const handleCaseAcceptanceOrRejection =
       const diff = referralEndTimestamp - readySeenAt;
 
       if (isAcceptanceAction && !useOldFlow) {
-        autoAcceptAfterMs = 2001 + getRttExtraWait(rtt);
+        autoAcceptAfterMs += getRttExtraWait(rtt);
         let prepareWaitTime = 0;
 
         prepareButtonWillBeClickableWhen =
-          diffBetweenZeroAndReadyLocals <= 1020 ? 1063 : 1066;
+          diffBetweenZeroAndReadyLocals <= 1020 ? 1066 : 1069;
 
         if (diffBetweenZeroAndReadyLocals < prepareButtonWillBeClickableWhen) {
           prepareWaitTime =
@@ -450,7 +450,7 @@ const handleCaseAcceptanceOrRejection =
         }
 
         if (diffBetweenZeroAndReadyLocals > 1020) {
-          autoAcceptAfterMs += 2;
+          autoAcceptAfterMs += 3;
         }
 
         const { isCurrentCaseDangerZone } = await analyzeReferralTimingPatterns(
@@ -459,7 +459,7 @@ const handleCaseAcceptanceOrRejection =
         );
 
         if (isCurrentCaseDangerZone) {
-          autoAcceptAfterMs += 5;
+          autoAcceptAfterMs += 6;
         }
 
         if (prepareWaitTime) {
@@ -543,6 +543,12 @@ const handleCaseAcceptanceOrRejection =
 
       const envUpdates = {
         recaptchaQuotaExceeded,
+        ...(useOldFlow
+          ? null
+          : {
+              AUTO_ACCEPT_DELAY: autoAcceptAfterMs,
+              RECAPTCHA_ACCEPT_DELAY: prepareButtonWillBeClickableWhen,
+            }),
         // DOES_SYSTEM_REDUCE_WAIT:
       };
 
@@ -572,6 +578,8 @@ const handleCaseAcceptanceOrRejection =
         waitTime,
         zeroSeenAt,
         timesWhenOneSecondStartedAndEnded,
+        autoAcceptAfterMs,
+        prepareButtonWillBeClickableWhen,
       });
 
       extraBotMessages.push(

@@ -47,6 +47,8 @@ const writePollLogsData = async ({
   extraBackendDelayMs,
   readySeenAtLocalMs,
   rtt,
+  autoAcceptAfterMs,
+  prepareButtonWillBeClickableWhen,
 }) => {
   const timingSummary = getDerivedTiming(timesWhenOneSecondStartedAndEnded);
 
@@ -77,6 +79,8 @@ const writePollLogsData = async ({
     isSameServerDate,
     timingSummary,
     timesWhenOneSecondStartedAndEnded,
+    autoAcceptAfterMs,
+    prepareButtonWillBeClickableWhen,
   };
 
   const key = createdAt.replace(/[:.]/g, "-");
