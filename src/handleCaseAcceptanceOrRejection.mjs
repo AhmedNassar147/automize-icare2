@@ -39,7 +39,7 @@ import writePollLogsData from "./writePollLogsData.mjs";
 // (A fourth case, 383905, showed very different values (1222/1496) but was
 // flagged as likely non-competitive/unrepresentative and excluded from this.)
 const PREPARE_BUTTON_TARGET_MS = 1065;
-const AUTO_ACCEPT_TARGET_MS = 2065;
+const AUTO_ACCEPT_TARGET_MS = 2060;
 
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
