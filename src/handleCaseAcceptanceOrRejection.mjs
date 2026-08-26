@@ -476,7 +476,7 @@ const handleCaseAcceptanceOrRejection =
         );
 
         if (isCurrentCaseDangerZone) {
-          autoAcceptAfterMs += diff === -1000 ? 6 : 2;
+          autoAcceptAfterMs += diff === -1000 ? 6 : 1;
         }
 
         autoAcceptAfterMs =
