@@ -491,17 +491,20 @@ const handleCaseAcceptanceOrRejection =
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
-        if (lastCaseDiff < 0 && isCurrentDiffNegative) {
+        // -1000/-2000 => 0
+        if (lastCaseDiff < 0 && isCurrentDiffNegative && gapMin > 14) {
           autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
+        // -1000 => 0
         if (lastCaseDiff < 0 && !isCurrentDiffNegative) {
           autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
-        if (lastCaseDiff >= 0 && !isCurrentDiffNegative) {
+        // 0 => 0
+        if (lastCaseDiff >= 0 && !isCurrentDiffNegative && gapMin > 14) {
           autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
