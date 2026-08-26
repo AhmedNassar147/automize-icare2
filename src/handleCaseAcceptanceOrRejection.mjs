@@ -482,6 +482,10 @@ const handleCaseAcceptanceOrRejection =
           autoAcceptAfterMs += 2;
         }
 
+        if (lastCaseDiff < 0 && !isCurrentDiffNegative) {
+          autoAcceptAfterMs += 1;
+        }
+
         autoAcceptAfterMs =
           useCachedTokenFlow && isUsingAutoAccept ? autoAcceptAfterMs : 0;
 
