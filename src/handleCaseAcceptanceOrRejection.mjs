@@ -459,7 +459,7 @@ const handleCaseAcceptanceOrRejection =
         // polling straddles a server-second boundary unexpectedly (e.g.
         // referralId 384179: readyDiff=-1523) - WAIT_CAP_MS keeps that from
         // turning into a multi-second sleep that would blow the deadline.
-        const WAIT_CAP_MS = readyDiff < 800 ? 27 : readyDiff < 910 ? 26 : 25;
+        const WAIT_CAP_MS = readyDiff <= 800 ? 27 : readyDiff < 910 ? 26 : 25;
 
         waitingTimeBeforeSendPrepareSignal = Math.max(
           16,
