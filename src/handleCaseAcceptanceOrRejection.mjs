@@ -479,12 +479,15 @@ const handleCaseAcceptanceOrRejection =
           isCurrentDiffNegative,
           lastCaseDiff,
           gapMin,
+          lastCaseRTT,
         } = await analyzeReferralTimingPatterns(referralEndTimestamp, diff);
 
         if (isCurrentCaseDangerZone) {
           autoAcceptIncreasedBy =
             diff === -1000
-              ? 5 + (gapMin > 60 ? 1 : 0)
+              ? rtt >= 200
+                ? 3
+                : 5 + (gapMin > 60 || gapMin < 25 ? 1 : 0)
               : waitBasedRtt <= 0
                 ? 3
                 : 2;
@@ -493,7 +496,8 @@ const handleCaseAcceptanceOrRejection =
 
         // -1000/-2000 => 0
         if (lastCaseDiff < 0 && isCurrentDiffNegative && gapMin > 14) {
-          autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
+          autoAcceptIncreasedBy =
+            lastCaseRTT >= 200 ? 4 : waitBasedRtt > 1 ? 1 : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 

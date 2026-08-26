@@ -214,6 +214,7 @@ export const analyzeReferralTimingPatterns = async (
       lastCaseOutcomeElapsedMs: 0,
       gapMinLastCase: 0,
       lastCasePreviousDelta: 0,
+      lastCaseRTT: 0,
     };
   }
 
@@ -247,6 +248,7 @@ export const analyzeReferralTimingPatterns = async (
     outcome: lastCaseOutcome,
     outcomeElapsedMs: lastCaseOutcomeElapsedMs,
     delta: lastDelta,
+    rtt: _lastCaseRTT,
   } = lastCaseOfYesterday;
 
   const diffFromLastToday = getDiffMsBasedTimeStamp(
@@ -323,6 +325,7 @@ export const analyzeReferralTimingPatterns = async (
     !doesSystemReducingWait && (isDoubleZeroDangerZone || isRecoveryThenDrop);
 
   const lastTodayRTT = _lastTodayRTT || 0;
+  const lastCaseRTT = _lastCaseRTT || 0;
 
   const safeLastExtraWait = Number.isFinite(lastExtraWait) ? lastExtraWait : 0;
 
@@ -361,6 +364,7 @@ export const analyzeReferralTimingPatterns = async (
     lastToday,
     lastTodayPreviousDelta,
     lastTodayRTT,
+    lastCaseRTT,
     wasLastTodayDangerous,
     wasFarDangerPhase,
     timeDiffFromLastCase,
