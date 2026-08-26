@@ -459,7 +459,8 @@ const handleCaseAcceptanceOrRejection =
         // polling straddles a server-second boundary unexpectedly (e.g.
         // referralId 384179: readyDiff=-1523) - WAIT_CAP_MS keeps that from
         // turning into a multi-second sleep that would blow the deadline.
-        const WAIT_CAP_MS = 25;
+        const WAIT_CAP_MS = readyDiff < 800 ? 27 : readyDiff < 910 ? 26 : 25;
+
         waitingTimeBeforeSendPrepareSignal = Math.max(
           16,
           Math.min(
@@ -470,13 +471,15 @@ const handleCaseAcceptanceOrRejection =
 
         autoAcceptAfterMs += waitBasedRtt;
 
-        const { isCurrentCaseDangerZone } = await analyzeReferralTimingPatterns(
-          referralEndTimestamp,
-          diff,
-        );
+        const { isCurrentCaseDangerZone, isCurrentDiffNegative, lastCaseDiff } =
+          await analyzeReferralTimingPatterns(referralEndTimestamp, diff);
 
         if (isCurrentCaseDangerZone) {
-          autoAcceptAfterMs += diff === -1000 ? 6 : 1;
+          autoAcceptAfterMs += diff === -1000 ? 6 : 2;
+        }
+
+        if (isCurrentDiffNegative && lastCaseDiff < 0) {
+          autoAcceptAfterMs += 2;
         }
 
         autoAcceptAfterMs =
