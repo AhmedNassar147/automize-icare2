@@ -487,7 +487,7 @@ const handleCaseAcceptanceOrRejection =
             diff === -1000
               ? rtt >= 170
                 ? 3
-                : 5 + (gapMin > 60 || gapMin < 25 ? 1 : 0)
+                : 5 + (gapMin > 60 || gapMin < 35 ? 1 : 0)
               : waitBasedRtt <= 0
                 ? 3
                 : 2;
