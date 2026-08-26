@@ -467,7 +467,7 @@ const handleCaseAcceptanceOrRejection =
         // turning into a multi-second sleep that would blow the deadline.
         const WAIT_CAP_MS = 64;
         waitingTimeBeforeSendPrepareSignal = Math.max(
-          18,
+          17,
           Math.min(
             WAIT_CAP_MS,
             prepareButtonWillBeClickableWhen - (readyDiff ?? 0),
@@ -481,8 +481,8 @@ const handleCaseAcceptanceOrRejection =
           diff,
         );
 
-        if (isCurrentCaseDangerZone) {
-          autoAcceptAfterMs += 7;
+        if (isCurrentCaseDangerZone && diff === -1000) {
+          autoAcceptAfterMs += 6;
         }
 
         autoAcceptAfterMs =
