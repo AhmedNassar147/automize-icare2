@@ -478,7 +478,7 @@ const handleCaseAcceptanceOrRejection =
 
         if (isCurrentCaseDangerZone) {
           autoAcceptIncreasedBy =
-            diff === -1000 ? 6 : waitBasedRtt <= 0 ? 3 : 2;
+            diff === -1000 ? 5 : waitBasedRtt <= 0 ? 3 : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
