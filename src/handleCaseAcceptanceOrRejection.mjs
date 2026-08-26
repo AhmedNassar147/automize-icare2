@@ -40,8 +40,8 @@ const getRttExtraWait = (rtt) => {
   // referralId 384006 (rtt=516, a trusted claimed=yes case) shows no bonus
   // at high rtt - matches its real autoAcceptAfterMs of 1990 exactly.
   if (rtt > 170) return 0;
-  if (rtt >= 90 && rtt <= 170) return +2;
-  if (rtt >= 84) return +1;
+  if (rtt >= 92 && rtt <= 170) return +2;
+  if (rtt >= 80) return +1;
   // extremely responsive session
   if (rtt < 70) return -1;
 
@@ -478,12 +478,12 @@ const handleCaseAcceptanceOrRejection =
           autoAcceptAfterMs += diff === -1000 ? 6 : 2;
         }
 
-        if (isCurrentDiffNegative && lastCaseDiff < 0) {
-          autoAcceptAfterMs += 2;
+        if (lastCaseDiff < 0 && isCurrentDiffNegative) {
+          autoAcceptAfterMs += waitBasedRtt > 1 ? 1 : 2;
         }
 
         if (lastCaseDiff < 0 && !isCurrentDiffNegative) {
-          autoAcceptAfterMs += 1;
+          autoAcceptAfterMs += waitBasedRtt > 1 ? 1 : 2;
         }
 
         autoAcceptAfterMs =
