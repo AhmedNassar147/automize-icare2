@@ -321,11 +321,11 @@ export const analyzeReferralTimingPatterns = async (
   const wasLastTodayDangerous = _messageFromLastToday.includes("danger-zone");
   const wasFarDangerPhase = _messageFromLastToday.includes("phase=far");
 
-  const isCurrentCaseDangerZone =
-    !doesSystemReducingWait && (isDoubleZeroDangerZone || isRecoveryThenDrop);
-
   const lastTodayRTT = _lastTodayRTT || 0;
   const lastCaseRTT = _lastCaseRTT || 0;
+
+  const isCurrentCaseDangerZone =
+    !doesSystemReducingWait && (isDoubleZeroDangerZone || isRecoveryThenDrop);
 
   const safeLastExtraWait = Number.isFinite(lastExtraWait) ? lastExtraWait : 0;
 

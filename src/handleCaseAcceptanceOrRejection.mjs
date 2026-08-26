@@ -475,19 +475,21 @@ const handleCaseAcceptanceOrRejection =
         autoAcceptAfterMs += waitBasedRtt;
 
         const {
-          isCurrentCaseDangerZone,
           isCurrentDiffNegative,
           lastCaseDiff,
           gapMin,
           lastCaseRTT,
+          isCurrentCaseDangerZone,
         } = await analyzeReferralTimingPatterns(referralEndTimestamp, diff);
+
+        const isThisCaseShownInTimeOfLastCaseDone = gapMin < 14;
 
         if (isCurrentCaseDangerZone) {
           autoAcceptIncreasedBy =
             diff === -1000
               ? rtt >= 170
                 ? 3
-                : 5 + (gapMin > 60 || gapMin < 35 ? 1 : 0)
+                : 5 + (gapMin > 55 || gapMin < 30 ? 1 : 0)
               : waitBasedRtt <= 0
                 ? 3
                 : 2;
@@ -497,19 +499,33 @@ const handleCaseAcceptanceOrRejection =
         // -1000/-2000 => 0
         if (lastCaseDiff < 0 && isCurrentDiffNegative) {
           autoAcceptIncreasedBy =
-            lastCaseRTT >= 170 ? 4 : waitBasedRtt > 1 ? 1 : 2;
+            lastCaseRTT >= 170
+              ? 4
+              : isThisCaseShownInTimeOfLastCaseDone
+                ? 0
+                : waitBasedRtt > 1
+                  ? 1
+                  : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         // -1000 => 0
         if (lastCaseDiff < 0 && !isCurrentDiffNegative) {
-          autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
+          autoAcceptIncreasedBy = isThisCaseShownInTimeOfLastCaseDone
+            ? 0
+            : waitBasedRtt > 1
+              ? 1
+              : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         // 0 => 0
-        if (lastCaseDiff >= 0 && !isCurrentDiffNegative && gapMin > 14) {
-          autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
+        if (lastCaseDiff >= 0 && !isCurrentDiffNegative) {
+          autoAcceptIncreasedBy = isThisCaseShownInTimeOfLastCaseDone
+            ? 0
+            : waitBasedRtt > 1
+              ? 1
+              : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
