@@ -575,8 +575,8 @@ const handleCaseAcceptanceOrRejection =
         ),
         summarizeLogsAfterAcceptance({
           referralId,
-          waitTime,
-          extraWait,
+          waitTime: autoAcceptAfterMs,
+          extraWait: autoAcceptIncreasedBy,
           referralEndTimestamp,
           endDateBasedServerDateMs,
           zeroSeenAt,
