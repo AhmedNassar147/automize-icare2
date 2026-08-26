@@ -495,7 +495,7 @@ const handleCaseAcceptanceOrRejection =
         }
 
         // -1000/-2000 => 0
-        if (lastCaseDiff < 0 && isCurrentDiffNegative && gapMin > 14) {
+        if (lastCaseDiff < 0 && isCurrentDiffNegative) {
           autoAcceptIncreasedBy =
             lastCaseRTT >= 170 ? 4 : waitBasedRtt > 1 ? 1 : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
