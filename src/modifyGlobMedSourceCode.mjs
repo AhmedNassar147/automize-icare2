@@ -513,7 +513,8 @@ const addPrepareButton = (
     `setTimeout(async ()=>{` +
     `const acceptBtn=document.querySelector(".referral-button-container button.MuiButton-containedPrimary:not([data-gm-prepare])");` +
     `if(acceptBtn){` +
-    `await ${acceptHandlerName}();` +
+    // `await ${acceptHandlerName}();` +
+    `acceptBtn.click();` +
     `}` +
     `},waitMs);` +
     `}` +
