@@ -38,8 +38,8 @@ import writePollLogsData from "./writePollLogsData.mjs";
 // had them - rtt doesn't appear to move these numbers in practice.
 // (A fourth case, 383905, showed very different values (1222/1496) but was
 // flagged as likely non-competitive/unrepresentative and excluded from this.)
-const PREPARE_BUTTON_TARGET_MS = 1065;
-const AUTO_ACCEPT_TARGET_MS = 2050;
+// const PREPARE_BUTTON_TARGET_MS = 1065;
+// const AUTO_ACCEPT_TARGET_MS = 2050;
 
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
@@ -287,7 +287,7 @@ const handleCaseAcceptanceOrRejection =
 
       let prepareButtonWillBeClickableWhen = useCachedTokenFlow
         ? // ? randomDelayInRange(1100, 1300)
-          Number(RECAPTCHA_ACCEPT_DELAY || 1065)
+          Math.max(1063, Number(RECAPTCHA_ACCEPT_DELAY || 1065))
         : 0;
 
       // const onLastSeconds = () => {
@@ -453,6 +453,7 @@ const handleCaseAcceptanceOrRejection =
 
       const diff = referralEndTimestamp - readySeenAt;
       let waitingTimeBeforeSendPrepareSignal = 0;
+      const waitBasedRtt = getRttExtraWait(rtt);
 
       if (isAcceptanceAction && !useOldFlow) {
         // Post-"ready" sleep before sending prepare-rcpt, driven by
@@ -466,11 +467,14 @@ const handleCaseAcceptanceOrRejection =
         // turning into a multi-second sleep that would blow the deadline.
         const WAIT_CAP_MS = 64;
         waitingTimeBeforeSendPrepareSignal = Math.max(
-          20,
-          Math.min(WAIT_CAP_MS, PREPARE_BUTTON_TARGET_MS - (readyDiff ?? 0)),
+          22,
+          Math.min(
+            WAIT_CAP_MS,
+            prepareButtonWillBeClickableWhen - (readyDiff ?? 0),
+          ),
         );
 
-        autoAcceptAfterMs = AUTO_ACCEPT_TARGET_MS + getRttExtraWait(rtt);
+        autoAcceptAfterMs += waitBasedRtt;
 
         const { isCurrentCaseDangerZone } = await analyzeReferralTimingPatterns(
           referralEndTimestamp,
@@ -478,13 +482,13 @@ const handleCaseAcceptanceOrRejection =
         );
 
         if (isCurrentCaseDangerZone) {
-          autoAcceptAfterMs += 8;
+          autoAcceptAfterMs += 7;
         }
 
         autoAcceptAfterMs =
           useCachedTokenFlow && isUsingAutoAccept ? autoAcceptAfterMs : 0;
 
-        prepareButtonWillBeClickableWhen = PREPARE_BUTTON_TARGET_MS;
+        // prepareButtonWillBeClickableWhen = PREPARE_BUTTON_TARGET_MS;
 
         // readyDiff should track diffBetweenZeroAndReadyLocals + rtt/2
         // within normal polling noise (both describe roughly the same
@@ -582,12 +586,12 @@ const handleCaseAcceptanceOrRejection =
 
       const envUpdates = {
         recaptchaQuotaExceeded,
-        // ...(useOldFlow
-        //   ? null
-        //   : {
-        //       AUTO_ACCEPT_DELAY: autoAcceptAfterMs,
-        //       RECAPTCHA_ACCEPT_DELAY: prepareButtonWillBeClickableWhen,
-        //     }),
+        ...(useOldFlow
+          ? null
+          : {
+              AUTO_ACCEPT_DELAY: autoAcceptAfterMs - Math.abs(waitBasedRtt),
+              RECAPTCHA_ACCEPT_DELAY: prepareButtonWillBeClickableWhen,
+            }),
         // DOES_SYSTEM_REDUCE_WAIT:
       };
 
@@ -622,6 +626,7 @@ const handleCaseAcceptanceOrRejection =
         lastSecondFnFiredWhenDiffWas,
         clockSkewAnomalyMessage,
         waitingTimeBeforeSendPrepareSignal,
+        waitBasedRtt,
       });
 
       extraBotMessages.push(
@@ -637,6 +642,7 @@ const handleCaseAcceptanceOrRejection =
           `<b>readyDiff:</b> ${readyDiff} MS\n` +
           `<b>diffBetweenZeroAndReadyLocals:</b> ${diffBetweenZeroAndReadyLocals} MS\n` +
           `<b>lastSecondFnFiredWhenDiffWas:</b> ${lastSecondFnFiredWhenDiffWas} MS\n` +
+          `<b>waitBasedRtt:</b> ${waitBasedRtt} MS\n` +
           `<b>waitingTimeBeforeSendPrepareSignal:</b> ${waitingTimeBeforeSendPrepareSignal} MS\n` +
           `<b>autoAcceptAfterMs:</b> ${autoAcceptAfterMs} MS\n`,
       );
