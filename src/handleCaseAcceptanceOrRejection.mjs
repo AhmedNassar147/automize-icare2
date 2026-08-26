@@ -27,19 +27,13 @@ import getExtraTimeBasedLogs, {
 import randomArrayItem from "./randomArrayItem.mjs";
 import writePollLogsData from "./writePollLogsData.mjs";
 
-// Target ms from "zero" for the prepare button to become clickable, and the
-// deliberate humanizing window before we auto-fire acceptance when no manual
-// click happened. These are fixed rather than rtt-scaled: across the three
-// confirmed-good reference cases we have (referralId 384041 rtt=67,
-// 384034 rtt=74, 384006 rtt=516 - all claimed=yes), the real recorded values
-// cluster tightly (prepare 1063/1063/1065, auto 1989/1989/1990) despite rtt
-// varying by 7x. An earlier version of this scaled both with rtt, but that
-// was fit to a single data point and contradicted by the other two once we
-// had them - rtt doesn't appear to move these numbers in practice.
-// (A fourth case, 383905, showed very different values (1222/1496) but was
-// flagged as likely non-competitive/unrepresentative and excluded from this.)
-// const PREPARE_BUTTON_TARGET_MS = 1065;
-// const AUTO_ACCEPT_TARGET_MS = 2050;
+// prepareButtonWillBeClickableWhen and autoAcceptAfterMs are driven by the
+// RECAPTCHA_ACCEPT_DELAY / AUTO_ACCEPT_DELAY env vars (see their initial
+// assignment below), not fixed here. A fitted rtt-scaled formula was tried
+// and dropped: with only a handful of confirmed-good reference cases
+// (referralId 384041, 384034, 384006), each version matched the case it was
+// calibrated on and broke on the next one once it arrived. Revisit once
+// more confirmed cases have accumulated in results/poll-logs.
 
 const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
@@ -465,9 +459,9 @@ const handleCaseAcceptanceOrRejection =
         // polling straddles a server-second boundary unexpectedly (e.g.
         // referralId 384179: readyDiff=-1523) - WAIT_CAP_MS keeps that from
         // turning into a multi-second sleep that would blow the deadline.
-        const WAIT_CAP_MS = 64;
+        const WAIT_CAP_MS = 60;
         waitingTimeBeforeSendPrepareSignal = Math.max(
-          17,
+          16,
           Math.min(
             WAIT_CAP_MS,
             prepareButtonWillBeClickableWhen - (readyDiff ?? 0),
