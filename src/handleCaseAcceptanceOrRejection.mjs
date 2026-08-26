@@ -490,41 +490,30 @@ const handleCaseAcceptanceOrRejection =
             diff === -1000
               ? rtt >= 170
                 ? 3
-                : 5 + (gapMin > 55 || gapMin < 30 ? 1 : 0)
-              : 2;
+                : 6 + (gapMin > 55 || gapMin < 30 ? 1 : 0)
+              : 3;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         // -1000/-2000 => 0
         if (lastCaseDiff < 0 && isCurrentDiffNegative) {
           autoAcceptIncreasedBy =
-            lastCaseRTT >= 170
-              ? 4
-              : isThisCaseShownInTimeOfLastCaseDone
-                ? 0
-                : waitBasedRtt > 1
-                  ? 1
-                  : 2;
+            lastCaseRTT >= 170 ? 4 : waitBasedRtt > 1 ? 1 : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         // -1000 => 0
         if (lastCaseDiff < 0 && !isCurrentDiffNegative) {
-          autoAcceptIncreasedBy = isThisCaseShownInTimeOfLastCaseDone
-            ? 0
-            : waitBasedRtt > 1
-              ? 1
-              : 2;
+          // isThisCaseShownInTimeOfLastCaseDone
+          //   ? 0
+          //   :
+          autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         // 0 => 0
         if (lastCaseDiff >= 0 && !isCurrentDiffNegative) {
-          autoAcceptIncreasedBy = isThisCaseShownInTimeOfLastCaseDone
-            ? 0
-            : waitBasedRtt > 1
-              ? 1
-              : 2;
+          autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
