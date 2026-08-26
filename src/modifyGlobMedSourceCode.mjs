@@ -489,14 +489,30 @@ const addPrepareButton = (
   acceptHandlerName,
   recaptchaTriggerFnName,
 ) => {
+  const injection =
+    'document.addEventListener("click",function(e){' +
+    'if(location.pathname!=="/referral/details")return;' +
+    'const btn=e.target.closest("button");' +
+    "if(!btn)return;" +
+    'const txt=btn.innerText||"";' +
+    'if(!txt.includes("Accept"))return;' +
+    'const pb=document.querySelector("[data-gm-prepare]");' +
+    'const k="GM__PREPARE_TIME"+window.history.state?.usr?.idReferral;' +
+    'const k_v=pb?.innerText||"";' +
+    "localStorage.setItem(k,k_v);" +
+    "});";
+
   const injectedOnClick =
     "onClick:async (e) => {" +
+    `const currentTime = Date.now();` +
     "const btn=e.currentTarget;" +
     "if (btn.disabled)return;" +
     "btn.disabled=true;" +
+    `const stateReferralId=window.history.state?.usr?.idReferral;` +
+    'const pk="GM__PREPARE_TIME_"+stateReferralId;' +
+    "localStorage.setItem(pk, currentTime);" +
     "try{" +
     `if(localStorage.getItem("usesCachedTokenFlow")==="1"){` +
-    `const stateReferralId=window.history.state?.usr?.idReferral;` +
     `const storeKey="GM__CPTCHA_TKN_" + stateReferralId;` +
     "const t1=performance.now();" +
     `const result=await ${recaptchaTriggerFnName}();` +
@@ -718,22 +734,20 @@ const addSettingsToDashboard = (sourceCode) => {
 };
 
 const addAcceptClickLogger = (sourceCode) => {
-  const injection =
-    'document.addEventListener("click",function(e){' +
-    'if(location.pathname!=="/referral/details")return;' +
-    'const btn=e.target.closest("button");' +
-    "if(!btn)return;" +
-    'const txt=btn.innerText||"";' +
-    'if(!txt.includes("Accept"))return;' +
-    'const pb=document.querySelector("[data-gm-prepare]");' +
-    'const k=Date.now()+"GM__PREPARE_TIME";' +
-    'const k_v=pb?.innerText||"";' +
-    "localStorage.setItem(k,k_v);" +
-    "});";
+  // const injection =
+  //   'document.addEventListener("click",function(e){' +
+  //   'if(location.pathname!=="/referral/details")return;' +
+  //   'const btn=e.target.closest("button");' +
+  //   "if(!btn)return;" +
+  //   'const txt=btn.innerText||"";' +
+  //   'if(!txt.includes("Accept"))return;' +
+  //   'const pb=document.querySelector("[data-gm-prepare]");' +
+  //   'const k="GM__PREPARE_TIME"+window.history.state?.usr?.idReferral;' +
+  //   'const k_v=pb?.innerText||"";' +
+  //   "localStorage.setItem(k,k_v);" +
+  //   "});";
 
-  return (
-    'console.log("<<< PATCHED BUNDLE LOADED >>>");' + injection + sourceCode
-  );
+  return 'console.log("<<< PATCHED BUNDLE LOADED >>>");' + sourceCode;
 };
 
 function modifyGlobMedSourceCode(code) {

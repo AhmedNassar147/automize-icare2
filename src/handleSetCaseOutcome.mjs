@@ -19,6 +19,7 @@ const handleSetCaseOutcome = async ({
   referralId: caseId,
   patientsStore,
   sendTelegramMessage,
+  userClickedPrepareButtonAt,
 }) => {
   if (!caseId) {
     return {
@@ -90,6 +91,7 @@ const handleSetCaseOutcome = async ({
     status: `${outcome}_${elapsedMs}`,
     clickedAt,
     tookMS: typeof tookMs === "number" ? tookMs : "",
+    extraWaitMessage: ` userClickedPrepareButtonAt=${userClickedPrepareButtonAt}`,
   });
 
   const delta = getOutcomeDelta(outcome, elapsedMs);

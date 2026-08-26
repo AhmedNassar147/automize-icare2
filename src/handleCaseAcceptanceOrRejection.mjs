@@ -450,6 +450,7 @@ const handleCaseAcceptanceOrRejection =
 
       let waitingTimeBeforeSendPrepareSignal = 0;
       let autoAcceptIncreasedBy = 0;
+      let prepareSignalSentAt = 0;
       const waitBasedRtt = getRttExtraWait(rtt);
 
       if (isAcceptanceAction && !useOldFlow) {
@@ -490,9 +491,7 @@ const handleCaseAcceptanceOrRejection =
               ? rtt >= 170
                 ? 3
                 : 5 + (gapMin > 55 || gapMin < 30 ? 1 : 0)
-              : waitBasedRtt <= 0
-                ? 3
-                : 2;
+              : 2;
           autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
@@ -556,6 +555,7 @@ const handleCaseAcceptanceOrRejection =
 
         await sleep(waitingTimeBeforeSendPrepareSignal);
 
+        prepareSignalSentAt = Date.now();
         broadcast({
           type: "prepare-rcpt",
           data: {
@@ -611,7 +611,7 @@ const handleCaseAcceptanceOrRejection =
           rtt,
           status: isAcceptanceAction ? "" : "not-clicked",
           claimed: isAcceptanceAction ? "" : "No",
-          extraWaitMessage: computedExtraBotMessages.join("_AND_"),
+          extraWaitMessage: `${computedExtraBotMessages.join("_AND_")} | prepareSignalSentAt=${prepareSignalSentAt} `,
           recaptchaQuotaExceeded,
         }),
       ]);
