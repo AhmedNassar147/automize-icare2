@@ -41,7 +41,7 @@ const getRttExtraWait = (rtt) => {
   // at high rtt - matches its real autoAcceptAfterMs of 1990 exactly.
   if (rtt > 170) return 0;
   if (rtt >= 92 && rtt <= 170) return +2;
-  if (rtt >= 80) return +1;
+  if (rtt >= 86) return +1;
   // extremely responsive session
   if (rtt < 70) return -1;
 
