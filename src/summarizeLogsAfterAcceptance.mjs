@@ -121,11 +121,14 @@ export async function updateCaseInLog(referralId, updates) {
 
     for (const [field, value] of Object.entries(updates)) {
       const key = fieldMap[field] ?? field;
-      if (key in current) current[key] = String(value);
 
       if (key === "extraWaitMessage") {
-        current[key] = `${current[key]} Notes: ${value}`;
+        const previous = current[key] || "";
+        current[key] = previous ? `${previous} ${value}` : String(value);
+        continue;
       }
+
+      if (key in current) current[key] = String(value);
     }
 
     return createPrettyRow(current);
