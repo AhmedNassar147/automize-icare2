@@ -53,6 +53,7 @@ const writePollLogsData = async ({
   clockSkewAnomalyMessage,
   waitingTimeBeforeSendPrepareSignal,
   waitBasedRtt,
+  autoAcceptIncreasedBy,
 }) => {
   const timingSummary = getDerivedTiming(timesWhenOneSecondStartedAndEnded);
 
@@ -84,6 +85,7 @@ const writePollLogsData = async ({
     timingSummary,
     timesWhenOneSecondStartedAndEnded,
     autoAcceptAfterMs,
+    autoAcceptIncreasedBy,
     prepareButtonWillBeClickableWhen,
     lastSecondFnFiredWhenDiffWas,
     clockSkewAnomalyMessage,

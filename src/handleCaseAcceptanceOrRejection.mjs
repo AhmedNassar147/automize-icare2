@@ -446,7 +446,9 @@ const handleCaseAcceptanceOrRejection =
       });
 
       const diff = referralEndTimestamp - readySeenAt;
+
       let waitingTimeBeforeSendPrepareSignal = 0;
+      let autoAcceptIncreasedBy = 0;
       const waitBasedRtt = getRttExtraWait(rtt);
 
       if (isAcceptanceAction && !useOldFlow) {
@@ -475,15 +477,18 @@ const handleCaseAcceptanceOrRejection =
           await analyzeReferralTimingPatterns(referralEndTimestamp, diff);
 
         if (isCurrentCaseDangerZone) {
-          autoAcceptAfterMs += diff === -1000 ? 6 : 2;
+          autoAcceptIncreasedBy = diff === -1000 ? 6 : 2;
+          autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         if (lastCaseDiff < 0 && isCurrentDiffNegative) {
-          autoAcceptAfterMs += waitBasedRtt > 1 ? 1 : 2;
+          autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
+          autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         if (lastCaseDiff < 0 && !isCurrentDiffNegative) {
-          autoAcceptAfterMs += waitBasedRtt > 1 ? 1 : 2;
+          autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
+          autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         autoAcceptAfterMs =
@@ -628,6 +633,7 @@ const handleCaseAcceptanceOrRejection =
         clockSkewAnomalyMessage,
         waitingTimeBeforeSendPrepareSignal,
         waitBasedRtt,
+        autoAcceptIncreasedBy,
       });
 
       extraBotMessages.push(
