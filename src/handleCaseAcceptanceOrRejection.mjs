@@ -39,8 +39,8 @@ const getRttExtraWait = (rtt) => {
   if (!Number.isFinite(rtt)) return 0;
   // referralId 384006 (rtt=516, a trusted claimed=yes case) shows no bonus
   // at high rtt - matches its real autoAcceptAfterMs of 1990 exactly.
-  if (rtt > 170) return 0;
-  if (rtt >= 92 && rtt <= 170) return +2;
+  if (rtt > 140) return 0;
+  if (rtt >= 92 && rtt <= 140) return +2;
   if (rtt >= 86) return +1;
   // extremely responsive session
   if (rtt < 70) return -1;
