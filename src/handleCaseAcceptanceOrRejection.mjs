@@ -501,7 +501,7 @@ const handleCaseAcceptanceOrRejection =
             diff === -1000
               ? rtt >= 170
                 ? 3
-                : 5 + (gapMin > 45 || gapMin < 30 ? 1 : 0) + (rtt > 85 ? 1 : 0)
+                : 5 + (gapMin > 45 || gapMin < 30 ? 1 : 0) + (rtt > 90 ? 1 : 0)
               : 3;
         }
 
