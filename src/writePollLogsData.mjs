@@ -54,6 +54,7 @@ const writePollLogsData = async ({
   waitingTimeBeforeSendPrepareSignal,
   waitBasedRtt,
   autoAcceptIncreasedBy,
+  prepareExpireMs,
 }) => {
   const timingSummary = getDerivedTiming(timesWhenOneSecondStartedAndEnded);
 
@@ -91,6 +92,7 @@ const writePollLogsData = async ({
     clockSkewAnomalyMessage,
     waitingTimeBeforeSendPrepareSignal,
     waitBasedRtt,
+    prepareExpireMs,
   };
 
   const key = createdAt.replace(/[:.]/g, "-");

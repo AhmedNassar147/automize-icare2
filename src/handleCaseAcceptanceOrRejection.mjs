@@ -202,7 +202,16 @@ const handleCaseAcceptanceOrRejection =
         AUTO_ACCEPT_DELAY,
         RECAPTCHA_ACCEPT_DELAY,
         USE_OLD_FLOW,
+        PREPARE_EXPIRE_MS,
       } = process.env;
+
+      // Client-side cutoff (scripts/fix-final-new-last-ready-case.mjs) after
+      // which the Prepare button turns red as a "you're now late" cue. Only
+      // 3 real reaction-time samples exist so far (referralId 384278 won at
+      // 1286ms, 384277/384286 lost at 1575/1847ms) - 1200 is a starting
+      // point, not a validated value. Env-tunable so it doesn't need a
+      // userscript redeploy to adjust as more samples come in.
+      let prepareExpireMs = Number(PREPARE_EXPIRE_MS || 1200);
 
       const isAcceptanceAction = actionType === USER_ACTION_TYPES.ACCEPT;
       const isFakeReject = actionType === FAKE_REJECT_PROBE;
@@ -463,7 +472,9 @@ const handleCaseAcceptanceOrRejection =
         // polling straddles a server-second boundary unexpectedly (e.g.
         // referralId 384179: readyDiff=-1523) - WAIT_CAP_MS keeps that from
         // turning into a multi-second sleep that would blow the deadline.
-        const WAIT_CAP_MS = readyDiff <= 800 ? 27 : readyDiff < 910 ? 26 : 25;
+        const MAX_WAIT = 27;
+        const WAIT_CAP_MS =
+          readyDiff <= 800 ? MAX_WAIT : readyDiff < 910 ? 26 : 25;
 
         waitingTimeBeforeSendPrepareSignal = Math.max(
           16,
@@ -490,16 +501,14 @@ const handleCaseAcceptanceOrRejection =
             diff === -1000
               ? rtt >= 170
                 ? 3
-                : 6 + (gapMin > 55 || gapMin < 30 ? 1 : 0)
+                : 5 + (gapMin > 45 || gapMin < 30 ? 1 : 0)
               : 3;
-          autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         // -1000/-2000 => 0
         if (lastCaseDiff < 0 && isCurrentDiffNegative) {
           autoAcceptIncreasedBy =
             lastCaseRTT >= 170 ? 4 : waitBasedRtt > 1 ? 1 : 2;
-          autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         // -1000 => 0
@@ -508,14 +517,18 @@ const handleCaseAcceptanceOrRejection =
           //   ? 0
           //   :
           autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
-          autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
 
         // 0 => 0
         if (lastCaseDiff >= 0 && !isCurrentDiffNegative) {
           autoAcceptIncreasedBy = waitBasedRtt > 1 ? 1 : 2;
-          autoAcceptAfterMs += autoAcceptIncreasedBy;
         }
+
+        if (!isCurrentCaseDangerZone && gapMin > 30) {
+          autoAcceptIncreasedBy += 1;
+        }
+
+        autoAcceptAfterMs += autoAcceptIncreasedBy;
 
         autoAcceptAfterMs =
           useCachedTokenFlow && isUsingAutoAccept ? autoAcceptAfterMs : 0;
@@ -544,12 +557,16 @@ const handleCaseAcceptanceOrRejection =
 
         await sleep(waitingTimeBeforeSendPrepareSignal);
 
+        prepareExpireMs =
+          MAX_WAIT - waitingTimeBeforeSendPrepareSignal + prepareExpireMs;
+
         prepareSignalSentAt = Date.now();
         broadcast({
           type: "prepare-rcpt",
           data: {
             referralId,
             autoAcceptAfterMs,
+            prepareExpireMs,
           },
         });
       }
@@ -622,7 +639,7 @@ const handleCaseAcceptanceOrRejection =
         ...(useOldFlow
           ? null
           : {
-              AUTO_ACCEPT_DELAY: autoAcceptAfterMs - Math.abs(waitBasedRtt),
+              AUTO_ACCEPT_DELAY: autoAcceptAfterMs - waitBasedRtt,
               RECAPTCHA_ACCEPT_DELAY: prepareButtonWillBeClickableWhen,
             }),
         // DOES_SYSTEM_REDUCE_WAIT:
@@ -661,6 +678,7 @@ const handleCaseAcceptanceOrRejection =
         waitingTimeBeforeSendPrepareSignal,
         waitBasedRtt,
         autoAcceptIncreasedBy,
+        prepareExpireMs,
       });
 
       extraBotMessages.push(
