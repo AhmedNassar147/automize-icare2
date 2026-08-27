@@ -525,7 +525,7 @@ const handleCaseAcceptanceOrRejection =
         }
 
         if (!isCurrentCaseDangerZone && gapMin > 40) {
-          autoAcceptIncreasedBy += 1;
+          autoAcceptIncreasedBy += waitBasedRtt > 0 ? 2 : 3;
         }
 
         autoAcceptAfterMs += autoAcceptIncreasedBy;
