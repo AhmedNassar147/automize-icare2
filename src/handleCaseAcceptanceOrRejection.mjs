@@ -505,6 +505,15 @@ const handleCaseAcceptanceOrRejection =
               : 3;
         }
 
+        if (
+          !isCurrentCaseDangerZone &&
+          lastCaseDiff === 0 &&
+          isCurrentDiffNegative
+        ) {
+          autoAcceptIncreasedBy =
+            lastCaseRTT >= 170 ? 4 : waitBasedRtt > 1 ? 1 : 2;
+        }
+
         // -1000/-2000 => 0
         if (lastCaseDiff < 0 && isCurrentDiffNegative) {
           autoAcceptIncreasedBy =
